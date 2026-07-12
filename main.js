@@ -156,9 +156,7 @@ ipcMain.on('quit-app', () => { app.isQuitting = true; app.quit(); });
 ipcMain.handle('get-public-config', () => ({
   SUPABASE_URL: CFG.SUPABASE_URL || null,
   SUPABASE_KEY: CFG.SUPABASE_ANON_KEY || null,
-  ADMIN_API_SECRET: CFG.ADMIN_API_SECRET && !CFG.ADMIN_API_SECRET.includes('PASTE') ? CFG.ADMIN_API_SECRET : null,
   TOSS_CLIENT_KEY: CFG.TOSS_CLIENT_KEY && !CFG.TOSS_CLIENT_KEY.includes('PASTE') ? CFG.TOSS_CLIENT_KEY : null,
-  INSTAGRAM_ACCESS_TOKEN: CFG.INSTAGRAM_ACCESS_TOKEN && !CFG.INSTAGRAM_ACCESS_TOKEN.includes('PASTE') ? CFG.INSTAGRAM_ACCESS_TOKEN : null,
 }));
 
 ipcMain.on('open-external', (e, url) => {

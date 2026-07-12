@@ -8,7 +8,7 @@
 // ═══════════════════════════════════════════════
 const fs   = require('fs');
 const path = require('path');
-const cfg  = require('./config.js');
+const cfg  = require('./config.admin.js');
 
 const EDGE_URL  = cfg.SUPABASE_URL + '/functions/v1/manage-cat-breeds';
 const ADMIN_KEY = cfg.ADMIN_API_SECRET;
