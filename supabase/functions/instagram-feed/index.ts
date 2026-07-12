@@ -72,11 +72,12 @@ Deno.serve(async (req) => {
     return json({ error: 'unexpected_response' }, 502);
   }
 
-  // 필요한 필드만 추려서 반환
+  // 필요한 필드만 추려서 반환 (VIDEO는 thumbnail_url 별도 포함)
   const posts = igData.data.map((p: Record<string, string>) => ({
     id: p.id,
-    media_type: p.media_type,
-    media_url: p.media_type === 'VIDEO' ? (p.thumbnail_url ?? '') : (p.media_url ?? ''),
+    media_type: p.media_type,          // IMAGE | VIDEO | CAROUSEL_ALBUM
+    media_url: p.media_url ?? '',
+    thumbnail_url: p.thumbnail_url ?? '', // VIDEO 전용, 없으면 빈 문자열
     permalink: p.permalink ?? '',
     caption: p.caption ?? '',
     timestamp: p.timestamp ?? '',
