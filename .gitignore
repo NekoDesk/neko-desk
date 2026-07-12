@@ -3,7 +3,6 @@ node_modules/
 
 # 시크릿 — 절대 커밋 금지
 config.js
-config.admin.js
 token.txt
 .env
 
