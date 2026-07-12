@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start *)",
+      "PowerShell(cd \"d:\\\\NekoDesk\\\\neko-desk-app\"; $env:ELECTRON_GET_USE_PROXY=\"false\"; node -e \"require\\('electron'\\)\" 2>&1)",
+      "PowerShell(npx asar --version 2>&1)",
+      "PowerShell(Start-Process \"d:\\\\NekoDesk\\\\neko-desk-app\\\\dist\\\\win-unpacked\\\\NEKO DESK.exe\")",
+      "PowerShell(Get-Process -Name \"NEKO DESK\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Name \"neko-desk\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Name \"electron\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}
