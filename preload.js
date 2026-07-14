@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 위젯 드래그
   dragWindow:     (dx, dy) => ipcRenderer.send('drag-window', dx, dy),
 
+  // 위젯 투명 영역 클릭 통과
+  setIgnoreMouseEvents: (ignore) => ipcRenderer.send('set-ignore-mouse-events', ignore),
+
   // 커서 팔로우 (화면 전체)
   setFollow:      (on, imgDataURL) => ipcRenderer.send('set-follow', on, imgDataURL),
 
@@ -59,4 +62,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 메인 → 렌더러 이벤트 수신
   onOpenDashboard: (cb) => ipcRenderer.on('trigger-open-dashboard', cb),
   onToggleFollow:  (cb) => ipcRenderer.on('trigger-toggle-follow', cb),
+
+  // NicePay 결제창 (V1 표준결제)
+  openPaymentWindow: (params) => ipcRenderer.invoke('open-payment-window', params),
+  onPaymentResult:   (cb) => ipcRenderer.on('payment-result', (e, data) => cb(data)),
 });

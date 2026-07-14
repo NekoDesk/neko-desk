@@ -26,7 +26,7 @@ npm start
 ```bash
 npm run build:win
 ```
-완료되면 `dist/` 폴더에 **NEKO DESK Setup 1.0.0.exe** 가 생겨요. 이걸 다른 사람한테 보내거나 배포하면 됩니다.
+완료되면 `dist/` 폴더에 **NEKO DESK Setup 1.1.0.exe** 가 생겨요. 이걸 다른 사람한테 보내거나 배포하면 됩니다.
 
 **Mac용 dmg 만들기:**
 ```bash

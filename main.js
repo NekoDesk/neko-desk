@@ -4,7 +4,7 @@
 const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { autoUpdater } = require('electron-updater');
+let autoUpdater = null;
 
 // 중복 실행 방지: 이미 실행 중이면 기존 창을 띄우고 종료
 const gotLock = app.requestSingleInstanceLock();
@@ -19,10 +19,11 @@ if (!gotLock) {
   });
 }
 
-let mainWindow = null;
+let mainWindow = null;       // 위젯 전용 윈도우 (항상 작게 유지)
+let dashboardWindow = null;  // 대시보드 별도 윈도우
 let tray = null;
 let isDashboardOpen = false;
-let lastWidgetPosition = null; // 대시보드 열기 전 위젯 위치 기억
+let lastWidgetPosition = null;
 
 // 위젯/대시보드 크기
 const WIDGET_SIZE    = { width: 280, height: 320 };
@@ -101,53 +102,53 @@ function toggleVisibility() {
   else mainWindow.show();
 }
 
+function openDashboardWindow() {
+  if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+    dashboardWindow.focus();
+    return;
+  }
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
+  dashboardWindow = new BrowserWindow({
+    width: DASHBOARD_SIZE.width,
+    height: DASHBOARD_SIZE.height,
+    x: Math.round(dx + (dw - DASHBOARD_SIZE.width) / 2),
+    y: Math.round(dy + (dh - DASHBOARD_SIZE.height) / 2),
+    frame: false,
+    transparent: true,
+    resizable: false,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    }
+  });
+  dashboardWindow.loadFile('renderer/index.html', { query: { mode: 'dashboard' } });
+  dashboardWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  dashboardWindow.on('closed', () => {
+    dashboardWindow = null;
+    isDashboardOpen = false;
+  });
+  isDashboardOpen = true;
+}
+
 function sendOpenDashboard() {
   if (!mainWindow) return;
   mainWindow.show();
-  mainWindow.webContents.send('trigger-open-dashboard');
+  openDashboardWindow();
 }
 
-// ═══ IPC: 위젯 ↔ 대시보드 모드 전환 ═══
+// ═══ IPC: 대시보드 윈도우 열기/닫기 (위젯 윈도우는 항상 유지) ═══
 ipcMain.on('open-dashboard', () => {
-  isDashboardOpen = true;
-  // 현재 위젯 위치 기억 (대시보드 닫을 때 복원용)
-  lastWidgetPosition = mainWindow.getPosition();
-  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
-  mainWindow.setResizable(true);
-  mainWindow.setBounds({
-    x: Math.round(dx + (dw - DASHBOARD_SIZE.width) / 2),
-    y: Math.round(dy + (dh - DASHBOARD_SIZE.height) / 2),
-    width: DASHBOARD_SIZE.width,
-    height: DASHBOARD_SIZE.height,
-  });
-  mainWindow.setAlwaysOnTop(false);
+  openDashboardWindow();
 });
 
 ipcMain.on('close-dashboard', () => {
-  isDashboardOpen = false;
-  // 저장된 위젯 위치로 복원 (없으면 우하단으로 fallback)
-  let x, y;
-  if (lastWidgetPosition) {
-    [x, y] = lastWidgetPosition;
-  } else {
-    const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-    const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
-    x = dx + dw - WIDGET_SIZE.width - 20;
-    y = dy + dh - WIDGET_SIZE.height - 20;
+  if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+    dashboardWindow.close();
   }
-  // setBounds + setPosition 둘 다 호출해서 위치 확실히 고정
-  mainWindow.setBounds({
-    x, y,
-    width: WIDGET_SIZE.width,
-    height: WIDGET_SIZE.height,
-  });
-  mainWindow.setPosition(x, y);
-  mainWindow.setResizable(false);
-  mainWindow.setAlwaysOnTop(true, 'screen-saver');
-  // alwaysOnTop이 위치를 살짝 옮길 수 있어서 한 번 더 확정
-  setTimeout(() => mainWindow.setPosition(x, y), 50);
-  mainWindow.focus();
+  isDashboardOpen = false;
 });
 
 ipcMain.on('quit-app', () => { app.isQuitting = true; app.quit(); });
@@ -157,7 +158,86 @@ ipcMain.handle('get-public-config', () => ({
   SUPABASE_URL: CFG.SUPABASE_URL || null,
   SUPABASE_KEY: CFG.SUPABASE_ANON_KEY || null,
   TOSS_CLIENT_KEY: CFG.TOSS_CLIENT_KEY && !CFG.TOSS_CLIENT_KEY.includes('PASTE') ? CFG.TOSS_CLIENT_KEY : null,
+  NICEPAY_MID: CFG.NICEPAY_MID || null,
+  NICEPAY_KEY: CFG.NICEPAY_KEY || null,
 }));
+
+// ─── NicePay 결제창 ───
+ipcMain.handle('open-payment-window', (event, params) => {
+  return new Promise((resolve) => {
+    const { BrowserWindow: BW, app: _app } = require('electron');
+    const fs = require('fs');
+    const os = require('os');
+    const pth = require('path');
+
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    const formHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>결제</title>
+<style>body{margin:0;background:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666}p{font-size:14px}</style>
+</head><body><p>결제창을 불러오는 중...</p>
+<form id="pf" method="POST" action="https://web.nicepay.co.kr/v3/paymentStd.jsp">
+  <input type="hidden" name="MID" value="${esc(params.mid)}">
+  <input type="hidden" name="GoodsName" value="${esc(params.goodsName)}">
+  <input type="hidden" name="Amt" value="${esc(params.amt)}">
+  <input type="hidden" name="Moid" value="${esc(params.moid)}">
+  <input type="hidden" name="BuyerName" value="${esc(params.buyerName)}">
+  <input type="hidden" name="BuyerEmail" value="${esc(params.buyerEmail)}">
+  <input type="hidden" name="BuyerTel" value="${esc(params.buyerTel)}">
+  <input type="hidden" name="ReturnURL" value="${esc(params.returnUrl)}">
+  <input type="hidden" name="EdiDate" value="${esc(params.ediDate)}">
+  <input type="hidden" name="SignData" value="${esc(params.signData)}">
+  <input type="hidden" name="CharSet" value="utf-8">
+  <input type="hidden" name="GoodsCnt" value="${esc(params.goodsCnt||'1')}">
+  <input type="hidden" name="MallReserved" value="${esc(params.mallReserved||'')}">
+</form>
+<script>document.getElementById('pf').submit();</script>
+</body></html>`;
+
+    const tmpFile = pth.join(os.tmpdir(), 'nekodesk_pay.html');
+    fs.writeFileSync(tmpFile, formHtml, 'utf-8');
+
+    const payWin = new BW({
+      width: 500, height: 750, title: 'NEKO DESK 결제',
+      autoHideMenuBar: true,
+      webPreferences: { nodeIntegration: false, contextIsolation: true }
+    });
+    payWin.webContents.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    );
+    payWin.loadFile(tmpFile);
+
+    const sendResult = (result) => {
+      [mainWindow, dashboardWindow].forEach(w => {
+        if (w && !w.isDestroyed()) w.webContents.send('payment-result', result);
+      });
+    };
+
+    payWin.webContents.on('will-navigate', (e, url) => {
+      if (url.startsWith('nekoapp://payment-done')) {
+        e.preventDefault();
+        try {
+          const u = new URL(url.replace('nekoapp://', 'http://x/'));
+          const result = {
+            success: u.searchParams.get('success') === '1',
+            tid: u.searchParams.get('tid') || '',
+            amt: u.searchParams.get('amt') || params.amt,
+            goods: u.searchParams.get('goods') || params.goodsName,
+            msg: u.searchParams.get('msg') || ''
+          };
+          sendResult(result);
+          resolve(result);
+        } catch(err) {
+          resolve({ success: false, msg: '결과 파싱 오류' });
+        }
+        payWin.close();
+      }
+    });
+
+    payWin.on('closed', () => {
+      resolve({ success: false, cancelled: true });
+    });
+  });
+});
 
 ipcMain.on('open-external', (e, url) => {
   // 외부 브라우저로 열기 (아임웹 상품/결제 페이지 등) — http/https만 허용
@@ -215,18 +295,25 @@ ipcMain.on('reset-widget-pos', () => {
 });
 
 ipcMain.on('install-update-now', () => {
-  autoUpdater.quitAndInstall();
+  if (autoUpdater) autoUpdater.quitAndInstall();
 });
 
-ipcMain.on('minimize-app', () => {
-  // 트레이로 숨기기 (트레이 아이콘 클릭으로 복귀)
-  if (mainWindow) mainWindow.hide();
+ipcMain.on('minimize-app', (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender);
+  if (win && win !== mainWindow) {
+    // 대시보드 윈도우에서 호출 → 대시보드만 닫기
+    win.close();
+  } else {
+    // 위젯에서 호출 → 트레이로 숨기기
+    if (mainWindow) mainWindow.hide();
+  }
 });
 
 // ═══ 포토부스: 프로그램 화면 캡처 → 지정 폴더(기본: 바탕화면)에 저장 ═══
 ipcMain.handle('capture-photo', async (e, rect, dir) => {
   try {
-    const img = await mainWindow.webContents.capturePage(rect);
+    const win = BrowserWindow.fromWebContents(e.sender) || mainWindow;
+    const img = await win.webContents.capturePage(rect);
     const dest = dir || app.getPath('desktop');
     const file = path.join(dest, 'neko-photo-' + Date.now() + '.png');
     fs.writeFileSync(file, img.toPNG());
@@ -236,8 +323,9 @@ ipcMain.handle('capture-photo', async (e, rect, dir) => {
   }
 });
 
-ipcMain.handle('choose-photo-dir', async () => {
-  const r = await dialog.showOpenDialog(mainWindow, {
+ipcMain.handle('choose-photo-dir', async (e) => {
+  const win = BrowserWindow.fromWebContents(e.sender) || mainWindow;
+  const r = await dialog.showOpenDialog(win, {
     title: '사진 저장 폴더 선택',
     properties: ['openDirectory', 'createDirectory']
   });
@@ -259,7 +347,7 @@ ipcMain.handle('get-displays', () => {
 
 ipcMain.on('move-to-display', (e, displayId, position) => {
   const display = screen.getAllDisplays().find(d => d.id === displayId);
-  if (!display || isDashboardOpen) return;
+  if (!display) return;
   const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
   const m = 40;
   const w = WIDGET_SIZE.width, h = WIDGET_SIZE.height;
@@ -276,9 +364,13 @@ ipcMain.on('move-to-display', (e, displayId, position) => {
 
 // ═══ 윈도우 드래그 (위젯 모드에서 자유롭게 이동) ═══
 ipcMain.on('drag-window', (e, dx, dy) => {
-  if (!mainWindow || isDashboardOpen) return;
+  if (!mainWindow) return;
   const [x, y] = mainWindow.getPosition();
   mainWindow.setPosition(x + dx, y + dy);
+});
+
+ipcMain.on('set-ignore-mouse-events', (e, ignore) => {
+  if (mainWindow) mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
 });
 
 // ═══ 커서 팔로우: 화면 전체를 따라다니는 미니 고양이 윈도우 ═══
@@ -488,22 +580,23 @@ app.whenReady().then(() => {
   gaTrack('app_start');
 
   // ═══ 자동 업데이트 (GitHub Releases) ═══
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
-  // 앱 켜고 3초 뒤 + 이후 4시간마다 업데이트 확인
-  setTimeout(() => autoUpdater.checkForUpdates().catch(()=>{}), 3000);
-  setInterval(() => autoUpdater.checkForUpdates().catch(()=>{}), 4 * 60 * 60 * 1000);
-
-  autoUpdater.on('update-available', (info) => {
-    if (mainWindow) mainWindow.webContents.send('update-status', { state: 'available', version: info.version });
-  });
-  autoUpdater.on('download-progress', (p) => {
-    if (mainWindow) mainWindow.webContents.send('update-status', { state: 'downloading', percent: Math.round(p.percent) });
-  });
-  autoUpdater.on('update-downloaded', (info) => {
-    if (mainWindow) mainWindow.webContents.send('update-status', { state: 'downloaded', version: info.version });
-  });
-  autoUpdater.on('error', () => {});
+  try {
+    autoUpdater = require('electron-updater').autoUpdater;
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    setTimeout(() => autoUpdater.checkForUpdates().catch(()=>{}), 3000);
+    setInterval(() => autoUpdater.checkForUpdates().catch(()=>{}), 4 * 60 * 60 * 1000);
+    autoUpdater.on('update-available', (info) => {
+      if (mainWindow) mainWindow.webContents.send('update-status', { state: 'available', version: info.version });
+    });
+    autoUpdater.on('download-progress', (p) => {
+      if (mainWindow) mainWindow.webContents.send('update-status', { state: 'downloading', percent: Math.round(p.percent) });
+    });
+    autoUpdater.on('update-downloaded', (info) => {
+      if (mainWindow) mainWindow.webContents.send('update-status', { state: 'downloaded', version: info.version });
+    });
+    autoUpdater.on('error', () => {});
+  } catch(e) {}
 
   // Ctrl+0: 커서 팔로우 ON/OFF (전역 단축키)
   globalShortcut.register('Control+0', () => {

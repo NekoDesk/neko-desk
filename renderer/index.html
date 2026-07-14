@@ -406,7 +406,7 @@ body.theme-mono {
 
 /* Fruits */
 .fruit-grid {
-  display: grid; grid-template-columns: repeat(6,1fr); gap: 6px;
+  display: grid; grid-template-columns: repeat(5,1fr); gap: 6px;
   padding: 10px; background: var(--card); border: 2px solid var(--border); min-height: 55px;
 }
 .fruit { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 17px; border: 2px solid transparent; cursor: pointer; }
@@ -421,16 +421,44 @@ body.theme-mono {
 .sch-dot { width: 10px; height: 10px; border: 2px solid; flex-shrink: 0; }
 .sch-time { font-size: 15px; font-weight: 700; min-width: 55px; color: var(--white); }
 .sch-label { font-size: 14px; color: var(--gray); flex: 1; }
+/* Schedule memo items */
+.sch-memo-row { display:flex; align-items:center; gap:6px; padding:4px 0; }
+.sch-time-in { background:var(--card); border:1px solid var(--border); color:var(--white); padding:3px 6px; font-size:12px; width:130px; outline:none; border-radius:3px; flex-shrink:0; }
+.sch-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px; font-size:13px; flex:1; outline:none; }
+.sch-label-in:focus { border-bottom-color:var(--yellow); }
+.sch-del-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
+.sch-del-btn:hover { color:#f66; border-color:#f66; }
+/* Work items */
+.work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
+.drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; }
+.ti-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px 2px; font-size:13px; flex:1; min-width:0; outline:none; }
+.ti-label-in:focus { border-bottom-color:var(--yellow); }
+.ampm-btn { font-size:11px; color:var(--yellow); background:var(--card); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
+.ti-time-in { width:145px; flex-shrink:0; background:var(--card); border:1px solid var(--border); color:var(--white); padding:4px 6px; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
+.ti-x-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
+.ti-x-btn:hover { color:#f66; border-color:#f66; }
+.cal-sel { border-color:var(--acc) !important; background:rgba(233,69,96,0.1) !important; }
+.sch-add-row { text-align:center; padding:2px 0; }
+.sch-add-btn { font-size:11px; color:var(--gray); cursor:pointer; padding:2px 12px; border:1px dashed var(--border); background:transparent; border-radius:3px; }
+.sch-add-btn:hover { color:var(--yellow); border-color:var(--yellow); }
+/* Calendar */
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-day { min-height:56px; padding:3px 2px; cursor:pointer; border-radius:3px; border:1px solid transparent; vertical-align:top; }
+.cal-day:hover { border-color:var(--border); background:var(--card); }
+.cal-day.today { border-color:var(--yellow); background:rgba(255,211,105,0.08); }
+.cal-day.has-note::after { content:'•'; display:block; text-align:center; color:var(--yellow); font-size:10px; line-height:1; }
+.cal-day-num { font-size:11px; text-align:center; }
+.cal-note-preview { font-size:9px; color:var(--gray); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:center; }
 .badge { font-family: 'Galmuri14', monospace; font-size: 11px; padding: 2px 6px; background: var(--yellow); color: #000; }
 .badge.g { background: var(--mint); color: #000; }
 
 /* Accessories */
-.mag-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 6px; }
+.mag-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 6px; }
 .mag-card { background: var(--card); border: 2px solid var(--border); border-radius: 4px; overflow: hidden; cursor: pointer; }
-.mag-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--panel); }
-.mag-card-info { padding: 6px 8px 8px; }
-.mag-card-cap { font-size: 11px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mag-card-date { font-size: 10px; color: var(--border); margin-top: 2px; }
+.mag-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; background: var(--panel); }
+.mag-card-info { padding: 5px 7px 7px; }
+.mag-card-cap { font-size: 13px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mag-card-date { font-size: 12px; color: var(--border); margin-top: 2px; }
 .breed-coming { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); border: 2px dashed var(--border); padding: 12px 6px; cursor: default; min-width: 80px; border-radius: 4px; }
 .breed-coming-label { font-size: 10px; color: var(--gray); margin-top: 4px; font-family: 'Galmuri14', monospace; }
 
@@ -440,8 +468,10 @@ body.theme-mono {
 .color-sw.sel { border-color: #fff; }
 
 /* Inputs */
-.ti-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.ti-row label { font-size: 14px; color: var(--gray); width: 80px; flex-shrink: 0; }
+.ti-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ti-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
+.ti-row label { font-size: 13px; color: var(--gray); white-space: nowrap; flex: 1; }
+.ti-row input[type="time"] { width: 120px; flex-shrink: 0; background: var(--card); border: 1px solid var(--border); color: var(--white); padding: 5px 8px; font-size: 13px; font-family: 'Galmuri14', monospace; outline: none; text-align: right; }
 input[type=time] {
   background: var(--card); border: 2px solid var(--border);
   color: var(--white); padding: 6px 10px;
@@ -607,7 +637,7 @@ select {
 
 <!-- ══ 플로팅 위젯 ══ -->
 <div id="floatWidget">
-  <div id="speechBubble" class="hidden" onclick="openDash()">안녕!</div>
+  <div id="speechBubble" class="hidden" onclick="speechBubbleClick()">안녕!</div>
   <div id="widgetCatWrap">
     <img id="widgetCanvas" class="cat-img-render">
   </div>
@@ -642,9 +672,9 @@ select {
       <div class="dtab" onclick="dTab('cycle')">⏱ 사이클</div>
       <div class="dtab" onclick="dTab('schedule')">📅 스케줄</div>
       <div class="dtab" onclick="dTab('cat')">🐱 고양이</div>
-      <div class="dtab" onclick="dTab('settings')">⚙ 설정</div>
       <div class="dtab" onclick="dTab('magazine')">📰 매거진</div>
       <div class="dtab" onclick="dTab('shop')">🛒 샵</div>
+      <div class="dtab" onclick="dTab('settings')">⚙ 설정</div>
     </div>
 
     <div class="dash-body">
@@ -661,13 +691,9 @@ select {
             <div class="stat-bar">
               <div class="stat-row">
                 <span>❤️ 기분</span>
-                <span>
-                  <input type="number" id="moodNumH" min="0" max="100" value="70"
-                    onchange="setMood(this.value)"
-                    style="width:48px;background:var(--card);border:1px solid var(--border);color:var(--white);font-size:14px;padding:2px 4px;text-align:center"> /100
-                </span>
+                <span><span id="mdValH">60</span> /100</span>
               </div>
-              <div class="bar-t"><div class="bar-f md-f" id="mdBarH" style="width:70%"></div></div>
+              <div class="bar-t"><div class="bar-f md-f" id="mdBarH" style="width:60%"></div></div>
             </div>
             <button class="btn btn-g" onclick="openPhotoBooth()" style="width:100%;margin-top:10px;font-size:14px">📸 고양이와 사진 찍기</button>
             <div class="stat-bar">
@@ -693,7 +719,7 @@ select {
                 <button class="btn btn-y" onclick="claimWelcome()" style="font-size:14px">🎁 200포인트 받기</button>
               </div>
               <div class="fruit-grid" id="fruitBasket"></div>
-              <div style="font-size:13px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 = 10pts</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 열매 획득 (최대 5개) · 샵에서 판매 → 포인트</div>
             </div>
           </div>
         </div>
@@ -702,45 +728,25 @@ select {
       <!-- CYCLE -->
       <div id="dp-cycle" class="dpage">
         <div class="grid2">
-          <div>
-            <div class="card" style="margin-bottom:14px">
-              <div class="card-title">⏱ 실시간 사이클 타이머</div>
-              <div class="timer-box">
-                <div class="timer-mode-lbl" id="tTimerMode">💪 집중 중</div>
-                <div class="timer-big" id="tTimerClock">55:00</div>
-                <div class="prog-track"><div class="prog-fill" id="tProgFill" style="width:0%"></div></div>
-              </div>
-              <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
-                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px">현재 실제 시각</div>
-                <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
-                <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
-              </div>
+          <div class="card">
+            <div class="card-title">⏱ 실시간 사이클 타이머</div>
+            <div class="timer-box">
+              <div class="timer-mode-lbl" id="tTimerMode">💪 집중 중</div>
+              <div class="timer-big" id="tTimerClock">55:00</div>
+              <div class="prog-track"><div class="prog-fill" id="tProgFill" style="width:0%"></div></div>
             </div>
-            <div class="card">
-              <div class="card-title">📋 오늘 기록</div>
-              <div class="grid2" style="margin-bottom:10px">
-                <div style="background:var(--card);padding:12px;text-align:center">
-                  <div style="font-family:'Galmuri14',monospace;font-size:18px;color:var(--mint)" id="sessCount">0</div>
-                  <div style="font-size:13px;color:var(--gray);margin-top:3px">완료 사이클</div>
-                </div>
-                <div style="background:var(--card);padding:12px;text-align:center">
-                  <div style="font-family:'Galmuri14',monospace;font-size:18px;color:var(--yellow)" id="todayPts">0</div>
-                  <div style="font-size:13px;color:var(--gray);margin-top:3px">오늘 pts</div>
-                </div>
-              </div>
-              <div class="log-box" id="sessionLog"><div class="log-entry">출근 시간 이후 자동 시작돼요!</div></div>
+            <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
+              <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px">현재 실제 시각</div>
+              <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
+              <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
             </div>
           </div>
-          <div>
-            <div class="card" style="margin-bottom:14px">
-              <div class="card-title">🗓 오늘 사이클 미리보기</div>
-              <div id="cyclePreview" style="max-height:280px;overflow-y:auto"></div>
-            </div>
-            <div class="card">
-              <div class="card-title">💡 현재 휴식 추천</div>
-              <div id="breakTip" style="font-size:15px;color:var(--gray);line-height:1.9">
-                집중 완료 후 여기에 추천 활동이 떠요!
-              </div>
+          <div class="card">
+            <div class="card-title">⏰ 업무 시간 설정</div>
+            <div id="workItemsList"></div>
+            <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()">✓ 저장</button>
+            <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8">
+              출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!
             </div>
           </div>
         </div>
@@ -748,23 +754,21 @@ select {
 
       <!-- SCHEDULE -->
       <div id="dp-schedule" class="dpage">
-        <div class="grid2">
+        <div class="grid2" style="align-items:start">
           <div class="card">
-            <div class="card-title">📅 업무 시간 설정</div>
-            <div class="ti-row"><label>🌅 출근</label><input type="time" id="wsIn" value="09:00" onchange="saveSchedule()"></div>
-            <div class="ti-row"><label>🍱 점심 시작</label><input type="time" id="lsIn" value="12:00" onchange="saveSchedule()"></div>
-            <div class="ti-row"><label>🍱 점심 끝</label><input type="time" id="leIn" value="13:00" onchange="saveSchedule()"></div>
-            <div class="ti-row"><label>🌆 퇴근</label><input type="time" id="weIn" value="18:00" onchange="saveSchedule()"></div>
-            <div class="ti-row"><label>🌙 저녁</label><input type="time" id="esIn" value="19:00" onchange="saveSchedule()"></div>
-            <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()">✓ 저장</button>
-            <div style="font-size:13px;color:var(--gray);margin-top:10px;line-height:1.7">
-              ✨ 출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!
+            <div id="calLeftGrid"></div>
+          </div>
+          <div class="card">
+            <div id="calRightPanel">
+              <div style="font-size:12px;color:var(--gray);text-align:center;padding:20px 0">날짜를 선택해 주세요 ◀</div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">📋 타임라인</div>
-            <div id="schTimeline"></div>
-          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">📓 메모장</div>
+          <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..."
+            oninput="S.scheduleMemo=this.value"
+            style="width:100%;min-height:120px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
         </div>
       </div>
 
@@ -781,15 +785,11 @@ select {
               <div style="flex:1">
                 <div class="stat-bar">
                   <div class="stat-row">
-                    <span>❤️ 기분 (직접 조절)</span>
-                    <span>
-                      <input type="number" id="moodNumP" min="0" max="100" value="70"
-                        onchange="setMood(this.value)"
-                        style="width:48px;background:var(--card);border:1px solid var(--border);color:var(--white);font-size:14px;padding:2px 4px;text-align:center"> /100
-                    </span>
+                    <span>❤️ 기분</span>
+                    <span><span id="mdValP">60</span> /100</span>
                   </div>
 
-                  <div class="bar-t"><div class="bar-f md-f" id="mdBarP" style="width:70%"></div></div>
+                  <div class="bar-t"><div class="bar-f md-f" id="mdBarP" style="width:60%"></div></div>
                 </div>
                 <div class="stat-bar">
 
@@ -815,7 +815,17 @@ select {
               <div style="font-size:12px;color:var(--gray);margin-bottom:5px">고양이 종류</div>
               <div class="breed-row" id="breedRow"></div>
             </div>
-
+            <div class="card">
+              <div class="card-title">🍋 열매로 포인트 사기</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div style="font-size:13px;color:var(--gray)">
+                  보유 열매 <span id="harvestedCount" style="color:var(--yellow);font-weight:700">0</span>개
+                  <span style="font-size:11px;opacity:0.6;margin-left:6px">· 1개 = 10pts</span>
+                </div>
+                <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
+              </div>
+              <div style="font-size:11px;color:var(--gray);opacity:0.7">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+            </div>
           </div>
         </div>
       </div>
@@ -824,56 +834,70 @@ select {
       <div id="dp-settings" class="dpage">
         <div class="grid2">
           <div>
-            <!-- 테마 선택 -->
+            <!-- 배경 테마 (접기/펴기) -->
             <div class="card" style="margin-bottom:14px">
-              <div class="card-title">🎨 배경 테마</div>
-              <div class="theme-grid" id="themeGrid"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleSection('themeBody','themeChev')">
+                <div class="card-title" style="margin-bottom:0">🎨 배경 테마</div>
+                <span id="themeChev" style="font-size:10px;color:var(--gray)">▼</span>
+              </div>
+              <div id="themeBody" style="display:none;margin-top:14px">
+                <div class="theme-grid" id="themeGrid"></div>
+              </div>
             </div>
-
           </div>
           <div>
+            <!-- 계정 -->
             <div class="card">
-              <div class="card-title">🐾 커서 팔로우</div>
-              <div style="font-size:14px;color:var(--gray);line-height:1.7;margin-bottom:10px">
-                토글을 켜면 작은 고양이가 화면 어디든 커서를 따라다녀요!<br>
-                <span class="shortcut-hint">Ctrl+0</span> 단축키로도 켜고 끌 수 있어요
-              </div>
-              <button class="btn btn-g" onclick="toggleFollow()">🐱 팔로우 <span id="followLabel">OFF</span></button>
-            </div>
-            <div class="card" style="margin-top:14px">
-              <div class="card-title">🖱 위젯 이동</div>
-              <div style="font-size:14px;color:var(--gray);line-height:1.7">
-                고양이를 마우스로 잡고 끌면<br>화면 어디든 옮길 수 있어요! 🐱
-              </div>
-            </div>
-            <div class="card" style="margin-top:14px">
-              <div class="card-title">📦 배송지 (상품 주문용)</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-                <input type="text" id="shipName" placeholder="받는 사람"
-                  style="background:var(--card);border:1px solid var(--border);color:var(--white);font-size:13px;padding:7px 9px">
-                <input type="text" id="shipPhone" placeholder="연락처 (010-...)"
-                  style="background:var(--card);border:1px solid var(--border);color:var(--white);font-size:13px;padding:7px 9px">
-              </div>
-              <div style="display:grid;grid-template-columns:110px 1fr;gap:8px;margin-bottom:8px">
-                <input type="text" id="shipPostal" placeholder="우편번호"
-                  style="background:var(--card);border:1px solid var(--border);color:var(--white);font-size:13px;padding:7px 9px">
-                <input type="text" id="shipAddr1" placeholder="주소"
-                  style="background:var(--card);border:1px solid var(--border);color:var(--white);font-size:13px;padding:7px 9px">
-              </div>
-              <input type="text" id="shipAddr2" placeholder="상세주소 (동/호수 등)"
-                style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-size:13px;padding:7px 9px;margin-bottom:8px">
-              <button class="btn btn-g" onclick="saveShipping()">💾 배송지 저장</button>
-            </div>
-            <div class="card" style="margin-top:14px">
-              <div class="card-title">📁 사진 저장 위치</div>
-              <div id="photoPathLabel" style="font-size:12px;color:var(--gray);margin-bottom:10px;word-break:break-all">바탕화면 (기본)</div>
-              <button class="btn btn-g" onclick="choosePhotoDir()">폴더 변경</button>
-            </div>
-            <div class="card" style="margin-top:14px">
               <div class="card-title">👤 계정</div>
               <div id="accountLabel" style="font-size:13px;color:var(--gray);margin-bottom:10px;word-break:break-all">-</div>
               <button class="btn btn-gr" onclick="doLogout()">로그아웃</button>
             </div>
+
+            <!-- 작동 방식 안내 (기본 숨김, 접기/펴기) -->
+            <div class="card" style="margin-top:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleSection('guideBody','guideChev')">
+                <div class="card-title" style="margin-bottom:0">⚙️ 작동 방식 안내</div>
+                <span id="guideChev" style="font-size:10px;color:var(--gray)">▼</span>
+              </div>
+              <div id="guideBody" style="display:none;margin-top:14px">
+                <div style="margin-bottom:14px">
+                  <div class="card-title" style="font-size:11px;margin-bottom:8px">💧 물 마시기 알람</div>
+                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
+                    30분마다 위젯 말풍선 + 알림으로 물 마시기 알람이 떠요.<br>
+                    위젯 상태일 때 <b style="color:var(--white)">말풍선을 클릭하면</b> 바구니에서 열매가 자동 수확돼요 🍋
+                  </div>
+                </div>
+                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
+                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🍋 열매 시스템</div>
+                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
+                    사이클 완료 → 열매 획득 (최대 5개 바구니에 쌓임)<br>
+                    바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br>
+                    <b style="color:var(--white)">샵 &gt; 열매로 포인트 사기</b>에서 2개당 20pts로 전환
+                  </div>
+                </div>
+                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
+                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🐾 커서 팔로우</div>
+                  <div style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:10px">
+                    토글을 켜면 작은 고양이가 화면 어디든 커서를 따라다녀요!<br>
+                    <span class="shortcut-hint">Ctrl+0</span> 단축키로도 켜고 끌 수 있어요
+                  </div>
+                  <button class="btn btn-g" onclick="toggleFollow()">🐱 팔로우 <span id="followLabel">OFF</span></button>
+                </div>
+                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
+                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🖱 위젯 이동</div>
+                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
+                    고양이를 마우스로 잡고 끌면 화면 어디든 옮길 수 있어요! 🐱<br>
+                    창이 열려 있어도 위젯은 항상 화면 위에 떠 있어요
+                  </div>
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:14px">
+                  <div class="card-title" style="font-size:11px;margin-bottom:8px">📁 사진 저장 위치</div>
+                  <div id="photoPathLabel" style="font-size:12px;color:var(--gray);margin-bottom:10px;word-break:break-all">바탕화면 (기본)</div>
+                  <button class="btn btn-g" onclick="choosePhotoDir()">폴더 변경</button>
+                </div>
+              </div>
+            </div>
+
             <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75">🔄 데이터 초기화</button>
           </div>
         </div>
@@ -910,16 +934,20 @@ select {
             <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)">NEKO STORE</div>
             <div style="font-size:14px;color:var(--gray);margin-top:3px">네코데스크가 고른 진짜 좋은 것들 🐾</div>
           </div>
-          <button onclick="openCart()" style="margin-left:auto;position:relative;background:transparent;border:2px solid var(--yellow);color:var(--yellow);font-size:18px;padding:8px 12px;cursor:pointer">
-            🛒<span id="cartCount" style="position:absolute;top:-8px;right:-8px;background:var(--acc);color:#fff;font-size:11px;border-radius:10px;padding:1px 6px;display:none">0</span>
-          </button>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button onclick="openWishlist()" style="position:relative;background:transparent;border:2px solid var(--acc);color:var(--acc);font-size:18px;padding:8px 12px;cursor:pointer">
+              ♥<span id="wishlistCount" style="position:absolute;top:-8px;right:-8px;background:var(--acc);color:#fff;font-size:11px;border-radius:10px;padding:1px 6px;display:none">0</span>
+            </button>
+          </div>
         </div>
 
-        <!-- 카테고리 탭 -->
-        <div id="catTabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
-
-
-        <div class="pshop-grid" id="realShopGrid"></div>
+        <!-- 카테고리 사이드바 + 상품 그리드 -->
+        <div style="display:flex;gap:14px;align-items:start">
+          <div id="catSidebar" style="min-width:110px;display:flex;flex-direction:column;gap:4px;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div class="pshop-grid" id="realShopGrid"></div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -930,6 +958,19 @@ select {
 <div class="taskbar">
   <span style="font-family:'Galmuri14',monospace;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:1px">NEKO DESK</span>
   <div id="tbTimer" style="margin-left:auto;font-family:'Galmuri14',monospace;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:1px"></div>
+</div>
+
+<!-- 찜 목록 모달 -->
+<div id="wishlistModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:20px;width:460px;max-width:96%;max-height:82vh;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'Galmuri14',monospace;font-size:15px;color:var(--acc)">♥ 찜 목록</span>
+      <button onclick="closeWishlist()" style="background:transparent;border:none;color:var(--gray);font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="wishlistTotal" style="font-size:13px;color:var(--yellow);font-weight:bold;padding:6px 10px;background:var(--card);border-radius:6px"></div>
+    <div id="wishlistItems" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:60px"></div>
+    <button class="btn btn-gr" style="width:100%;font-size:12px" onclick="closeWishlist()">닫기</button>
+  </div>
 </div>
 
 <!-- 포토부스 모달 -->
@@ -989,18 +1030,8 @@ select {
 // THEMES
 // ══════════════════════════════════════════
 const THEMES = [
-  { id:'space',  name:'🌌 스페이스', bg:'radial-gradient(ellipse at 30% 50%, #1a0a4a 0%, #0d0020 50%, #2a0030 100%)',
-    vars:{ '--frame-bg':'#56549e','--frame':'#3d3b78','--frame-light':'#8f8dd0','--frame-text':'#2f2d5e','--bg':'#1a1a2e','--panel':'#16213e','--card':'#0f3460','--acc':'#e94560','--mint':'#53d8c0','--yellow':'#ffd369','--white':'#eaeaea','--gray':'#8892b0','--border':'#2a3a5c' }, preview:'linear-gradient(135deg,#1a0a4a,#2a0030)' },
-  { id:'forest', name:'🌿 포레스트', bg:'radial-gradient(ellipse at 60% 40%, #0a2010 0%, #051508 60%, #0d2015 100%)',
-    vars:{ '--frame-bg':'#3f7a52','--frame':'#2c5a3a','--frame-light':'#7fc093','--frame-text':'#1f4029','--bg':'#0a1a0e','--panel':'#0d2012','--card':'#0f3018','--acc':'#ff6b35','--mint':'#4ecb71','--yellow':'#d4e157','--white':'#e8f5e9','--gray':'#81c784','--border':'#1b4332' }, preview:'linear-gradient(135deg,#0a2010,#051508)' },
-  { id:'sunset', name:'🌅 선셋', bg:'radial-gradient(ellipse at 50% 70%, #3a0a00 0%, #200010 40%, #1a0530 100%)',
-    vars:{ '--frame-bg':'#c06038','--frame':'#8f4525','--frame-light':'#e89a6e','--frame-text':'#6e3318','--bg':'#1a0800','--panel':'#240c05','--card':'#3a1200','--acc':'#ff4500','--mint':'#ff9a3c','--yellow':'#ffd166','--white':'#fff3e0','--gray':'#ff8a65','--border':'#5c2a00' }, preview:'linear-gradient(135deg,#3a0a00,#200010)' },
-  { id:'ocean',  name:'🌊 오션', bg:'radial-gradient(ellipse at 40% 30%, #001a3a 0%, #000d20 60%, #001525 100%)',
-    vars:{ '--frame-bg':'#2a7ca6','--frame':'#1c587a','--frame-light':'#6cb4d6','--frame-text':'#143f57','--bg':'#001020','--panel':'#001828','--card':'#002040','--acc':'#00b4d8','--mint':'#90e0ef','--yellow':'#caf0f8','--white':'#e0f7fa','--gray':'#4db6ac','--border':'#004d6e' }, preview:'linear-gradient(135deg,#001a3a,#001525)' },
-  { id:'warm',   name:'☕ 웜', bg:'radial-gradient(ellipse at 50% 60%, #2a1500 0%, #150800 60%, #1a0e00 100%)',
-    vars:{ '--frame-bg':'#a87648','--frame':'#7c5530','--frame-light':'#d0a878','--frame-text':'#5a3d20','--bg':'#1a0e00','--panel':'#241505','--card':'#3a2010','--acc':'#d4845a','--mint':'#f0b27a','--yellow':'#f9e4b7','--white':'#fff8e1','--gray':'#bcaaa4','--border':'#5d3a1a' }, preview:'linear-gradient(135deg,#2a1500,#150800)' },
-  { id:'mono',   name:'⚫ 모노', bg:'radial-gradient(ellipse at 50% 50%, #1a1a1a 0%, #0a0a0a 60%, #111 100%)',
-    vars:{ '--frame-bg':'#6a6a6a','--frame':'#454545','--frame-light':'#9a9a9a','--frame-text':'#333333','--bg':'#111','--panel':'#1a1a1a','--card':'#242424','--acc':'#e0e0e0','--mint':'#9e9e9e','--yellow':'#bdbdbd','--white':'#f5f5f5','--gray':'#616161','--border':'#333' }, preview:'linear-gradient(135deg,#1a1a1a,#0a0a0a)' },
+  { id:'white',  name:'⬜ 화이트', bg:'radial-gradient(ellipse at 40% 40%, #ffffff 0%, #f7f8fa 60%, #eef0f4 100%)',
+    vars:{ '--frame-bg':'#c8d0dc','--frame':'#a2aec2','--frame-light':'#e8ecf2','--frame-text':'#6a7890','--bg':'#f8f9fb','--panel':'#ffffff','--card':'#eef1f5','--acc':'#5a6b8c','--mint':'#4aa890','--yellow':'#d9a93e','--white':'#33405a','--gray':'#8c98ad','--border':'#d8dee8' }, preview:'linear-gradient(135deg,#ffffff,#eef0f4)' },
   { id:'ivory',  name:'🤍 맑은 아이보리', bg:'radial-gradient(ellipse at 40% 40%, #fffdf5 0%, #faf6e8 60%, #f5efdc 100%)',
     vars:{ '--frame-bg':'#d9c89a','--frame':'#bca76e','--frame-light':'#efe4c0','--frame-text':'#8a7440','--bg':'#faf7ee','--panel':'#fffdf5','--card':'#f3eeda','--acc':'#c98f5a','--mint':'#7fb89a','--yellow':'#d9a93e','--white':'#4a4234','--gray':'#9a8f7a','--border':'#e0d8c0' }, preview:'linear-gradient(135deg,#fffdf5,#f5efdc)' },
   { id:'bpink',  name:'🌸 베이비 핑크', bg:'radial-gradient(ellipse at 50% 40%, #fff0f3 0%, #ffe4ea 60%, #fdd8e2 100%)',
@@ -1009,8 +1040,6 @@ const THEMES = [
     vars:{ '--frame-bg':'#a8c8ec','--frame':'#7aa6d8','--frame-light':'#d2e4f6','--frame-text':'#4a7ab0','--bg':'#edf5fe','--panel':'#f6faff','--card':'#dcebfa','--acc':'#4a86c8','--mint':'#5cb8a8','--yellow':'#d9a93e','--white':'#2e4258','--gray':'#7e9ab8','--border':'#bed6ee' }, preview:'linear-gradient(135deg,#f0f7ff,#d5e7fb)' },
   { id:'pmint',  name:'🍃 페일 민트', bg:'radial-gradient(ellipse at 40% 40%, #f0fcf6 0%, #e0f7ec 60%, #d2f0e2 100%)',
     vars:{ '--frame-bg':'#9ed8bc','--frame':'#6cba96','--frame-light':'#cdeede','--frame-text':'#3c8a66','--bg':'#ecfaf3','--panel':'#f5fdf9','--card':'#dcf2e7','--acc':'#3aa882','--mint':'#2e9e7a','--yellow':'#d9a93e','--white':'#2c4a3e','--gray':'#7aa896','--border':'#bce2d0' }, preview:'linear-gradient(135deg,#f0fcf6,#d2f0e2)' },
-  { id:'white',  name:'⬜ 화이트', bg:'radial-gradient(ellipse at 40% 40%, #ffffff 0%, #f7f8fa 60%, #eef0f4 100%)',
-    vars:{ '--frame-bg':'#c8d0dc','--frame':'#a2aec2','--frame-light':'#e8ecf2','--frame-text':'#6a7890','--bg':'#f8f9fb','--panel':'#ffffff','--card':'#eef1f5','--acc':'#5a6b8c','--mint':'#4aa890','--yellow':'#d9a93e','--white':'#33405a','--gray':'#8c98ad','--border':'#d8dee8' }, preview:'linear-gradient(135deg,#ffffff,#eef0f4)' },
   { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #f8f2ff 0%, #efe4fb 60%, #e4d5f5 100%)',
     vars:{ '--frame-bg':'#cbaee8','--frame':'#a784d0','--frame-light':'#e6d6f6','--frame-text':'#7a55a8','--bg':'#f5edfd','--panel':'#faf5ff','--card':'#ecdff8','--acc':'#8a5ec0','--mint':'#5cb8a8','--yellow':'#d9a93e','--white':'#473560','--gray':'#a58cc4','--border':'#d8c2ee' }, preview:'linear-gradient(135deg,#f8f2ff,#e4d5f5)' },
 ];
@@ -1153,7 +1182,14 @@ function drawCat(el, breed, acc, mood) {
   if (typeof S === 'undefined') return;
   if (breed && window._customBreeds && window._customBreeds[breed]) {
     const cb = window._customBreeds[breed];
-    const imgUrl = catFrameIdx === 0 ? cb.image_url : (cb.image_url_side || cb.image_url);
+    // 기분 40 이하 → 화난 고양이 이미지 (_b 버전)
+    let imgUrl;
+    if ((mood ?? S.cat.mood) <= 40) {
+      // image_url의 확장자 직전에 _b 삽입: white.png → white_b.png
+      imgUrl = cb.image_url_b || (cb.image_url || '').replace(/(\.[^./]+)$/, '_b$1');
+    } else {
+      imgUrl = catFrameIdx === 0 ? cb.image_url : (cb.image_url_side || cb.image_url);
+    }
     if (imgUrl) {
       el.style.filter = 'none';
       if (_catLoadedUrls.has(imgUrl)) {
@@ -1169,7 +1205,19 @@ function drawCat(el, breed, acc, mood) {
         _catLoadedUrls.add(imgUrl);
         if (el.getAttribute('data-neko') === imgUrl) el.src = imgUrl;
       };
-      real.onerror = () => {};
+      real.onerror = () => {
+        // _b 이미지 없음 → 일반 이미지로 폴백
+        const fallback = cb.image_url;
+        if (fallback && imgUrl !== fallback) {
+          if (_catLoadedUrls.has(fallback)) {
+            if (el.getAttribute('data-neko') === imgUrl) { el.setAttribute('data-neko', fallback); el.src = fallback; }
+          } else {
+            const fb = new Image();
+            fb.onload = () => { _catLoadedUrls.add(fallback); if (el.getAttribute('data-neko') === imgUrl) { el.setAttribute('data-neko', fallback); el.src = fallback; } };
+            fb.src = fallback;
+          }
+        }
+      };
       real.src = imgUrl;
       return;
     }
@@ -1201,25 +1249,71 @@ function showUpdateReady(version){
   if (b) b.style.display = 'flex';
 }
 
-// 수분 보충 / 기지개 — 1시간에 한 번씩 번갈아 알림
-let healthReminderIdx = 0;
+// 물 마시기 알림 — 30분마다 말풍선
+const WATER_BUBBLE_MSGS = ['물 한 잔 마시고 와요 💧', '잠깐! 수분 보충 타임 💧', '물 마실 시간이에요 💧'];
+const WATER_PRAISE_MSGS = ['잘했어요! 몸이 기뻐해 🌟', '수분 보충 완료! 역시 최고 💪', '건강 챙기는 중! 열매 +1 🍋', '물 마신 보상! 🍋 획득'];
+let waterBubbleIdx = 0;
+let _isWaterBubble = false;
+
 function startHealthReminders() {
-  const remind = () => {
-    if (healthReminderIdx % 2 === 0) {
-      toast('info', '수분 보충 시간', '물 한 잔 마시고 가볍게 숨 고르기 💧');
+  setInterval(() => {
+    const msg = WATER_BUBBLE_MSGS[waterBubbleIdx % WATER_BUBBLE_MSGS.length];
+    _isWaterBubble = true;
+    showBubble(msg); // 위젯 모드: 말풍선
+    toast('info', '💧 수분 보충 시간', msg); // 대시보드 모드에도 표시
+    waterBubbleIdx++;
+  }, 30 * 60 * 1000); // 30분마다
+}
+
+function speechBubbleClick() {
+  if (_isWaterBubble) {
+    _isWaterBubble = false;
+    const praised = WATER_PRAISE_MSGS[Math.floor(Math.random() * WATER_PRAISE_MSGS.length)];
+    if (harvestOneFruit()) {
+      showBubble(praised);
     } else {
-      toast('info', '기지개 켜기', '잠깐 일어나 쭉~ 기지개 한 번! 🙆');
+      showBubble('물 잘 마셨어요! 🌟');
     }
-    healthReminderIdx++;
-  };
-  setInterval(remind, 60 * 60 * 1000); // 1시간마다
+  } else {
+    openDash();
+  }
+}
+
+// 설정 섹션 접기/펴기
+function toggleSection(contentId, chevronId) {
+  const el = document.getElementById(contentId);
+  const ch = document.getElementById(chevronId);
+  if (!el) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? '' : 'none';
+  if (ch) ch.textContent = isHidden ? '▲' : '▼';
+}
+
+// 위젯 투명 영역 클릭 통과 — 고양이·말풍선·타임바 위에서만 클릭 활성화
+function initClickThrough() {
+  if (!window.electronAPI || !window.electronAPI.setIgnoreMouseEvents) return;
+  document.addEventListener('mousemove', (e) => {
+    // 대시보드 모드: 클릭 통과 절대 금지 (모든 버튼 먹통 방지)
+    if (document.body.classList.contains('electron-dashboard')) {
+      window.electronAPI.setIgnoreMouseEvents(false);
+      return;
+    }
+    if (!document.body.classList.contains('electron-widget')) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const isClickable = !!el && !!(
+      el.closest('#widgetCatWrap') ||
+      el.closest('#speechBubble') ||
+      el.closest('.taskbar')
+    );
+    window.electronAPI.setIgnoreMouseEvents(!isClickable);
+  });
 }
 // ══════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════
 function dTab(name) {
   document.querySelectorAll('.dtab').forEach((t,i)=>{
-    const pages=['home','cycle','schedule','cat','settings','magazine','shop'];
+    const pages=['home','cycle','schedule','cat','magazine','shop','settings'];
     t.classList.toggle('active', pages[i]===name);
   });
   document.querySelectorAll('.dpage').forEach(p=>p.classList.remove('active'));
@@ -1227,31 +1321,39 @@ function dTab(name) {
   if (name==='cat') renderCatPage();
   if (name==='shop') renderShop();
   if (name==='magazine') loadMagazine();
-  if (name==='schedule') renderSchTimeline();
-  if (name==='cycle') renderCyclePreview();
+  if (name==='schedule') {
+    renderCalendar();
+    const mt = document.getElementById('scheduleMemoTxt');
+    if (mt) mt.value = S.scheduleMemo || '';
+  }
+  if (name==='cycle') { renderCyclePreview(); renderWorkItems(); }
   if (name==='settings') renderThemeGrid();
   renderAll();
 }
 
 function openDash() {
   if (window.electronAPI) {
+    // 위젯 윈도우: 대시보드 별도 윈도우를 열어달라고 요청. 위젯은 그대로 유지.
     window.electronAPI.openDashboard();
-    document.body.classList.remove('electron-widget');
-    document.body.classList.add('electron-dashboard');
+    return;
   }
+  // 브라우저(개발) 모드 fallback
+  document.body.classList.add('electron-dashboard');
   document.getElementById('dashboard').classList.add('open');
-  renderAll(); renderFruits(); renderHomeSchedule(); renderCyclePreview();
+  renderAll(); renderFruits(); renderHomeSchedule(); renderCyclePreview(); renderHarvestCount();
 }
 function minimizeApp(){
   if (window.electronAPI && window.electronAPI.minimizeApp) window.electronAPI.minimizeApp();
 }
 function closeDash() {
-  document.getElementById('dashboard').classList.remove('open');
   if (window.electronAPI) {
+    // 대시보드 윈도우에서 호출: 이 윈도우를 닫아달라고 요청
     window.electronAPI.closeDashboard();
-    document.body.classList.remove('electron-dashboard');
-    document.body.classList.add('electron-widget');
+    return;
   }
+  // 브라우저(개발) 모드 fallback
+  document.getElementById('dashboard').classList.remove('open');
+  document.body.classList.remove('electron-dashboard');
 }
 
 // ══════════════════════════════════════════
@@ -1263,10 +1365,11 @@ function closeDash() {
 const S = {
   pts: 0,
   welcomeClaimed: false,
-  cat: { name:'냐옹이', breed:'', acc:null, lv:1, xp:0, mood:70, age:'새끼 고양이' },
+  cat: { name:'냐옹이', breed:'', acc:null, lv:1, xp:0, mood:60, age:'새끼 고양이' },
   timer: { sessions:0, todayPts:0 },
   schedule: { ws:'09:00', ls:'12:00', le:'13:00', we:'18:00', es:'19:00' },
   fruits: [],
+  harvestedFruits: 0,
   follow: false,
   pos: 'br',
   sessions: 0,
@@ -1278,6 +1381,16 @@ const S = {
   photoPath: null,   // null = 바탕화면
   lastCycleIdx: -1,
   lastDate: new Date().toDateString(),
+  catFedThisCycle: false,
+  lastPenaltyBreakIdx: -1,
+  lastMoodResetDate: null,
+  scheduleItems: null,
+  scheduleMemo: '',
+  calendarNotes: {},
+  wishlist: [],
+  wishlistDone: [],
+  redeemedCoupons: {},
+  workItems: null,
 };
 
 // ══════════════════════════════════════════
@@ -1303,8 +1416,12 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','welcomeClaimed','ownedAccs','theme','photoPath','products','shipping']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','welcomeClaimed','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
+    // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
+    if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
+      S.fruits = S.fruits.filter(f => !f.done).map(f => f.e);
+    }
 
     // 날짜가 바뀌었으면 오늘 기록 리셋
     const today = new Date().toDateString();
@@ -1312,14 +1429,16 @@ function loadState() {
       S.todayPts = 0;
       S.sessions = 0;
       S.lastCycleIdx = -1;
+      S.catFedThisCycle = false;
+      S.lastPenaltyBreakIdx = -1;
       S.lastDate = today;
       saveState();
     }
   } catch(e) { console.warn('불러오기 실패:', e); }
 }
 
-// 자동 저장: 10초마다 + 페이지 닫을 때
-setInterval(saveState, 10000);
+// 자동 저장은 DOMContentLoaded 이후 위젯 창에서만 시작 (대시보드 자동저장 덮어쓰기 방지)
+// 두 창 모두 닫힐 때는 저장
 window.addEventListener('beforeunload', saveState);
 
 function resetAllData(){
@@ -1379,40 +1498,66 @@ function earnPts(n) {
   S.pts += n; S.todayPts += n;
   saveState();
   ['ptsDisplay','shopPts'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=S.pts; });
-  document.getElementById('todayPts').textContent = S.todayPts;
+  const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
 }
 
 function addFruit() {
+  if (S.fruits.length >= 5) return; // 최대 5개
   const f=['🍋','🍊','🍎','🍇','🍓','🫐','🍑','🍒'];
-  S.fruits.push({e:f[Math.floor(Math.random()*f.length)], done:false});
+  S.fruits.push(f[Math.floor(Math.random()*f.length)]);
   renderFruits();
+  renderHarvestCount();
+}
+
+function harvestOneFruit() {
+  if (S.fruits.length === 0) return false;
+  S.fruits.splice(0, 1);
+  S.harvestedFruits = (S.harvestedFruits || 0) + 1;
+  saveState();
+  renderFruits();
+  renderHarvestCount();
+  return true;
 }
 
 function renderFruits() {
   const el = document.getElementById('fruitBasket'); if(!el) return;
   el.innerHTML = '';
-  S.fruits.slice(-12).forEach((f,i) => {
+  S.fruits.forEach((emoji) => {
     const d = document.createElement('div');
-    d.className = 'fruit'+(f.done?' done':' new');
-    d.textContent = f.e;
-    if(!f.done) d.onclick = () => { f.done=true; earnPts(10); toast('reward','🍋 수확!','+10 pts'); renderFruits(); };
+    d.className = 'fruit new';
+    d.textContent = emoji;
+    d.onclick = () => {
+      harvestOneFruit();
+      toast('reward','🍋 수확!','샵에서 팔면 포인트로! 🏪');
+    };
     el.appendChild(d);
   });
 }
 
-function addXP(n) { /* 경험치 시스템 제거됨 */ }
-
-function setMood(v){
-  S.cat.mood = Math.max(0, Math.min(100, parseInt(v)||0));
-  updateCatUI(); saveState();
+function renderHarvestCount() {
+  const count = S.harvestedFruits || 0;
+  const el = document.getElementById('harvestedCount');
+  if (el) el.textContent = count;
+  const btn = document.getElementById('sellFruitBtn');
+  if (btn) btn.textContent = `🍋 팔기 (${count}개)`;
 }
+
+function sellFruits() {
+  const count = S.harvestedFruits || 0;
+  if (count < 1) { toast('alert','열매 부족','열매가 1개 이상 있어야 팔 수 있어요 🍋'); return; }
+  const pts = count * 10;
+  S.harvestedFruits = 0;
+  earnPts(pts);
+  saveState();
+  renderHarvestCount();
+  toast('reward','🍋 판매 완료!',`열매 ${count}개 → +${pts}pts 획득!`);
+}
+
+function addXP(n) { /* 경험치 시스템 제거됨 */ }
 
 function updateCatUI() {
   ['mdBarH','mdBarP'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.width=S.cat.mood+'%';
-  });
-  ['moodNumH','moodNumP'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value=S.cat.mood;
   });
   ['mdValH','mdValP'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=S.cat.mood;
@@ -1425,7 +1570,8 @@ function updateCatUI() {
 
 function feedCat(food) {
   if(S.pts<20){toast('alert','포인트 부족!','열매를 더 수확해요!');return;}
-  earnPts(-20); S.cat.mood=Math.min(100,S.cat.mood+15); addXP(10);
+  earnPts(-20); S.cat.mood=Math.min(100,S.cat.mood+10); addXP(10);
+  S.catFedThisCycle = true;
   S.growthLogs.push(`${food} 먹었어요! 😸`);
   toast('info','🍣 냠냠!',`${food}를 맛있게 먹었어요!`);
   updateCatUI();
@@ -1537,7 +1683,8 @@ function loadCustomBreeds() {
         name: row.name,
         desc: row.description || '',
         image_url: row.image_url,
-        image_url_side: row.image_url_side || row.image_url
+        image_url_side: row.image_url_side || row.image_url,
+        image_url_b: row.image_url_b || null
       };
     });
     // 이미지 HTTP 캐시 프라이밍 → 로딩 화면 중에 다운로드 완료
@@ -1855,17 +2002,16 @@ function updateCycleUI() {
     else cl.textContent = `${Math.floor((nowMinutes() - timeToMinutes(S.schedule.ws))/CYCLE_MINS) + 1}번째 사이클 진행 중`;
   }
 
-  // 사이클 완료 감지
-  if (!isPre && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
+  // 사이클 완료 감지 — 위젯 창에서만 실행 (대시보드 창 중복 방지)
+  if (!window._isDashboard && !isPre && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
     if (S.lastCycleIdx >= 0) {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
       const hc = document.getElementById('hCycleCount'); if(hc) hc.textContent = `오늘 완료: ${S.sessions} 사이클`;
-      earnPts(10);
       addFruit();
       addXP(15);
-      addLog('g', `✅ 사이클 ${S.lastCycleIdx+1} 완료! +10pts 🍋`);
-      toast('reward','🍋 사이클 완료!',`${S.lastCycleIdx+1}번째 사이클 성공! +10pts`);
+      addLog('g', `✅ 사이클 ${S.lastCycleIdx+1} 완료! 🍋 열매 획득`);
+      toast('reward','🍋 사이클 완료!',`${S.lastCycleIdx+1}번째 사이클 성공! 열매 +1`);
       if (window.electronAPI && window.electronAPI.gaEvent) window.electronAPI.gaEvent('cycle_complete', {});
     }
     S.lastCycleIdx = c.cycleIdx;
@@ -1886,6 +2032,7 @@ function updateCycleUI() {
     const tips = ['💧 물 한 잔 마셔요','🚶 스트레칭','🚽 화장실','👀 눈 멀리 20초','🌬 심호흡'];
     const bt = document.getElementById('breakTip');
     if (bt) bt.innerHTML = `<div style="font-size:22px">${tips[c.cycleIdx % tips.length]}</div>`;
+    // (break 기반 기분 페널티 제거 → 15분 타이머로 대체)
   } else if (isPre) {
     const el = document.getElementById('speechBubble');
     if (el) { el.textContent='출근 시간이 되면 자동으로 시작해요! 🐱'; el.classList.remove('hidden'); }
@@ -1904,7 +2051,7 @@ function renderCyclePreview() {
   let cycleStart = wsMin;
   let idx = 0;
   let lunchShown = false;
-  while (cycleStart + FOCUS_MINS <= weMin + 60 && idx < 20) {
+  while (cycleStart + FOCUS_MINS <= weMin && idx < 20) {
     // 점심시간 행을 시간 순서에 맞게 삽입
     if (!lunchShown && cycleStart >= lsMin) {
       const isLunchNow = nowMin >= lsMin && nowMin < leMin;
@@ -1970,11 +2117,80 @@ function getPeriod(){
   return'evening';
 }
 
+// ── 업무 시간 설정 (동적 리스트) ──
+const WORK_DEFAULTS = [
+  { time:'09:00', label:'출근' },
+  { time:'12:00', label:'점심 시작' },
+  { time:'13:00', label:'점심 끝' },
+  { time:'18:00', label:'퇴근' },
+  { time:'19:00', label:'저녁' },
+];
+
+let _dragWorkIdx = -1;
+
+function renderWorkItems() {
+  if (!S.workItems) S.workItems = WORK_DEFAULTS.map(x=>({...x}));
+  const el = document.getElementById('workItemsList');
+  if (!el) return;
+  el.innerHTML = S.workItems.map((item, i) => {
+    const h = parseInt(item.time.split(':')[0]);
+    const isAM = h < 12;
+    return `
+      <div class="work-item-row" draggable="true"
+        ondragstart="_dragWorkIdx=${i}"
+        ondragover="event.preventDefault()"
+        ondrop="workDrop(${i},event)">
+        <span class="drag-handle">⠿</span>
+        <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="내용"
+          oninput="S.workItems[${i}].label=this.value">
+        <button class="ampm-btn" onclick="toggleAmPm(${i})">${isAM?'오전':'오후'}</button>
+        <input type="time" value="${item.time}" class="ti-time-in"
+          onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
+        <button class="ti-x-btn" onclick="removeWorkItem(${i})">×</button>
+      </div>`;
+  }).join('');
+  el.innerHTML += `<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">+ 항목 추가</button>`;
+}
+
+function workDrop(i, e) {
+  e.preventDefault();
+  if (_dragWorkIdx < 0 || _dragWorkIdx === i) return;
+  const moved = S.workItems.splice(_dragWorkIdx, 1)[0];
+  S.workItems.splice(i, 0, moved);
+  _dragWorkIdx = -1;
+  renderWorkItems();
+}
+function toggleAmPm(i) {
+  if (!S.workItems) return;
+  const parts = S.workItems[i].time.split(':');
+  let h = parseInt(parts[0]);
+  h = h >= 12 ? h - 12 : h + 12;
+  if (h >= 24) h -= 24;
+  S.workItems[i].time = String(h).padStart(2,'0') + ':' + (parts[1]||'00');
+  renderWorkItems();
+}
+function addWorkItem() {
+  if (!S.workItems) S.workItems = [];
+  S.workItems.push({ time:'09:00', label:'새 항목' });
+  renderWorkItems();
+}
+function removeWorkItem(i) {
+  if (!S.workItems) return;
+  S.workItems.splice(i, 1);
+  renderWorkItems();
+}
+
 function saveSchedule(){
-  S.schedule={ws:document.getElementById('wsIn').value,ls:document.getElementById('lsIn').value,le:document.getElementById('leIn').value,we:document.getElementById('weIn').value,es:document.getElementById('esIn').value};
-  renderSchTimeline();renderHomeSchedule();
+  if (!S.workItems) S.workItems = WORK_DEFAULTS.map(x=>({...x}));
+  const it = S.workItems;
+  S.schedule.ws = it[0]?.time || '09:00';
+  S.schedule.ls = it[1]?.time || '12:00';
+  S.schedule.le = it[2]?.time || '13:00';
+  S.schedule.we = it[3]?.time || '18:00';
+  S.schedule.es = it[4]?.time || '19:00';
   saveState();
-  toast('info','📅 저장!','스케줄 업데이트 완료!');
+  renderHomeSchedule();
+  toast('info','📅 저장!','업무 시간이 저장됐어요!');
 }
 
 function renderSchTimeline(){
@@ -1995,7 +2211,208 @@ function renderSchTimeline(){
       ${i.per===p?'<span class="badge">NOW</span>':''}
     </div>`).join('');
 }
-function renderHomeSchedule(){const el=document.getElementById('homeSchEl');if(!el)return;renderSchTimeline();const tl=document.getElementById('schTimeline');if(tl)el.innerHTML=tl.innerHTML;}
+function renderHomeSchedule(){
+  const el=document.getElementById('homeSchEl'); if(!el)return;
+  const s=S.schedule, p=getPeriod();
+  const items=[
+    {t:s.ws,l:'🌅 오전 업무',per:'work'},
+    {t:s.ls,l:'🍱 점심',per:'lunch'},
+    {t:s.le,l:'☀️ 오후 업무',per:'postlunch'},
+    {t:s.we,l:'🌆 퇴근 후',per:'afterwork'},
+    {t:s.es,l:'🌙 저녁',per:'evening'},
+  ];
+  el.innerHTML=items.map(i=>`
+    <div class="sch-item ${i.per===p?'now':''}">
+      <div class="sch-dot" style="border-color:${i.per===p?'var(--yellow)':'var(--gray)'}"></div>
+      <div class="sch-time">${i.t}</div>
+      <div class="sch-label">${i.l}</div>
+      ${i.per===p?'<span class="badge">NOW</span>':''}
+    </div>`).join('');
+}
+
+// ── 스케줄 메모 아이템 ──
+const SCH_DEFAULTS = [
+  { time:'09:00', label:'마케팅팀 미팅' },
+];
+
+function renderScheduleItems() {
+  if (!S.scheduleItems) S.scheduleItems = SCH_DEFAULTS.map(x=>({...x}));
+  const items = S.scheduleItems;
+  const el = document.getElementById('scheduleItemsList');
+  if (!el) return;
+
+  let html = `<div class="sch-add-row"><button class="sch-add-btn" onclick="addScheduleItem(0)">+ 추가</button></div>`;
+  items.forEach((item, i) => {
+    html += `
+      <div class="sch-memo-row">
+        <input type="time" value="${item.time}" class="sch-time-in" onchange="updateSchItem(${i},'time',this.value)">
+        <input type="text" value="${item.label.replace(/"/g,'&quot;')}" class="sch-label-in" placeholder="내용" onchange="updateSchItem(${i},'label',this.value)">
+        <button class="sch-del-btn" onclick="removeSchItem(${i})">×</button>
+      </div>
+      <div class="sch-add-row"><button class="sch-add-btn" onclick="addScheduleItem(${i+1})">+ 추가</button></div>`;
+  });
+
+  el.innerHTML = html;
+  const memo = document.getElementById('scheduleMemoArea');
+  if (memo) memo.value = S.scheduleMemo || '';
+}
+
+function addScheduleItem(idx) {
+  if (!S.scheduleItems) S.scheduleItems = SCH_DEFAULTS.map(x=>({...x}));
+  S.scheduleItems.splice(idx, 0, { time:'00:00', label:'새 항목' });
+  saveState(); renderScheduleItems();
+}
+function removeSchItem(i) {
+  if (!S.scheduleItems) return;
+  S.scheduleItems.splice(i, 1);
+  saveState(); renderScheduleItems();
+}
+function updateSchItem(i, key, val) {
+  if (!S.scheduleItems) return;
+  S.scheduleItems[i][key] = val;
+  saveState();
+}
+
+// ── 캘린더 ──
+let _calYear = new Date().getFullYear();
+let _calMonth = new Date().getMonth();
+let _calKey = '';
+
+function getCalNotes(key) {
+  const val = (S.calendarNotes||{})[key];
+  if (!val) return [];
+  if (typeof val === 'string') return [{text: val, done: false}]; // 구버전 마이그레이션
+  return val;
+}
+function setCalNotes(key, items) {
+  if (!S.calendarNotes) S.calendarNotes = {};
+  if (items.length) S.calendarNotes[key] = items;
+  else delete S.calendarNotes[key];
+}
+
+function renderCalendar() {
+  const leftEl = document.getElementById('calLeftGrid');
+  const rightEl = document.getElementById('calRightPanel');
+
+  const y = _calYear, m = _calMonth;
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = new Date();
+  const dows = ['일','월','화','수','목','금','토'];
+
+  // ── 왼쪽: 캘린더 그리드 ──
+  if (leftEl) {
+    let lh = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calPrev()">◀</button>
+        <span style="font-family:'Galmuri14',monospace;font-size:12px">${y}년 ${m+1}월</span>
+        <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calNext()">▶</button>
+      </div>
+      <div class="cal-grid">
+      ${dows.map((d,i)=>`<div style="text-align:center;font-size:10px;color:${i===0?'#f88':'var(--gray)'};padding:2px 0;border-bottom:1px solid var(--border)">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < firstDow; i++) lh += `<div></div>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const items = getCalNotes(key);
+      const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
+      const isSel = key === _calKey;
+      const isSun = (firstDow + d - 1) % 7 === 0;
+      const inlineItems = items.map((item, i) => `
+        <div style="display:flex;align-items:flex-start;gap:2px;margin-top:2px;text-align:left">
+          <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${key}',${i})"
+            style="width:10px;height:10px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0;margin-top:1px">
+          <span style="font-size:9px;flex:1;overflow:hidden;word-break:break-all;${item.done?'text-decoration:line-through;opacity:0.4':''}">${item.text.replace(/</g,'&lt;')}</span>
+          <button onclick="event.stopPropagation();deleteDayItem('${key}',${i})"
+            style="background:transparent;border:none;color:var(--gray);font-size:9px;cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button>
+        </div>`).join('');
+
+      lh += `<div class="cal-day${isToday?' today':''}${isSel?' cal-sel':''}" onclick="openDayNote('${key}')">
+        <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
+        ${inlineItems}
+      </div>`;
+    }
+    lh += `</div>`;
+    leftEl.innerHTML = lh;
+  }
+
+  // ── 오른쪽: 날짜 선택 패널 ──
+  if (rightEl) {
+    const selLabel = _calKey ? (()=>{const [yy,mm,dd]=_calKey.split('-');return `${parseInt(yy)}년 ${parseInt(mm)}월 ${parseInt(dd)}일`;})() : null;
+    const selItems = _calKey ? getCalNotes(_calKey) : [];
+
+    let rh = `<div style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace;margin-bottom:10px">
+      ${selLabel || '날짜를 선택해 주세요 ◀'}
+    </div>`;
+
+    if (_calKey) {
+      if (selItems.length) {
+        const allDone = selItems.every(i => i.done);
+        rh += `<div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px" onclick="selectAllDayItems()">${allDone?'전체 해제':'전체 선택'}</button>
+          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px;color:#f88;border-color:#f88" onclick="deleteSelectedDayItems()">선택 삭제</button>
+        </div>`;
+      }
+      rh += selItems.map((item, i) => `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
+            style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
+          <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>
+          <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
+        </div>`).join('');
+
+      rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
+        <input id="dayNoteInput" placeholder="새 스케줄 입력..."
+          onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')"
+          style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:6px 8px;font-size:12px;outline:none;border-radius:4px;box-sizing:border-box;margin-bottom:6px">
+        <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">+ 추가</button>
+      </div>`;
+    }
+    rightEl.innerHTML = rh;
+  }
+}
+
+function openDayNote(key) { _calKey = key; renderCalendar(); }
+function selectAllDayItems() {
+  if (!_calKey) return;
+  const items = getCalNotes(_calKey);
+  const allDone = items.every(i => i.done);
+  items.forEach(i => i.done = !allDone);
+  setCalNotes(_calKey, items);
+  saveState(); renderCalendar();
+}
+function deleteSelectedDayItems() {
+  if (!_calKey) return;
+  const remaining = getCalNotes(_calKey).filter(i => !i.done);
+  setCalNotes(_calKey, remaining);
+  saveState(); renderCalendar();
+}
+function addDayItem(key) {
+  const inp = document.getElementById('dayNoteInput');
+  const text = (inp?.value||'').trim();
+  if (!text) return;
+  const items = getCalNotes(key);
+  items.push({text, done:false});
+  setCalNotes(key, items);
+  if (inp) inp.value = '';
+  saveState(); renderCalendar();
+  // 입력창에 포커스 유지
+  setTimeout(()=>document.getElementById('dayNoteInput')?.focus(), 50);
+}
+function toggleDayItem(key, i) {
+  const items = getCalNotes(key);
+  if (items[i]) items[i].done = !items[i].done;
+  setCalNotes(key, items);
+  saveState(); renderCalendar();
+}
+function deleteDayItem(key, i) {
+  const items = getCalNotes(key);
+  items.splice(i, 1);
+  setCalNotes(key, items);
+  saveState(); renderCalendar();
+}
+function calPrev() { _calMonth--; if(_calMonth<0){_calMonth=11;_calYear--;} renderCalendar(); }
+function calNext() { _calMonth++; if(_calMonth>11){_calMonth=0;_calYear++;} renderCalendar(); }
 
 
 // ══════════════════════════════════════════
@@ -2062,13 +2479,13 @@ document.addEventListener('keydown',e=>{
 // ══ 실제 상품 샵 (Supabase 연동) ══
 window._cfg = null;          // 공개 설정 (main에서 로드)
 window._remoteProducts = null; // Supabase 상품 캐시
-window._cart = [];           // 장바구니
 const SHOP_CATS = [
   { id: 'office',  name: '🖇 사무용품' },
   { id: 'health',  name: '💊 건강식품' },
   { id: 'living',  name: '🏠 리빙' },
   { id: 'beauty',  name: '💄 뷰티' },
   { id: 'fitness', name: '🏃 운동' },
+  { id: 'coupon',  name: '🎟 포인트 교환' },
 ];
 let shopCat = 'office';
 function selectCat(id){ shopCat = id; renderShop(); }
@@ -2082,31 +2499,42 @@ function sbHeaders(){
 }
 
 // Supabase에서 상품 불러오기 (실패 시 마지막 캐시 사용)
-function loadRemoteProducts(){
-  if (!window._cfg || !window._cfg.SUPABASE_URL) { renderShop(); _nekoLoadStep(); return; }
-  fetch(window._cfg.SUPABASE_URL + '/rest/v1/products?select=*&active=eq.true&order=created_at.desc', {
-    headers: sbHeaders()
+function _fetchProducts(onDone) {
+  if (!window._cfg || !window._cfg.SUPABASE_URL) { if (onDone) onDone(); return; }
+  fetch(window._cfg.SUPABASE_URL + '/rest/v1/products?select=*&order=created_at.desc', {
+    headers: { ...sbHeaders(), 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
   })
-  .then(r => r.json())
+  .then(r => {
+    if (!r.ok) return [];
+    return r.json();
+  })
   .then(rows => {
     if (Array.isArray(rows)) {
-      window._remoteProducts = rows.map(r => ({
+      window._remoteProducts = rows.filter(r => r.active).map(r => ({
         id: r.id, name: r.name, price: r.price, link: r.link, img: r.img_url, cat: r.cat || 'office'
       }));
       try { localStorage.setItem('nekodesk_products_cache', JSON.stringify(window._remoteProducts)); } catch(e){}
     }
     renderShop();
-    _nekoLoadStep();
+    if (onDone) onDone();
   })
   .catch(() => {
-    // 오프라인: 캐시 fallback
     try {
       const cache = JSON.parse(localStorage.getItem('nekodesk_products_cache') || 'null');
       if (cache) window._remoteProducts = cache;
     } catch(e){}
     renderShop();
-    _nekoLoadStep();
+    if (onDone) onDone();
   });
+}
+
+function loadRemoteProducts(){
+  if (!window._cfg || !window._cfg.SUPABASE_URL) { renderShop(); _nekoLoadStep(); return; }
+  _fetchProducts(() => _nekoLoadStep());
+}
+
+function startProductsAutoRefresh(){
+  setInterval(() => { _fetchProducts(null); }, 60 * 1000); // 1분마다 조용히 갱신
 }
 
 function getProducts(){
@@ -2118,15 +2546,22 @@ function renderShop(){
   const grid = document.getElementById('realShopGrid');
   if (!grid) return;
 
-  // 카테고리 탭 렌더
-  const tabs = document.getElementById('catTabs');
-  if (tabs) {
-    tabs.innerHTML = SHOP_CATS.map(cat =>
-      `<button class="btn ${cat.id===shopCat?'btn-y':'btn-gr'}" style="font-size:13px" onclick="selectCat('${cat.id}')">${cat.name}</button>`
+  // 카테고리 세로 사이드바
+  const sidebar = document.getElementById('catSidebar');
+  if (sidebar) {
+    sidebar.innerHTML = SHOP_CATS.map(cat =>
+      `<button onclick="selectCat('${cat.id}')" style="text-align:left;padding:8px 10px;font-size:12px;border:1px solid ${cat.id===shopCat?'var(--yellow)':'var(--border)'};background:${cat.id===shopCat?'var(--yellow)':'var(--card)'};color:${cat.id===shopCat?'#1a1a1a':'var(--fg)'};border-radius:6px;cursor:pointer;white-space:nowrap">${cat.name}</button>`
     ).join('');
   }
 
-  // 현재 카테고리 상품만
+  // 포인트 교환 카테고리
+  if (shopCat === 'coupon') {
+    grid.innerHTML = renderCouponPanel();
+    updateWishlistCount();
+    return;
+  }
+
+  // 일반 상품 카테고리
   const all = getProducts();
   const products = all.filter(p => (p.cat || 'office') === shopCat);
 
@@ -2138,14 +2573,14 @@ function renderShop(){
         ${p.desc ? `<div class="pshop-desc">${p.desc}</div>` : ''}
         <div class="pshop-price">₩${Number(p.price).toLocaleString()}</div>
         <div class="pshop-actions">
-          <button class="pshop-buy" onclick="addToCart(${p.id})">ADD TO CART</button>
-          <button class="pshop-buy" style="opacity:0.4;cursor:not-allowed" title="결제 준비 중">BUY NOW</button>
-          <button class="pshop-heart" onclick="this.classList.toggle('liked')">♡</button>
+          <button class="pshop-buy" onclick="buyNow(${p.id})">BUY NOW</button>
+          <button class="pshop-heart ${isWishlisted(p.id)?'liked':''}" onclick="toggleWishlist(${p.id})">
+            ${isWishlisted(p.id)?'♥':'♡'}
+          </button>
         </div>
       </div>
     </div>`).join('');
 
-  // 이 카테고리에 상품이 하나도 없을 때만 "상품 준비 중" 표시
   if (products.length === 0) {
     html = `
       <div class="pshop-card pshop-placeholder">
@@ -2155,41 +2590,211 @@ function renderShop(){
   }
 
   grid.innerHTML = html;
-  updateCartCount();
+  updateWishlistCount();
 }
 
-// ── 장바구니 ──
-function addToCart(id){
-  const p = getProducts().find(x => x.id === id);
-  if (!p) return;
-  window._cart.push(p);
-  updateCartCount();
-  toast('reward','장바구니 담기', p.name + ' 담았어요!');
-}
 function buyNow(id){
   const p = getProducts().find(x => x.id === id);
   if (!p || !p.link) return;
-  if (window.electronAPI && window.electronAPI.openExternal) {
-    window.electronAPI.openExternal(p.link);
-  } else {
-    window.open(p.link, '_blank');
-  }
+  _openExtLink(p.link);
   if (window.electronAPI && window.electronAPI.gaEvent) window.electronAPI.gaEvent('buy_now', { product: p.name });
 }
-function updateCartCount(){
-  const el = document.getElementById('cartCount');
+function _openExtLink(url){
+  if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(url);
+  else window.open(url, '_blank');
+}
+function _copyText(text) {
+  const fallback = () => {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+    document.body.appendChild(el);
+    el.focus(); el.select();
+    try { document.execCommand('copy'); toast('reward','복사됨','클립보드에 복사했어요!'); }
+    catch(e) { toast('alert','복사 실패','수동으로 복사해 주세요'); }
+    document.body.removeChild(el);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast('reward','복사됨','클립보드에 복사했어요!')).catch(fallback);
+  } else { fallback(); }
+}
+
+// ── 찜 목록 ──
+function isWishlisted(id) { return (S.wishlist||[]).includes(id); }
+function isWishlistDone(id) { return (S.wishlistDone||[]).includes(id); }
+
+function toggleWishlist(id) {
+  if (!S.wishlist) S.wishlist = [];
+  const idx = S.wishlist.indexOf(id);
+  if (idx >= 0) {
+    S.wishlist.splice(idx, 1);
+    // 찜 해제 시 구매완료 목록에서도 제거
+    if (S.wishlistDone) {
+      const di = S.wishlistDone.indexOf(id);
+      if (di >= 0) S.wishlistDone.splice(di, 1);
+    }
+  } else {
+    S.wishlist.push(id);
+  }
+  saveState();
+  renderShop();
+  updateWishlistCount();
+  if (document.getElementById('wishlistModal').style.display !== 'none') renderWishlistModal();
+}
+
+
+function updateWishlistCount() {
+  const el = document.getElementById('wishlistCount');
   if (!el) return;
-  if (window._cart.length > 0) { el.style.display = 'block'; el.textContent = window._cart.length; }
+  const n = (S.wishlist||[]).length;
+  if (n > 0) { el.style.display = 'block'; el.textContent = n; }
   else el.style.display = 'none';
 }
-function openCart(){
-  if (window._cart.length === 0) { toast('info','장바구니','아직 담은 상품이 없어요'); return; }
-  const lines = window._cart.map((p,i) => `${i+1}. ${p.name} — ₩${Number(p.price).toLocaleString()}`).join('\n');
-  const total = window._cart.reduce((s,p)=>s+Number(p.price),0);
-  if (confirm('🛒 장바구니\n\n' + lines + '\n\n합계: ₩' + total.toLocaleString() + '\n\n[확인]을 누르면 비웁니다 (결제는 PG 연동 후 가능)')) {
-    window._cart = [];
-    updateCartCount();
-    toast('info','장바구니','비웠어요');
+
+function openWishlist() {
+  if (!(S.wishlist||[]).length) { toast('info','찜 목록','찜한 상품이 아직 없어요 ♡'); return; }
+  renderWishlistModal();
+  document.getElementById('wishlistModal').style.display = 'flex';
+}
+function closeWishlist() { document.getElementById('wishlistModal').style.display = 'none'; }
+
+function renderWishlistModal() {
+  const all = getProducts();
+  const wishIds = S.wishlist || [];
+  const items = wishIds.map(id => all.find(x => x.id === id)).filter(Boolean);
+
+  const total = items.reduce((s, p) => s + Number(p.price), 0);
+  const totalEl = document.getElementById('wishlistTotal');
+  if (totalEl) totalEl.textContent = items.length ? `합계: ₩${total.toLocaleString()}` : '';
+
+  const el = document.getElementById('wishlistItems');
+  if (!el) return;
+
+  if (!items.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);padding:20px">찜한 상품이 없어요</div>';
+    return;
+  }
+
+  el.innerHTML = items.map(p => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card);border:1px solid var(--border);border-radius:6px">
+      ${p.img ? `<img src="${p.img}" style="width:36px;height:36px;object-fit:cover;border-radius:4px">` : '<span style="font-size:22px">🛍</span>'}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        <div style="font-size:12px;color:var(--yellow)">₩${Number(p.price).toLocaleString()}</div>
+      </div>
+      <button onclick="${p.link?`_openExtLink('${p.link}')`:'toast(\"info\",\"준비 중\",\"구매 링크가 없어요\")'}" style="background:var(--yellow);border:none;color:#1a1a1a;font-size:11px;padding:4px 9px;cursor:pointer;border-radius:4px;white-space:nowrap">구매하러 가기</button>
+      <button onclick="toggleWishlist(${p.id})" title="찜 해제" style="background:transparent;border:none;color:var(--gray);font-size:18px;cursor:pointer;line-height:1;padding:0 4px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+
+// ── 포인트 교환 쿠폰 ──
+function _kstYearMonth() {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 7); // "YYYY-MM"
+}
+function renderCouponPanel() {
+  const ym = _kstYearMonth();
+  const redeemed = (S.redeemedCoupons || {})[ym];
+  if (redeemed) {
+    return `<div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:14px;color:var(--yellow);font-weight:bold">🎟 ${ym} 쿠폰</div>
+      <div style="font-size:13px;color:var(--gray)">이미 이번 달 쿠폰을 발급받았어요!</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--card);border:2px solid var(--acc);border-radius:8px">
+        <span style="font-size:15px;font-family:'Galmuri14',monospace;color:var(--acc);letter-spacing:2px;flex:1">${redeemed.code}</span>
+        <button onclick="_copyText('${redeemed.code}')" style="background:var(--acc);border:none;color:#fff;font-size:12px;padding:5px 10px;cursor:pointer;border-radius:4px">복사</button>
+      </div>
+      ${redeemed.discount ? `<div style="font-size:12px;color:var(--gray)">할인: ₩${Number(redeemed.discount).toLocaleString()} / 최소주문: ₩${Number(redeemed.minOrder||0).toLocaleString()}</div>` : ''}
+      ${redeemed.expires ? `<div style="font-size:12px;color:var(--gray)">유효기간: ${redeemed.expires.slice(0,10)}</div>` : ''}
+    </div>`;
+  }
+  return `<div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:14px;color:var(--yellow);font-weight:bold">🎟 ${ym} 쿠폰</div>
+    <div style="font-size:13px;color:var(--gray)">포인트 1,000점을 사용해서 이번 달 쇼핑 쿠폰을 발급받으세요!</div>
+    <div style="font-size:13px">현재 포인트: <span style="color:var(--yellow);font-weight:bold">${S.pts} pts</span></div>
+    <button onclick="redeemCoupon()" style="background:var(--acc);border:none;color:#fff;font-size:13px;padding:10px 16px;cursor:pointer;border-radius:8px;font-family:'Galmuri14',monospace;white-space:nowrap">🎟 1,000 포인트로 쿠폰 발급받기</button>
+    ${S.pts < 1000 ? '<div style="font-size:12px;color:var(--gray)">포인트가 부족해요. 열매를 더 모아보세요 🍋</div>' : ''}
+  </div>`;
+}
+
+let _couponLoading = false;
+async function redeemCoupon() {
+  if (_couponLoading) return;
+  const ym = _kstYearMonth();
+  if ((S.redeemedCoupons||{})[ym]) { toast('info','이미 발급됨','이번 달 쿠폰은 이미 발급받았어요'); return; }
+  if (S.pts < 1000) { toast('alert','포인트 부족',`현재 ${S.pts}pts — 1,000pts 필요해요`); return; }
+  if (!window._cfg || !window._cfg.SUPABASE_URL) { toast('alert','오류','서버에 연결할 수 없어요'); return; }
+
+  _couponLoading = true;
+  earnPts(-1000); // 선차감
+  renderShop();
+
+  try {
+    const res = await fetch(window._cfg.SUPABASE_URL + '/functions/v1/get-monthly-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': window._cfg.SUPABASE_KEY },
+      body: JSON.stringify({ year_month: ym })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || '서버 오류');
+    if (!S.redeemedCoupons) S.redeemedCoupons = {};
+    S.redeemedCoupons[ym] = {
+      code: data.coupon_code,
+      discount: data.discount_amount,
+      minOrder: data.min_order_amount,
+      expires: data.expires_at
+    };
+    saveState();
+    toast('reward','🎟 발급 완료!',`쿠폰 코드: ${data.coupon_code}`);
+    renderShop();
+  } catch(e) {
+    earnPts(+1000); // 롤백
+    renderShop();
+    toast('alert','발급 실패', e.message || '잠시 후 다시 시도해 주세요');
+  } finally {
+    _couponLoading = false;
+  }
+}
+
+// ── NicePay V1 결제 ──
+async function sha256hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function startNicepayPayment(items){
+  const cfg = window._cfg;
+  if (!cfg || !cfg.NICEPAY_MID || !cfg.NICEPAY_KEY) {
+    toast('alert','결제 오류','결제 설정이 없습니다'); return;
+  }
+  if (!window.electronAPI || !window.electronAPI.openPaymentWindow) {
+    toast('alert','결제 오류','앱에서만 결제 가능합니다'); return;
+  }
+  const mid = cfg.NICEPAY_MID;
+  const amt = items.reduce((s, p) => s + Number(p.price), 0);
+  const moid = 'NEKO' + Date.now();
+  const goodsName = items.length === 1 ? items[0].name : items[0].name + ' 외 ' + (items.length - 1) + '건';
+  const now = new Date();
+  const ediDate = now.getFullYear().toString()
+    + String(now.getMonth()+1).padStart(2,'0')
+    + String(now.getDate()).padStart(2,'0')
+    + String(now.getHours()).padStart(2,'0')
+    + String(now.getMinutes()).padStart(2,'0')
+    + String(now.getSeconds()).padStart(2,'0');
+  const signData = await sha256hex(ediDate + mid + String(amt) + cfg.NICEPAY_KEY);
+  const returnUrl = cfg.SUPABASE_URL + '/functions/v1/nicepay-callback';
+
+  toast('info','결제창 열기','잠시만 기다려 주세요...');
+  const result = await window.electronAPI.openPaymentWindow({
+    mid, amt: String(amt), moid, goodsName,
+    buyerName: '고객', buyerEmail: '', buyerTel: '010-0000-0000',
+    returnUrl, ediDate, signData, goodsCnt: String(items.length),
+    mallReserved: JSON.stringify({ items: items.map(p=>p.id) })
+  });
+
+  if (result && result.success) {
+    toast('reward','결제 완료!', `${result.goods} 결제가 완료됐어요 (TID: ${result.tid})`);
+  } else if (!result?.cancelled) {
+    toast('alert','결제 실패', result?.msg || '결제가 취소되거나 실패했어요');
   }
 }
 
@@ -2547,6 +3152,9 @@ function wiggleCat(){
 // ══════════════════════════════════════════
 function init(){
   loadState();   // 저장된 데이터 복원
+  renderWorkItems();  // 업무 시간 설정 초기 렌더
+  const _mt = document.getElementById('scheduleMemoTxt');
+  if (_mt) _mt.value = S.scheduleMemo || '';
   updatePhotoPathLabel();
   loadShippingUI();
   // 공개 설정 로드 → Supabase 상품 불러오기
@@ -2577,21 +3185,27 @@ function init(){
   const hc=document.getElementById('hCycleCount'); if(hc) hc.textContent=`오늘 완료: ${S.sessions} 사이클`;
   if(typeof updateCatUI==='function') updateCatUI();
   if(typeof renderFruits==='function') renderFruits();
+  if(typeof renderHarvestCount==='function') renderHarvestCount();
   updateClock();
   updateCycleUI();
 
   setInterval(()=>{ updateClock(); updateCycleUI(); renderCyclePreview(); }, 1000);
-  setInterval(wiggleCat, 9000);
-  startCatAnimation(); // 4초마다 고양이 프레임 전환
-  startHealthReminders(); // 수분/기지개 1시간 간격 번갈아
+  startCatAnimation();       // 4초마다 고양이 프레임 전환
+  startProductsAutoRefresh(); // 1분마다 상품 목록 갱신
 
-  // 출근 전이면 안내, 출근 후면 바로 상태 표시
-  const c = calcCycle();
-  if(c.phase === 'pre'){
-    showBubble('출근 시간이 되면 자동으로 시작해요! 🐱');
-    toast('info','🐱 냐옹!','출근 시간을 설정하면 자동으로 사이클이 시작돼요!');
-  } else {
-    toast('info','🐱 냐옹!','실시간 사이클 타이머가 작동 중이에요!');
+  // 위젯 전용 기능 (대시보드 윈도우에서는 실행 안 함)
+  if (!window._isDashboard) {
+    setInterval(wiggleCat, 9000);
+    startHealthReminders(); // 30분마다 물 말풍선
+    initClickThrough();     // 위젯 투명 영역 클릭 통과
+
+    const c = calcCycle();
+    if(c.phase === 'pre'){
+      showBubble('출근 시간이 되면 자동으로 시작해요! 🐱');
+      toast('info','🐱 냐옹!','출근 시간을 설정하면 자동으로 사이클이 시작돼요!');
+    } else {
+      toast('info','🐱 냐옹!','실시간 사이클 타이머가 작동 중이에요!');
+    }
   }
 }
 
@@ -2621,17 +3235,82 @@ function installCatDrag(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 대시보드 전용 윈도우 여부 판별 (?mode=dashboard 쿼리)
+  const IS_DASHBOARD = new URLSearchParams(window.location.search).get('mode') === 'dashboard';
+  window._isDashboard = IS_DASHBOARD;
+
   installCatDrag();
-  // Electron 환경 감지
+
   if (window.electronAPI) {
-    document.body.classList.add('electron-widget');
-    // body 배경 투명
     document.body.style.background = 'transparent';
+    if (IS_DASHBOARD) {
+      // 대시보드 전용 윈도우: 처음부터 대시보드 UI만 표시
+      document.body.classList.add('electron-dashboard');
+      document.getElementById('dashboard').classList.add('open');
+    } else {
+      // 위젯 윈도우
+      document.body.classList.add('electron-widget');
+    }
   }
 
   init();
-  // Electron 트레이에서 대시보드 열기 요청
-  if (window.electronAPI && window.electronAPI.onOpenDashboard) {
+
+  // 두 창 모두 storage 이벤트 수신 — 서로의 변경사항을 즉시 메모리에 반영
+  // (위젯 자동저장이 대시보드 변경을 덮어쓰는 것을 방지)
+  const SYNC_KEYS = ['fruits','harvestedFruits','pts','todayPts','sessions','lastCycleIdx','catFedThisCycle','lastPenaltyBreakIdx'];
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return;
+    try {
+      const saved = JSON.parse(e.newValue);
+      SYNC_KEYS.forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
+      if (saved.cat) Object.assign(S.cat, saved.cat);
+      renderFruits();
+      renderHarvestCount();
+      updateCatUI();
+      ['ptsDisplay','shopPts'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=S.pts; });
+      const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
+    } catch(err) {}
+  });
+
+  // 자동저장(10초)은 위젯 창에서만 — 대시보드는 사용자 액션 시에만 명시적으로 저장
+  if (!IS_DASHBOARD) setInterval(saveState, 10000);
+
+  // ── 기분 감소 타이머 (15분마다 -5) — 위젯 창에서만 ──
+  if (!IS_DASHBOARD) {
+    setInterval(() => {
+      if (S.cat.mood > 0) {
+        S.cat.mood = Math.max(0, S.cat.mood - 5);
+        updateCatUI();
+        saveState();
+      }
+    }, 15 * 60 * 1000);
+
+    // 출근시간마다 기분 60 리셋 (매분 체크)
+    setInterval(() => {
+      const now = new Date();
+      const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const today = now.toDateString();
+      if (hhmm === S.schedule.ws && S.lastMoodResetDate !== today) {
+        S.lastMoodResetDate = today;
+        S.cat.mood = 60;
+        updateCatUI();
+        saveState();
+        toast('info', '🌅 출근 시작!', '고양이 기분이 60으로 리셋됐어요');
+      }
+    }, 60 * 1000);
+  }
+
+  // ── NicePay 결제 결과 수신 ──
+  if (window.electronAPI && window.electronAPI.onPaymentResult) {
+    window.electronAPI.onPaymentResult((result) => {
+      if (result && result.success) {
+        toast('reward','결제 완료!', `${result.goods} 결제가 완료됐어요`);
+      }
+    });
+  }
+
+  // Electron 트레이에서 대시보드 열기 요청 (위젯 윈도우만 처리)
+  if (!IS_DASHBOARD && window.electronAPI && window.electronAPI.onOpenDashboard) {
     window.electronAPI.onOpenDashboard(() => openDash());
   }
   if (window.electronAPI && window.electronAPI.onToggleFollow) {
