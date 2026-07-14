@@ -527,21 +527,8 @@ ipcMain.handle('google-login', async () => {
   }
 });
 
-// 계정별 환영 보너스: localStorage 초기화와 무관하게 영구 기록
-ipcMain.handle('welcome-check', (e, email) => {
-  if (!email || email === 'guest') return { eligible: false };
-  const claimed = readJSON(CLAIMED_FILE(), { emails: [] });
-  return { eligible: !claimed.emails.includes(email) };
-});
-
-ipcMain.handle('welcome-claim', (e, email) => {
-  if (!email || email === 'guest') return { ok: false, reason: 'guest' };
-  const claimed = readJSON(CLAIMED_FILE(), { emails: [] });
-  if (claimed.emails.includes(email)) return { ok: false, reason: 'already' };
-  claimed.emails.push(email);
-  writeJSON(CLAIMED_FILE(), claimed);
-  return { ok: true };
-});
+// 앱 버전 (package.json version)
+ipcMain.handle('get-app-version', () => app.getVersion());
 
 // ═══ GA4 애널리틱스 (Measurement Protocol — 데스크탑 앱용 공식 방식) ═══
 function gaTrack(eventName, params = {}) {

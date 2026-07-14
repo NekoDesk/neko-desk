@@ -29,8 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   guestLogin:     () => ipcRenderer.invoke('guest-login'),
   getSession:     () => ipcRenderer.invoke('get-session'),
   logout:         () => ipcRenderer.invoke('logout'),
-  welcomeCheck:   (email) => ipcRenderer.invoke('welcome-check', email),
-  welcomeClaim:   (email) => ipcRenderer.invoke('welcome-claim', email),
+  getAppVersion:  () => ipcRenderer.invoke('get-app-version'),
 
   // 포토부스: 프로그램 화면 캡처 + 저장
   capturePhoto:   (rect, dir) => ipcRenderer.invoke('capture-photo', rect, dir),

@@ -713,11 +713,6 @@ select {
             </div>
             <div class="card">
               <div class="card-title">🍋 열매 바구니</div>
-              <div id="welcomeBonus" style="display:none;background:var(--card);border:2px dashed var(--yellow);padding:12px;text-align:center;margin-bottom:10px">
-                <div style="font-size:15px;color:var(--yellow);margin-bottom:8px">🎉 설치를 축하합니다!</div>
-                <div style="font-size:13px;color:var(--gray);margin-bottom:10px">환영 선물로 포인트를 받으세요!</div>
-                <button class="btn btn-y" onclick="claimWelcome()" style="font-size:14px">🎁 200포인트 받기</button>
-              </div>
               <div class="fruit-grid" id="fruitBasket"></div>
               <div style="font-size:12px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 열매 획득 (최대 5개) · 샵에서 판매 → 포인트</div>
             </div>
@@ -899,6 +894,7 @@ select {
             </div>
 
             <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75">🔄 데이터 초기화</button>
+            <div id="appVersionLabel" style="margin-top:14px;text-align:center;font-size:11px;color:var(--gray);opacity:0.6"></div>
           </div>
         </div>
       </div>
@@ -1364,7 +1360,6 @@ function closeDash() {
 // ══════════════════════════════════════════
 const S = {
   pts: 0,
-  welcomeClaimed: false,
   cat: { name:'냐옹이', breed:'', acc:null, lv:1, xp:0, mood:60, age:'새끼 고양이' },
   timer: { sessions:0, todayPts:0 },
   schedule: { ws:'09:00', ls:'12:00', le:'13:00', we:'18:00', es:'19:00' },
@@ -1416,7 +1411,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','welcomeClaimed','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -1453,45 +1448,20 @@ function resetAllData(){
   }
 }
 
-function claimWelcome(){
-  // 데스크탑 앱: 구글 계정 기준 1회 (데이터 초기화해도 중복 지급 안 됨)
-  if (window.electronAPI && window.electronAPI.welcomeClaim) {
-    const email = window._session && window._session.email;
-    if (!email || window._session.guest) {
-      toast('alert','로그인 필요','구글 계정으로 로그인하면 받을 수 있어요!');
-      return;
+async function _tryWelcomeBonus(email) {
+  if (!email || !window._cfg || !window._cfg.SUPABASE_URL) return;
+  try {
+    const res = await fetch(window._cfg.SUPABASE_URL + '/functions/v1/claim-welcome-bonus', {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      earnPts(200);
+      toast('reward','🎁 환영 선물!','첫 로그인 보너스 200포인트를 받았어요!');
     }
-    window.electronAPI.welcomeClaim(email).then(res => {
-      if (res && res.ok) {
-        earnPts(200); saveState();
-        toast('reward','🎁 환영 선물!','200포인트를 받았어요! 샵에서 사용해보세요~');
-      } else {
-        toast('alert','이미 받았어요','이 계정은 환영 선물을 이미 받았어요!');
-      }
-      updateWelcomeUI();
-    });
-    return;
-  }
-  // 브라우저 모드
-  if (S.welcomeClaimed) return;
-  S.welcomeClaimed = true;
-  earnPts(200);
-  saveState();
-  toast('reward','🎁 환영 선물!','200포인트를 받았어요!');
-  updateWelcomeUI();
-}
-function updateWelcomeUI(){
-  const el = document.getElementById('welcomeBonus');
-  if (!el) return;
-  if (window.electronAPI && window.electronAPI.welcomeCheck) {
-    const email = window._session && window._session.email;
-    if (!email || window._session.guest) { el.style.display = 'none'; return; }
-    window.electronAPI.welcomeCheck(email).then(res => {
-      el.style.display = (res && res.eligible) ? 'block' : 'none';
-    });
-    return;
-  }
-  el.style.display = S.welcomeClaimed ? 'none' : 'block';
+  } catch(e) {}
 }
 
 function earnPts(n) {
@@ -2855,7 +2825,7 @@ function applySession(s){
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
   if (lbl) lbl.textContent = s.guest ? '게스트 (보너스/광고설정 불가)' : s.email + (s.isAdmin ? ' (관리자)' : '');
-  updateWelcomeUI();
+  if (!s.guest && s.email) _tryWelcomeBonus(s.email);
 }
 
 function doGoogleLogin(){
@@ -3173,7 +3143,7 @@ function init(){
       else showLoginGate();
     });
   } else {
-    updateWelcomeUI(); // 브라우저 모드: 게이트 없음
+    // 브라우저 모드: 게이트 없음
   }
   applyTheme(S.theme || 'bpink'); // 기본 테마: 베이비 핑크
   renderAll();
@@ -3192,6 +3162,14 @@ function init(){
   setInterval(()=>{ updateClock(); updateCycleUI(); renderCyclePreview(); }, 1000);
   startCatAnimation();       // 4초마다 고양이 프레임 전환
   startProductsAutoRefresh(); // 1분마다 상품 목록 갱신
+
+  // 설정 탭 버전 표시
+  if (window.electronAPI && window.electronAPI.getAppVersion) {
+    window.electronAPI.getAppVersion().then(v => {
+      const el = document.getElementById('appVersionLabel');
+      if (el) el.textContent = 'NEKO DESK v' + v;
+    });
+  }
 
   // 위젯 전용 기능 (대시보드 윈도우에서는 실행 안 함)
   if (!window._isDashboard) {
