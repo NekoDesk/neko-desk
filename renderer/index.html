@@ -1044,7 +1044,7 @@ let currentTheme = 'space';
 function applyTheme(id) {
   currentTheme = id;
   const t = THEMES.find(x=>x.id===id);
-  if (!t) return applyTheme('bpink');
+  if (!t) return applyTheme('white');
   if (typeof S !== 'undefined') { S.theme = id; if (typeof saveState === 'function') saveState(); }
   // 테마 클래스만 교체 (electron-widget 등 다른 클래스는 보존!)
   document.body.classList.forEach(cls => {
@@ -3145,7 +3145,7 @@ function init(){
   } else {
     // 브라우저 모드: 게이트 없음
   }
-  applyTheme(S.theme || 'bpink'); // 기본 테마: 베이비 핑크
+  applyTheme(S.theme || 'white'); // 기본 테마: 화이트
   renderAll();
 
   // 복원된 상태 UI 반영
