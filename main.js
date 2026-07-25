@@ -45,12 +45,16 @@ function createWindow() {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     }
   });
+
+  // 콘텐츠 렌더링 완료 후 창 표시 (로딩 중 검은 박스 방지)
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   mainWindow.loadFile('renderer/index.html');
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
