@@ -1269,11 +1269,13 @@ function startHealthReminders() {
 function speechBubbleClick() {
   if (_isWaterBubble) {
     _isWaterBubble = false;
-    const praised = WATER_PRAISE_MSGS[Math.floor(Math.random() * WATER_PRAISE_MSGS.length)];
-    if (harvestOneFruit()) {
-      showBubble(praised);
+    if (S.fruits.length >= 5) {
+      showBubble('물 잘 마셨어요! 🌟 (바구니 가득!)');
     } else {
-      showBubble('물 잘 마셨어요! 🌟');
+      addFruit();
+      saveState();
+      const praised = WATER_PRAISE_MSGS[Math.floor(Math.random() * WATER_PRAISE_MSGS.length)];
+      showBubble(praised);
     }
   } else {
     openDash();
