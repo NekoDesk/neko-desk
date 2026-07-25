@@ -677,7 +677,8 @@ select {
       <div class="dtab" onclick="dTab('schedule')">📅 스케줄</div>
       <div class="dtab" onclick="dTab('cat')">🐱 고양이</div>
       <div class="dtab" onclick="dTab('magazine')">📰 매거진</div>
-      <div class="dtab" onclick="dTab('shop')">🛒 샵</div>
+      <!-- SHOP_TAB_HIDDEN: 샵 복원 시 아래 주석 해제, 위 주석 제거 -->
+      <!-- <div class="dtab" onclick="dTab('shop')">🛒 샵</div> -->
       <div class="dtab" onclick="dTab('settings')">⚙ 설정</div>
     </div>
 
@@ -718,7 +719,7 @@ select {
             <div class="card">
               <div class="card-title">🍋 열매 바구니</div>
               <div class="fruit-grid" id="fruitBasket"></div>
-              <div style="font-size:12px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 열매 획득 (최대 5개) · 샵에서 판매 → 포인트</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트</div>
             </div>
           </div>
         </div>
@@ -871,7 +872,7 @@ select {
                   <div style="font-size:13px;color:var(--gray);line-height:1.7">
                     사이클 완료 → 열매 획득 (최대 5개 바구니에 쌓임)<br>
                     바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br>
-                    <b style="color:var(--white)">샵 &gt; 열매로 포인트 사기</b>에서 2개당 20pts로 전환
+                    <b style="color:var(--white)">고양이 탭 &gt; 🍋 팔기</b>에서 2개당 20pts로 전환
                   </div>
                 </div>
                 <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
@@ -1502,7 +1503,7 @@ function renderFruits() {
     d.textContent = emoji;
     d.onclick = () => {
       harvestOneFruit();
-      toast('reward','🍋 수확!','샵에서 팔면 포인트로! 🏪');
+      toast('reward','🍋 수확!','고양이 탭에서 팔면 포인트로! 🐱');
     };
     el.appendChild(d);
   });
