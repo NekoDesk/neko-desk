@@ -691,23 +691,22 @@ select {
             <div class="cat-display" style="margin-bottom:12px">
               <img id="homeCatCanvas" class="big-cat cat-img-render">
               <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)" id="catNameH">냐옹이</div>
-              <div style="font-size:13px;color:var(--gray)">Lv.<span id="catLvH">1</span> · <span id="catAgeH">새끼 고양이</span></div>
             </div>
             <div class="stat-bar">
               <div class="stat-row">
-                <span>❤️ 기분</span>
+                <span data-i18n="home_mood">❤️ 기분</span>
                 <span><span id="mdValH">60</span> /100</span>
               </div>
               <div class="bar-t"><div class="bar-f md-f" id="mdBarH" style="width:60%"></div></div>
             </div>
-            <button class="btn btn-g" onclick="openPhotoBooth()" style="width:100%;margin-top:10px;font-size:14px">📸 고양이와 사진 찍기</button>
+            <button class="btn btn-g" onclick="openPhotoBooth()" style="width:100%;margin-top:10px;font-size:14px" data-i18n="photo_btn">📸 고양이와 사진 찍기</button>
             <div class="stat-bar">
 
             </div>
           </div>
           <div>
             <div class="card" style="margin-bottom:12px">
-              <div class="card-title">⏱ 현재 사이클</div>
+              <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
               <div class="timer-box" style="padding:14px">
                 <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
                 <div class="timer-big" id="hTimerClock">55:00</div>
@@ -717,9 +716,9 @@ select {
               <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:8px" id="hCycleCount">오늘 완료: 0 사이클</div>
             </div>
             <div class="card">
-              <div class="card-title">🍋 열매 바구니</div>
+              <div class="card-title" data-i18n="home_fruit_title">🍋 열매 바구니</div>
               <div class="fruit-grid" id="fruitBasket"></div>
-              <div style="font-size:12px;color:var(--gray);margin-top:7px">사이클 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:7px" data-i18n="home_fruit_desc">사이클 완료 또는 할 일 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트</div>
             </div>
           </div>
         </div>
@@ -729,25 +728,23 @@ select {
       <div id="dp-cycle" class="dpage">
         <div class="grid2">
           <div class="card">
-            <div class="card-title">⏱ 실시간 사이클 타이머</div>
+            <div class="card-title" data-i18n="cycle_timer_title">⏱ 실시간 사이클 타이머</div>
             <div class="timer-box">
               <div class="timer-mode-lbl" id="tTimerMode">💪 집중 중</div>
               <div class="timer-big" id="tTimerClock">55:00</div>
               <div class="prog-track"><div class="prog-fill" id="tProgFill" style="width:0%"></div></div>
             </div>
             <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
-              <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px">현재 실제 시각</div>
+              <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
               <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
               <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
             </div>
           </div>
           <div class="card">
-            <div class="card-title">⏰ 업무 시간 설정</div>
+            <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
             <div id="workItemsList"></div>
-            <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()">✓ 저장</button>
-            <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8">
-              출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!
-            </div>
+            <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
+            <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
           </div>
         </div>
       </div>
@@ -765,8 +762,8 @@ select {
           </div>
         </div>
         <div class="card" style="margin-top:12px">
-          <div class="card-title">📓 메모장</div>
-          <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..."
+          <div class="card-title" data-i18n="todo_memo_title">📓 메모장</div>
+          <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..." data-i18n-placeholder="todo_memo_ph"
             oninput="S.scheduleMemo=this.value"
             style="width:100%;min-height:120px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
         </div>
@@ -776,7 +773,7 @@ select {
       <div id="dp-cat" class="dpage">
         <div class="grid2">
           <div class="card">
-            <div class="card-title">🐱 내 고양이</div>
+            <div class="card-title" data-i18n="cat_my_cat">🐱 내 고양이</div>
             <div style="display:flex;gap:16px;align-items:flex-start">
               <div style="text-align:center">
                 <img id="catPageCanvas" class="big-cat cat-img-render" style="margin-bottom:8px">
@@ -785,7 +782,7 @@ select {
               <div style="flex:1">
                 <div class="stat-bar">
                   <div class="stat-row">
-                    <span>❤️ 기분</span>
+                    <span data-i18n="cat_mood">❤️ 기분</span>
                     <span><span id="mdValP">60</span> /100</span>
                   </div>
 
@@ -794,13 +791,13 @@ select {
                 <div class="stat-bar">
 
                 </div>
-                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:10px 0 5px">이름</div>
+                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:10px 0 5px" data-i18n="cat_name_lbl">이름</div>
                 <div style="display:flex;gap:6px;margin-bottom:10px">
-                  <input id="catNameIn" type="text" placeholder="이름 입력..."
+                  <input id="catNameIn" type="text" placeholder="이름 입력..." data-i18n-placeholder="cat_name_ph"
                     style="background:var(--card);border:2px solid var(--border);color:var(--white);padding:6px;font-size:15px;flex:1;outline:none">
                   <button class="btn btn-g" onclick="renameCat()">OK</button>
                 </div>
-                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px">먹이 <span style="color:var(--yellow)">(20pts)</span></div>
+                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n-html="cat_food_html">먹이 <span style="color:var(--yellow)">(20pts)</span></div>
                 <div style="display:flex;gap:6px">
                   <button class="btn btn-y" onclick="feedCat('참치')">🐟</button>
                   <button class="btn btn-y" onclick="feedCat('연어')">🍣</button>
@@ -811,20 +808,20 @@ select {
           </div>
           <div>
             <div class="card" style="margin-bottom:12px">
-              <div class="card-title">👒 꾸미기</div>
-              <div style="font-size:12px;color:var(--gray);margin-bottom:5px">고양이 종류</div>
+              <div class="card-title" data-i18n="cat_deco_title">👒 꾸미기</div>
+              <div style="font-size:12px;color:var(--gray);margin-bottom:5px" data-i18n="cat_breed_lbl">고양이 종류</div>
               <div class="breed-row" id="breedRow"></div>
             </div>
             <div class="card">
-              <div class="card-title">🍋 열매로 포인트 사기</div>
+              <div class="card-title" data-i18n="cat_sell_title">🍋 열매로 포인트 사기</div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                 <div style="font-size:13px;color:var(--gray)">
-                  보유 열매 <span id="harvestedCount" style="color:var(--yellow);font-weight:700">0</span>개
-                  <span style="font-size:11px;opacity:0.6;margin-left:6px">· 1개 = 10pts</span>
+                  <span data-i18n="cat_harvest_lbl">보유 열매</span> <span id="harvestedCount" style="color:var(--yellow);font-weight:700">0</span><span id="harvestUnit" data-i18n="harvest_unit">개</span>
+                  <span data-i18n="cat_per_unit" style="font-size:11px;opacity:0.6;margin-left:6px">· 1개 = 10pts</span>
                 </div>
                 <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
               </div>
-              <div style="font-size:11px;color:var(--gray);opacity:0.7">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+              <div style="font-size:11px;color:var(--gray);opacity:0.7" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
             </div>
           </div>
         </div>
@@ -874,43 +871,7 @@ select {
                 <div class="card-title" style="margin-bottom:0" data-i18n="guide_title">⚙️ 작동 방식 안내</div>
                 <span id="guideChev" style="font-size:10px;color:var(--gray)">▼</span>
               </div>
-              <div id="guideBody" style="display:none;margin-top:14px">
-                <div style="margin-bottom:14px">
-                  <div class="card-title" style="font-size:11px;margin-bottom:8px">💧 물 마시기 알람</div>
-                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
-                    30분마다 위젯 말풍선 + 알림으로 물 마시기 알람이 떠요.<br>
-                    위젯 상태일 때 <b style="color:var(--white)">말풍선을 클릭하면</b> 바구니에서 열매가 자동 수확돼요 🍋
-                  </div>
-                </div>
-                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
-                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🍋 열매 시스템</div>
-                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
-                    사이클 완료 → 열매 획득 (최대 5개 바구니에 쌓임)<br>
-                    바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br>
-                    <b style="color:var(--white)">고양이 탭 &gt; 🍋 팔기</b>에서 2개당 20pts로 전환
-                  </div>
-                </div>
-                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
-                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🐾 커서 팔로우</div>
-                  <div style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:10px">
-                    토글을 켜면 작은 고양이가 화면 어디든 커서를 따라다녀요!<br>
-                    <span class="shortcut-hint">Ctrl+0</span> 단축키로도 켜고 끌 수 있어요
-                  </div>
-                  <button class="btn btn-g" onclick="toggleFollow()">🐱 팔로우 <span id="followLabel">OFF</span></button>
-                </div>
-                <div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">
-                  <div class="card-title" style="font-size:11px;margin-bottom:8px">🖱 위젯 이동</div>
-                  <div style="font-size:13px;color:var(--gray);line-height:1.7">
-                    고양이를 마우스로 잡고 끌면 화면 어디든 옮길 수 있어요! 🐱<br>
-                    창이 열려 있어도 위젯은 항상 화면 위에 떠 있어요
-                  </div>
-                </div>
-                <div style="border-top:1px solid var(--border);padding-top:14px">
-                  <div class="card-title" style="font-size:11px;margin-bottom:8px">📁 사진 저장 위치</div>
-                  <div id="photoPathLabel" style="font-size:12px;color:var(--gray);margin-bottom:10px;word-break:break-all">바탕화면 (기본)</div>
-                  <button class="btn btn-g" onclick="choosePhotoDir()">폴더 변경</button>
-                </div>
-              </div>
+              <div id="guideBody" style="display:none;margin-top:14px"></div>
             </div>
 
             <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75" data-i18n="reset_btn">🔄 데이터 초기화</button>
@@ -1090,13 +1051,59 @@ function renderThemeGrid() {
 // ══════════════════════════════════════════
 const STRINGS = {
   ko: {
+    // 탭
     tab_home:'🏠 홈', tab_cycle:'⏱ 스케줄', tab_todo:'📝 To Do List',
     tab_cat:'🐱 고양이', tab_magazine:'📰 매거진', tab_settings:'⚙ 설정',
+    // 설정
     theme_title:'🎨 배경 테마', theme_save:'저장',
     lang_title:'🌐 언어',
     acc_title:'👤 계정', logout_btn:'로그아웃',
     guide_title:'⚙️ 작동 방식 안내',
     reset_btn:'🔄 데이터 초기화',
+    // 홈
+    home_mood:'❤️ 기분', photo_btn:'📸 고양이와 사진 찍기',
+    home_cycle_title:'⏱ 현재 사이클',
+    home_fruit_title:'🍋 열매 바구니',
+    home_fruit_desc:'사이클 완료 또는 할 일 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트',
+    // 사이클
+    cycle_timer_title:'⏱ 실시간 사이클 타이머',
+    cycle_clock_lbl:'현재 실제 시각',
+    cycle_settings_title:'⏰ 업무 시간 설정',
+    cycle_save_btn:'✓ 저장',
+    cycle_desc:'출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!',
+    mode_focus:'💪 집중 중', mode_break:'☕ 휴식 시간', mode_lunch:'🍱 점심시간', mode_pre:'⏸ 출근 전',
+    next_lunch:'점심시간 끝까지', next_focus:'다음 휴식까지', next_pre:'출근 전입니다', next_break:'다음 집중까지',
+    cycle_auto:'출근 시간부터 자동 시작', cycles_unit:'사이클', today_done:'오늘 완료:',
+    work_am:'오전', work_pm:'오후', work_add:'+ 항목 추가', work_new:'새 항목', work_ph:'내용',
+    date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일',
+    dows:'일,월,화,수,목,금,토',
+    // To Do List
+    todo_memo_title:'📓 메모장', todo_memo_ph:'자유롭게 메모하세요...',
+    todo_date_ph:'날짜를 선택해 주세요 ◀',
+    todo_add_btn:'+ 추가', todo_input_ph:'새 스케줄 입력...',
+    todo_select_all:'전체 선택', todo_deselect:'전체 해제', todo_del_sel:'선택 삭제',
+    todo_fruit_msg:'할 일 완료! 열매 +1 🍋',
+    // 고양이
+    cat_my_cat:'🐱 내 고양이', cat_mood:'❤️ 기분',
+    cat_name_lbl:'이름', cat_name_ph:'이름 입력...',
+    cat_food_html:'먹이 <span style="color:var(--yellow)">(20pts)</span>',
+    cat_deco_title:'👒 꾸미기', cat_breed_lbl:'고양이 종류',
+    cat_sell_title:'🍋 열매로 포인트 사기',
+    cat_harvest_lbl:'보유 열매', harvest_unit:'개', cat_per_unit:'· 1개 = 10pts',
+    cat_sell_btn:'🍋 팔기',
+    cat_sell_desc:'사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!',
+    // 안내
+    guide_water_sub:'💧 물 마시기 알람',
+    guide_water_html:'30분마다 위젯 말풍선 + 알림으로 물 마시기 알람이 떠요.<br>위젯 상태일 때 <b style="color:var(--white)">말풍선을 클릭하면</b> 바구니에 열매 +1 🍋',
+    guide_fruit_sub:'🍋 열매 시스템',
+    guide_fruit_html:'사이클 완료 또는 할 일 체크 → 열매 획득 (최대 5개 바구니에 쌓임)<br>바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br><b style="color:var(--white)">고양이 탭 &gt; 🍋 팔기</b>에서 열매 1개당 10pts로 전환',
+    guide_follow_sub:'🐾 커서 팔로우',
+    guide_follow_html:'토글을 켜면 작은 고양이가 화면 어디든 커서를 따라다녀요!<br><span class="shortcut-hint">Ctrl+0</span> 단축키로도 켜고 끌 수 있어요',
+    follow_btn_label:'🐱 팔로우',
+    guide_move_sub:'🖱 위젯 이동',
+    guide_move_html:'고양이를 마우스로 잡고 끌면 화면 어디든 옮길 수 있어요! 🐱<br>창이 열려 있어도 위젯은 항상 화면 위에 떠 있어요',
+    guide_photo_sub:'📁 사진 저장 위치',
+    guide_photo_default:'바탕화면 (기본)', guide_photo_change:'폴더 변경',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1106,6 +1113,45 @@ const STRINGS = {
     acc_title:'👤 Account', logout_btn:'Log out',
     guide_title:'⚙️ How it works',
     reset_btn:'🔄 Reset Data',
+    home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
+    home_cycle_title:'⏱ Current Cycle',
+    home_fruit_title:'🍋 Fruit Basket',
+    home_fruit_desc:'Cycle done or to-do checked = 🍋 fruit (max 5) · Sell at Cat tab → pts',
+    cycle_timer_title:'⏱ Live Cycle Timer',
+    cycle_clock_lbl:'Current Time',
+    cycle_settings_title:'⏰ Work Schedule',
+    cycle_save_btn:'✓ Save',
+    cycle_desc:'60-min cycle from work start<br>(55 min focus + 5 min break)<br>auto-calculated in real time!',
+    mode_focus:'💪 Focusing', mode_break:'☕ Break', mode_lunch:'🍱 Lunch', mode_pre:'⏸ Before work',
+    next_lunch:'Until lunch ends', next_focus:'Until next break', next_pre:'Before work hours', next_break:'Until next focus',
+    cycle_auto:'Auto-starts at work time', cycles_unit:'cycles', today_done:'Today:',
+    work_am:'AM', work_pm:'PM', work_add:'+ Add item', work_new:'New item', work_ph:'Label',
+    date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}',
+    dows:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
+    todo_memo_title:'📓 Notes', todo_memo_ph:'Write notes...',
+    todo_date_ph:'Select a date ◀',
+    todo_add_btn:'+ Add', todo_input_ph:'New to-do...',
+    todo_select_all:'Select all', todo_deselect:'Deselect all', todo_del_sel:'Delete selected',
+    todo_fruit_msg:'Task done! Fruit +1 🍋',
+    cat_my_cat:'🐱 My Cat', cat_mood:'❤️ Mood',
+    cat_name_lbl:'Name', cat_name_ph:'Enter name...',
+    cat_food_html:'Food <span style="color:var(--yellow)">(20pts)</span>',
+    cat_deco_title:'👒 Customize', cat_breed_lbl:'Cat breed',
+    cat_sell_title:'🍋 Trade Fruits',
+    cat_harvest_lbl:'Fruits', harvest_unit:'', cat_per_unit:'· 1 = 10pts',
+    cat_sell_btn:'🍋 Sell',
+    cat_sell_desc:'Complete cycles & harvest from basket to earn fruits!',
+    guide_water_sub:'💧 Drink Water',
+    guide_water_html:'A water reminder pops up every 30 min via widget bubble + notification.<br>While the widget is visible, <b style="color:var(--white)">click the bubble</b> to earn a fruit +1 🍋',
+    guide_fruit_sub:'🍋 Fruit System',
+    guide_fruit_html:'Cycle done or to-do checked → earn fruit (max 5 in basket)<br>Click a basket fruit or water bubble → harvest<br><b style="color:var(--white)">Cat tab &gt; 🍋 Sell</b> — 10pts per fruit',
+    guide_follow_sub:'🐾 Cursor Follow',
+    guide_follow_html:'Toggle on and a tiny cat follows your cursor anywhere!<br><span class="shortcut-hint">Ctrl+0</span> shortcut also works',
+    follow_btn_label:'🐱 Follow',
+    guide_move_sub:'🖱 Move Widget',
+    guide_move_html:'Drag the cat anywhere on screen! 🐱<br>The widget stays on top even when other windows are open',
+    guide_photo_sub:'📁 Photo Folder',
+    guide_photo_default:'Desktop (default)', guide_photo_change:'Change folder',
   },
   ja: {
     tab_home:'🏠 ホーム', tab_cycle:'⏱ スケジュール', tab_todo:'📝 ToDoリスト',
@@ -1115,6 +1161,45 @@ const STRINGS = {
     acc_title:'👤 アカウント', logout_btn:'ログアウト',
     guide_title:'⚙️ 使い方',
     reset_btn:'🔄 データ初期化',
+    home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
+    home_cycle_title:'⏱ 現在サイクル',
+    home_fruit_title:'🍋 フルーツ',
+    home_fruit_desc:'サイクル完了またはToDo完了 = 🍋 フルーツ獲得 (最大5個) · ねこタブで販売 → pts',
+    cycle_timer_title:'⏱ ライブタイマー',
+    cycle_clock_lbl:'現在時刻',
+    cycle_settings_title:'⏰ 勤務時間設定',
+    cycle_save_btn:'✓ 保存',
+    cycle_desc:'出勤時間かだ60分サイクル<br>(55分集中 + 5分休憩)<br>リアルタイムで自動計算！',
+    mode_focus:'💪 集中中', mode_break:'☕ 休憩', mode_lunch:'🍱 ランチ', mode_pre:'⏸ 出勤前',
+    next_lunch:'ランチ終了まで', next_focus:'次の休憩まで', next_pre:'出勤前', next_break:'次の集中まで',
+    cycle_auto:'出勤時間に自動開始', cycles_unit:'サイクル', today_done:'今日:',
+    work_am:'午前', work_pm:'午後', work_add:'+ 追加', work_new:'新しい項目', work_ph:'ラベル',
+    date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日',
+    dows:'日,月,火,水,木,金,土',
+    todo_memo_title:'📓 メモ', todo_memo_ph:'自由にメモ...',
+    todo_date_ph:'日付を選択 ◀',
+    todo_add_btn:'+ 追加', todo_input_ph:'予定を入力...',
+    todo_select_all:'全て選択', todo_deselect:'全て解除', todo_del_sel:'選択削除',
+    todo_fruit_msg:'完了！フルーツ+1 🍋',
+    cat_my_cat:'🐱 わたしのねこ', cat_mood:'❤️ 気分',
+    cat_name_lbl:'名前', cat_name_ph:'名前を入力...',
+    cat_food_html:'えさ <span style="color:var(--yellow)">(20pts)</span>',
+    cat_deco_title:'👒 カスタマイズ', cat_breed_lbl:'ねこの種類',
+    cat_sell_title:'🍋 フルーツ交換',
+    cat_harvest_lbl:'フルーツ', harvest_unit:'個', cat_per_unit:'· 1個 = 10pts',
+    cat_sell_btn:'🍋 売る',
+    cat_sell_desc:'サイクル完了後にバスケットから収穫してフルーツを貯めよう！',
+    guide_water_sub:'💧 水分補給アラーム',
+    guide_water_html:'30分ごとにウィジェットのバブル＋通知で水分補給アラームが出ます。<br>ウィジェット表示中に<b style="color:var(--white)">バブルをクリック</b>するとフルーツ+1 🍋',
+    guide_fruit_sub:'🍋 フルーツシステム',
+    guide_fruit_html:'サイクル完了またはToDo完了 → フルーツ獲得（バスケット最大5個）<br>バスケットのフルーツまたは水バブルをクリック → 収穫<br><b style="color:var(--white)">ねこタブ &gt; 🍋 売る</b> — 1個10pts',
+    guide_follow_sub:'🐾 カーソルフォロー',
+    guide_follow_html:'トグルをオンにすると小さなネコが画面のどこでもカーソルを追いかけます！<br><span class="shortcut-hint">Ctrl+0</span> ショートカットでもオン/オフできます',
+    follow_btn_label:'🐱 フォロー',
+    guide_move_sub:'🖱 ウィジェット移動',
+    guide_move_html:'ネコをドラッグして画面の好きな場所に移動できます！🐱<br>他のウィンドウが開いていてもウィジェットは常に最前面に表示されます',
+    guide_photo_sub:'📁 写真保存先',
+    guide_photo_default:'デスクトップ(デフォルト)', guide_photo_change:'フォルダ変更',
   }
 };
 
@@ -1127,10 +1212,17 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = L(el.dataset.i18n);
   });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = L(el.dataset.i18nHtml);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = L(el.dataset.i18nPlaceholder);
+  });
   ['ko','en','ja'].forEach(lang => {
     const btn = document.getElementById('langBtn_' + lang);
     if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
   });
+  renderGuideBody();
 }
 
 function setLang(lang) {
@@ -1146,6 +1238,43 @@ function saveTheme() {
     saveState();
     toast('info', '🎨 ' + L('theme_title'), L('theme_save') + '!');
   }
+}
+
+function nthCycleLabel(n) {
+  const lang = (typeof S !== 'undefined' && S.language) || 'ko';
+  if (lang === 'ja') return n + '番目のサイクル進行中';
+  if (lang === 'en') return 'Cycle ' + n + ' in progress';
+  return n + '번째 사이클 진행 중';
+}
+
+function renderGuideBody() {
+  const el = document.getElementById('guideBody');
+  if (!el) return;
+  const follow = typeof S !== 'undefined' ? S.follow : false;
+  const photoPath = typeof S !== 'undefined' && S.photoPath ? S.photoPath : L('guide_photo_default');
+  el.innerHTML =
+    '<div style="margin-bottom:14px">' +
+      '<div class="card-title" style="font-size:11px;margin-bottom:8px">' + L('guide_water_sub') + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7">' + L('guide_water_html') + '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">' +
+      '<div class="card-title" style="font-size:11px;margin-bottom:8px">' + L('guide_fruit_sub') + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7">' + L('guide_fruit_html') + '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">' +
+      '<div class="card-title" style="font-size:11px;margin-bottom:8px">' + L('guide_follow_sub') + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:10px">' + L('guide_follow_html') + '</div>' +
+      '<button class="btn btn-g" onclick="toggleFollow()">' + L('follow_btn_label') + ' <span id="followLabel">' + (follow ? 'ON' : 'OFF') + '</span></button>' +
+    '</div>' +
+    '<div style="margin-bottom:14px;border-top:1px solid var(--border);padding-top:14px">' +
+      '<div class="card-title" style="font-size:11px;margin-bottom:8px">' + L('guide_move_sub') + '</div>' +
+      '<div style="font-size:13px;color:var(--gray);line-height:1.7">' + L('guide_move_html') + '</div>' +
+    '</div>' +
+    '<div style="border-top:1px solid var(--border);padding-top:14px">' +
+      '<div class="card-title" style="font-size:11px;margin-bottom:8px">' + L('guide_photo_sub') + '</div>' +
+      '<div id="photoPathLabel" style="font-size:12px;color:var(--gray);margin-bottom:10px;word-break:break-all">' + photoPath + '</div>' +
+      '<button class="btn btn-g" onclick="choosePhotoDir()">' + L('guide_photo_change') + '</button>' +
+    '</div>';
 }
 
 // ══════════════════════════════════════════
@@ -1593,8 +1722,10 @@ function renderHarvestCount() {
   const count = S.harvestedFruits || 0;
   const el = document.getElementById('harvestedCount');
   if (el) el.textContent = count;
+  const unit = document.getElementById('harvestUnit');
+  if (unit) unit.textContent = L('harvest_unit');
   const btn = document.getElementById('sellFruitBtn');
-  if (btn) btn.textContent = `🍋 팔기 (${count}개)`;
+  if (btn) btn.textContent = L('cat_sell_btn') + (count > 0 ? ' (' + count + ')' : '');
 }
 
 function sellFruits() {
@@ -2029,7 +2160,7 @@ function updateCycleUI() {
   if (tbT) tbT.textContent = isPre ? '' : (isLunch ? '점심 ' : isFocus ? '집중 ' : '휴식 ') + fmt(c.remaining);
 
   // 대시보드 타이머
-  const modeLabel = isLunch ? '🍱 점심시간' : isFocus ? '💪 집중 중' : (isPre ? '⏸ 출근 전' : '☕ 휴식 시간');
+  const modeLabel = isLunch ? L('mode_lunch') : isFocus ? L('mode_focus') : (isPre ? L('mode_pre') : L('mode_break'));
   const clockClass = isFocus ? 'timer-big' : 'timer-big brk';
   const modeClass  = isFocus ? 'timer-mode-lbl' : 'timer-mode-lbl brk';
   const pct = isPre ? '0%' : ((1 - c.remaining / c.total) * 100).toFixed(1) + '%';
@@ -2049,12 +2180,12 @@ function updateCycleUI() {
   });
 
   const nl = document.getElementById('hNextLabel');
-  if (nl) nl.textContent = isLunch ? '점심시간 끝까지' : isFocus ? '다음 휴식까지' : isPre ? '출근 전입니다' : '다음 집중까지';
+  if (nl) nl.textContent = isLunch ? L('next_lunch') : isFocus ? L('next_focus') : isPre ? L('next_pre') : L('next_break');
 
   const cl = document.getElementById('cycleLabel');
   if (cl) {
-    if (isPre) cl.textContent = '출근 시간부터 자동 시작';
-    else cl.textContent = `${Math.floor((nowMinutes() - timeToMinutes(S.schedule.ws))/CYCLE_MINS) + 1}번째 사이클 진행 중`;
+    if (isPre) cl.textContent = L('cycle_auto');
+    else cl.textContent = nthCycleLabel(Math.floor((nowMinutes() - timeToMinutes(S.schedule.ws))/CYCLE_MINS) + 1);
   }
 
   // 사이클 완료 감지 — 위젯 창에서만 실행 (대시보드 창 중복 방지)
@@ -2062,7 +2193,7 @@ function updateCycleUI() {
     if (S.lastCycleIdx >= 0) {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
-      const hc = document.getElementById('hCycleCount'); if(hc) hc.textContent = `오늘 완료: ${S.sessions} 사이클`;
+      const hc = document.getElementById('hCycleCount'); if(hc) hc.textContent = L('today_done') + ' ' + S.sessions + ' ' + L('cycles_unit');
       addFruit();
       addXP(15);
       addLog('g', `✅ 사이클 ${S.lastCycleIdx+1} 완료! 🍋 열매 획득`);
@@ -2196,15 +2327,15 @@ function renderWorkItems() {
         ondragover="event.preventDefault()"
         ondrop="workDrop(${i},event)">
         <span class="drag-handle">⠿</span>
-        <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="내용"
+        <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="${L('work_ph')}"
           oninput="S.workItems[${i}].label=this.value">
-        <button class="ampm-btn" onclick="toggleAmPm(${i})">${isAM?'오전':'오후'}</button>
+        <button class="ampm-btn" onclick="toggleAmPm(${i})">${isAM?L('work_am'):L('work_pm')}</button>
         <input type="time" value="${item.time}" class="ti-time-in"
           onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
         <button class="ti-x-btn" onclick="removeWorkItem(${i})">×</button>
       </div>`;
   }).join('');
-  el.innerHTML += `<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">+ 항목 추가</button>`;
+  el.innerHTML += '<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">' + L('work_add') + '</button>';
 }
 
 function workDrop(i, e) {
@@ -2226,7 +2357,7 @@ function toggleAmPm(i) {
 }
 function addWorkItem() {
   if (!S.workItems) S.workItems = [];
-  S.workItems.push({ time:'09:00', label:'새 항목' });
+  S.workItems.push({ time:'09:00', label:L('work_new') });
   renderWorkItems();
 }
 function removeWorkItem(i) {
@@ -2353,14 +2484,14 @@ function renderCalendar() {
   const firstDow = new Date(y, m, 1).getDay();
   const daysInMonth = new Date(y, m+1, 0).getDate();
   const today = new Date();
-  const dows = ['일','월','화','수','목','금','토'];
+  const dows = L('dows').split(',');
 
   // ── 왼쪽: 캘린더 그리드 ──
   if (leftEl) {
     let lh = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calPrev()">◀</button>
-        <span style="font-family:'Galmuri14',monospace;font-size:12px">${y}년 ${m+1}월</span>
+        <span style="font-family:'Galmuri14',monospace;font-size:12px">${L('date_ym').replace('{y}',y).replace('{m}',m+1)}</span>
         <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calNext()">▶</button>
       </div>
       <div class="cal-grid">
@@ -2393,19 +2524,19 @@ function renderCalendar() {
 
   // ── 오른쪽: 날짜 선택 패널 ──
   if (rightEl) {
-    const selLabel = _calKey ? (()=>{const [yy,mm,dd]=_calKey.split('-');return `${parseInt(yy)}년 ${parseInt(mm)}월 ${parseInt(dd)}일`;})() : null;
+    const selLabel = _calKey ? (()=>{const [yy,mm,dd]=_calKey.split('-');return L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd));})() : null;
     const selItems = _calKey ? getCalNotes(_calKey) : [];
 
     let rh = `<div style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace;margin-bottom:10px">
-      ${selLabel || '날짜를 선택해 주세요 ◀'}
+      ${selLabel || L('todo_date_ph')}
     </div>`;
 
     if (_calKey) {
       if (selItems.length) {
         const allDone = selItems.every(i => i.done);
         rh += `<div style="display:flex;gap:6px;margin-bottom:10px">
-          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px" onclick="selectAllDayItems()">${allDone?'전체 해제':'전체 선택'}</button>
-          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px;color:#f88;border-color:#f88" onclick="deleteSelectedDayItems()">선택 삭제</button>
+          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px" onclick="selectAllDayItems()">${allDone?L('todo_deselect'):L('todo_select_all')}</button>
+          <button class="btn btn-gr" style="flex:1;font-size:11px;padding:4px 6px;color:#f88;border-color:#f88" onclick="deleteSelectedDayItems()">${L('todo_del_sel')}</button>
         </div>`;
       }
       rh += selItems.map((item, i) => `
@@ -2417,10 +2548,10 @@ function renderCalendar() {
         </div>`).join('');
 
       rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
-        <input id="dayNoteInput" placeholder="새 스케줄 입력..."
+        <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')"
           style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:6px 8px;font-size:12px;outline:none;border-radius:4px;box-sizing:border-box;margin-bottom:6px">
-        <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">+ 추가</button>
+        <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
       </div>`;
     }
     rightEl.innerHTML = rh;
@@ -2456,8 +2587,16 @@ function addDayItem(key) {
 }
 function toggleDayItem(key, i) {
   const items = getCalNotes(key);
-  if (items[i]) items[i].done = !items[i].done;
+  if (!items[i]) return;
+  const wasDone = items[i].done;
+  items[i].done = !items[i].done;
   setCalNotes(key, items);
+  if (!wasDone && items[i].done) {
+    if (S.fruits.length < 5) {
+      addFruit();
+      toast('reward', '🍋 ' + L('home_fruit_title'), L('todo_fruit_msg'));
+    }
+  }
   saveState(); renderCalendar();
 }
 function deleteDayItem(key, i) {
