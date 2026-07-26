@@ -672,14 +672,14 @@ select {
     </div>
 
     <div class="dash-tabs">
-      <div class="dtab active" onclick="dTab('home')">🏠 홈</div>
-      <div class="dtab" onclick="dTab('cycle')">⏱ 사이클</div>
-      <div class="dtab" onclick="dTab('schedule')">📅 스케줄</div>
-      <div class="dtab" onclick="dTab('cat')">🐱 고양이</div>
-      <div class="dtab" onclick="dTab('magazine')">📰 매거진</div>
+      <div class="dtab active" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
+      <div class="dtab" onclick="dTab('cycle')" data-i18n="tab_cycle">⏱ 스케줄</div>
+      <div class="dtab" onclick="dTab('schedule')" data-i18n="tab_todo">📝 To Do List</div>
+      <div class="dtab" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</div>
+      <div class="dtab" onclick="dTab('magazine')" data-i18n="tab_magazine">📰 매거진</div>
       <!-- SHOP_TAB_HIDDEN: 샵 복원 시 아래 주석 해제, 위 주석 제거 -->
       <!-- <div class="dtab" onclick="dTab('shop')">🛒 샵</div> -->
-      <div class="dtab" onclick="dTab('settings')">⚙ 설정</div>
+      <div class="dtab" onclick="dTab('settings')" data-i18n="tab_settings">⚙ 설정</div>
     </div>
 
     <div class="dash-body">
@@ -837,26 +837,41 @@ select {
             <!-- 배경 테마 (접기/펴기) -->
             <div class="card" style="margin-bottom:14px">
               <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleSection('themeBody','themeChev')">
-                <div class="card-title" style="margin-bottom:0">🎨 배경 테마</div>
+                <div class="card-title" style="margin-bottom:0" data-i18n="theme_title">🎨 배경 테마</div>
                 <span id="themeChev" style="font-size:10px;color:var(--gray)">▼</span>
               </div>
               <div id="themeBody" style="display:none;margin-top:14px">
                 <div class="theme-grid" id="themeGrid"></div>
+                <button class="btn btn-g" onclick="saveTheme()" style="margin-top:12px;width:100%;font-size:13px" data-i18n="theme_save">저장</button>
+              </div>
+            </div>
+            <!-- 언어 선택 -->
+            <div class="card" style="margin-bottom:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleSection('langBody','langChev')">
+                <div class="card-title" style="margin-bottom:0" data-i18n="lang_title">🌐 언어</div>
+                <span id="langChev" style="font-size:10px;color:var(--gray)">▼</span>
+              </div>
+              <div id="langBody" style="display:none;margin-top:12px">
+                <div style="display:flex;gap:8px">
+                  <button id="langBtn_ko" onclick="setLang('ko')" class="btn btn-y" style="flex:1;font-size:12px">한국어</button>
+                  <button id="langBtn_en" onclick="setLang('en')" class="btn btn-gr" style="flex:1;font-size:12px">English</button>
+                  <button id="langBtn_ja" onclick="setLang('ja')" class="btn btn-gr" style="flex:1;font-size:12px">日本語</button>
+                </div>
               </div>
             </div>
           </div>
           <div>
             <!-- 계정 -->
             <div class="card">
-              <div class="card-title">👤 계정</div>
+              <div class="card-title" data-i18n="acc_title">👤 계정</div>
               <div id="accountLabel" style="font-size:13px;color:var(--gray);margin-bottom:10px;word-break:break-all">-</div>
-              <button class="btn btn-gr" onclick="doLogout()">로그아웃</button>
+              <button class="btn btn-gr" onclick="doLogout()" data-i18n="logout_btn">로그아웃</button>
             </div>
 
             <!-- 작동 방식 안내 (기본 숨김, 접기/펴기) -->
             <div class="card" style="margin-top:14px">
               <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleSection('guideBody','guideChev')">
-                <div class="card-title" style="margin-bottom:0">⚙️ 작동 방식 안내</div>
+                <div class="card-title" style="margin-bottom:0" data-i18n="guide_title">⚙️ 작동 방식 안내</div>
                 <span id="guideChev" style="font-size:10px;color:var(--gray)">▼</span>
               </div>
               <div id="guideBody" style="display:none;margin-top:14px">
@@ -898,7 +913,7 @@ select {
               </div>
             </div>
 
-            <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75">🔄 데이터 초기화</button>
+            <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75" data-i18n="reset_btn">🔄 데이터 초기화</button>
             <div id="appVersionLabel" style="margin-top:14px;text-align:center;font-size:11px;color:var(--gray);opacity:0.6"></div>
           </div>
         </div>
@@ -1044,20 +1059,19 @@ const THEMES = [
   { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #f8f2ff 0%, #efe4fb 60%, #e4d5f5 100%)',
     vars:{ '--frame-bg':'#cbaee8','--frame':'#a784d0','--frame-light':'#e6d6f6','--frame-text':'#7a55a8','--bg':'#f5edfd','--panel':'#faf5ff','--card':'#ecdff8','--acc':'#8a5ec0','--mint':'#5cb8a8','--yellow':'#d9a93e','--white':'#473560','--gray':'#a58cc4','--border':'#d8c2ee' }, preview:'linear-gradient(135deg,#f8f2ff,#e4d5f5)' },
 ];
-let currentTheme = 'space';
+let currentTheme = 'white';
 
 function applyTheme(id) {
   currentTheme = id;
-  const t = THEMES.find(x=>x.id===id);
-  if (!t) return applyTheme('white');
-  if (typeof S !== 'undefined') { S.theme = id; if (typeof saveState === 'function') saveState(); }
-  // 테마 클래스만 교체 (electron-widget 등 다른 클래스는 보존!)
+  const thm = THEMES.find(x=>x.id===id);
+  if (!thm) return applyTheme('white');
+  // 시각적 적용만 (S.theme 저장은 saveTheme()에서만)
   document.body.classList.forEach(cls => {
     if (cls.startsWith('theme-')) document.body.classList.remove(cls);
   });
   document.body.classList.add('theme-'+id);
   const root = document.documentElement.style;
-  Object.entries(t.vars).forEach(([k,v]) => root.setProperty(k,v));
+  Object.entries(thm.vars).forEach(([k,v]) => root.setProperty(k,v));
   document.querySelectorAll('.theme-opt').forEach(el => el.classList.toggle('sel', el.dataset.tid===id));
 }
 
@@ -1069,6 +1083,69 @@ function renderThemeGrid() {
       <div style="font-size:13px">${t.name}</div>
     </div>
   `).join('');
+}
+
+// ══════════════════════════════════════════
+// 다국어 (i18n)
+// ══════════════════════════════════════════
+const STRINGS = {
+  ko: {
+    tab_home:'🏠 홈', tab_cycle:'⏱ 스케줄', tab_todo:'📝 To Do List',
+    tab_cat:'🐱 고양이', tab_magazine:'📰 매거진', tab_settings:'⚙ 설정',
+    theme_title:'🎨 배경 테마', theme_save:'저장',
+    lang_title:'🌐 언어',
+    acc_title:'👤 계정', logout_btn:'로그아웃',
+    guide_title:'⚙️ 작동 방식 안내',
+    reset_btn:'🔄 데이터 초기화',
+  },
+  en: {
+    tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
+    tab_cat:'🐱 Cat', tab_magazine:'📰 Magazine', tab_settings:'⚙ Settings',
+    theme_title:'🎨 Theme', theme_save:'Save',
+    lang_title:'🌐 Language',
+    acc_title:'👤 Account', logout_btn:'Log out',
+    guide_title:'⚙️ How it works',
+    reset_btn:'🔄 Reset Data',
+  },
+  ja: {
+    tab_home:'🏠 ホーム', tab_cycle:'⏱ スケジュール', tab_todo:'📝 ToDoリスト',
+    tab_cat:'🐱 ねこ', tab_magazine:'📰 マガジン', tab_settings:'⚙ 設定',
+    theme_title:'🎨 テーマ', theme_save:'保存',
+    lang_title:'🌐 言語',
+    acc_title:'👤 アカウント', logout_btn:'ログアウト',
+    guide_title:'⚙️ 使い方',
+    reset_btn:'🔄 データ初期化',
+  }
+};
+
+function L(key) {
+  const lang = (typeof S !== 'undefined' && S.language) || 'ko';
+  return (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.ko[key] || key;
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = L(el.dataset.i18n);
+  });
+  ['ko','en','ja'].forEach(lang => {
+    const btn = document.getElementById('langBtn_' + lang);
+    if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
+  });
+}
+
+function setLang(lang) {
+  if (typeof S === 'undefined') return;
+  S.language = lang;
+  saveState();
+  applyLang();
+}
+
+function saveTheme() {
+  if (typeof S !== 'undefined') {
+    S.theme = currentTheme;
+    saveState();
+    toast('info', '🎨 ' + L('theme_title'), L('theme_save') + '!');
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1393,6 +1470,7 @@ const S = {
   wishlistDone: [],
   redeemedCoupons: {},
   workItems: null,
+  language: 'ko',
 };
 
 // ══════════════════════════════════════════
@@ -1418,7 +1496,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3153,6 +3231,7 @@ function init(){
     // 브라우저 모드: 게이트 없음
   }
   applyTheme(S.theme || 'white'); // 기본 테마: 화이트
+  applyLang();
   renderAll();
 
   // 복원된 상태 UI 반영
@@ -3258,7 +3337,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 자동저장(10초)은 위젯 창에서만 — 대시보드는 사용자 액션 시에만 명시적으로 저장
-  if (!IS_DASHBOARD) setInterval(saveState, 10000);
+  if (!IS_DASHBOARD) setInterval(() => {
+    try {
+      const _sv = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (_sv.theme) S.theme = _sv.theme;
+      if (_sv.language) S.language = _sv.language;
+    } catch(e) {}
+    saveState();
+  }, 10000);
 
   // ── 기분 감소 타이머 (15분마다 -5) — 위젯 창에서만 ──
   if (!IS_DASHBOARD) {
