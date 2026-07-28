@@ -12,7 +12,7 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       if (!mainWindow.isVisible()) mainWindow.show();
       mainWindow.focus();
     }
@@ -102,7 +102,7 @@ function createTray() {
 }
 
 function toggleVisibility() {
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isVisible()) mainWindow.hide();
   else mainWindow.show();
 }
@@ -140,7 +140,7 @@ function openDashboardWindow() {
 }
 
 function sendOpenDashboard() {
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.show();
   openDashboardWindow();
 }
