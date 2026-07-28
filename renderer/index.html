@@ -621,6 +621,31 @@ select {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
+/* ── Diary ── */
+.diary-nb{position:relative;padding:16px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
+.diary-top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;background:var(--panel);border-radius:10px;padding:12px}
+.diary-mini-cal{flex:0 0 206px}
+.diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:bold;color:var(--white);margin-bottom:8px}
+.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;padding:2px 6px;border-radius:4px}
+.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
+.diary-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px}
+.diary-cal-dows span{font-size:12px;text-align:center;color:var(--gray)}
+.diary-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.diary-cal-cell{font-size:13px;text-align:center;padding:4px 2px;cursor:pointer;border-radius:3px;color:var(--white);position:relative;line-height:1.4}
+.diary-cal-cell:hover{background:rgba(255,255,255,0.1)}
+.diary-cal-cell.today{background:var(--yellow);color:#333;font-weight:bold}
+.diary-cal-cell.selected{outline:2px solid var(--accent);outline-offset:-1px}
+.diary-cal-cell.has-entry::after{content:'\2022';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);color:var(--accent);font-size:7px;line-height:1}
+.diary-cal-cell.today.has-entry::after{color:var(--bg)}
+.diary-cal-cell.selected.has-entry::after{color:var(--accent)}
+.diary-photo-col{flex:1;display:flex;flex-direction:column}
+.diary-photo-frame{width:100%;min-height:60px;background:rgba(255,255,255,0.05);border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;box-sizing:border-box}
+.diary-photo-del-btn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;text-align:center;z-index:2;padding:0}
+.diary-photo-del-btn:hover{background:rgba(180,0,0,0.75)}
+.diary-date-label{font-size:13px;font-weight:bold;color:var(--yellow);margin:4px 0 6px;letter-spacing:1px;padding-left:44px}
+.diary-lines-area{padding-left:44px;padding-top:2px}
+.diary-textarea{width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
+.diary-btns{display:flex;gap:8px;margin-top:16px;padding-left:44px}
 </style>
 </head>
 <body class="theme-space">
@@ -665,7 +690,7 @@ select {
       <img id="dashHeaderCat" class="cat-img-render" style="width:48px;height:58px">
       <div>
         <div class="dash-logo">🐱 NEKO DESK</div>
-        <div id="dashEncMsg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
+        <div id="dashEncMsg" data-i18n="dash_enc_msg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
       </div>
       <div class="header-pts">🍋 <span id="ptsDisplay">0</span> pts</div>
 
@@ -674,7 +699,8 @@ select {
     <div class="dash-tabs">
       <div class="dtab active" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
       <div class="dtab" onclick="dTab('cycle')" data-i18n="tab_cycle">⏱ 스케줄</div>
-      <div class="dtab" onclick="dTab('schedule')" data-i18n="tab_todo">📝 To Do List</div>
+      <div class="dtab" onclick="dTab('schedule')" data-i18n="tab_todo">📝 할 일 목록</div>
+      <div class="dtab" onclick="dTab('diary')" data-i18n="tab_diary">📔 다이어리</div>
       <div class="dtab" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</div>
       <div class="dtab" onclick="dTab('magazine')" data-i18n="tab_magazine">📰 매거진</div>
       <!-- SHOP_TAB_HIDDEN: 샵 복원 시 아래 주석 해제, 위 주석 제거 -->
@@ -713,7 +739,7 @@ select {
                 <div class="prog-track"><div class="prog-fill" id="hProgFill" style="width:0%"></div></div>
                 <div style="font-size:12px;color:var(--gray);margin-top:8px" id="hNextLabel">다음 휴식까지</div>
               </div>
-              <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:8px" id="hCycleCount">오늘 완료: 0 사이클</div>
+              <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:8px;line-height:1.7" id="hCycleCount" data-i18n-html="cycle_home_desc">55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.</div>
             </div>
             <div class="card">
               <div class="card-title" data-i18n="home_fruit_title">🍋 열매 바구니</div>
@@ -766,6 +792,45 @@ select {
           <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..." data-i18n-placeholder="todo_memo_ph"
             oninput="S.scheduleMemo=this.value"
             style="width:100%;min-height:120px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
+          <button class="btn btn-g" style="width:100%;font-size:11px;padding:6px;margin-top:6px" onclick="saveScheduleNotes()" data-i18n="todo_save_btn">💾 저장</button>
+        </div>
+      </div>
+
+      <!-- DIARY -->
+      <div id="dp-diary" class="dpage">
+        <div class="diary-nb">
+          <div class="diary-top-row">
+            <div class="diary-mini-cal">
+              <div class="diary-cal-header">
+                <button class="diary-cal-nav" onclick="diaryCalNav(-1)">&#9664;</button>
+                <span id="diaryCalTitle"></span>
+                <button class="diary-cal-nav" onclick="diaryCalNav(1)">&#9654;</button>
+              </div>
+              <div class="diary-cal-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+              <div class="diary-cal-grid" id="diaryCalGrid"></div>
+            </div>
+            <div class="diary-photo-col">
+              <div class="diary-photo-frame" id="diaryPhotoFrame">
+                <button id="diaryPhotoDelBtn" class="diary-photo-del-btn" onclick="diaryDelPhoto()" style="display:none">&#10005;</button>
+                <span id="diaryNoPhoto" style="font-size:28px;opacity:0.4">&#128247;</span>
+                <img id="diaryPhotoImg" style="display:none;max-height:100%;max-width:100%;width:auto;height:auto;object-fit:contain;display:none">
+              </div>
+              <div id="diaryPhotoActions" style="display:flex;gap:6px;margin-top:6px">
+                <button class="btn btn-b" style="flex:1;font-size:10px;padding:5px 4px" onclick="openPhotoBooth(function(d){_diaryImgData=d;updateDiaryPhoto(d);})">&#128248; <span data-i18n="diary_cam_btn">고양이와 사진찍기</span></button>
+                <button class="btn btn-g" style="flex:1;font-size:10px;padding:5px 4px" onclick="diaryAttachImg()">&#128444; <span data-i18n="diary_attach_btn">이미지 첨부</span></button>
+              </div>
+              <input type="file" id="diaryCamInput" accept="image/*" capture="environment" style="display:none" onchange="diaryImgSelected(this)">
+              <input type="file" id="diaryFileInput" accept="image/*" style="display:none" onchange="diaryImgSelected(this)">
+            </div>
+          </div>
+          <div class="diary-date-label" id="diaryDateLabel"></div>
+          <div class="diary-lines-area">
+            <textarea id="diaryText" class="diary-textarea" oninput="diaryGrow(this)" data-i18n-placeholder="diary_ph" placeholder="오늘의 일기를 써요..."></textarea>
+          </div>
+          <div class="diary-btns">
+            <button class="btn btn-g" style="flex:1;font-size:12px;padding:7px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
+            <button class="btn btn-b" style="flex:1;font-size:12px;padding:7px" onclick="exportDiaryImg()">&#128444; <span data-i18n="diary_export_btn">이미지로 저장</span></button>
+          </div>
         </div>
       </div>
 
@@ -839,7 +904,6 @@ select {
               </div>
               <div id="themeBody" style="display:none;margin-top:14px">
                 <div class="theme-grid" id="themeGrid"></div>
-                <button class="btn btn-g" onclick="saveTheme()" style="margin-top:12px;width:100%;font-size:13px" data-i18n="theme_save">저장</button>
               </div>
             </div>
             <!-- 언어 선택 -->
@@ -886,12 +950,10 @@ select {
           <div style="font-size:26px">📸</div>
           <div>
             <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)">GOOD ENERGY MAGAZINE</div>
-            <div style="font-size:14px;color:var(--gray);margin-top:3px">@good.energy.kr 인스타그램</div>
+            <div style="font-size:14px;color:var(--gray);margin-top:3px" data-i18n="mag_instagram">@good.energy.kr 인스타그램</div>
           </div>
           <button onclick="if(window.electronAPI)window.electronAPI.openExternal('https://www.instagram.com/good.energy.kr')"
-            style="margin-left:auto;background:transparent;border:2px solid var(--yellow);color:var(--yellow);font-size:12px;padding:6px 10px;cursor:pointer">
-            📷 팔로우
-          </button>
+            style="margin-left:auto;background:transparent;border:2px solid var(--yellow);color:var(--yellow);font-size:12px;padding:6px 10px;cursor:pointer" data-i18n="mag_follow">📷 팔로우</button>
         </div>
         <div id="magLoading" style="text-align:center;padding:30px;color:var(--gray);font-size:12px">⏳ 불러오는 중...</div>
         <div id="magSetup" style="display:none;text-align:center;padding:30px">
@@ -1026,7 +1088,7 @@ function applyTheme(id) {
   currentTheme = id;
   const thm = THEMES.find(x=>x.id===id);
   if (!thm) return applyTheme('white');
-  // 시각적 적용만 (S.theme 저장은 saveTheme()에서만)
+  if (typeof S !== 'undefined') { S.theme = id; saveState(); }
   document.body.classList.forEach(cls => {
     if (cls.startsWith('theme-')) document.body.classList.remove(cls);
   });
@@ -1041,7 +1103,7 @@ function renderThemeGrid() {
   el.innerHTML = THEMES.map(t=>`
     <div class="theme-opt ${t.id===currentTheme?'sel':''}" data-tid="${t.id}" onclick="applyTheme('${t.id}')">
       <div class="th-preview" style="background:${t.preview}"></div>
-      <div style="font-size:13px">${t.name}</div>
+      <div style="font-size:13px">${L('theme_' + t.id)}</div>
     </div>
   `).join('');
 }
@@ -1052,7 +1114,7 @@ function renderThemeGrid() {
 const STRINGS = {
   ko: {
     // 탭
-    tab_home:'🏠 홈', tab_cycle:'⏱ 스케줄', tab_todo:'📝 To Do List',
+    tab_home:'🏠 홈', tab_cycle:'⏱ 스케줄', tab_todo:'📝 할 일 목록',
     tab_cat:'🐱 고양이', tab_magazine:'📰 매거진', tab_settings:'⚙ 설정',
     // 설정
     theme_title:'🎨 배경 테마', theme_save:'저장',
@@ -1074,6 +1136,7 @@ const STRINGS = {
     mode_focus:'💪 집중 중', mode_break:'☕ 휴식 시간', mode_lunch:'🍱 점심시간', mode_pre:'⏸ 출근 전',
     next_lunch:'점심시간 끝까지', next_focus:'다음 휴식까지', next_pre:'출근 전입니다', next_break:'다음 집중까지',
     cycle_auto:'출근 시간부터 자동 시작', cycles_unit:'사이클', today_done:'오늘 완료:',
+    cycle_home_desc:'55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.',
     work_am:'오전', work_pm:'오후', work_add:'+ 항목 추가', work_new:'새 항목', work_ph:'내용',
     date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일',
     dows:'일,월,화,수,목,금,토',
@@ -1083,6 +1146,7 @@ const STRINGS = {
     todo_add_btn:'+ 추가', todo_input_ph:'새 스케줄 입력...',
     todo_select_all:'전체 선택', todo_deselect:'전체 해제', todo_del_sel:'선택 삭제',
     todo_fruit_msg:'할 일 완료! 열매 +1 🍋',
+    todo_save_btn:'💾 저장', todo_saved_title:'저장됨', todo_saved_msg:'할 일 목록이 저장됐어요!',
     // 고양이
     cat_my_cat:'🐱 내 고양이', cat_mood:'❤️ 기분',
     cat_name_lbl:'이름', cat_name_ph:'이름 입력...',
@@ -1096,7 +1160,7 @@ const STRINGS = {
     guide_water_sub:'💧 물 마시기 알람',
     guide_water_html:'30분마다 위젯 말풍선 + 알림으로 물 마시기 알람이 떠요.<br>위젯 상태일 때 <b style="color:var(--white)">말풍선을 클릭하면</b> 바구니에 열매 +1 🍋',
     guide_fruit_sub:'🍋 열매 시스템',
-    guide_fruit_html:'사이클 완료 또는 할 일 체크 → 열매 획득 (최대 5개 바구니에 쌓임)<br>바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br><b style="color:var(--white)">고양이 탭 &gt; 🍋 팔기</b>에서 열매 1개당 10pts로 전환',
+    guide_fruit_html:'사이클 완료 → 🍋 열매 +1<br><b style="color:var(--white)">할 일 목록</b> 탭에서 체크박스 완료 시에도 → 바구니에 🍋 열매 +1 (최대 5개)<br>바구니 열매 클릭 또는 물 말풍선 클릭 → 수확<br><b style="color:var(--white)">고양이 탭 &gt; 🍋 팔기</b>에서 열매 1개당 10pts로 전환',
     guide_follow_sub:'🐾 커서 팔로우',
     guide_follow_html:'토글을 켜면 작은 고양이가 화면 어디든 커서를 따라다녀요!<br><span class="shortcut-hint">Ctrl+0</span> 단축키로도 켜고 끌 수 있어요',
     follow_btn_label:'🐱 팔로우',
@@ -1104,6 +1168,15 @@ const STRINGS = {
     guide_move_html:'고양이를 마우스로 잡고 끌면 화면 어디든 옮길 수 있어요! 🐱<br>창이 열려 있어도 위젯은 항상 화면 위에 떠 있어요',
     guide_photo_sub:'📁 사진 저장 위치',
     guide_photo_default:'바탕화면 (기본)', guide_photo_change:'폴더 변경',
+    // 추가
+    dash_enc_msg:'실시간 시계와 동기화 중 🕐',
+    mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우',
+    acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
+    theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
+    theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
+    tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
+    diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 일기를 써요...',
+    diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1125,6 +1198,7 @@ const STRINGS = {
     mode_focus:'💪 Focusing', mode_break:'☕ Break', mode_lunch:'🍱 Lunch', mode_pre:'⏸ Before work',
     next_lunch:'Until lunch ends', next_focus:'Until next break', next_pre:'Before work hours', next_break:'Until next focus',
     cycle_auto:'Auto-starts at work time', cycles_unit:'cycles', today_done:'Today:',
+    cycle_home_desc:'55 min focus + 5 min break cycle!<br>Drink water and take a stretch.',
     work_am:'AM', work_pm:'PM', work_add:'+ Add item', work_new:'New item', work_ph:'Label',
     date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}',
     dows:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
@@ -1133,6 +1207,7 @@ const STRINGS = {
     todo_add_btn:'+ Add', todo_input_ph:'New to-do...',
     todo_select_all:'Select all', todo_deselect:'Deselect all', todo_del_sel:'Delete selected',
     todo_fruit_msg:'Task done! Fruit +1 🍋',
+    todo_save_btn:'💾 Save', todo_saved_title:'Saved', todo_saved_msg:'To-do list saved!',
     cat_my_cat:'🐱 My Cat', cat_mood:'❤️ Mood',
     cat_name_lbl:'Name', cat_name_ph:'Enter name...',
     cat_food_html:'Food <span style="color:var(--yellow)">(20pts)</span>',
@@ -1144,7 +1219,7 @@ const STRINGS = {
     guide_water_sub:'💧 Drink Water',
     guide_water_html:'A water reminder pops up every 30 min via widget bubble + notification.<br>While the widget is visible, <b style="color:var(--white)">click the bubble</b> to earn a fruit +1 🍋',
     guide_fruit_sub:'🍋 Fruit System',
-    guide_fruit_html:'Cycle done or to-do checked → earn fruit (max 5 in basket)<br>Click a basket fruit or water bubble → harvest<br><b style="color:var(--white)">Cat tab &gt; 🍋 Sell</b> — 10pts per fruit',
+    guide_fruit_html:'Cycle complete → 🍋 +1<br>Checking a <b style="color:var(--white)">To Do List</b> checkbox also adds → 🍋 +1 to basket (max 5)<br>Click a basket fruit or water bubble → harvest<br><b style="color:var(--white)">Cat tab &gt; 🍋 Sell</b> — 10pts per fruit',
     guide_follow_sub:'🐾 Cursor Follow',
     guide_follow_html:'Toggle on and a tiny cat follows your cursor anywhere!<br><span class="shortcut-hint">Ctrl+0</span> shortcut also works',
     follow_btn_label:'🐱 Follow',
@@ -1152,6 +1227,14 @@ const STRINGS = {
     guide_move_html:'Drag the cat anywhere on screen! 🐱<br>The widget stays on top even when other windows are open',
     guide_photo_sub:'📁 Photo Folder',
     guide_photo_default:'Desktop (default)', guide_photo_change:'Change folder',
+    dash_enc_msg:'Syncing with live clock 🕐',
+    mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow',
+    acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
+    theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
+    theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
+    tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
+    diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
+    diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
   ja: {
     tab_home:'🏠 ホーム', tab_cycle:'⏱ スケジュール', tab_todo:'📝 ToDoリスト',
@@ -1173,6 +1256,7 @@ const STRINGS = {
     mode_focus:'💪 集中中', mode_break:'☕ 休憩', mode_lunch:'🍱 ランチ', mode_pre:'⏸ 出勤前',
     next_lunch:'ランチ終了まで', next_focus:'次の休憩まで', next_pre:'出勤前', next_break:'次の集中まで',
     cycle_auto:'出勤時間に自動開始', cycles_unit:'サイクル', today_done:'今日:',
+    cycle_home_desc:'55分集中・5分休憩サイクル！<br>水分補給と軽いストレッチも忘れずに。',
     work_am:'午前', work_pm:'午後', work_add:'+ 追加', work_new:'新しい項目', work_ph:'ラベル',
     date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日',
     dows:'日,月,火,水,木,金,土',
@@ -1181,6 +1265,7 @@ const STRINGS = {
     todo_add_btn:'+ 追加', todo_input_ph:'予定を入力...',
     todo_select_all:'全て選択', todo_deselect:'全て解除', todo_del_sel:'選択削除',
     todo_fruit_msg:'完了！フルーツ+1 🍋',
+    todo_save_btn:'💾 保存', todo_saved_title:'保存', todo_saved_msg:'ToDoリストを保存しました！',
     cat_my_cat:'🐱 わたしのねこ', cat_mood:'❤️ 気分',
     cat_name_lbl:'名前', cat_name_ph:'名前を入力...',
     cat_food_html:'えさ <span style="color:var(--yellow)">(20pts)</span>',
@@ -1192,7 +1277,7 @@ const STRINGS = {
     guide_water_sub:'💧 水分補給アラーム',
     guide_water_html:'30分ごとにウィジェットのバブル＋通知で水分補給アラームが出ます。<br>ウィジェット表示中に<b style="color:var(--white)">バブルをクリック</b>するとフルーツ+1 🍋',
     guide_fruit_sub:'🍋 フルーツシステム',
-    guide_fruit_html:'サイクル完了またはToDo完了 → フルーツ獲得（バスケット最大5個）<br>バスケットのフルーツまたは水バブルをクリック → 収穫<br><b style="color:var(--white)">ねこタブ &gt; 🍋 売る</b> — 1個10pts',
+    guide_fruit_html:'サイクル完了 → 🍋 +1<br><b style="color:var(--white)">ToDoリスト</b>のチェックボックスを完了しても → バスケットに🍋 +1（最大5個）<br>バスケットのフルーツまたは水バブルをクリック → 収穫<br><b style="color:var(--white)">ねこタブ &gt; 🍋 売る</b> — 1個10pts',
     guide_follow_sub:'🐾 カーソルフォロー',
     guide_follow_html:'トグルをオンにすると小さなネコが画面のどこでもカーソルを追いかけます！<br><span class="shortcut-hint">Ctrl+0</span> ショートカットでもオン/オフできます',
     follow_btn_label:'🐱 フォロー',
@@ -1200,6 +1285,14 @@ const STRINGS = {
     guide_move_html:'ネコをドラッグして画面の好きな場所に移動できます！🐱<br>他のウィンドウが開いていてもウィジェットは常に最前面に表示されます',
     guide_photo_sub:'📁 写真保存先',
     guide_photo_default:'デスクトップ(デフォルト)', guide_photo_change:'フォルダ変更',
+    dash_enc_msg:'リアルタイム時計と同期中 🕐',
+    mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー',
+    acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
+    theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
+    theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
+    tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
+    diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
+    diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
 };
 
@@ -1223,6 +1316,8 @@ function applyLang() {
     if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
   });
   renderGuideBody();
+  renderThemeGrid();
+  renderCatPage();
 }
 
 function setLang(lang) {
@@ -1522,15 +1617,20 @@ function initClickThrough() {
 // ══════════════════════════════════════════
 function dTab(name) {
   document.querySelectorAll('.dtab').forEach((t,i)=>{
-    const pages=['home','cycle','schedule','cat','magazine','shop','settings'];
+    const pages=['home','cycle','schedule','diary','cat','magazine','settings'];
     t.classList.toggle('active', pages[i]===name);
   });
   document.querySelectorAll('.dpage').forEach(p=>p.classList.remove('active'));
   document.getElementById('dp-'+name).classList.add('active');
+  if (name==='diary') renderDiary();
   if (name==='cat') renderCatPage();
   if (name==='shop') renderShop();
   if (name==='magazine') loadMagazine();
   if (name==='schedule') {
+    if (!_calKey) {
+      const _t = new Date();
+      _calKey = `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+    }
     renderCalendar();
     const mt = document.getElementById('scheduleMemoTxt');
     if (mt) mt.value = S.scheduleMemo || '';
@@ -1596,6 +1696,7 @@ const S = {
   scheduleMemo: '',
   calendarNotes: {},
   wishlist: [],
+  diaryEntries: {},
   wishlistDone: [],
   redeemedCoupons: {},
   workItems: null,
@@ -1777,12 +1878,17 @@ function renderCatPage() {
   const cr=document.getElementById('breedRow');
   if(cr){
 
-    const custom = Object.entries(window._customBreeds||{}).map(([id,b])=>`
+    const _bLang = (typeof S !== 'undefined' && S.language) || 'ko';
+    const custom = Object.entries(window._customBreeds||{}).map(([id,b])=>{
+      const _bn = (_bLang !== 'ko' && b['name_'+_bLang]) || b.name;
+      const _bd = (_bLang !== 'ko' && b['desc_'+_bLang]) || b.desc || '';
+      return `
     <div class="breed-card ${id===S.cat.breed?'sel':''}" onclick="setCatBreed('${id}')">
-      <img class="breed-thumb" id="breedThumb-${id}" alt="${b.name}">
-      <div class="breed-name">${b.name}</div>
-      <div class="breed-desc">${b.desc||''}</div>
-    </div>`).join('');
+      <img class="breed-thumb" id="breedThumb-${id}" alt="${_bn}">
+      <div class="breed-name">${_bn}</div>
+      <div class="breed-desc">${_bd}</div>
+    </div>`;
+    }).join('');
 
     const comingSoon = `
     <div class="breed-coming">
@@ -1868,6 +1974,10 @@ function loadCustomBreeds() {
       window._customBreeds['custom_' + row.id] = {
         name: row.name,
         desc: row.description || '',
+        name_en: row.name_en || row.name,
+        name_ja: row.name_ja || row.name,
+        desc_en: row.desc_en || row.description || '',
+        desc_ja: row.desc_ja || row.description || '',
         image_url: row.image_url,
         image_url_side: row.image_url_side || row.image_url,
         image_url_b: row.image_url_b || null
@@ -2193,7 +2303,7 @@ function updateCycleUI() {
     if (S.lastCycleIdx >= 0) {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
-      const hc = document.getElementById('hCycleCount'); if(hc) hc.textContent = L('today_done') + ' ' + S.sessions + ' ' + L('cycles_unit');
+      // hCycleCount is now static (data-i18n='cycle_home_desc')
       addFruit();
       addXP(15);
       addLog('g', `✅ 사이클 ${S.lastCycleIdx+1} 완료! 🍋 열매 획득`);
@@ -2552,6 +2662,7 @@ function renderCalendar() {
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')"
           style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:6px 8px;font-size:12px;outline:none;border-radius:4px;box-sizing:border-box;margin-bottom:6px">
         <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
+        <button class="btn btn-g" style="width:100%;font-size:11px;padding:6px;margin-top:6px" onclick="saveScheduleNotes()">${L('todo_save_btn')}</button>
       </div>`;
     }
     rightEl.innerHTML = rh;
@@ -2585,6 +2696,329 @@ function addDayItem(key) {
   // 입력창에 포커스 유지
   setTimeout(()=>document.getElementById('dayNoteInput')?.focus(), 50);
 }
+function saveScheduleNotes() {
+  S.scheduleMemo = (document.getElementById('scheduleMemoTxt')?.value || S.scheduleMemo);
+  saveState();
+  toast('info', L('todo_saved_title'), L('todo_saved_msg'));
+}
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveScheduleNotes(); }
+});
+// ── 다이어리 ──
+let _diaryDate = '', _diaryCalYear = new Date().getFullYear(), _diaryCalMonth = new Date().getMonth(), _diaryImgData = null;
+
+function syncDiaryFrameHeight() {
+  requestAnimationFrame(() => {
+    const cal = document.querySelector('.diary-mini-cal');
+    const frame = document.getElementById('diaryPhotoFrame');
+    if (cal && frame) {
+      const h = cal.offsetHeight;
+      frame.style.height = h + 'px';
+      frame.style.maxHeight = h + 'px';
+    }
+  });
+}
+function renderDiary() {
+  if (!_diaryDate) {
+    const t = new Date();
+    _diaryDate = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+    _diaryCalYear = t.getFullYear(); _diaryCalMonth = t.getMonth();
+  }
+  renderDiaryCal();
+  loadDiaryEntry(_diaryDate);
+  syncDiaryFrameHeight();
+}
+
+function renderDiaryCal() {
+  const title = document.getElementById('diaryCalTitle');
+  const grid = document.getElementById('diaryCalGrid');
+  if (!title || !grid) return;
+  const mn = [{ko:'일',en:'Su',ja:'日'},{ko:'월',en:'Mo',ja:'月'},{ko:'화',en:'Tu',ja:'火'},{ko:'수',en:'We',ja:'水'},{ko:'목',en:'Th',ja:'木'},{ko:'금',en:'Fr',ja:'金'},{ko:'토',en:'Sa',ja:'土'}];
+  const lang = S.language || 'ko';
+  const mnames = {ko:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+               en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+               ja:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']};
+  title.textContent = `${_diaryCalYear} ${(mnames[lang]||mnames.ko)[_diaryCalMonth]}`;
+  const dow = document.querySelector('.diary-cal-dows');
+  if (dow) dow.innerHTML = mn.map(d=>`<span>${d[lang]||d.ko}</span>`).join('');
+  const first = new Date(_diaryCalYear, _diaryCalMonth, 1).getDay();
+  const days = new Date(_diaryCalYear, _diaryCalMonth+1, 0).getDate();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  let html = '<div></div>'.repeat(first);
+  for (let d = 1; d <= days; d++) {
+    const ds = `${_diaryCalYear}-${String(_diaryCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls = 'diary-cal-cell';
+    if (ds===todayStr) cls+=' today';
+    if (ds===_diaryDate) cls+=' selected';
+    const e = S.diaryEntries && S.diaryEntries[ds];
+    if (e && (e.text || e.imageData)) cls+=' has-entry';
+    html += `<div class="${cls}" onclick="selectDiaryDate('${ds}')">${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function diaryCalNav(dir) {
+  _diaryCalMonth += dir;
+  if (_diaryCalMonth < 0) { _diaryCalMonth = 11; _diaryCalYear--; }
+  if (_diaryCalMonth > 11) { _diaryCalMonth = 0; _diaryCalYear++; }
+  renderDiaryCal();
+}
+
+function selectDiaryDate(ds) { _diaryDate = ds; renderDiaryCal(); loadDiaryEntry(ds); }
+
+function loadDiaryEntry(ds) {
+  const entry = (S.diaryEntries||{})[ds] || {};
+  const ta = document.getElementById('diaryText');
+  const lbl = document.getElementById('diaryDateLabel');
+  if (lbl) lbl.textContent = ds;
+  if (ta) { ta.value = entry.text || ''; diaryGrow(ta); }
+  _diaryImgData = entry.imageData || null;
+  const img = document.getElementById('diaryPhotoImg');
+  const noP = document.getElementById('diaryNoPhoto');
+  const del = document.getElementById('diaryPhotoDelBtn');
+  if (_diaryImgData && img) {
+    img.src = _diaryImgData; img.style.display = '';
+    if (noP) noP.style.display = 'none';
+    if (del) del.style.display = '';
+  } else {
+    if (img) img.style.display = 'none';
+    if (noP) noP.style.display = '';
+    if (del) del.style.display = 'none';
+  }
+}
+
+function diaryGrow(el) { el.style.height='auto'; el.style.height=Math.max(220,el.scrollHeight)+'px'; }
+
+function diaryAttachImg() { document.getElementById('diaryFileInput').click(); }
+
+function diaryTakePhoto_REMOVED() {
+  const modal = document.createElement('div');
+  modal.id = 'diaryCamModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px';
+  const vid = document.createElement('video');
+  vid.autoplay = true; vid.playsInline = true;
+  vid.style.cssText = 'width:320px;height:240px;border-radius:12px;object-fit:cover;background:#111';
+  const cvs = document.createElement('canvas');
+  cvs.width = 640; cvs.height = 480; cvs.style.display = 'none';
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:12px';
+  const capBtn = document.createElement('button');
+  capBtn.className = 'btn btn-y'; capBtn.style.padding = '8px 22px';
+  capBtn.textContent = '📸 ' + (S.language==='en'?'Shoot':S.language==='ja'?'撕る':'찍기');
+  let stream;
+  capBtn.onclick = () => {
+    const ctx = cvs.getContext('2d');
+    ctx.drawImage(vid, 0, 0, 640, 480);
+    const catImg = new Image();
+    catImg.crossOrigin = 'anonymous';
+    const finish = () => { _diaryImgData = cvs.toDataURL('image/jpeg',0.88); updateDiaryPhoto(_diaryImgData); closeDiaryCam(stream, modal); };
+    catImg.onload = () => {
+      const ch = Math.round(480*0.4), cw = Math.round(ch*catImg.naturalWidth/catImg.naturalHeight);
+      ctx.drawImage(catImg, 640-cw-12, 480-ch-12, cw, ch);
+      finish();
+    };
+    catImg.onerror = finish;
+    catImg.src = '../assets/icon.png';
+  };
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-r'; cancelBtn.style.padding = '8px 22px';
+  cancelBtn.textContent = '✕';
+  cancelBtn.onclick = () => closeDiaryCam(stream, modal);
+  row.appendChild(capBtn); row.appendChild(cancelBtn);
+  modal.appendChild(vid); modal.appendChild(cvs); modal.appendChild(row);
+  document.body.appendChild(modal);
+  navigator.mediaDevices.getUserMedia({video:true})
+    .then(s => { stream = s; vid.srcObject = s; })
+    .catch(() => { modal.remove(); document.getElementById('diaryCamInput').click(); });
+}
+
+function closeDiaryCam(stream, modal) {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (modal) modal.remove();
+}
+
+function diaryImgSelected(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { _diaryImgData = e.target.result; updateDiaryPhoto(_diaryImgData); };
+  reader.readAsDataURL(file); input.value = '';
+}
+
+function updateDiaryPhoto(dataUrl) {
+  const img = document.getElementById('diaryPhotoImg');
+  const noP = document.getElementById('diaryNoPhoto');
+  const del = document.getElementById('diaryPhotoDelBtn');
+  if (img) { img.src = dataUrl; img.style.display = 'block'; }
+  if (noP) noP.style.display = 'none';
+  if (del) del.style.display = '';
+  syncDiaryFrameHeight();
+}
+function diaryDelPhoto() {
+  _diaryImgData = null;
+  const img = document.getElementById('diaryPhotoImg');
+  const noP = document.getElementById('diaryNoPhoto');
+  const del = document.getElementById('diaryPhotoDelBtn');
+  if (img) { img.src = ''; img.style.display = 'none'; }
+  if (noP) noP.style.display = '';
+  if (del) del.style.display = 'none';
+  syncDiaryFrameHeight();
+}
+
+function fitDiaryFrame(dataUrl) {
+  const fr = document.getElementById('diaryPhotoFrame'); if (!fr) return;
+  const tmp = new Image();
+  tmp.onload = () => { const ratio = tmp.naturalHeight/tmp.naturalWidth; const w = fr.offsetWidth||180; fr.style.height = Math.round(w*ratio)+'px'; };
+  tmp.src = dataUrl;
+}
+
+function saveDiary() {
+  if (!S.diaryEntries) S.diaryEntries = {};
+  const ta = document.getElementById('diaryText');
+  S.diaryEntries[_diaryDate] = { text: ta ? ta.value : '', imageData: _diaryImgData };
+  saveState();
+  renderDiaryCal();
+  toast('info', L('diary_saved_title'), L('diary_saved_msg'));
+}
+
+async function exportDiaryImg() {
+  if (!window.electronAPI || !window.electronAPI.captureRegionUrl) {
+    toast('alert', '지원 안됨', ''); return;
+  }
+  const dashBody = document.querySelector('#dashPanel .dash-body');
+  const dpEl = document.getElementById('dp-diary');
+  const dashPanel = document.getElementById('dashPanel');
+  if (!dashBody || !dpEl || !dashPanel) return;
+
+  const hideIds = ['diaryPhotoActions','diaryPhotoDelBtn'];
+  const hideEls = hideIds.map(id=>document.getElementById(id)).filter(Boolean);
+  const dBtns = document.querySelector('.diary-btns');
+  if (dBtns) hideEls.push(dBtns);
+  const prevDisplay = hideEls.map(el=>el.style.display);  // 원래 인라인 display 보존 (예: flex)
+  hideEls.forEach(el=>el.style.display='none');
+  const restore = () => {
+    hideEls.forEach((el,i)=>{ el.style.display = prevDisplay[i]; });
+    dashBody.style.overflowY = '';
+    dashBody.style.borderRadius = '';
+    dashPanel.style.borderRadius = '';
+    dashBody.scrollTop = 0;
+  };
+
+  // 캡처 준비: 스크롤바 숨김(overflow hidden에서도 scrollTop 제어 가능),
+  // 둥근 모서리 임시 제거 (스트립 경계마다 테두리 곡선이 찍히는 것 방지)
+  // 상단 여백은 dash-body 자체 padding(18px)으로 좌우와 동일하게 유지
+  dashBody.style.overflowY = 'hidden';
+  dashBody.style.borderRadius = '0';
+  dashPanel.style.borderRadius = '0';
+  dashBody.scrollTop = 0;
+  await new Promise(r=>setTimeout(r,150));
+
+  const panelRect = dashPanel.getBoundingClientRect();
+  const bodyRect  = dashBody.getBoundingClientRect();
+  const bodyCS = window.getComputedStyle(dashBody);
+  const bTop = parseFloat(bodyCS.borderTopWidth) || 0;
+  const bBot = parseFloat(bodyCS.borderBottomWidth) || 2;
+  const frameCol = bodyCS.borderLeftColor || '#333';
+  const pX = Math.round(panelRect.x);
+  const pY = Math.round(panelRect.y);
+  const pW = Math.round(panelRect.width);
+  const hdrH  = Math.round(bodyRect.top - panelRect.top);
+  const viewH = dashBody.clientHeight;   // 테두리 제외한 보이는 높이 (하단 테두리 캡처 방지)
+  const fullH = dashBody.scrollHeight;   // 전체 콘텐츠 높이
+  const bodyY = Math.round(bodyRect.top + bTop);
+  const bodyBottom = Math.round(bodyRect.bottom);
+  // 하단 프레임 높이: 안쪽 테두리 + 프레임 배경 간격 + 바깥 테두리 (측면과 동일 구조)
+  const frameBotH = Math.round(panelRect.bottom) - (bodyBottom - bBot);
+  const IH = hdrH + fullH + frameBotH;   // 조립된 패널 전체 높이
+  const R = 12;                          // 바깥 프레임 corner radius (CSS와 동일)
+
+  // 4면 동일 흰색 여백 (PAD)
+  const PAD = 24;
+  const cvs = document.createElement('canvas');
+  cvs.width  = pW + PAD * 2;
+  cvs.height = IH + PAD * 2;
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  // 상하 꼭짓점 모두 동일한 radius로 클리핑
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(PAD, PAD, pW, IH, R);
+  ctx.clip();
+
+  const loadImg = url => new Promise(ok => {
+    const im = new Image();
+    im.onload = () => ok(im); im.onerror = () => ok(null);
+    im.src = url;
+  });
+
+  try {
+    // 1. 헤더 (고양이 로고 + 탭)
+    const hRes = await window.electronAPI.captureRegionUrl({x:pX, y:pY, width:pW, height:hdrH});
+    if (hRes && hRes.ok) {
+      const hImg = await loadImg(hRes.dataUrl);
+      if (hImg) ctx.drawImage(hImg, 0, 0, hImg.naturalWidth, hImg.naturalHeight, PAD, PAD, pW, hdrH);
+    }
+
+    // 2. body 스트립 캡처 + 스티칭
+    //    실제 scrollTop을 읽어서(끝에서는 클램핑됨) 정확한 위치부터 잘라 붙임
+    let offset = 0;
+    while (offset < fullH) {
+      dashBody.scrollTop = offset;
+      await new Promise(r=>setTimeout(r,110));
+      const actual = dashBody.scrollTop;
+      const rowH = Math.min(viewH - (offset - actual), fullH - offset);
+      if (rowH <= 0) break;
+      const res = await window.electronAPI.captureRegionUrl({x:pX, y:bodyY, width:pW, height:viewH});
+      if (res && res.ok) {
+        const sImg = await loadImg(res.dataUrl);
+        if (sImg) {
+          const scale = sImg.naturalHeight / viewH;  // 실제 캡처 배율 (DPR)
+          ctx.drawImage(sImg,
+            0, Math.round((offset - actual) * scale), sImg.naturalWidth, Math.round(rowH * scale),
+            PAD, PAD + hdrH + offset, pW, rowH);
+        }
+      }
+      offset += rowH;
+    }
+
+    // 3. 하단 프레임을 실제 화면에서 캡처해 붙임
+    //    (안쪽 테두리 → 프레임 배경 간격 → 바깥 테두리, 측면과 동일한 구조)
+    //    OV: 안쪽 카드 하단 radius가 온전히 나오도록 콘텐츠 끝부분과 겹쳐서 캡처
+    dashBody.style.borderRadius = '';   // 안쪽 카드 하단 라운드 복원
+    await new Promise(r=>setTimeout(r,80));
+    const OV = 12;
+    const fRes = await window.electronAPI.captureRegionUrl({
+      x: pX, y: bodyBottom - bBot - OV, width: pW, height: frameBotH + OV
+    });
+    if (fRes && fRes.ok) {
+      const fImg = await loadImg(fRes.dataUrl);
+      if (fImg) ctx.drawImage(fImg, 0, 0, fImg.naturalWidth, fImg.naturalHeight,
+        PAD, PAD + hdrH + fullH - OV, pW, frameBotH + OV);
+    }
+
+    // 4. 클리핑 해제 후 바깥 테두리를 radius 따라 다시 그려 마감
+    ctx.restore();
+    ctx.strokeStyle = frameCol;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(PAD + 1, PAD + 1, pW - 2, IH - 2, R - 1);
+    ctx.stroke();
+
+    restore();
+    const link = document.createElement('a');
+    link.download = `diary-${_diaryDate}.png`;
+    link.href = cvs.toDataURL('image/png');
+    link.click();
+    toast('reward', '📸', `diary-${_diaryDate}.png`);
+
+  } catch(err) {
+    restore();
+    toast('alert', '저장 실패', '');
+  }
+}
+// ── 다이어리 끝 ──
+
 function toggleDayItem(key, i) {
   const items = getCalNotes(key);
   if (!items[i]) return;
@@ -3048,7 +3482,7 @@ function applySession(s){
   hideLoginGate();
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
-  if (lbl) lbl.textContent = s.guest ? '게스트 (보너스/광고설정 불가)' : s.email + (s.isAdmin ? ' (관리자)' : '');
+  if (lbl) lbl.textContent = s.guest ? L('acc_guest') : s.email + (s.isAdmin ? L('acc_admin') : '');
   if (!s.guest && s.email) _tryWelcomeBonus(s.email);
 }
 
@@ -3242,7 +3676,9 @@ function _onPhotoSegResult(results) {
   requestAnimationFrame(_photoTick);
 }
 
-function openPhotoBooth() {
+let _photoBoothCallback = null;
+function openPhotoBooth(callback) {
+  _photoBoothCallback = callback || null;
   document.getElementById('photoModal').style.display = 'flex';
   _setPhotoBg(_photoBgMode); // 버튼 상태 초기화
 
@@ -3294,6 +3730,13 @@ function closePhotoBooth() {
 function capturePhoto() {
   const canvas = document.getElementById('photoCanvas');
   if (!canvas || !canvas.width) { toast('alert','카메라 없음','카메라가 연결되어 있는지 확인해주세요!'); return; }
+
+  if (_photoBoothCallback) {
+    const cb = _photoBoothCallback; _photoBoothCallback = null;
+    cb(canvas.toDataURL('image/jpeg', 0.9));
+    closePhotoBooth();
+    return;
+  }
 
   if (window.electronAPI && window.electronAPI.capturePhoto) {
     // 데스크탑 앱: 화면 캡처로 저장 (배경제거+고양이 합성 캔버스가 그대로 찍힘)
@@ -3377,7 +3820,7 @@ function init(){
   ['ptsDisplay','shopPts'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=S.pts; });
   const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
   const sc=document.getElementById('sessCount'); if(sc) sc.textContent=S.sessions;
-  const hc=document.getElementById('hCycleCount'); if(hc) hc.textContent=`오늘 완료: ${S.sessions} 사이클`;
+  // hCycleCount is now static (data-i18n='cycle_home_desc')
   if(typeof updateCatUI==='function') updateCatUI();
   if(typeof renderFruits==='function') renderFruits();
   if(typeof renderHarvestCount==='function') renderHarvestCount();
@@ -3481,6 +3924,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const _sv = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       if (_sv.theme) S.theme = _sv.theme;
       if (_sv.language) S.language = _sv.language;
+      // 대시보드 편집 데이터 덮어쓰기 방지
+      if (_sv.calendarNotes !== undefined) S.calendarNotes = _sv.calendarNotes;
+      if (_sv.scheduleMemo !== undefined) S.scheduleMemo = _sv.scheduleMemo;
+      if (_sv.cat) Object.assign(S.cat, _sv.cat);
+      if (_sv.pts !== undefined) S.pts = _sv.pts;
+      if (_sv.wishlist !== undefined) S.wishlist = _sv.wishlist;
     } catch(e) {}
     saveState();
   }, 10000);

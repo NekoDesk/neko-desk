@@ -70,6 +70,7 @@ function createWindow() {
     }
   });
 
+
   // 시작 시 개발자 도구 켜고 싶으면 주석 해제:
   // mainWindow.webContents.openDevTools({ mode: 'detach' });
 }
@@ -108,6 +109,7 @@ function toggleVisibility() {
 
 function openDashboardWindow() {
   if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+    if (dashboardWindow.isMinimized()) dashboardWindow.restore();
     dashboardWindow.focus();
     return;
   }
@@ -305,10 +307,10 @@ ipcMain.on('install-update-now', () => {
 ipcMain.on('minimize-app', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   if (win && win !== mainWindow) {
-    // 대시보드 윈도우에서 호출 → 대시보드만 닫기
-    win.close();
+    // 대시보드 → 최소화 (작업표시줄로)
+    win.minimize();
   } else {
-    // 위젯에서 호출 → 트레이로 숨기기
+    // 위젯 → 트레이로 숨기기
     if (mainWindow) mainWindow.hide();
   }
 });
@@ -323,6 +325,43 @@ ipcMain.handle('capture-photo', async (e, rect, dir) => {
     fs.writeFileSync(file, img.toPNG());
     return { ok: true, path: file };
   } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('capture-region-url', async (e, rect) => {
+  try {
+    const win = BrowserWindow.fromWebContents(e.sender) || mainWindow;
+    const img = await win.webContents.capturePage(rect);
+    const base64 = img.toPNG().toString('base64');
+    return { ok: true, dataUrl: 'data:image/png;base64,' + base64 };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('capture-full-page', async (e, { contentH }) => {
+  const win = BrowserWindow.fromWebContents(e.sender) || mainWindow;
+  if (!win) return { ok: false, error: 'no window' };
+  const origBounds = win.getBounds();
+  try {
+    const neededH = Math.min(Math.round(contentH) + 80, 8000);
+    if (neededH > origBounds.height) {
+      const disp = screen.getDisplayNearestPoint({ x: origBounds.x, y: origBounds.y });
+      win.setBounds({
+        x: origBounds.x,
+        y: disp.workArea.y,
+        width: origBounds.width,
+        height: neededH
+      });
+      await new Promise(r => setTimeout(r, 450));
+    }
+    const img = await win.webContents.capturePage();
+    win.setBounds(origBounds);
+    await new Promise(r => setTimeout(r, 100));
+    return { ok: true, dataUrl: 'data:image/png;base64,' + img.toPNG().toString('base64') };
+  } catch (err) {
+    try { win.setBounds(origBounds); } catch (_) {}
     return { ok: false, error: String(err) };
   }
 });

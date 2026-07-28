@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 포토부스: 프로그램 화면 캡처 + 저장
   capturePhoto:   (rect, dir) => ipcRenderer.invoke('capture-photo', rect, dir),
+  captureRegionUrl: (rect) => ipcRenderer.invoke('capture-region-url', rect),
+  captureFullPage:  (params) => ipcRenderer.invoke('capture-full-page', params),
   choosePhotoDir: () => ipcRenderer.invoke('choose-photo-dir'),
 
   // 종료
