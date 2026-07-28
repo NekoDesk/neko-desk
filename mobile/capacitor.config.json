@@ -1,0 +1,11 @@
+{
+  "appId": "com.siwon.nekodesk.mobile",
+  "appName": "NEKO DESK",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
