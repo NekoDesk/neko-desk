@@ -24,6 +24,50 @@
     catch (e) { return null; }
   }
 
+  function capPlugin(name) {
+    return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
+  }
+
+  // ── 구글 로그인 (Supabase OAuth + 딥링크) ──
+  var LOGIN_CALLBACK = 'nekodesk://auth-callback';
+  var _pendingLogin = null;
+
+  function openExternalUrl(url) {
+    var Browser = capPlugin('Browser');
+    if (Browser) Browser.open({ url: url });
+    else window.open(url, '_blank');
+  }
+
+  function initDeepLinkListener() {
+    var App = capPlugin('App');
+    if (!App) return;
+    App.addListener('appUrlOpen', function (data) {
+      var url = (data && data.url) || '';
+      if (url.indexOf(LOGIN_CALLBACK) !== 0) return;
+      var Browser = capPlugin('Browser');
+      if (Browser) Browser.close().catch(function () {});
+      // Supabase는 토큰을 URL 프래그먼트(#access_token=...)로 전달
+      var frag = url.split('#')[1] || url.split('?')[1] || '';
+      var params = new URLSearchParams(frag);
+      var token = params.get('access_token');
+      var finish = function (result) {
+        if (_pendingLogin) { _pendingLogin(result); _pendingLogin = null; }
+      };
+      if (!token) { finish(null); return; }
+      fetch(PUBLIC_CFG.SUPABASE_URL + '/auth/v1/user', {
+        headers: { Authorization: 'Bearer ' + token, apikey: PUBLIC_CFG.SUPABASE_KEY }
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (u) {
+          if (!u || !u.email) { finish(null); return; }
+          var s = { email: u.email, guest: false, isAdmin: false };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+          finish(s);
+        })
+        .catch(function () { finish(null); });
+    });
+  }
+
   window.electronAPI = {
     // ── 창 제어: 모바일은 단일 화면이므로 전부 no-op ──
     openDashboard: function () {
@@ -47,8 +91,18 @@
       return Promise.resolve(s);
     },
     googleLogin: function () {
-      // 모바일 구글 로그인은 딥링크 설정이 필요 → v1은 게스트 안내
-      return Promise.resolve({ error: 'not_configured' });
+      return new Promise(function (resolve) {
+        if (!capPlugin('App')) { resolve({ error: 'not_configured' }); return; }
+        _pendingLogin = resolve;
+        openExternalUrl(
+          PUBLIC_CFG.SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' +
+          encodeURIComponent(LOGIN_CALLBACK)
+        );
+        // 3분 내에 콜백이 없으면 실패 처리
+        setTimeout(function () {
+          if (_pendingLogin === resolve) { _pendingLogin = null; resolve(null); }
+        }, 180000);
+      });
     },
     logout: function () {
       localStorage.removeItem(SESSION_KEY);
@@ -59,8 +113,8 @@
     getPublicConfig: function () { return Promise.resolve(PUBLIC_CFG); },
     getAppVersion: function () { return Promise.resolve(APP_VERSION); },
 
-    // ── 외부 링크 ──
-    openExternal: function (url) { window.open(url, '_blank'); },
+    // ── 외부 링크 (시스템 브라우저로) ──
+    openExternal: function (url) { openExternalUrl(url); },
 
     // ── 분석/업데이트: no-op ──
     gaEvent: function () {},
@@ -105,5 +159,37 @@
     var st = document.createElement('style');
     st.textContent = css;
     document.head.appendChild(st);
+
+    // 구글 로그인 딥링크 콜백 수신 시작
+    initDeepLinkListener();
+
+    // 홈의 '현재 사이클' 카드 숨김 (모바일은 업무 사이클 기능 제외)
+    var tClock = document.getElementById('hTimerClock');
+    if (tClock) {
+      var cycleCard = tClock.closest('.card');
+      if (cycleCard) cycleCard.style.display = 'none';
+    }
+
+    // 포토부스에 전/후면 카메라 전환 버튼 주입
+    var facing = 'user';
+    var bgBtn = document.getElementById('photoBgBlur');
+    if (bgBtn && bgBtn.parentElement && navigator.mediaDevices) {
+      var flipBtn = document.createElement('button');
+      flipBtn.textContent = '🔄 카메라 전환';
+      flipBtn.style.cssText = 'font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer';
+      flipBtn.onclick = function () {
+        facing = (facing === 'user') ? 'environment' : 'user';
+        var v = document.getElementById('photoVideo');
+        if (!v) return;
+        if (v.srcObject) v.srcObject.getTracks().forEach(function (t) { t.stop(); });
+        navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720, facingMode: facing }, audio: false
+        }).then(function (stream) {
+          v.srcObject = stream;
+          if (v.play) v.play().catch(function () {});
+        }).catch(function () {});
+      };
+      bgBtn.parentElement.appendChild(flipBtn);
+    }
   });
 })();
