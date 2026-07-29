@@ -1607,7 +1607,8 @@ function initClickThrough() {
     const isClickable = !!el && !!(
       el.closest('#widgetCatWrap') ||
       el.closest('#speechBubble') ||
-      el.closest('.taskbar')
+      el.closest('.taskbar') ||
+      el.closest('#updateBanner')
     );
     window.electronAPI.setIgnoreMouseEvents(!isClickable);
   });
