@@ -143,6 +143,9 @@
       '.dtb-btns { display:none !important; }',
       // body transparent(인라인) 무효화
       'body { background: var(--bg) !important; }',
+      // 모바일: 탭이 텍스트 선택으로 인식되는 것 방지 (이모지 파란 선택 현상)
+      '* { -webkit-user-select:none !important; user-select:none !important; -webkit-tap-highlight-color:transparent; }',
+      'input, textarea, [contenteditable] { -webkit-user-select:text !important; user-select:text !important; }',
       // 모바일에서는 업무 사이클(스케줄) 탭 제거
       '.dtab[onclick*="cycle"] { display:none !important; }',
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
