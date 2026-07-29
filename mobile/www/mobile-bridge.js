@@ -89,6 +89,11 @@
       '.dtb-btns { display:none !important; }',
       // body transparent(인라인) 무효화
       'body { background: var(--bg) !important; }',
+      // 모바일에서는 업무 사이클(스케줄) 탭 제거
+      '.dtab[onclick*="cycle"] { display:none !important; }',
+      // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
+      'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
+      '.dpage * { max-width:100%; box-sizing:border-box; }',
       // 좁은 화면 대응
       '@media (max-width:700px) {',
       '  .grid2 { grid-template-columns: 1fr !important; }',

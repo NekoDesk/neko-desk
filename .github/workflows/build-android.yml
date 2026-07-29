@@ -38,14 +38,20 @@ jobs:
         working-directory: mobile
         run: npx cap sync android
 
-      - name: Build APK (debug)
+      - name: Restore signing keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > /tmp/nekodesk.p12
+
+      - name: Build APK (signed release)
         working-directory: mobile/android
+        env:
+          RELEASE_KEYSTORE_PATH: /tmp/nekodesk.p12
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk NEKO-DESK-mobile.apk
+        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk NEKO-DESK-mobile.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
