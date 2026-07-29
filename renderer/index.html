@@ -1593,25 +1593,30 @@ function toggleSection(contentId, chevronId) {
   if (ch) ch.textContent = isHidden ? '▲' : '▼';
 }
 
-// 위젯 투명 영역 클릭 통과 — 고양이·말풍선·타임바 위에서만 클릭 활성화
+// 위젯 투명 영역 클릭 통과 — 보이는 UI 위에서만 클릭 활성화, 빈 영역은 통과
 function initClickThrough() {
   if (!window.electronAPI || !window.electronAPI.setIgnoreMouseEvents) return;
-  document.addEventListener('mousemove', (e) => {
+  const hitTest = (x, y) => {
     // 대시보드 모드: 클릭 통과 절대 금지 (모든 버튼 먹통 방지)
     if (document.body.classList.contains('electron-dashboard')) {
       window.electronAPI.setIgnoreMouseEvents(false);
       return;
     }
     if (!document.body.classList.contains('electron-widget')) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const isClickable = !!el && !!(
-      el.closest('#widgetCatWrap') ||
-      el.closest('#speechBubble') ||
-      el.closest('.taskbar') ||
-      el.closest('#updateBanner')
-    );
+    const el = document.elementFromPoint(x, y);
+    // 화면에 보이는 모든 UI(고양이/말풍선/타임바/배너 등)는 클릭 가능.
+    // 진짜 빈(투명) 영역 — html/body/floatWidget 컨테이너 자체 — 만 클릭 통과.
+    const isClickable = !!el
+      && el !== document.documentElement
+      && el !== document.body
+      && el.id !== 'floatWidget';
     window.electronAPI.setIgnoreMouseEvents(!isClickable);
-  });
+  };
+  document.addEventListener('mousemove', (e) => hitTest(e.clientX, e.clientY));
+  // 안전장치: forward 이벤트가 끊겨도 메인 프로세스 폴링으로 항상 판정
+  if (window.electronAPI.onCursorPos) {
+    window.electronAPI.onCursorPos((p) => hitTest(p.x, p.y));
+  }
 }
 // ══════════════════════════════════════════
 // TABS

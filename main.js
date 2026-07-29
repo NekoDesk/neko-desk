@@ -416,6 +416,16 @@ ipcMain.on('set-ignore-mouse-events', (e, ignore) => {
   if (mainWindow) mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
 });
 
+// 위젯 클릭 통과 안전장치: forward 이벤트는 창 숨김/표시 등을 거치면 끊길 수 있음
+// → 메인에서 커서 위치를 폴링해 renderer가 항상 히트테스트를 할 수 있게 함
+setInterval(() => {
+  if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
+  const p = screen.getCursorScreenPoint();
+  const b = mainWindow.getBounds();
+  if (p.x < b.x || p.x >= b.x + b.width || p.y < b.y || p.y >= b.y + b.height) return;
+  mainWindow.webContents.send('cursor-pos', { x: p.x - b.x, y: p.y - b.y });
+}, 120);
+
 // ═══ 커서 팔로우: 화면 전체를 따라다니는 미니 고양이 윈도우 ═══
 let cursorWindow = null;
 let cursorTimer = null;

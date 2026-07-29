@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 메인 → 렌더러 이벤트 수신
   onOpenDashboard: (cb) => ipcRenderer.on('trigger-open-dashboard', cb),
   onToggleFollow:  (cb) => ipcRenderer.on('trigger-toggle-follow', cb),
+  onCursorPos:     (cb) => ipcRenderer.on('cursor-pos', (e, p) => cb(p)),
 
   // NicePay 결제창 (V1 표준결제)
   openPaymentWindow: (params) => ipcRenderer.invoke('open-payment-window', params),
