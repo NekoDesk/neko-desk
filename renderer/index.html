@@ -1744,7 +1744,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3805,6 +3805,126 @@ function wiggleCat(){
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
+// ══════════════════════════════
+// 클라우드 동기화 (PC ↔ 모바일) — 대시보드 창에서만 동작
+// 구글 로그인 상태일 때 할 일 목록 / 메모 / 다이어리를 Supabase에 저장·복원
+// ══════════════════════════════
+const CLOUD_KEYS = ['calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone'];
+const CLOUD_TS_KEY = 'nekodesk_sync_pushed_at';
+let _cloudSb = null, _cloudCfg = null, _cloudReady = false, _cloudTimer = null;
+
+async function _cloudRefreshToken() {
+  if (!_cloudSb || !_cloudSb.refresh) return null;
+  try {
+    const r = await fetch(_cloudCfg.SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: _cloudCfg.SUPABASE_KEY },
+      body: JSON.stringify({ refresh_token: _cloudSb.refresh })
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    if (!d || !d.access_token) return null;
+    _cloudSb.token = d.access_token;
+    if (d.refresh_token) _cloudSb.refresh = d.refresh_token;
+    if (window.electronAPI.saveSupabaseSession) window.electronAPI.saveSupabaseSession(_cloudSb);
+    return _cloudSb.token;
+  } catch(e) { return null; }
+}
+
+async function _cloudFetch(path, opts, retry) {
+  if (!_cloudSb || !_cloudCfg) return null;
+  opts = opts || {};
+  // 헤더는 매 호출마다 재구성 — 재시도 시 새 토큰이 반영되도록
+  opts.headers = Object.assign({}, opts.headers || {}, {
+    apikey: _cloudCfg.SUPABASE_KEY,
+    Authorization: 'Bearer ' + _cloudSb.token,
+    'Content-Type': 'application/json'
+  });
+  try {
+    const r = await fetch(_cloudCfg.SUPABASE_URL + path, opts);
+    if (r.status === 401 && !retry) {
+      const t = await _cloudRefreshToken();
+      return t ? _cloudFetch(path, opts, true) : null;
+    }
+    return r;
+  } catch(e) { return null; }
+}
+
+function _cloudApply(data) {
+  if (!data) return false;
+  let changed = false;
+  CLOUD_KEYS.forEach(k => { if (data[k] !== undefined) { S[k] = data[k]; changed = true; } });
+  if (!changed) return false;
+  // saveState()를 거치지 않고 직접 써서 불필요한 업로드 방지
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+  try {
+    renderAll();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderDiary === 'function') renderDiary();
+    const memo = document.getElementById('scheduleMemoTxt');
+    if (memo) memo.value = S.scheduleMemo || '';
+  } catch(e) {}
+  return true;
+}
+
+async function cloudPull(notify) {
+  if (!_cloudSb) return false;
+  const r = await _cloudFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' });
+  if (!r || !r.ok) return false;
+  const rows = await r.json();
+  _cloudReady = true;                         // 조회 성공 → 업로드 허용
+  if (!rows || !rows.length || !rows[0].data) { cloudPush(true); return false; }
+  const remoteTs = new Date(rows[0].updated_at || 0).getTime();
+  const pushedTs = Number(localStorage.getItem(CLOUD_TS_KEY) || 0);
+  if (remoteTs > pushedTs) {
+    const ok = _cloudApply(rows[0].data);
+    localStorage.setItem(CLOUD_TS_KEY, String(remoteTs));
+    if (ok && notify) toast('info', '☁️ 동기화', '최신 내용을 가져왔어요');
+    return ok;
+  }
+  return false;
+}
+
+async function cloudPush(force) {
+  if (!_cloudSb || (!_cloudReady && !force)) return false;
+  const data = {};
+  CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
+  const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: _cloudSb.uid, data, updated_at: new Date().toISOString() })
+  });
+  const ok = !!(r && r.ok);
+  if (ok) localStorage.setItem(CLOUD_TS_KEY, String(Date.now()));
+  return ok;
+}
+
+function cloudSchedulePush() {
+  if (!_cloudSb || !_cloudReady) return;
+  clearTimeout(_cloudTimer);
+  _cloudTimer = setTimeout(() => cloudPush(), 2500);   // 편집이 멈추면 올림
+}
+
+async function initCloudSync() {
+  if (!window.electronAPI || !window.electronAPI.getSupabaseSession) return;
+  // 위젯 창은 대시보드의 최신 편집을 모를 수 있으므로 대시보드에서만 동기화
+  if (!window._isDashboard) return;
+  try {
+    const sb = await window.electronAPI.getSupabaseSession();
+    if (!sb || !sb.token) return;
+    _cloudSb = sb;
+    _cloudCfg = await window.electronAPI.getPublicConfig();
+    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) return;
+    if (!saveState._cloudWrapped) {
+      const _origSave = saveState;
+      saveState = function () { _origSave.apply(this, arguments); cloudSchedulePush(); };
+      saveState._cloudWrapped = true;
+    }
+    await cloudPull(false);
+    setInterval(() => cloudPull(false), 60000);   // 1분마다 최신 내용 확인
+  } catch(e) {}
+}
+
 function refreshAutoLaunchBtn(on) {
   const b = document.getElementById('autoLaunchBtn');
   if (!b) return;
@@ -3861,6 +3981,9 @@ function init(){
   setInterval(()=>{ updateClock(); updateCycleUI(); renderCyclePreview(); }, 1000);
   startCatAnimation();       // 4초마다 고양이 프레임 전환
   startProductsAutoRefresh(); // 1분마다 상품 목록 갱신
+
+  // 클라우드 동기화 시작 (구글 로그인 + 대시보드 창)
+  initCloudSync();
 
   // 부팅 시 자동 실행 토글 초기화 (데스크톱 전용)
   if (window.electronAPI && window.electronAPI.getAutoLaunch) {
@@ -3968,6 +4091,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (_sv.cat) Object.assign(S.cat, _sv.cat);
       if (_sv.pts !== undefined) S.pts = _sv.pts;
       if (_sv.wishlist !== undefined) S.wishlist = _sv.wishlist;
+      if (_sv.wishlistDone !== undefined) S.wishlistDone = _sv.wishlistDone;
+      if (_sv.diaryEntries !== undefined) S.diaryEntries = _sv.diaryEntries;
     } catch(e) {}
     saveState();
   }, 10000);

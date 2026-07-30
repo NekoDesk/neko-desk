@@ -35,6 +35,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAutoLaunch:  () => ipcRenderer.invoke('get-auto-launch'),
   setAutoLaunch:  (on) => ipcRenderer.invoke('set-auto-launch', on),
 
+  // 기기 간 동기화 (Supabase 세션)
+  getSupabaseSession:  () => ipcRenderer.invoke('get-supabase-session'),
+  saveSupabaseSession: (sb) => ipcRenderer.invoke('save-supabase-session', sb),
+
   // 포토부스: 프로그램 화면 캡처 + 저장
   capturePhoto:   (rect, dir) => ipcRenderer.invoke('capture-photo', rect, dir),
   captureRegionUrl: (rect) => ipcRenderer.invoke('capture-region-url', rect),

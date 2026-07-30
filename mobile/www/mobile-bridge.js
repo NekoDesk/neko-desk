@@ -123,11 +123,12 @@
     var s = readSession();
     if (!s || !s.token) return Promise.resolve(null);
     opts = opts || {};
-    opts.headers = Object.assign({
+    // 헤더는 매 호출마다 재구성 — 재시도 시 새 토큰이 반영되도록
+    opts.headers = Object.assign({}, opts.headers || {}, {
       apikey: PUBLIC_CFG.SUPABASE_KEY,
       Authorization: 'Bearer ' + s.token,
       'Content-Type': 'application/json'
-    }, opts.headers || {});
+    });
     return fetch(PUBLIC_CFG.SUPABASE_URL + path, opts).then(function (r) {
       if (r.status === 401 && !retry) {
         return refreshToken().then(function (t) {

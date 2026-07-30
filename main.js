@@ -579,12 +579,42 @@ ipcMain.handle('google-login', async () => {
     }).then(r => r.json());
     if (!info.email) return { error: 'userinfo_failed' };
 
-    const s = { email: info.email, guest: false };
+    // 구글 id_token → Supabase 세션 교환 (기기 간 동기화용)
+    // 모바일과 같은 구글 계정이면 같은 Supabase 유저가 되어 데이터가 공유됨
+    let sb = null;
+    if (tok.id_token && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) {
+      try {
+        const r = await fetch(CFG.SUPABASE_URL + '/auth/v1/token?grant_type=id_token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_ANON_KEY },
+          body: JSON.stringify({ provider: 'google', id_token: tok.id_token }),
+        }).then(r => r.json());
+        if (r && r.access_token) {
+          sb = { token: r.access_token, refresh: r.refresh_token, uid: r.user && r.user.id };
+        }
+      } catch (e) {}
+    }
+
+    const s = { email: info.email, guest: false, sb };
     writeJSON(SESSION_FILE(), s);
     return sessionInfo(info.email, false);
   } catch (err) {
     return { error: String(err.message || err) };
   }
+});
+
+// ═══ 기기 간 동기화용 Supabase 세션 ═══
+ipcMain.handle('get-supabase-session', () => {
+  const s = readJSON(SESSION_FILE(), null);
+  return (s && s.sb && s.sb.token) ? s.sb : null;
+});
+
+ipcMain.handle('save-supabase-session', (e, sb) => {
+  const s = readJSON(SESSION_FILE(), null);
+  if (!s) return false;
+  s.sb = sb;
+  writeJSON(SESSION_FILE(), s);
+  return true;
 });
 
 // 앱 버전 (package.json version)
