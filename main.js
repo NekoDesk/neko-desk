@@ -159,6 +159,13 @@ ipcMain.on('close-dashboard', () => {
 
 ipcMain.on('quit-app', () => { app.isQuitting = true; app.quit(); });
 
+// ═══ 부팅 시 자동 실행 설정 ═══
+ipcMain.handle('get-auto-launch', () => app.getLoginItemSettings().openAtLogin);
+ipcMain.handle('set-auto-launch', (e, on) => {
+  app.setLoginItemSettings({ openAtLogin: !!on });
+  return app.getLoginItemSettings().openAtLogin;
+});
+
 
 ipcMain.handle('get-public-config', () => ({
   SUPABASE_URL: CFG.SUPABASE_URL || null,
@@ -618,6 +625,15 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   gaTrack('app_start');
+
+  // ═══ 부팅 시 자동 실행: 설치 후 최초 1회만 기본 활성화 (사용자가 끄면 유지) ═══
+  try {
+    const autoLaunchMarker = path.join(app.getPath('userData'), '.auto-launch-init');
+    if (app.isPackaged && !fs.existsSync(autoLaunchMarker)) {
+      app.setLoginItemSettings({ openAtLogin: true });
+      fs.writeFileSync(autoLaunchMarker, '1');
+    }
+  } catch (e) {}
 
   // ═══ 자동 업데이트 (GitHub Releases) ═══
   try {

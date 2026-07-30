@@ -921,6 +921,14 @@ select {
                 </div>
               </div>
             </div>
+            <!-- 부팅 시 자동 실행 -->
+            <div class="card" id="autoLaunchCard" style="margin-bottom:14px;display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="card-title" style="margin-bottom:0" data-i18n="autostart_title">🚀 부팅 시 자동 실행</div>
+                <button id="autoLaunchBtn" class="btn btn-gr" style="font-size:12px;padding:6px 16px" onclick="toggleAutoLaunch()">-</button>
+              </div>
+              <div style="font-size:12px;color:var(--gray);margin-top:8px" data-i18n="autostart_desc">PC를 켜면 NEKO DESK가 자동으로 시작돼요</div>
+            </div>
           </div>
           <div>
             <!-- 계정 -->
@@ -1178,6 +1186,7 @@ const STRINGS = {
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
     diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
+    autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1234,6 +1243,7 @@ const STRINGS = {
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
+    autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
     diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
     diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
@@ -1292,6 +1302,7 @@ const STRINGS = {
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
+    autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
     diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
     diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
@@ -3794,6 +3805,19 @@ function wiggleCat(){
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
+function refreshAutoLaunchBtn(on) {
+  const b = document.getElementById('autoLaunchBtn');
+  if (!b) return;
+  b.textContent = on ? L('autostart_on') : L('autostart_off');
+  b.classList.toggle('btn-y', !!on);
+  b.classList.toggle('btn-gr', !on);
+}
+function toggleAutoLaunch() {
+  if (!window.electronAPI || !window.electronAPI.setAutoLaunch) return;
+  window.electronAPI.getAutoLaunch().then(cur =>
+    window.electronAPI.setAutoLaunch(!cur).then(refreshAutoLaunchBtn));
+}
+
 function init(){
   loadState();   // 저장된 데이터 복원
   renderWorkItems();  // 업무 시간 설정 초기 렌더
@@ -3837,6 +3861,13 @@ function init(){
   setInterval(()=>{ updateClock(); updateCycleUI(); renderCyclePreview(); }, 1000);
   startCatAnimation();       // 4초마다 고양이 프레임 전환
   startProductsAutoRefresh(); // 1분마다 상품 목록 갱신
+
+  // 부팅 시 자동 실행 토글 초기화 (데스크톱 전용)
+  if (window.electronAPI && window.electronAPI.getAutoLaunch) {
+    const _alc = document.getElementById('autoLaunchCard');
+    if (_alc) _alc.style.display = '';
+    window.electronAPI.getAutoLaunch().then(refreshAutoLaunchBtn);
+  }
 
   // 설정 탭 버전 표시
   if (window.electronAPI && window.electronAPI.getAppVersion) {

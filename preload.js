@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   logout:         () => ipcRenderer.invoke('logout'),
   getAppVersion:  () => ipcRenderer.invoke('get-app-version'),
 
+  // 부팅 시 자동 실행
+  getAutoLaunch:  () => ipcRenderer.invoke('get-auto-launch'),
+  setAutoLaunch:  (on) => ipcRenderer.invoke('set-auto-launch', on),
+
   // 포토부스: 프로그램 화면 캡처 + 저장
   capturePhoto:   (rect, dir) => ipcRenderer.invoke('capture-photo', rect, dir),
   captureRegionUrl: (rect) => ipcRenderer.invoke('capture-region-url', rect),
