@@ -2752,15 +2752,16 @@ function toggleDiaryTop() {
 
 /** 다른 날짜로 옮기기 전, 편집 중이던 내용을 자동 저장 */
 function _diaryAutoSave() {
-  if (!_diaryDate) return;
+  if (!_diaryDate) return false;
   const ta = document.getElementById('diaryText');
   const txt = ta ? ta.value : '';
   if (!S.diaryEntries) S.diaryEntries = {};
   const prev = S.diaryEntries[_diaryDate] || {};
-  if ((prev.text || '') === txt && (prev.imageData || null) === (_diaryImgData || null)) return;
-  if (!txt && !_diaryImgData) delete S.diaryEntries[_diaryDate];
-  else S.diaryEntries[_diaryDate] = { text: txt, imageData: _diaryImgData };
+  if ((prev.text || '') === txt && (prev.imageData || null) === (_diaryImgData || null)) return false;
+  if (!txt && !_diaryImgData) { delete S.diaryEntries[_diaryDate]; saveState(); return false; }
+  S.diaryEntries[_diaryDate] = { text: txt, imageData: _diaryImgData };
   saveState();
+  return true;   // 새 내용이 저장됨
 }
 
 function renderDiary() {
@@ -2814,7 +2815,14 @@ function diaryCalNav(dir) {
 }
 
 function selectDiaryDate(ds) {
-  _diaryAutoSave();          // 미저장 내용 보존 — 빈 날짜로도 자유롭게 이동
+  // 미저장 내용 보존 — 쓰던 글은 '쓰던 날짜'에 저장되므로 반드시 안내
+  const savedDate = _diaryDate;
+  if (_diaryAutoSave() && savedDate !== ds) {
+    const [sy, sm, sd] = savedDate.split('-');
+    toast('info', '📔 ' + L('diary_saved_title'),
+      L('date_ymd').replace('{y}', parseInt(sy)).replace('{m}', parseInt(sm)).replace('{d}', parseInt(sd))
+      + ' → ' + L('diary_saved_msg'));
+  }
   _diaryDate = ds;
   renderDiaryCal();
   loadDiaryEntry(ds);

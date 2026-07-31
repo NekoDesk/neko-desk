@@ -363,9 +363,11 @@
       return new Promise(function (resolve) {
         if (!capPlugin('App')) { resolve({ error: 'not_configured' }); return; }
         _pendingLogin = resolve;
+        // prompt=select_account: 폰에 기본 로그인된 구글 계정이 자동 선택되는 것을 막고
+        // 항상 계정 선택 화면을 띄운다 (PC와 다른 계정으로 로그인되는 사고 방지)
         openExternalUrl(
-          PUBLIC_CFG.SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' +
-          encodeURIComponent(LOGIN_CALLBACK)
+          PUBLIC_CFG.SUPABASE_URL + '/auth/v1/authorize?provider=google&prompt=select_account' +
+          '&redirect_to=' + encodeURIComponent(LOGIN_CALLBACK)
         );
         // 3분 내에 콜백이 없으면 실패 처리
         setTimeout(function () {
