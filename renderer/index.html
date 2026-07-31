@@ -643,7 +643,9 @@ select {
 .diary-photo-frame{width:100%;min-height:60px;background:rgba(255,255,255,0.05);border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;box-sizing:border-box}
 .diary-photo-del-btn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;text-align:center;z-index:2;padding:0}
 .diary-photo-del-btn:hover{background:rgba(180,0,0,0.75)}
-.diary-date-label{font-size:13px;font-weight:bold;color:var(--yellow);margin:4px 0 6px;letter-spacing:1px;padding-left:44px}
+.diary-fold-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;font-size:12px;font-weight:bold;color:var(--gray);padding:6px 10px;margin-bottom:6px;background:var(--panel);border-radius:8px}
+.diary-fold-hd:hover{color:var(--white)}
+.diary-date-label{font-size:14px;font-weight:bold;color:var(--yellow);margin:4px 0 6px;letter-spacing:1px;padding-left:44px}
 .diary-lines-area{padding-left:44px;padding-top:2px}
 .diary-textarea{width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
 .diary-btns{display:flex;gap:8px;margin-top:16px;padding-left:44px}
@@ -800,7 +802,11 @@ select {
       <!-- DIARY -->
       <div id="dp-diary" class="dpage">
         <div class="diary-nb">
-          <div class="diary-top-row">
+          <div class="diary-fold-hd" onclick="toggleDiaryTop()">
+            <span data-i18n="diary_fold_title">📅 날짜 · 사진</span>
+            <span id="diaryTopChev">▲</span>
+          </div>
+          <div class="diary-top-row" id="diaryTopRow">
             <div class="diary-mini-cal">
               <div class="diary-cal-header">
                 <button class="diary-cal-nav" onclick="diaryCalNav(-1)">&#9664;</button>
@@ -1187,7 +1193,7 @@ const STRINGS = {
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
     diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
-    autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
+    diary_fold_title:'📅 날짜 · 사진', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1244,7 +1250,7 @@ const STRINGS = {
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
-    autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
+    diary_fold_title:'📅 Date · Photo', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
     diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
     diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
@@ -1303,7 +1309,7 @@ const STRINGS = {
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
-    autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
+    diary_fold_title:'📅 日付・写真', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
     diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
     diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
@@ -1745,7 +1751,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries','diaryTopFolded']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -2730,18 +2736,45 @@ function syncDiaryFrameHeight() {
   requestAnimationFrame(() => {
     const cal = document.querySelector('.diary-mini-cal');
     const frame = document.getElementById('diaryPhotoFrame');
-    if (cal && frame) {
+    if (cal && frame && cal.offsetHeight > 0) {
       const h = cal.offsetHeight;
       frame.style.height = h + 'px';
       frame.style.maxHeight = h + 'px';
     }
   });
 }
+function toggleDiaryTop() {
+  toggleSection('diaryTopRow', 'diaryTopChev');
+  const el = document.getElementById('diaryTopRow');
+  S.diaryTopFolded = !!(el && el.style.display === 'none');
+  saveState();
+  syncDiaryFrameHeight();
+}
+
+/** 다른 날짜로 옮기기 전, 편집 중이던 내용을 자동 저장 */
+function _diaryAutoSave() {
+  if (!_diaryDate) return;
+  const ta = document.getElementById('diaryText');
+  const txt = ta ? ta.value : '';
+  if (!S.diaryEntries) S.diaryEntries = {};
+  const prev = S.diaryEntries[_diaryDate] || {};
+  if ((prev.text || '') === txt && (prev.imageData || null) === (_diaryImgData || null)) return;
+  if (!txt && !_diaryImgData) delete S.diaryEntries[_diaryDate];
+  else S.diaryEntries[_diaryDate] = { text: txt, imageData: _diaryImgData };
+  saveState();
+}
+
 function renderDiary() {
   if (!_diaryDate) {
     const t = new Date();
     _diaryDate = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
     _diaryCalYear = t.getFullYear(); _diaryCalMonth = t.getMonth();
+  }
+  const _top = document.getElementById('diaryTopRow');
+  const _chev = document.getElementById('diaryTopChev');
+  if (_top) {
+    _top.style.display = S.diaryTopFolded ? 'none' : '';
+    if (_chev) _chev.textContent = S.diaryTopFolded ? '▼' : '▲';
   }
   renderDiaryCal();
   loadDiaryEntry(_diaryDate);
@@ -2784,7 +2817,12 @@ function diaryCalNav(dir) {
   renderDiaryCal();
 }
 
-function selectDiaryDate(ds) { _diaryDate = ds; renderDiaryCal(); loadDiaryEntry(ds); }
+function selectDiaryDate(ds) {
+  _diaryAutoSave();          // 미저장 내용 보존 — 빈 날짜로도 자유롭게 이동
+  _diaryDate = ds;
+  renderDiaryCal();
+  loadDiaryEntry(ds);
+}
 
 function loadDiaryEntry(ds) {
   const entry = (S.diaryEntries||{})[ds] || {};

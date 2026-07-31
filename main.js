@@ -160,10 +160,42 @@ ipcMain.on('close-dashboard', () => {
 ipcMain.on('quit-app', () => { app.isQuitting = true; app.quit(); });
 
 // ═══ 부팅 시 자동 실행 설정 ═══
-ipcMain.handle('get-auto-launch', () => app.getLoginItemSettings().openAtLogin);
+// 사용자의 의도(켬/끔)를 파일에 저장해두고, 실행할 때마다 실제 등록 상태와 맞춘다.
+// 업데이트·재설치 등으로 등록이 사라져도 다음 실행에서 자동 복구된다.
+const AUTOLAUNCH_FILE = () => path.join(app.getPath('userData'), 'auto-launch.json');
+const AUTOLAUNCH_OPTS = () => ({ path: process.execPath, args: [] });
+
+function getAutoLaunchPref() {
+  const j = readJSON(AUTOLAUNCH_FILE(), null);
+  return (j && typeof j.enabled === 'boolean') ? j.enabled : true;  // 기본값: 켜짐
+}
+
+function isAutoLaunchOn() {
+  try {
+    return app.getLoginItemSettings(AUTOLAUNCH_OPTS()).openAtLogin;
+  } catch (e) { return false; }
+}
+
+function applyAutoLaunch(on) {
+  try {
+    app.setLoginItemSettings(Object.assign({ openAtLogin: !!on }, AUTOLAUNCH_OPTS()));
+  } catch (e) {}
+}
+
+function syncAutoLaunch() {
+  if (!app.isPackaged) return;   // 개발 중에는 등록하지 않음
+  try {
+    const want = getAutoLaunchPref();
+    if (want !== isAutoLaunchOn()) applyAutoLaunch(want);
+  } catch (e) {}
+}
+
+ipcMain.handle('get-auto-launch', () => isAutoLaunchOn());
+
 ipcMain.handle('set-auto-launch', (e, on) => {
-  app.setLoginItemSettings({ openAtLogin: !!on });
-  return app.getLoginItemSettings().openAtLogin;
+  writeJSON(AUTOLAUNCH_FILE(), { enabled: !!on });
+  applyAutoLaunch(on);
+  return isAutoLaunchOn();
 });
 
 
@@ -656,14 +688,8 @@ app.whenReady().then(() => {
   createTray();
   gaTrack('app_start');
 
-  // ═══ 부팅 시 자동 실행: 설치 후 최초 1회만 기본 활성화 (사용자가 끄면 유지) ═══
-  try {
-    const autoLaunchMarker = path.join(app.getPath('userData'), '.auto-launch-init');
-    if (app.isPackaged && !fs.existsSync(autoLaunchMarker)) {
-      app.setLoginItemSettings({ openAtLogin: true });
-      fs.writeFileSync(autoLaunchMarker, '1');
-    }
-  } catch (e) {}
+  // ═══ 부팅 시 자동 실행: 매 실행마다 설정을 점검해 어긋나면 복구 ═══
+  syncAutoLaunch();
 
   // ═══ 자동 업데이트 (GitHub Releases) ═══
   try {

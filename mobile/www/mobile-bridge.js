@@ -476,6 +476,93 @@
   }
 
   // ═══════════════════════════════════════════════
+  // 포토부스: 고양이 크기 축소 + 하단 4종 선택줄
+  // ═══════════════════════════════════════════════
+  // 합성 코드가 프레임 높이의 92%로 그리므로, 원본에 투명 여백을 둘러
+  // 화면상 고양이만 작게 보이도록 한다 (합성 로직은 건드리지 않음).
+  var PHOTO_CAT_PAD = 2.3;
+
+  function paddedCatUrl(src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = function () {
+        try {
+          var w = im.naturalWidth, h = im.naturalHeight;
+          var c = document.createElement('canvas');
+          c.width = Math.round(w * PHOTO_CAT_PAD);
+          c.height = Math.round(h * PHOTO_CAT_PAD);
+          var x = c.getContext('2d');
+          x.imageSmoothingEnabled = false;
+          x.drawImage(im, c.width - w, c.height - h, w, h);   // 오른쪽 아래 정렬
+          res(c.toDataURL('image/png'));
+        } catch (e) { res(null); }
+      };
+      im.onerror = function () { res(null); };
+      im.src = src;
+    });
+  }
+
+  function applyPhotoCat(url) {
+    var el = document.getElementById('photoCat');
+    if (!el || !url) return;
+    paddedCatUrl(url).then(function (d) { el.src = d || url; });
+  }
+
+  function buildCatPicker() {
+    if (document.getElementById('mCatPicker')) return;
+    var frame = document.getElementById('photoFrame');
+    var breeds = window._customBreeds || {};
+    var ids = Object.keys(breeds).filter(function (id) { return breeds[id].image_url; });
+    if (!frame || !ids.length) return;
+
+    var bar = document.createElement('div');
+    bar.id = 'mCatPicker';
+    bar.style.cssText = 'display:flex;gap:6px;justify-content:center;padding:8px 0 0;flex-wrap:wrap';
+    var st = getS();
+    var curBreed = st && st.cat && st.cat.breed;
+
+    ids.forEach(function (id) {
+      var b = document.createElement('button');
+      b.style.cssText = 'background:var(--frame-light);border:2px solid ' +
+        (id === curBreed ? 'var(--acc)' : 'var(--frame)') +
+        ';border-radius:6px;padding:3px;cursor:pointer;line-height:0';
+      var im = document.createElement('img');
+      im.src = breeds[id].image_url;
+      im.style.cssText = 'width:34px;height:41px;image-rendering:pixelated;display:block;object-fit:contain';
+      b.appendChild(im);
+      b.onclick = function () {
+        applyPhotoCat(breeds[id].image_url);
+        Array.prototype.forEach.call(bar.children, function (c) { c.style.borderColor = 'var(--frame)'; });
+        b.style.borderColor = 'var(--acc)';
+      };
+      bar.appendChild(b);
+    });
+
+    // 촬영 버튼 줄 바로 위에 삽입
+    var shoot = frame.querySelector('.btn.btn-g');
+    var row = shoot && shoot.parentElement;
+    if (row && row.parentElement) row.parentElement.insertBefore(bar, row);
+    else frame.appendChild(bar);
+  }
+
+  function hookPhotoBooth() {
+    if (typeof window.openPhotoBooth !== 'function' || window.openPhotoBooth._mWrapped) return;
+    var orig = window.openPhotoBooth;
+    window.openPhotoBooth = function () {
+      var r = orig.apply(this, arguments);
+      setTimeout(function () {
+        buildCatPicker();
+        var st = getS();
+        var cur = st && st.cat && window._customBreeds && window._customBreeds[st.cat.breed];
+        if (cur && cur.image_url) applyPhotoCat(cur.image_url);
+      }, 120);
+      return r;
+    };
+    window.openPhotoBooth._mWrapped = true;
+  }
+
+  // ═══════════════════════════════════════════════
   // 부팅
   // ═══════════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', function () {
@@ -505,6 +592,34 @@
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',
+
+      // ── 다이어리: 캘린더를 화면 폭에 꽉 차게 (오른쪽 여백 제거) ──
+      '#dp-diary .diary-top-row { flex-direction:column !important; }',
+      '#dp-diary .diary-mini-cal { flex:1 1 100% !important; width:100% !important; }',
+      '#dp-diary .diary-cal-header { font-size:15px !important; padding:2px 2px 6px; }',
+      '#dp-diary .diary-cal-nav { font-size:20px !important; padding:4px 16px !important; }',
+      '#dp-diary .diary-cal-dows span { font-size:12px !important; }',
+      '#dp-diary .diary-cal-cell { font-size:14px !important; padding:9px 2px !important; }',
+      '#dp-diary .diary-photo-col { width:100% !important; }',
+      '#dp-diary .diary-photo-frame { height:auto !important; max-height:none !important; min-height:150px !important; }',
+      '#dp-diary .diary-date-label, #dp-diary .diary-lines-area, #dp-diary .diary-btns { padding-left:14px !important; }',
+      '#dp-diary .diary-nb { padding:12px !important; }',
+
+      // ── 할 일 목록 캘린더: 셀 안의 체크박스/문구는 숨기고 점으로만 표시 ──
+      '#calLeftGrid .cal-day > div:not(.cal-day-num) { display:none !important; }',
+      '#calLeftGrid .cal-day { min-height:36px !important; }',
+      '#calLeftGrid .cal-day:has(> div:nth-child(2))::after {',
+      '  content:"\\2022"; display:block; text-align:center; color:var(--yellow); font-size:14px; line-height:1;',
+      '}',
+
+      // ── 고양이 탭: 잘림/찌그러짐 방지 ──
+      '#dp-cat [style*="display:flex"] { flex-wrap:wrap !important; }',
+      '#dp-cat .big-cat { width:110px !important; height:132px !important; flex-shrink:0 !important; }',
+      '#dp-cat .breed-row { grid-template-columns:repeat(2,1fr) !important; }',
+      '#dp-cat .breed-name { white-space:normal !important; font-size:12px !important; }',
+      '#dp-cat .breed-desc { white-space:normal !important; font-size:10px !important; }',
+      '#dp-cat #sellFruitBtn { flex-shrink:0 !important; }',
+      '#dp-cat input { min-width:0 !important; }',
       // 좁은 화면 대응
       '@media (max-width:700px) {',
       '  .grid2 { grid-template-columns: 1fr !important; }',
@@ -573,6 +688,9 @@
 
       // 3) 다이어리 이미지 저장 → 모바일 공유 시트
       window.exportDiaryImg = exportDiaryImgMobile;
+
+      // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
+      hookPhotoBooth();
 
       // 4) 클라우드 동기화 시작 (구글 로그인 상태일 때만)
       initSync();
