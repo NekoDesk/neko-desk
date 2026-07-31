@@ -34,6 +34,11 @@
   function capPlugin(name) {
     return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
   }
+  // renderer의 S는 `const`로 선언되어 window에 붙지 않는다.
+  // 같은 classic script 스코프를 공유하므로 식별자로 직접 참조해야 함.
+  function getS() {
+    try { return (typeof S !== 'undefined' && S) ? S : null; } catch (e) { return null; }
+  }
   function toast(kind, title, msg) {
     if (typeof window.toast === 'function') window.toast(kind, title, msg);
   }
@@ -141,30 +146,31 @@
 
   /** 로컬 S에서 동기화 대상만 추출 */
   function collectLocal() {
-    var out = {};
-    if (typeof window.S === 'undefined') return out;
+    var out = {}, st = getS();
+    if (!st) return out;
     SYNC_KEYS.forEach(function (k) {
-      if (window.S[k] !== undefined) out[k] = window.S[k];
+      if (st[k] !== undefined) out[k] = st[k];
     });
     return out;
   }
 
   /** 원격 데이터를 S에 반영하고 화면 갱신 */
   function applyRemote(data) {
-    if (!data || typeof window.S === 'undefined') return false;
+    var st = getS();
+    if (!data || !st) return false;
     var changed = false;
     SYNC_KEYS.forEach(function (k) {
-      if (data[k] !== undefined) { window.S[k] = data[k]; changed = true; }
+      if (data[k] !== undefined) { st[k] = data[k]; changed = true; }
     });
     if (!changed) return false;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.S));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
       // 화면 다시 그리기
       if (typeof window.renderAll === 'function') window.renderAll();
       if (typeof window.renderCalendar === 'function') window.renderCalendar();
       if (typeof window.renderDiary === 'function') window.renderDiary();
       var memo = document.getElementById('scheduleMemoTxt');
-      if (memo) memo.value = window.S.scheduleMemo || '';
+      if (memo) memo.value = st.scheduleMemo || '';
     } catch (e) {}
     return true;
   }
@@ -176,7 +182,8 @@
       .then(function (r) { return r && r.ok ? r.json() : null; })
       .then(function (rows) {
         _syncReady = true;                       // 조회 성공 → 이제 push 허용
-        if (!rows || !rows.length || !rows[0].data) {
+        var remote = (rows && rows.length) ? rows[0].data : null;
+        if (!remote || !Object.keys(remote).length) {
           syncPush(true);                        // 클라우드가 비어 있으면 로컬을 올림
           return false;
         }
@@ -184,7 +191,7 @@
         var pushedTs = Number(localStorage.getItem(SYNC_TS_KEY) || 0);
         // 이 기기가 마지막으로 올린 것보다 원격이 최신일 때만 덮어씀
         if (remoteTs > pushedTs) {
-          var ok = applyRemote(rows[0].data);
+          var ok = applyRemote(remote);
           localStorage.setItem(SYNC_TS_KEY, String(remoteTs));
           if (ok && notify) toast('info', '☁️ 동기화', 'PC의 최신 내용을 가져왔어요');
           return ok;
@@ -198,7 +205,10 @@
   function syncPush(force) {
     if (!loggedIn() || (!_syncReady && !force)) return Promise.resolve(false);
     var s = readSession();
-    var body = { user_id: s.uid, data: collectLocal(), updated_at: new Date().toISOString() };
+    var local = collectLocal();
+    // 빈 데이터로 클라우드를 덮어쓰지 않음
+    if (!Object.keys(local).length) return Promise.resolve(false);
+    var body = { user_id: s.uid, data: local, updated_at: new Date().toISOString() };
     return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -335,7 +345,8 @@
     var ta = document.getElementById('diaryText');
     var img = document.getElementById('diaryPhotoImg');
     var text = ta ? ta.value : '';
-    var dateStr = window._diaryDate || '';
+    var dateStr = '';
+    try { if (typeof _diaryDate !== 'undefined') dateStr = _diaryDate || ''; } catch (e) {}
     var hasImg = img && img.src && img.style.display !== 'none';
 
     var W = 1080, PAD = 64, CW = W - PAD * 2;
@@ -498,10 +509,11 @@
       // 1) 다이어리 로컬 복원 — renderer의 loadState가 diaryEntries를 빠뜨림
       try {
         var raw = localStorage.getItem(STORAGE_KEY);
-        if (raw && typeof window.S !== 'undefined') {
+        var st0 = getS();
+        if (raw && st0) {
           var saved = JSON.parse(raw);
-          if (saved.diaryEntries && !Object.keys(window.S.diaryEntries || {}).length) {
-            window.S.diaryEntries = saved.diaryEntries;
+          if (saved.diaryEntries && !Object.keys(st0.diaryEntries || {}).length) {
+            st0.diaryEntries = saved.diaryEntries;
             if (typeof window.renderDiary === 'function') window.renderDiary();
           }
         }

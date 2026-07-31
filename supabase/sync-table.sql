@@ -12,6 +12,11 @@ create table if not exists public.nekodesk_sync (
 
 alter table public.nekodesk_sync enable row level security;
 
+-- 역할별 접근 권한 (RLS와 별개로 반드시 필요)
+--   실제 행 보호는 아래 RLS 정책이 담당한다.
+grant select, insert, update on table public.nekodesk_sync to authenticated;
+grant select on table public.nekodesk_sync to anon;
+
 -- 본인 행만 읽고 쓸 수 있음
 drop policy if exists "own row select" on public.nekodesk_sync;
 create policy "own row select" on public.nekodesk_sync

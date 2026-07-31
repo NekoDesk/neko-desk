@@ -3873,11 +3873,12 @@ async function cloudPull(notify) {
   if (!r || !r.ok) return false;
   const rows = await r.json();
   _cloudReady = true;                         // 조회 성공 → 업로드 허용
-  if (!rows || !rows.length || !rows[0].data) { cloudPush(true); return false; }
+  const remote = (rows && rows.length) ? rows[0].data : null;
+  if (!remote || !Object.keys(remote).length) { cloudPush(true); return false; }
   const remoteTs = new Date(rows[0].updated_at || 0).getTime();
   const pushedTs = Number(localStorage.getItem(CLOUD_TS_KEY) || 0);
   if (remoteTs > pushedTs) {
-    const ok = _cloudApply(rows[0].data);
+    const ok = _cloudApply(remote);
     localStorage.setItem(CLOUD_TS_KEY, String(remoteTs));
     if (ok && notify) toast('info', '☁️ 동기화', '최신 내용을 가져왔어요');
     return ok;
@@ -3889,6 +3890,7 @@ async function cloudPush(force) {
   if (!_cloudSb || (!_cloudReady && !force)) return false;
   const data = {};
   CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
+  if (!Object.keys(data).length) return false;   // 빈 데이터로 클라우드를 덮어쓰지 않음
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
