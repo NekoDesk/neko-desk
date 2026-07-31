@@ -302,13 +302,21 @@
     var local = collectLocal();
     // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
     if (isEmptyPayload(local)) { pushStatus('올릴 내용 없음'); return Promise.resolve(false); }
-    local._device = 'mobile';                    // 어느 기기가 올렸는지 진단용
-    var body = { user_id: s.uid, data: local, updated_at: new Date().toISOString() };
-    return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify(body)
-    }).then(function (r) {
+    // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
+    // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
+    return authFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' })
+      .then(function (rg) { return rg && rg.ok ? rg.json() : null; })
+      .then(function (rows) {
+        var remote = (rows && rows.length) ? rows[0].data : null;
+        var payload = remote ? mergePayload(remote, local) : local;
+        payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
+        var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
+        return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify(body)
+        });
+      }).then(function (r) {
       var ok = !!(r && r.ok);
       if (ok) {
         localStorage.removeItem(DIRTY_KEY);   // 내 변경이 클라우드에 반영됨

@@ -4030,6 +4030,19 @@ async function cloudPush(force) {
   CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
   // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
   if (_cloudIsEmpty(data)) { _pushStatus('올릴 내용 없음'); return false; }
+  // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
+  // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
+  try {
+    const rg = await _cloudFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' });
+    if (rg && rg.ok) {
+      const rows = await rg.json();
+      const remoteNow = (rows && rows.length) ? rows[0].data : null;
+      if (remoteNow) {
+        const merged = _cloudMerge(remoteNow, data);
+        Object.keys(merged).forEach(k => { data[k] = merged[k]; });
+      }
+    }
+  } catch(e) {}
   data._device = 'pc';                       // 어느 기기가 올렸는지 진단용
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
     method: 'POST',
