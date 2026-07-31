@@ -626,19 +626,18 @@ select {
 .diary-nb{position:relative;padding:16px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
 .diary-top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;background:var(--panel);border-radius:10px;padding:12px}
 .diary-mini-cal{flex:0 0 206px}
-.diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:bold;color:var(--white);margin-bottom:8px}
-.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;padding:2px 6px;border-radius:4px}
-.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
+.diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-family:'Galmuri14',monospace;font-size:12px;color:var(--white);margin-bottom:8px}
+.cal-nav,.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;line-height:1;padding:2px 8px;border-radius:4px}
+.cal-nav:hover,.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
 .diary-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px}
 .diary-cal-dows span{font-size:12px;text-align:center;color:var(--gray)}
 .diary-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .diary-cal-cell{font-size:13px;text-align:center;padding:4px 2px;cursor:pointer;border-radius:3px;color:var(--white);position:relative;line-height:1.4}
 .diary-cal-cell:hover{background:rgba(255,255,255,0.1)}
 .diary-cal-cell.today{background:var(--yellow);color:#333;font-weight:bold}
-.diary-cal-cell.selected{outline:2px solid var(--accent);outline-offset:-1px}
-.diary-cal-cell.has-entry::after{content:'\2022';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);color:var(--accent);font-size:7px;line-height:1}
+.diary-cal-cell.selected{outline:2px solid var(--acc);outline-offset:-1px}
+.diary-cal-cell.has-entry::after{content:'\2022';display:block;text-align:center;color:var(--yellow);font-size:13px;line-height:1;margin-top:1px}
 .diary-cal-cell.today.has-entry::after{color:var(--bg)}
-.diary-cal-cell.selected.has-entry::after{color:var(--accent)}
 .diary-photo-col{flex:1;display:flex;flex-direction:column}
 .diary-photo-frame{width:100%;min-height:60px;background:rgba(255,255,255,0.05);border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;box-sizing:border-box}
 .diary-photo-del-btn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;text-align:center;z-index:2;padding:0}
@@ -2625,9 +2624,9 @@ function renderCalendar() {
   if (leftEl) {
     let lh = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calPrev()">◀</button>
+        <button class="cal-nav" onclick="calPrev()">◀</button>
         <span style="font-family:'Galmuri14',monospace;font-size:12px">${L('date_ym').replace('{y}',y).replace('{m}',m+1)}</span>
-        <button class="btn btn-gr" style="padding:3px 8px;font-size:11px" onclick="calNext()">▶</button>
+        <button class="cal-nav" onclick="calNext()">▶</button>
       </div>
       <div class="cal-grid">
       ${dows.map((d,i)=>`<div style="text-align:center;font-size:10px;color:${i===0?'#f88':'var(--gray)'};padding:2px 0;border-bottom:1px solid var(--border)">${d}</div>`).join('')}`;
@@ -2785,14 +2784,11 @@ function renderDiaryCal() {
   const title = document.getElementById('diaryCalTitle');
   const grid = document.getElementById('diaryCalGrid');
   if (!title || !grid) return;
-  const mn = [{ko:'일',en:'Su',ja:'日'},{ko:'월',en:'Mo',ja:'月'},{ko:'화',en:'Tu',ja:'火'},{ko:'수',en:'We',ja:'水'},{ko:'목',en:'Th',ja:'木'},{ko:'금',en:'Fr',ja:'金'},{ko:'토',en:'Sa',ja:'土'}];
-  const lang = S.language || 'ko';
-  const mnames = {ko:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
-               en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-               ja:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']};
-  title.textContent = `${_diaryCalYear} ${(mnames[lang]||mnames.ko)[_diaryCalMonth]}`;
+  // 제목·요일은 할 일 목록 캘린더와 동일한 형식 사용
+  title.textContent = L('date_ym').replace('{y}', _diaryCalYear).replace('{m}', _diaryCalMonth + 1);
   const dow = document.querySelector('.diary-cal-dows');
-  if (dow) dow.innerHTML = mn.map(d=>`<span>${d[lang]||d.ko}</span>`).join('');
+  if (dow) dow.innerHTML = L('dows').split(',')
+    .map((d,i)=>`<span style="color:${i===0?'#f88':'var(--gray)'}">${d}</span>`).join('');
   const first = new Date(_diaryCalYear, _diaryCalMonth, 1).getDay();
   const days = new Date(_diaryCalYear, _diaryCalMonth+1, 0).getDate();
   const today = new Date();

@@ -596,8 +596,9 @@
       // ── 다이어리: 캘린더를 화면 폭에 꽉 차게 (오른쪽 여백 제거) ──
       '#dp-diary .diary-top-row { flex-direction:column !important; }',
       '#dp-diary .diary-mini-cal { flex:1 1 100% !important; width:100% !important; }',
-      '#dp-diary .diary-cal-header { font-size:15px !important; padding:2px 2px 6px; }',
-      '#dp-diary .diary-cal-nav { font-size:20px !important; padding:4px 16px !important; }',
+      '#dp-diary .diary-cal-header { font-size:14px !important; padding:2px 2px 6px; }',
+      // 월 이동 화살표는 두 캘린더 모두 같은 크기로
+      '#dp-diary .diary-cal-nav, #dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
       '#dp-diary .diary-cal-dows span { font-size:12px !important; }',
       '#dp-diary .diary-cal-cell { font-size:14px !important; padding:9px 2px !important; }',
       '#dp-diary .diary-photo-col { width:100% !important; }',
