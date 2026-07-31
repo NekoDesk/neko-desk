@@ -1063,6 +1063,7 @@ select {
       <div style="font-size:32px;margin-bottom:10px">🐱</div>
       <div style="font-size:15px;color:var(--white);margin-bottom:6px">네코데스크에 오신 걸 환영해요!</div>
       <div style="font-size:13px;color:var(--gray);margin-bottom:18px">계속하려면 구글 계정으로 로그인해주세요</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--gray);text-align:left;line-height:1.6" data-i18n-html="login_sync_info">☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span></div>
       <button class="btn btn-g" onclick="doGoogleLogin()" style="width:100%;font-size:15px;margin-bottom:8px">G 구글로 로그인</button>
       <button class="btn btn-gr" onclick="doGuestLogin()" style="width:100%;font-size:13px">게스트로 둘러보기 (보너스 없음)</button>
       <div id="loginStatus" style="font-size:12px;color:var(--gray);margin-top:10px"></div>
@@ -1192,7 +1193,7 @@ const STRINGS = {
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
     diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
-    diary_fold_title:'📅 날짜 · 사진', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
+    login_sync_info:'☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span>', diary_fold_title:'📅 날짜 · 사진', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1249,7 +1250,7 @@ const STRINGS = {
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
-    diary_fold_title:'📅 Date · Photo', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
+    login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', diary_fold_title:'📅 Date · Photo', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
     diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
     diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
@@ -1308,7 +1309,7 @@ const STRINGS = {
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
-    diary_fold_title:'📅 日付・写真', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
+    login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', diary_fold_title:'📅 日付・写真', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
     diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
     diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
