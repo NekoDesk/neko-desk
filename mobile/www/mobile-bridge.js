@@ -42,6 +42,28 @@
   function toast(kind, title, msg) {
     if (typeof window.toast === 'function') window.toast(kind, title, msg);
   }
+  /** 모든 값이 비어있는 페이로드인가 (값 없는 기기가 클라우드를 지우는 것 방지) */
+  function isEmptyPayload(d) {
+    var ks = Object.keys(d || {});
+    if (!ks.length) return true;
+    return ks.every(function (k) {
+      var v = d[k];
+      if (v === null || v === undefined) return true;
+      if (typeof v === 'string') return v.trim() === '';
+      if (Array.isArray(v)) return v.length === 0;
+      if (typeof v === 'object') return Object.keys(v).length === 0;
+      return false;
+    });
+  }
+  /** 설정 탭의 동기화 상태 표시 (renderer가 만든 요소를 사용) */
+  function syncStatus(msg) {
+    var el = document.getElementById('syncStatus');
+    if (el) el.textContent = '☁️ 동기화: ' + msg;
+  }
+  function nowHHMM() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
 
   // ═══════════════════════════════════════════════
   // 구글 로그인 (Supabase OAuth + 딥링크)
@@ -179,13 +201,24 @@
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);
     return authFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' })
-      .then(function (r) { return r && r.ok ? r.json() : null; })
+      .then(function (r) {
+        if (!r || !r.ok) {
+          syncStatus('연결 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+          return null;
+        }
+        return r.json();
+      })
       .then(function (rows) {
+        if (rows === null) return false;
         _syncReady = true;                       // 조회 성공 → 이제 push 허용
         var remote = (rows && rows.length) ? rows[0].data : null;
-        if (!remote || !Object.keys(remote).length) {
-          syncPush(true);                        // 클라우드가 비어 있으면 로컬을 올림
-          return false;
+        if (isEmptyPayload(remote)) {
+          // 클라우드가 비어 있으면 로컬을 올림
+          return syncPush(true).then(function (up) {
+            syncStatus(up ? '연결됨 · 내 기록을 올렸어요 (' + nowHHMM() + ')'
+                          : '연결됨 · 올릴 내용 없음 (' + nowHHMM() + ')');
+            return false;
+          });
         }
         var remoteTs = new Date(rows[0].updated_at || 0).getTime();
         var pushedTs = Number(localStorage.getItem(SYNC_TS_KEY) || 0);
@@ -194,11 +227,13 @@
           var ok = applyRemote(remote);
           localStorage.setItem(SYNC_TS_KEY, String(remoteTs));
           if (ok && notify) toast('info', '☁️ 동기화', 'PC의 최신 내용을 가져왔어요');
+          syncStatus('연결됨 · 받음 (' + nowHHMM() + ')');
           return ok;
         }
+        syncStatus('연결됨 (' + nowHHMM() + ')');
         return false;
       })
-      .catch(function () { return false; });
+      .catch(function () { syncStatus('연결 오류'); return false; });
   }
 
   /** 기기 → 클라우드 */
@@ -206,8 +241,8 @@
     if (!loggedIn() || (!_syncReady && !force)) return Promise.resolve(false);
     var s = readSession();
     var local = collectLocal();
-    // 빈 데이터로 클라우드를 덮어쓰지 않음
-    if (!Object.keys(local).length) return Promise.resolve(false);
+    // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
+    if (isEmptyPayload(local)) return Promise.resolve(false);
     var body = { user_id: s.uid, data: local, updated_at: new Date().toISOString() };
     return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
       method: 'POST',
@@ -215,9 +250,14 @@
       body: JSON.stringify(body)
     }).then(function (r) {
       var ok = !!(r && r.ok);
-      if (ok) localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+      if (ok) {
+        localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+        syncStatus('연결됨 · 올림 (' + nowHHMM() + ')');
+      } else {
+        syncStatus('업로드 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+      }
       return ok;
-    }).catch(function () { return false; });
+    }).catch(function () { syncStatus('업로드 오류'); return false; });
   }
 
   function schedulePush() {
@@ -227,7 +267,11 @@
   }
 
   function initSync() {
-    if (!loggedIn()) return;
+    if (!loggedIn()) {
+      syncStatus(readSession() ? '구글 로그인 필요 (지금은 게스트)' : '로그인 필요');
+      return;
+    }
+    syncStatus('연결 중...');
     // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
     if (typeof window.saveState === 'function' && !window.saveState._syncWrapped) {
       var orig = window.saveState;

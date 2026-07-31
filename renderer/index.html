@@ -935,6 +935,7 @@ select {
             <div class="card">
               <div class="card-title" data-i18n="acc_title">👤 계정</div>
               <div id="accountLabel" style="font-size:13px;color:var(--gray);margin-bottom:10px;word-break:break-all">-</div>
+              <div id="syncStatus" style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">☁️ 동기화: 확인 중...</div>
               <button class="btn btn-gr" onclick="doLogout()" data-i18n="logout_btn">로그아웃</button>
             </div>
 
@@ -3867,22 +3868,57 @@ function _cloudApply(data) {
   return true;
 }
 
+/** 모든 값이 비어있는 페이로드인가 (값 없는 기기가 클라우드를 지우는 것 방지) */
+function _cloudIsEmpty(d) {
+  const ks = Object.keys(d || {});
+  if (!ks.length) return true;
+  return ks.every(k => {
+    const v = d[k];
+    if (v === null || v === undefined) return true;
+    if (typeof v === 'string') return v.trim() === '';
+    if (Array.isArray(v)) return v.length === 0;
+    if (typeof v === 'object') return Object.keys(v).length === 0;
+    return false;
+  });
+}
+
+/** 설정 탭에 동기화 상태 표시 */
+function _syncStatus(msg) {
+  const el = document.getElementById('syncStatus');
+  if (el) el.textContent = '☁️ 동기화: ' + msg;
+}
+
+function _syncNow() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
 async function cloudPull(notify) {
   if (!_cloudSb) return false;
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' });
-  if (!r || !r.ok) return false;
+  if (!r || !r.ok) {
+    _syncStatus('연결 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+    return false;
+  }
   const rows = await r.json();
   _cloudReady = true;                         // 조회 성공 → 업로드 허용
   const remote = (rows && rows.length) ? rows[0].data : null;
-  if (!remote || !Object.keys(remote).length) { cloudPush(true); return false; }
+  if (_cloudIsEmpty(remote)) {
+    const up = await cloudPush(true);          // 클라우드가 비어있으면 내 것을 올림
+    _syncStatus(up ? '연결됨 · 내 기록을 올렸어요 (' + _syncNow() + ')'
+                   : '연결됨 · 올릴 내용 없음 (' + _syncNow() + ')');
+    return false;
+  }
   const remoteTs = new Date(rows[0].updated_at || 0).getTime();
   const pushedTs = Number(localStorage.getItem(CLOUD_TS_KEY) || 0);
   if (remoteTs > pushedTs) {
     const ok = _cloudApply(remote);
     localStorage.setItem(CLOUD_TS_KEY, String(remoteTs));
     if (ok && notify) toast('info', '☁️ 동기화', '최신 내용을 가져왔어요');
+    _syncStatus('연결됨 · 받음 (' + _syncNow() + ')');
     return ok;
   }
+  _syncStatus('연결됨 (' + _syncNow() + ')');
   return false;
 }
 
@@ -3890,14 +3926,20 @@ async function cloudPush(force) {
   if (!_cloudSb || (!_cloudReady && !force)) return false;
   const data = {};
   CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
-  if (!Object.keys(data).length) return false;   // 빈 데이터로 클라우드를 덮어쓰지 않음
+  // 내 기기가 텔 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
+  if (_cloudIsEmpty(data)) return false;
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify({ user_id: _cloudSb.uid, data, updated_at: new Date().toISOString() })
   });
   const ok = !!(r && r.ok);
-  if (ok) localStorage.setItem(CLOUD_TS_KEY, String(Date.now()));
+  if (ok) {
+    localStorage.setItem(CLOUD_TS_KEY, String(Date.now()));
+    _syncStatus('연결됨 · 올림 (' + _syncNow() + ')');
+  } else {
+    _syncStatus('업로드 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+  }
   return ok;
 }
 
@@ -3908,15 +3950,21 @@ function cloudSchedulePush() {
 }
 
 async function initCloudSync() {
-  if (!window.electronAPI || !window.electronAPI.getSupabaseSession) return;
+  if (!window.electronAPI || !window.electronAPI.getSupabaseSession) {
+    _syncStatus('지원 안 됨'); return;
+  }
   // 위젯 창은 대시보드의 최신 편집을 모를 수 있으므로 대시보드에서만 동기화
   if (!window._isDashboard) return;
   try {
     const sb = await window.electronAPI.getSupabaseSession();
-    if (!sb || !sb.token) return;
+    if (!sb || !sb.token) {
+      _syncStatus('걱글 로그인 필요 (로그아웃 후 다시 로그인)');
+      return;
+    }
     _cloudSb = sb;
     _cloudCfg = await window.electronAPI.getPublicConfig();
-    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) return;
+    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) { _syncStatus('설정 오류'); return; }
+    _syncStatus('연결 중...');
     if (!saveState._cloudWrapped) {
       const _origSave = saveState;
       saveState = function () { _origSave.apply(this, arguments); cloudSchedulePush(); };
@@ -3924,7 +3972,7 @@ async function initCloudSync() {
     }
     await cloudPull(false);
     setInterval(() => cloudPull(false), 60000);   // 1분마다 최신 내용 확인
-  } catch(e) {}
+  } catch(e) { _syncStatus('오류: ' + (e && e.message || e)); }
 }
 
 function refreshAutoLaunchBtn(on) {
