@@ -11,6 +11,7 @@
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
+  var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
 
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
@@ -226,6 +227,27 @@
     return true;
   }
 
+  /**
+   * 원격과 로컬을 병합 (로컬 우선).
+   * diaryEntries/calendarNotes처럼 날짜별 객체는 항목 단위로 합쳐
+   * 양쪽 기기의 기록을 모두 보존한다.
+   */
+  function mergePayload(remote, local) {
+    var out = {};
+    SYNC_KEYS.forEach(function (k) {
+      var rv = remote ? remote[k] : undefined;
+      var lv = local ? local[k] : undefined;
+      if (lv === undefined) { if (rv !== undefined) out[k] = rv; return; }
+      if (rv && lv && typeof rv === 'object' && typeof lv === 'object'
+          && !Array.isArray(rv) && !Array.isArray(lv)) {
+        out[k] = Object.assign({}, rv, lv);   // 원격 + 로컬, 겹치면 로컬 우선
+      } else {
+        out[k] = lv;                          // 그 외는 로컬(내 변경) 우선
+      }
+    });
+    return out;
+  }
+
   /** 클라우드 → 기기 */
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);
@@ -246,11 +268,13 @@
           syncStatus('클라우드 비어있음 (' + nowHHMM() + ')');
           return false;
         }
-        // 내가 방금 저장한 내용이 아직 올라가기 전이면 원격을 덮어씌우지 않는다.
-        // (그대로 적용하면 직전에 쓴 글이 사라진 뒤 그 상태가 업로드됨)
-        if (_pushTimer) {
-          syncStatus('내 변경 저장 대기 중 (' + nowHHMM() + ')');
-          return false;
+        // 아직 안 올라간 내 변경이 있으면(앱을 껐다 켠 경우 포함) 원격으로 덮어쓰지 않고,
+        // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
+        if (_pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
+          var merged = mergePayload(remote, collectLocal());
+          applyRemote(merged);
+          syncStatus('내 변경 병합 (' + nowHHMM() + ')');
+          return syncPush(true);
         }
         // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
         // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
@@ -287,6 +311,7 @@
     }).then(function (r) {
       var ok = !!(r && r.ok);
       if (ok) {
+        localStorage.removeItem(DIRTY_KEY);   // 내 변경이 클라우드에 반영됨
         // 서버가 기록한 시각을 그대로 저장해 두어야 다음 비교가 정확함
         r.json().then(function (back) {
           if (back && back[0] && back[0].updated_at) {
@@ -303,12 +328,20 @@
 
   function schedulePush() {
     if (!loggedIn()) return;
+    localStorage.setItem(DIRTY_KEY, '1');   // 앱이 죽어도 '안 올라간 변경 있음'이 남도록
     if (!_syncReady) { pushStatus('연결 대기 중'); return; }
     clearTimeout(_pushTimer);
     _pushTimer = setTimeout(function () {
       _pushTimer = null;
       syncPush();
     }, 2500);   // 편집이 멎으면 올림
+  }
+
+  /** 예약된 업로드를 기다리지 않고 즉시 실행 (앱이 백그라운드로 갈 때) */
+  function flushPush() {
+    if (!loggedIn() || !_syncReady) return;
+    if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
+    if (localStorage.getItem(DIRTY_KEY) === '1') syncPush();
   }
 
   function initSync() {
@@ -325,13 +358,17 @@
     }
     syncPull(false);
     setInterval(function () { syncPull(false); }, 15000);   // 15초마다 최신 내용 확인
-    // 앱을 다시 열 때마다 최신 내용 확인
+    // 앱을 열면 최신 내용 확인, 백그라운드로 가면 예약된 업로드 즉시 실행
     var App = capPlugin('App');
     if (App) {
       App.addListener('appStateChange', function (st) {
         if (st && st.isActive) syncPull(false);
+        else flushPush();
       });
     }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) flushPush();
+    });
   }
 
   // ═══════════════════════════════════════════════
@@ -378,6 +415,7 @@
     logout: function () {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(SYNC_TS_KEY);
+      localStorage.removeItem(DIRTY_KEY);
       return Promise.resolve(true);
     },
 

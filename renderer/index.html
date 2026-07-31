@@ -3861,6 +3861,7 @@ const CLOUD_KEYS = [
   'schedule','workItems','scheduleItems','shipping','theme','language'
 ];
 const CLOUD_TS_KEY = 'nekodesk_sync_pushed_at';
+const CLOUD_DIRTY_KEY = 'nekodesk_sync_dirty';   // 안 올라간 변경 존재 표시 (재시작에도 유지)
 let _cloudSb = null, _cloudCfg = null, _cloudReady = false, _cloudTimer = null;
 
 async function _cloudRefreshToken() {
@@ -3898,6 +3899,27 @@ async function _cloudFetch(path, opts, retry) {
     }
     return r;
   } catch(e) { return null; }
+}
+
+/**
+ * 원격과 로컬을 병합 (로컬 우선).
+ * diaryEntries/calendarNotes처럼 날짜별 객체는 항목 단위로 합쳐
+ * 양쪽 기기의 기록을 모두 보존한다.
+ */
+function _cloudMerge(remote, local) {
+  const out = {};
+  CLOUD_KEYS.forEach(k => {
+    const rv = remote ? remote[k] : undefined;
+    const lv = local ? local[k] : undefined;
+    if (lv === undefined) { if (rv !== undefined) out[k] = rv; return; }
+    if (rv && lv && typeof rv === 'object' && typeof lv === 'object'
+        && !Array.isArray(rv) && !Array.isArray(lv)) {
+      out[k] = Object.assign({}, rv, lv);   // 원격 + 로컬, 겹치면 로컬 우선
+    } else {
+      out[k] = lv;                          // 그 외는 로컬(내 변경) 우선
+    }
+  });
+  return out;
 }
 
 function _cloudApply(data) {
@@ -3977,8 +3999,15 @@ async function cloudPull(notify) {
     _syncStatus('클라우드 비어있음 (' + _syncNow() + ')');
     return false;
   }
-  // 내가 방금 저장한 내용이 아직 올라가기 전이면 원격을 덮어씨우지 않는다.
-  if (_cloudTimer) { _syncStatus('내 변경 저장 대기 중 (' + _syncNow() + ')'); return false; }
+  // 안 올라간 내 변경이 있으면(재시작 포함) 원격으로 덮어쓰지 않고,
+  // 원격과 병합한 결과를 올린다 — 양쪽 기기 기록이 모두 살아남는다.
+  if (_cloudTimer || localStorage.getItem(CLOUD_DIRTY_KEY) === '1') {
+    const localData = {};
+    CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) localData[k] = S[k]; });
+    _cloudApply(_cloudMerge(remote, localData));
+    _syncStatus('내 변경 병합 (' + _syncNow() + ')');
+    return cloudPush(true);
+  }
   // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
   // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
   const remoteTs = String(rows[0].updated_at || '');
@@ -4013,6 +4042,7 @@ async function cloudPush(force) {
       const back = await r.json();
       if (back && back[0] && back[0].updated_at) localStorage.setItem(CLOUD_TS_KEY, String(back[0].updated_at));
     } catch(e) {}
+    localStorage.removeItem(CLOUD_DIRTY_KEY);   // 내 변경이 클라우드에 반영됨
     _pushStatus('완료 (' + _syncNow() + ')');
   } else {
     _pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
@@ -4022,10 +4052,16 @@ async function cloudPush(force) {
 
 function cloudSchedulePush() {
   if (!_cloudSb) return;
+  localStorage.setItem(CLOUD_DIRTY_KEY, '1');   // 창이 닫혀도 '안 올라간 변경 있음'이 남도록
   if (!_cloudReady) { _pushStatus('연결 대기 중'); return; }
   clearTimeout(_cloudTimer);
   _cloudTimer = setTimeout(() => { _cloudTimer = null; cloudPush(); }, 2500);   // 편집이 멈추면 올림
 }
+
+// 대시보드 창이 닫히기 직전, 예약만 되고 안 올라간 변경을 즉시 올림
+window.addEventListener('beforeunload', () => {
+  if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; cloudPush(); }
+});
 
 async function initCloudSync() {
   if (!window.electronAPI || !window.electronAPI.getSupabaseSession) {
