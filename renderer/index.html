@@ -629,17 +629,15 @@ select {
 .diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-family:'Galmuri14',monospace;font-size:12px;color:var(--white);margin-bottom:8px}
 .cal-nav,.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;line-height:1;padding:2px 8px;border-radius:4px}
 .cal-nav:hover,.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
-.diary-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px}
-.diary-cal-dows span{font-size:12px;text-align:center;color:var(--gray)}
-.diary-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.diary-cal-cell{font-size:13px;text-align:center;padding:4px 2px;cursor:pointer;border-radius:3px;color:var(--white);position:relative;line-height:1.4}
-.diary-cal-cell:hover{background:rgba(255,255,255,0.1)}
-.diary-cal-cell.today{background:var(--yellow);color:#333;font-weight:bold}
-.diary-cal-cell.selected{outline:2px solid var(--gray);outline-offset:-1px;background:rgba(150,150,150,0.20)}
-.diary-cal-cell.today.selected{background:rgba(150,150,150,0.20);color:var(--yellow)}
-.diary-cal-cell.today.selected.has-entry::after{color:var(--yellow)}
-.diary-cal-cell.has-entry::after{content:'\2022';display:block;text-align:center;color:var(--yellow);font-size:13px;line-height:1;margin-top:1px}
-.diary-cal-cell.today.has-entry::after{color:var(--bg)}
+/* 다이어리 캘린더 — 할 일 목록 캘린더(.cal-*)와 동일한 규격 */
+.diary-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px}
+.diary-cal-dows span{font-size:10px;text-align:center;color:var(--gray);padding:2px 0;border-bottom:1px solid var(--border)}
+.diary-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.diary-cal-cell{min-height:30px;font-size:11px;text-align:center;padding:3px 2px;cursor:pointer;border-radius:3px;border:1px solid transparent;color:var(--white);line-height:1.4}
+.diary-cal-cell:hover{border-color:var(--border);background:var(--card)}
+.diary-cal-cell.today{border-color:var(--yellow);background:rgba(255,211,105,0.08)}
+.diary-cal-cell.selected{border-color:var(--gray);background:rgba(150,150,150,0.20)}
+.diary-cal-cell.has-entry::after{content:'\2022';display:block;text-align:center;color:var(--yellow);font-size:10px;line-height:1}
 .diary-photo-col{flex:1;display:flex;flex-direction:column}
 .diary-photo-frame{width:100%;min-height:60px;background:rgba(255,255,255,0.05);border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;box-sizing:border-box}
 .diary-photo-del-btn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:22px;text-align:center;z-index:2;padding:0}

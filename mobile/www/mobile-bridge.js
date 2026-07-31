@@ -624,11 +624,10 @@
       // ── 다이어리: 캘린더를 화면 폭에 꽉 차게 (오른쪽 여백 제거) ──
       '#dp-diary .diary-top-row { flex-direction:column !important; }',
       '#dp-diary .diary-mini-cal { flex:1 1 100% !important; width:100% !important; }',
-      '#dp-diary .diary-cal-header { font-size:14px !important; padding:2px 2px 6px; }',
-      // 월 이동 화살표는 두 캘린더 모두 같은 크기로
+      // 두 캘린더(할 일 목록 · 다이어리)는 완전히 같은 규격으로 보이게 한다
       '#dp-diary .diary-cal-nav, #dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
-      '#dp-diary .diary-cal-dows span { font-size:12px !important; }',
-      '#dp-diary .diary-cal-cell { font-size:14px !important; padding:9px 2px !important; }',
+      '#dp-diary .diary-cal-cell, #calLeftGrid .cal-day { min-height:36px !important; font-size:11px !important; }',
+      '#dp-diary .diary-cal-dows span, #dp-schedule .cal-grid > div { font-size:10px !important; }',
       '#dp-diary .diary-photo-col { width:100% !important; }',
       '#dp-diary .diary-photo-frame { height:auto !important; max-height:none !important; min-height:150px !important; }',
       '#dp-diary .diary-date-label, #dp-diary .diary-lines-area, #dp-diary .diary-btns { padding-left:14px !important; }',
@@ -636,9 +635,8 @@
 
       // ── 할 일 목록 캘린더: 셀 안의 체크박스/문구는 숨기고 점으로만 표시 ──
       '#calLeftGrid .cal-day > div:not(.cal-day-num) { display:none !important; }',
-      '#calLeftGrid .cal-day { min-height:36px !important; }',
       '#calLeftGrid .cal-day:has(> div:nth-child(2))::after {',
-      '  content:"\\2022"; display:block; text-align:center; color:var(--yellow); font-size:14px; line-height:1;',
+      '  content:"\\2022"; display:block; text-align:center; color:var(--yellow); font-size:10px; line-height:1;',
       '}',
 
       // ── 고양이 탭: 잘림/찌그러짐 방지 ──
