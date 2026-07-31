@@ -12,6 +12,7 @@
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
   var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
+  var OWNER_KEY = 'neko_data_owner';      // 이 기기 데이터의 주인 계정 (계정별 데이터 분리)
 
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
@@ -38,6 +39,26 @@
   }
   function writeSession(s) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  }
+  /**
+   * 계정별 데이터 분리: 이 기기의 데이터가 다른 계정 것이면 비우고 재시작.
+   * 게스트로 쓰다 처음 로그인하면 기존 데이터를 그 계정 것으로 승계.
+   * @returns true면 재시작 중이므로 호출측은 중단해야 함
+   */
+  function enforceDataOwner(email) {
+    try {
+      var owner = localStorage.getItem(OWNER_KEY);
+      if (owner && owner !== email) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SYNC_TS_KEY);
+        localStorage.removeItem(DIRTY_KEY);
+        localStorage.setItem(OWNER_KEY, email);
+        location.reload();
+        return true;
+      }
+      localStorage.setItem(OWNER_KEY, email);
+    } catch (e) {}
+    return false;
   }
   function capPlugin(name) {
     return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
@@ -125,6 +146,8 @@
             token: token, refresh: refresh, uid: u.id
           };
           writeSession(s);
+          // 다른 계정의 데이터가 남아있으면 비우고 재시작 (계정별 분리)
+          if (enforceDataOwner(u.email)) return;
           finish(s);
           // 로그인 직후 클라우드 데이터 가져오기
           syncPull(true);
@@ -357,6 +380,9 @@
       syncStatus(readSession() ? '구글 로그인 필요 (지금은 게스트)' : '로그인 필요');
       return;
     }
+    // 앱 시작 시에도 데이터 주인 확인 (다른 계정 데이터면 비우고 재시작)
+    var ses = readSession();
+    if (ses && ses.email && enforceDataOwner(ses.email)) return;
     syncStatus('연결 중...');
     // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
     if (typeof window.saveState === 'function' && !window.saveState._syncWrapped) {

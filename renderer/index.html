@@ -3538,8 +3538,34 @@ function hideLoginGate(){
   if (window.electronAPI && window.electronAPI.enterWidgetMode) window.electronAPI.enterWidgetMode();
 }
 
+const DATA_OWNER_KEY = 'nekodesk_data_owner';
+
+/**
+ * 계정별 데이터 분리.
+ * 이 기기의 데이터가 다른 계정 것이면 비우고 새 계정으로 시작한다.
+ * 게스트로 쓰다 처음 로그인하면 기존 데이터를 그 계정 것으로 승계한다.
+ * @returns true면 초기화 후 재시작 중이므로 호출측은 중단해야 함
+ */
+function enforceDataOwner(email) {
+  try {
+    const owner = localStorage.getItem(DATA_OWNER_KEY);
+    if (owner && owner !== email) {
+      _skipSave = true;   // 재시작 전에 예전 데이터가 다시 저장되지 않도록
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('nekodesk_sync_pushed_at');
+      localStorage.removeItem('nekodesk_sync_dirty');
+      localStorage.setItem(DATA_OWNER_KEY, email);
+      location.reload();
+      return true;
+    }
+    localStorage.setItem(DATA_OWNER_KEY, email);
+  } catch(e) {}
+  return false;
+}
+
 function applySession(s){
   window._session = s;
+  if (s && !s.guest && s.email && enforceDataOwner(s.email)) return;
   hideLoginGate();
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
