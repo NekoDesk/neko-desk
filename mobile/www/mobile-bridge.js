@@ -66,11 +66,19 @@
       return false;
     });
   }
-  /** 설정 탭의 동기화 상태 표시 (renderer가 만든 요소를 사용) */
-  function syncStatus(msg) {
+  // 받기/올리기 결과를 각각 보관해 한쪽이 다른 쪽을 덮어쓰지 않게 한다
+  // (예전에는 15초 주기의 '받기'가 업로드 실패 메시지를 지워버려 원인을 알 수 없었음)
+  var _stPull = '', _stPush = '';
+  function renderSyncStatus() {
     var el = document.getElementById('syncStatus');
-    if (el) el.textContent = '☁️ 동기화: ' + msg;
+    if (!el) return;
+    var parts = [];
+    if (_stPull) parts.push('받기 ' + _stPull);
+    if (_stPush) parts.push('올리기 ' + _stPush);
+    el.textContent = '☁️ 동기화: ' + (parts.length ? parts.join(' · ') : '대기 중');
   }
+  function syncStatus(msg) { _stPull = msg; renderSyncStatus(); }
+  function pushStatus(msg) { _stPush = msg; renderSyncStatus(); }
   function nowHHMM() {
     var d = new Date();
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -234,12 +242,15 @@
         _syncReady = true;                       // 조회 성공 → 이제 push 허용
         var remote = (rows && rows.length) ? rows[0].data : null;
         if (isEmptyPayload(remote)) {
-          // 클라우드가 비어 있으면 로컬을 올림
-          return syncPush(true).then(function (up) {
-            syncStatus(up ? '연결됨 · 내 기록을 올렸어요 (' + nowHHMM() + ')'
-                          : '연결됨 · 올릴 내용 없음 (' + nowHHMM() + ')');
-            return false;
-          });
+          syncPush(true);                        // 클라우드가 비어 있으면 로컬을 올림
+          syncStatus('클라우드 비어있음 (' + nowHHMM() + ')');
+          return false;
+        }
+        // 내가 방금 저장한 내용이 아직 올라가기 전이면 원격을 덮어씌우지 않는다.
+        // (그대로 적용하면 직전에 쓴 글이 사라진 뒤 그 상태가 업로드됨)
+        if (_pushTimer) {
+          syncStatus('내 변경 저장 대기 중 (' + nowHHMM() + ')');
+          return false;
         }
         // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
         // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
@@ -249,10 +260,10 @@
           var ok = applyRemote(remote);
           localStorage.setItem(SYNC_TS_KEY, remoteTs);
           if (ok && notify) toast('info', '☁️ 동기화', 'PC의 최신 내용을 가져왔어요');
-          syncStatus('연결됨 · 받음 (' + nowHHMM() + ')');
+          syncStatus('받음 (' + nowHHMM() + ')');
           return ok;
         }
-        syncStatus('연결됨 (' + nowHHMM() + ')');
+        syncStatus('최신 (' + nowHHMM() + ')');
         return false;
       })
       .catch(function () { syncStatus('연결 오류'); return false; });
@@ -260,11 +271,14 @@
 
   /** 기기 → 클라우드 */
   function syncPush(force) {
-    if (!loggedIn() || (!_syncReady && !force)) return Promise.resolve(false);
+    if (!loggedIn()) { pushStatus('로그인 필요'); return Promise.resolve(false); }
+    if (!_syncReady && !force) { pushStatus('연결 대기 중'); return Promise.resolve(false); }
     var s = readSession();
+    if (!s || !s.uid) { pushStatus('계정 정보 없음 (재로그인 필요)'); return Promise.resolve(false); }
     var local = collectLocal();
     // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
-    if (isEmptyPayload(local)) return Promise.resolve(false);
+    if (isEmptyPayload(local)) { pushStatus('올릴 내용 없음'); return Promise.resolve(false); }
+    local._device = 'mobile';                    // 어느 기기가 올렸는지 진단용
     var body = { user_id: s.uid, data: local, updated_at: new Date().toISOString() };
     return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
       method: 'POST',
@@ -279,18 +293,22 @@
             localStorage.setItem(SYNC_TS_KEY, String(back[0].updated_at));
           }
         }).catch(function () {});
-        syncStatus('연결됨 · 올림 (' + nowHHMM() + ')');
+        pushStatus('완료 (' + nowHHMM() + ')');
       } else {
-        syncStatus('업로드 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+        pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
       }
       return ok;
-    }).catch(function () { syncStatus('업로드 오류'); return false; });
+    }).catch(function () { pushStatus('오류'); return false; });
   }
 
   function schedulePush() {
-    if (!loggedIn() || !_syncReady) return;
+    if (!loggedIn()) return;
+    if (!_syncReady) { pushStatus('연결 대기 중'); return; }
     clearTimeout(_pushTimer);
-    _pushTimer = setTimeout(syncPush, 2500);   // 편집이 멎으면 올림
+    _pushTimer = setTimeout(function () {
+      _pushTimer = null;
+      syncPush();
+    }, 2500);   // 편집이 멎으면 올림
   }
 
   function initSync() {

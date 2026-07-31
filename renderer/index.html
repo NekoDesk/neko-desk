@@ -3935,11 +3935,19 @@ function _cloudIsEmpty(d) {
   });
 }
 
-/** 설정 탭에 동기화 상태 표시 */
-function _syncStatus(msg) {
+// 받기/올리기 결과를 각각 보관 — 주기적인 '받기'가 업로드 실패 메시지를
+// 지워버려 원인을 알 수 없던 문제를 막는다.
+let _stPull = '', _stPush = '';
+function _renderSyncStatus() {
   const el = document.getElementById('syncStatus');
-  if (el) el.textContent = '☁️ 동기화: ' + msg;
+  if (!el) return;
+  const parts = [];
+  if (_stPull) parts.push('받기 ' + _stPull);
+  if (_stPush) parts.push('올리기 ' + _stPush);
+  el.textContent = '☁️ 동기화: ' + (parts.length ? parts.join(' · ') : '대기 중');
 }
+function _syncStatus(msg) { _stPull = msg; _renderSyncStatus(); }
+function _pushStatus(msg) { _stPush = msg; _renderSyncStatus(); }
 
 function _syncNow() {
   const d = new Date();
@@ -3957,11 +3965,12 @@ async function cloudPull(notify) {
   _cloudReady = true;                         // 조회 성공 → 업로드 허용
   const remote = (rows && rows.length) ? rows[0].data : null;
   if (_cloudIsEmpty(remote)) {
-    const up = await cloudPush(true);          // 클라우드가 비어있으면 내 것을 올림
-    _syncStatus(up ? '연결됨 · 내 기록을 올렸어요 (' + _syncNow() + ')'
-                   : '연결됨 · 올릴 내용 없음 (' + _syncNow() + ')');
+    cloudPush(true);                           // 클라우드가 비어있으면 내 것을 올림
+    _syncStatus('클라우드 비어있음 (' + _syncNow() + ')');
     return false;
   }
+  // 내가 방금 저장한 내용이 아직 올라가기 전이면 원격을 덮어씨우지 않는다.
+  if (_cloudTimer) { _syncStatus('내 변경 저장 대기 중 (' + _syncNow() + ')'); return false; }
   // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
   // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
   const remoteTs = String(rows[0].updated_at || '');
@@ -3970,19 +3979,21 @@ async function cloudPull(notify) {
     const ok = _cloudApply(remote);
     localStorage.setItem(CLOUD_TS_KEY, remoteTs);
     if (ok && notify) toast('info', '☁️ 동기화', '최신 내용을 가져왔어요');
-    _syncStatus('연결됨 · 받음 (' + _syncNow() + ')');
+    _syncStatus('받음 (' + _syncNow() + ')');
     return ok;
   }
-  _syncStatus('연결됨 (' + _syncNow() + ')');
+  _syncStatus('최신 (' + _syncNow() + ')');
   return false;
 }
 
 async function cloudPush(force) {
-  if (!_cloudSb || (!_cloudReady && !force)) return false;
+  if (!_cloudSb) { _pushStatus('로그인 필요'); return false; }
+  if (!_cloudReady && !force) { _pushStatus('연결 대기 중'); return false; }
   const data = {};
   CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
-  // 내 기기가 텔 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
-  if (_cloudIsEmpty(data)) return false;
+  // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
+  if (_cloudIsEmpty(data)) { _pushStatus('올릴 내용 없음'); return false; }
+  data._device = 'pc';                       // 어느 기기가 올렸는지 진단용
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
@@ -3994,17 +4005,18 @@ async function cloudPush(force) {
       const back = await r.json();
       if (back && back[0] && back[0].updated_at) localStorage.setItem(CLOUD_TS_KEY, String(back[0].updated_at));
     } catch(e) {}
-    _syncStatus('연결됨 · 올림 (' + _syncNow() + ')');
+    _pushStatus('완료 (' + _syncNow() + ')');
   } else {
-    _syncStatus('업로드 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+    _pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
   }
   return ok;
 }
 
 function cloudSchedulePush() {
-  if (!_cloudSb || !_cloudReady) return;
+  if (!_cloudSb) return;
+  if (!_cloudReady) { _pushStatus('연결 대기 중'); return; }
   clearTimeout(_cloudTimer);
-  _cloudTimer = setTimeout(() => cloudPush(), 2500);   // 편집이 멈추면 올림
+  _cloudTimer = setTimeout(() => { _cloudTimer = null; cloudPush(); }, 2500);   // 편집이 멈추면 올림
 }
 
 async function initCloudSync() {
