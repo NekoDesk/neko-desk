@@ -12,8 +12,15 @@
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
 
-  // 계정 간 동기화 대상 (할 일 목록 + 다이어리)
-  var SYNC_KEYS = ['calendarNotes', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone'];
+  // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
+  var SYNC_KEYS = [
+    // 기록
+    'calendarNotes', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
+    // 고양이·진행 상태
+    'cat', 'pts', 'fruits', 'harvestedFruits', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
+    // 설정
+    'schedule', 'workItems', 'scheduleItems', 'shipping', 'theme', 'language'
+  ];
 
   // 공개 설정만 포함 (비밀키 없음 — Supabase anon key는 공개용으로 설계됨)
   var PUBLIC_CFG = {
@@ -42,14 +49,18 @@
   function toast(kind, title, msg) {
     if (typeof window.toast === 'function') window.toast(kind, title, msg);
   }
-  /** 모든 값이 비어있는 페이로드인가 (값 없는 기기가 클라우드를 지우는 것 방지) */
+  // '실질적으로 아무 기록도 없는가' 판단용 (cat처럼 항상 기본값이 있는 키는 제외)
+  var CONTENT_KEYS = ['calendarNotes', 'diaryEntries', 'wishlist', 'wishlistDone',
+    'scheduleMemo', 'growthLogs', 'ownedAccs', 'fruits', 'harvestedFruits', 'pts'];
+
+  /** 기록이 하나도 없는 페이로드인가 (빈 기기가 클라우드를 지우는 것 방지) */
   function isEmptyPayload(d) {
-    var ks = Object.keys(d || {});
-    if (!ks.length) return true;
-    return ks.every(function (k) {
+    if (!d || !Object.keys(d).length) return true;
+    return CONTENT_KEYS.every(function (k) {
       var v = d[k];
       if (v === null || v === undefined) return true;
       if (typeof v === 'string') return v.trim() === '';
+      if (typeof v === 'number') return v === 0;
       if (Array.isArray(v)) return v.length === 0;
       if (typeof v === 'object') return Object.keys(v).length === 0;
       return false;
@@ -188,9 +199,19 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
       // 화면 다시 그리기
+      if (typeof window.applyTheme === 'function' && st.theme) window.applyTheme(st.theme);
+      if (typeof window.applyLang === 'function') window.applyLang();
       if (typeof window.renderAll === 'function') window.renderAll();
+      if (typeof window.updateCatUI === 'function') window.updateCatUI();
+      if (typeof window.renderFruits === 'function') window.renderFruits();
+      if (typeof window.renderHarvestCount === 'function') window.renderHarvestCount();
       if (typeof window.renderCalendar === 'function') window.renderCalendar();
       if (typeof window.renderDiary === 'function') window.renderDiary();
+      if (typeof window.renderWorkItems === 'function') window.renderWorkItems();
+      ['ptsDisplay', 'shopPts'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = st.pts;
+      });
       var memo = document.getElementById('scheduleMemoTxt');
       if (memo) memo.value = st.scheduleMemo || '';
     } catch (e) {}

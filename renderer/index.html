@@ -3844,7 +3844,14 @@ function wiggleCat(){
 // 클라우드 동기화 (PC ↔ 모바일) — 대시보드 창에서만 동작
 // 구글 로그인 상태일 때 할 일 목록 / 메모 / 다이어리를 Supabase에 저장·복원
 // ══════════════════════════════
-const CLOUD_KEYS = ['calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone'];
+const CLOUD_KEYS = [
+  // 기록
+  'calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone',
+  // 고양이·진행 상태
+  'cat','pts','fruits','harvestedFruits','growthLogs','ownedAccs','redeemedCoupons',
+  // 설정
+  'schedule','workItems','scheduleItems','shipping','theme','language'
+];
 const CLOUD_TS_KEY = 'nekodesk_sync_pushed_at';
 let _cloudSb = null, _cloudCfg = null, _cloudReady = false, _cloudTimer = null;
 
@@ -3893,23 +3900,35 @@ function _cloudApply(data) {
   // saveState()를 거치지 않고 직접 써서 불필요한 업로드 방지
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
   try {
+    if (typeof applyTheme === 'function' && S.theme) applyTheme(S.theme);
+    if (typeof applyLang === 'function') applyLang();
     renderAll();
+    if (typeof updateCatUI === 'function') updateCatUI();
+    if (typeof renderFruits === 'function') renderFruits();
+    if (typeof renderHarvestCount === 'function') renderHarvestCount();
     if (typeof renderCalendar === 'function') renderCalendar();
     if (typeof renderDiary === 'function') renderDiary();
+    if (typeof renderWorkItems === 'function') renderWorkItems();
+    ['ptsDisplay','shopPts'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = S.pts; });
     const memo = document.getElementById('scheduleMemoTxt');
     if (memo) memo.value = S.scheduleMemo || '';
   } catch(e) {}
   return true;
 }
 
-/** 모든 값이 비어있는 페이로드인가 (값 없는 기기가 클라우드를 지우는 것 방지) */
+// '실질적으로 아무 기록도 없는가' 판단에 쓰는 항목들.
+// cat 같이 항상 기본값이 들어있는 키는 제외해야 판정이 유효하다.
+const CLOUD_CONTENT_KEYS = ['calendarNotes','diaryEntries','wishlist','wishlistDone',
+  'scheduleMemo','growthLogs','ownedAccs','fruits','harvestedFruits','pts'];
+
+/** 기록이 하나도 없는 페이로드인가 (빈 기기가 클라우드를 지우는 것 방지) */
 function _cloudIsEmpty(d) {
-  const ks = Object.keys(d || {});
-  if (!ks.length) return true;
-  return ks.every(k => {
+  if (!d || !Object.keys(d).length) return true;
+  return CLOUD_CONTENT_KEYS.every(k => {
     const v = d[k];
     if (v === null || v === undefined) return true;
     if (typeof v === 'string') return v.trim() === '';
+    if (typeof v === 'number') return v === 0;
     if (Array.isArray(v)) return v.length === 0;
     if (typeof v === 'object') return Object.keys(v).length === 0;
     return false;
@@ -4167,16 +4186,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!IS_DASHBOARD) setInterval(() => {
     try {
       const _sv = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      if (_sv.theme) S.theme = _sv.theme;
-      if (_sv.language) S.language = _sv.language;
-      // 대시보드 편집 데이터 덮어쓰기 방지
-      if (_sv.calendarNotes !== undefined) S.calendarNotes = _sv.calendarNotes;
-      if (_sv.scheduleMemo !== undefined) S.scheduleMemo = _sv.scheduleMemo;
-      if (_sv.cat) Object.assign(S.cat, _sv.cat);
-      if (_sv.pts !== undefined) S.pts = _sv.pts;
-      if (_sv.wishlist !== undefined) S.wishlist = _sv.wishlist;
-      if (_sv.wishlistDone !== undefined) S.wishlistDone = _sv.wishlistDone;
-      if (_sv.diaryEntries !== undefined) S.diaryEntries = _sv.diaryEntries;
+      // 대시보드 편집·클라우드 동기화 결과를 덮어쓰지 않도록 최신값을 먼저 반영
+      CLOUD_KEYS.forEach(k => {
+        if (_sv[k] === undefined) return;
+        if (k === 'cat') Object.assign(S.cat, _sv.cat);
+        else S[k] = _sv[k];
+      });
     } catch(e) {}
     saveState();
   }, 10000);
