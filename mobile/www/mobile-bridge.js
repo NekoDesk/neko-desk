@@ -241,12 +241,13 @@
             return false;
           });
         }
-        var remoteTs = new Date(rows[0].updated_at || 0).getTime();
-        var pushedTs = Number(localStorage.getItem(SYNC_TS_KEY) || 0);
-        // 이 기기가 마지막으로 올린 것보다 원격이 최신일 때만 덮어씀
-        if (remoteTs > pushedTs) {
+        // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
+        // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
+        var remoteTs = String(rows[0].updated_at || '');
+        var seenTs = localStorage.getItem(SYNC_TS_KEY) || '';
+        if (remoteTs && remoteTs !== seenTs) {
           var ok = applyRemote(remote);
-          localStorage.setItem(SYNC_TS_KEY, String(remoteTs));
+          localStorage.setItem(SYNC_TS_KEY, remoteTs);
           if (ok && notify) toast('info', '☁️ 동기화', 'PC의 최신 내용을 가져왔어요');
           syncStatus('연결됨 · 받음 (' + nowHHMM() + ')');
           return ok;
@@ -267,12 +268,17 @@
     var body = { user_id: s.uid, data: local, updated_at: new Date().toISOString() };
     return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
       method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify(body)
     }).then(function (r) {
       var ok = !!(r && r.ok);
       if (ok) {
-        localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+        // 서버가 기록한 시각을 그대로 저장해 두어야 다음 비교가 정확함
+        r.json().then(function (back) {
+          if (back && back[0] && back[0].updated_at) {
+            localStorage.setItem(SYNC_TS_KEY, String(back[0].updated_at));
+          }
+        }).catch(function () {});
         syncStatus('연결됨 · 올림 (' + nowHHMM() + ')');
       } else {
         syncStatus('업로드 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
@@ -300,6 +306,7 @@
       window.saveState._syncWrapped = true;
     }
     syncPull(false);
+    setInterval(function () { syncPull(false); }, 15000);   // 15초마다 최신 내용 확인
     // 앱을 다시 열 때마다 최신 내용 확인
     var App = capPlugin('App');
     if (App) {
