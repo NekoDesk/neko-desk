@@ -575,8 +575,24 @@ ipcMain.handle('google-login', async () => {
       prompt: 'select_account',
     });
 
+    // 로그인 창은 화면 중앙에. (부모를 위젯으로 두면 우하단 위젯 옆에 뜨는 문제)
+    const AW = 480, AH = 680;
+    const refWin = (dashboardWindow && !dashboardWindow.isDestroyed()) ? dashboardWindow : mainWindow;
+    let ax, ay;
+    try {
+      const rb = refWin.getBounds();
+      const wa = screen.getDisplayNearestPoint({
+        x: Math.round(rb.x + rb.width / 2),
+        y: Math.round(rb.y + rb.height / 2),
+      }).workArea;
+      ax = Math.round(wa.x + (wa.width - AW) / 2);
+      ay = Math.round(wa.y + (wa.height - AH) / 2);
+    } catch (e) {}
+
     const authWin = new BrowserWindow({
-      width: 480, height: 680, parent: mainWindow, modal: false,
+      width: AW, height: AH, x: ax, y: ay,
+      parent: mainWindow, modal: false,
+      alwaysOnTop: true,     // 항상 위에 뜨는 위젯/대시보드에 가려지지 않도록
       autoHideMenuBar: true, webPreferences: { nodeIntegration: false }
     });
     authWin.loadURL(authUrl);
