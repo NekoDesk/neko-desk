@@ -720,8 +720,6 @@
       '#dp-diary .diary-cal-nav, #dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
       '#dp-diary .diary-cal-cell, #calLeftGrid .cal-day { min-height:36px !important; font-size:11px !important; }',
       '#dp-diary .diary-cal-dows span, #dp-schedule .cal-grid > div { font-size:10px !important; }',
-      '#dp-diary .diary-photo-col { width:100% !important; }',
-      '#dp-diary .diary-photo-frame { height:auto !important; max-height:none !important; min-height:150px !important; }',
       '#dp-diary .diary-date-label, #dp-diary .diary-lines-area, #dp-diary .diary-btns { padding-left:14px !important; }',
       '#dp-diary .diary-nb { padding:12px !important; }',
 

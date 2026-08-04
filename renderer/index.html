@@ -625,7 +625,7 @@ select {
 /* ── Diary ── */
 .diary-nb{position:relative;padding:16px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
 .diary-top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;background:var(--panel);border-radius:10px;padding:12px}
-.diary-mini-cal{flex:0 0 206px}
+.diary-mini-cal{width:100%;max-width:440px;margin:0 auto}
 .diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-family:'Galmuri14',monospace;font-size:12px;color:var(--white);margin-bottom:8px}
 .cal-nav,.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;line-height:1;padding:2px 8px;border-radius:4px}
 .cal-nav:hover,.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
@@ -802,7 +802,7 @@ select {
       <div id="dp-diary" class="dpage">
         <div class="diary-nb">
           <div class="diary-fold-hd" onclick="toggleDiaryTop()">
-            <span data-i18n="diary_fold_title">📅 날짜 · 사진</span>
+            <span data-i18n="diary_fold_title">📅 날짜 선택</span>
             <span id="diaryTopChev">▲</span>
           </div>
           <div class="diary-top-row" id="diaryTopRow">
@@ -814,19 +814,6 @@ select {
               </div>
               <div class="diary-cal-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
               <div class="diary-cal-grid" id="diaryCalGrid"></div>
-            </div>
-            <div class="diary-photo-col">
-              <div class="diary-photo-frame" id="diaryPhotoFrame">
-                <button id="diaryPhotoDelBtn" class="diary-photo-del-btn" onclick="diaryDelPhoto()" style="display:none">&#10005;</button>
-                <span id="diaryNoPhoto" style="font-size:28px;opacity:0.4">&#128247;</span>
-                <img id="diaryPhotoImg" style="display:none;max-height:100%;max-width:100%;width:auto;height:auto;object-fit:contain;display:none">
-              </div>
-              <div id="diaryPhotoActions" style="display:flex;gap:6px;margin-top:6px">
-                <button class="btn btn-b" style="flex:1;font-size:10px;padding:5px 4px" onclick="openPhotoBooth(function(d){_diaryImgData=d;updateDiaryPhoto(d);})">&#128248; <span data-i18n="diary_cam_btn">고양이와 사진찍기</span></button>
-                <button class="btn btn-g" style="flex:1;font-size:10px;padding:5px 4px" onclick="diaryAttachImg()">&#128444; <span data-i18n="diary_attach_btn">이미지 첨부</span></button>
-              </div>
-              <input type="file" id="diaryCamInput" accept="image/*" capture="environment" style="display:none" onchange="diaryImgSelected(this)">
-              <input type="file" id="diaryFileInput" accept="image/*" style="display:none" onchange="diaryImgSelected(this)">
             </div>
           </div>
           <div class="diary-date-label" id="diaryDateLabel"></div>
@@ -1193,7 +1180,7 @@ const STRINGS = {
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
     diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
-    login_sync_info:'☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span>', diary_fold_title:'📅 날짜 · 사진', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
+    login_sync_info:'☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span>', diary_fold_title:'📅 날짜 선택', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1250,7 +1237,7 @@ const STRINGS = {
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
-    login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', diary_fold_title:'📅 Date · Photo', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
+    login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', diary_fold_title:'📅 Select Date', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
     diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
     diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
@@ -1309,7 +1296,7 @@ const STRINGS = {
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
-    login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', diary_fold_title:'📅 日付・写真', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
+    login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', diary_fold_title:'📅 日付選択', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
     diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
     diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
@@ -4145,6 +4132,15 @@ function toggleAutoLaunch() {
 
 function init(){
   loadState();   // 저장된 데이터 복원
+
+  // 앱을 새로 실행하면 고양이 기분만 기본값(60)으로 시작한다.
+  // 위젯 창 = 앱 시작 시점. 대시보드를 여닫을 때마다 리셋되면 안 되므로 제외.
+  if (!window._isDashboard && S.cat && S.cat.mood !== 60) {
+    S.cat.mood = 60;
+    saveState();
+    // 다른 기기에도 반영되도록 '올릴 변경 있음'으로 표시
+    try { localStorage.setItem(CLOUD_DIRTY_KEY, '1'); } catch(e) {}
+  }
   renderWorkItems();  // 업무 시간 설정 초기 렌더
   const _mt = document.getElementById('scheduleMemoTxt');
   if (_mt) _mt.value = S.scheduleMemo || '';
