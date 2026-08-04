@@ -433,8 +433,16 @@ body.theme-mono {
 .sch-label-in:focus { border-bottom-color:var(--yellow); }
 .sch-del-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .sch-del-btn:hover { color:#f66; border-color:#f66; }
-.sch-move-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:12px; cursor:grab; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
+.sch-move-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:12px; cursor:grab; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; touch-action:none; }
 .sch-move-btn:hover { color:var(--mint); border-color:var(--mint); }
+.sch-move-btn:active { cursor:grabbing; }
+/* 브라우저 기본 title 툴팁은 1초 이상 걸려서 직접 만든다 */
+.sch-move-btn::after { content:attr(data-tip); position:absolute; right:0; bottom:calc(100% + 6px);
+  white-space:nowrap; font-size:11px; padding:4px 8px; background:var(--card); color:var(--white);
+  border:1px solid var(--border); border-radius:4px; opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity 0.1s ease 0.08s, visibility 0s linear 0.08s; z-index:60; }
+.sch-move-btn:hover::after { opacity:1; visibility:visible; }
+body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 .todo-help-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
@@ -2733,8 +2741,7 @@ function renderCalendar() {
       const isSun = (firstDow + d - 1) % 7 === 0;
       // 셀 안에는 날짜만 — 할 일이 있는 날은 숫자 아래에 점만 표시 (다이어리와 동일).
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
-      lh += `<div class="cal-day${isToday?' today':''}${isSel?' cal-sel':''}${items.length?' has-note':''}" onclick="openDayNote('${key}')"
-        ondragover="calDragOver(event)" ondragleave="calDragLeave(event)" ondrop="calDrop(event,'${key}')">
+      lh += `<div class="cal-day${isToday?' today':''}${isSel?' cal-sel':''}${items.length?' has-note':''}" data-key="${key}" onclick="openDayNote('${key}')">
         <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
       </div>`;
     }
@@ -2765,18 +2772,13 @@ function renderCalendar() {
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
           <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>
-          <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}" draggable="true"
-            title="${L('todo_move_btn')}"
-            ondragstart="startMoveItem(event,'${_calKey}',${i})"
-            ondragend="endMoveItem()"
-            onclick="toggleMoveItem(event,'${_calKey}',${i})">⤴</button>
+          <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}"
+            data-tip="${L('todo_move_btn')}"
+            onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⤴</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
-      // 평상시 사용법은 ? 버튼(사용 팁)으로 옮기고, 옮기기 선택 중일 때만 안내를 띄운다
-      if (_moveSrc) {
-        rh += `<div class="todo-move-tip on">📍 ${L('todo_move_active')}</div>`;
-      }
+      // 사용법은 ? 버튼(사용 팁)에서 안내. 선택 상태는 ⤴ 버튼 색으로 표시된다.
 
       rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
         <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
@@ -2793,14 +2795,51 @@ function renderCalendar() {
 // ── 일정 옮기기: 버튼을 드래그해 다른 날짜에 놓거나, 눌러서 선택 후 날짜 클릭 ──
 let _moveSrc = null;
 
-function startMoveItem(e, key, idx) {
-  _moveSrc = { key, idx };
-  try {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', key + '|' + idx);
-  } catch(err) {}
+// 브라우저 기본 드래그(HTML5 DnD)는 드롭 불가 영역에서 빨간 금지 커서를 강제로 띄우고
+// 커서 모양을 CSS로 바꿀 수 없다. 그래서 포인터 이벤트로 직접 구현한다.
+let _drag = null;
+const DRAG_THRESHOLD = 3;   // 이 픽셀 이상 움직여야 드래그로 간주 (그 전엔 클릭)
+
+function moveBtnDown(e, key, idx) {
+  if (e.button !== undefined && e.button !== 0) return;   // 좌클릭/터치만
+  e.preventDefault();
+  e.stopPropagation();
+  _drag = { key, idx, x0: e.clientX, y0: e.clientY, moved: false, hover: null };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
 }
-function endMoveItem() { renderCalendar(); }   // 취소됐으면 선택 상태를 화면에 반영
+
+function _dragMove(e) {
+  if (!_drag) return;
+  if (!_drag.moved) {
+    if (Math.abs(e.clientX - _drag.x0) + Math.abs(e.clientY - _drag.y0) < DRAG_THRESHOLD) return;
+    _drag.moved = true;
+    document.body.classList.add('dragging-item');   // 주먹 쥔 손 커서
+  }
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = (under && under.closest) ? under.closest('.cal-day[data-key]') : null;
+  if (_drag.hover && _drag.hover !== cell) _drag.hover.classList.remove('cal-drop');
+  if (cell) cell.classList.add('cal-drop');
+  _drag.hover = cell;
+}
+
+function _dragEnd() {
+  if (!_drag) return;
+  const d = _drag; _drag = null;
+  document.body.classList.remove('dragging-item');
+  if (d.hover) d.hover.classList.remove('cal-drop');
+  if (!d.moved) { toggleMoveItem(null, d.key, d.idx); return; }   // 제자리 클릭 → 선택 토글
+  if (d.hover && d.hover.dataset.key) {
+    _moveSrc = { key: d.key, idx: d.idx };
+    moveItemTo(d.hover.dataset.key);
+  } else {
+    _moveSrc = null;
+    renderCalendar();
+  }
+}
+
+document.addEventListener('pointermove', _dragMove);
+document.addEventListener('pointerup', _dragEnd);
+document.addEventListener('pointercancel', _dragEnd);
 
 /** 버튼 클릭: 옮길 항목 선택/해제 (터치 기기에서도 사용 가능) */
 function toggleMoveItem(e, key, idx) {
@@ -2812,18 +2851,6 @@ function toggleMoveItem(e, key, idx) {
     toast('info', L('todo_move_btn'), L('todo_move_hint'));
   }
   renderCalendar();
-}
-
-function calDragOver(e) {
-  if (!_moveSrc) return;
-  e.preventDefault();
-  e.currentTarget.classList.add('cal-drop');
-}
-function calDragLeave(e) { e.currentTarget.classList.remove('cal-drop'); }
-function calDrop(e, destKey) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('cal-drop');
-  moveItemTo(destKey);
 }
 
 /** 선택된 항목을 destKey 날짜로 이동 */
