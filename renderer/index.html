@@ -437,6 +437,8 @@ body.theme-mono {
 .sch-move-btn:hover { color:var(--mint); border-color:var(--mint); }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
+.todo-help-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
+.todo-help-btn:hover { color:var(--yellow); border-color:var(--yellow); }
 .todo-move-tip { font-size:11px; color:var(--gray); line-height:1.55; margin:10px 0 0; padding:7px 9px; background:var(--card); border:1px dashed var(--border); border-radius:4px; }
 .todo-move-tip.on { color:var(--bg); background:var(--mint); border-style:solid; border-color:var(--mint); font-weight:700; }
 /* Work items */
@@ -1013,6 +1015,17 @@ select {
 </div>
 
 <!-- 찜 목록 모달 -->
+<!-- 할 일 목록 사용 팁 -->
+<div id="todoTipModal" style="display:none;position:fixed;inset:0;z-index:9450;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTodoTips(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="todo_tip_title">💡 사용 팁</span>
+      <button onclick="closeTodoTips()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div id="todoTipBody" style="font-size:12px;color:var(--gray);line-height:1.75"></div>
+  </div>
+</div>
+
 <div id="wishlistModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,0.75);align-items:center;justify-content:center">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:20px;width:460px;max-width:96%;max-height:82vh;display:flex;flex-direction:column;gap:12px">
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1193,6 +1206,8 @@ const STRINGS = {
     login_google_btn:'구글 로그인 하기',
     vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
+    todo_tip_title:'💡 사용 팁',
+    todo_tip_html:'<b style="color:var(--white)">⤴ 일정 옮기기</b><br>⤴ 버튼을 누른 채로 캘린더의 원하는 날짜 위로 끌어다 놓으면 일정이 그 날로 옮겨져요.<br>⤴ 버튼을 클릭해서 일정을 선택한 뒤 날짜를 클릭해도 이동이 가능합니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)',
     todo_move_btn:'일정 옮기기 (드래그 또는 클릭)', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
     todo_move_tip:'버튼을 <b>캘린더 날짜로 끌어다 놓으면</b> 그 날로 옮겨져요.<br>버튼을 <b>눌러 선택한 뒤 날짜를 클릭</b>해도 됩니다.',
     todo_move_active:'옮길 날짜를 캘린더에서 눌러주세요 (버튼을 다시 누르면 취소)',
@@ -1263,6 +1278,8 @@ const STRINGS = {
     login_google_btn:'Sign in with Google',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
+    todo_tip_title:'💡 Tips',
+    todo_tip_html:'<b style="color:var(--white)">⤴ Move a task</b><br>Hold the ⤴ button and drop it on any date in the calendar to move the task to that day.<br>Or click the ⤴ button to select the task, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)',
     todo_move_btn:'Move to another day (drag or click)', todo_move_hint:'Tap a date on the calendar to move it',
     todo_move_tip:'<b>Drag the button onto a calendar date</b> to move it there.<br>Or <b>click the button, then click a date</b>.',
     todo_move_active:'Pick the target date on the calendar (click the button again to cancel)',
@@ -1334,6 +1351,8 @@ const STRINGS = {
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
     todo_moved_title:'📅 移動しました',
+    todo_tip_title:'💡 使い方のヒント',
+    todo_tip_html:'<b style="color:var(--white)">⤴ 予定を移動</b><br>⤴ ボタンを押したままカレンダーの日付にドロップすると、その日に移動します。<br>⤴ ボタンをクリックして選択し、日付をクリックしても移動できます。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）',
     todo_move_btn:'予定を移動（ドラッグまたはクリック）', todo_move_hint:'移動先の日付をカレンダーで選んでください',
     todo_move_tip:'ボタンを<b>カレンダーの日付にドラッグ</b>すると移動します。<br>ボタンを<b>押して選択し、日付をクリック</b>してもOKです。',
     todo_move_active:'移動先の日付をカレンダーで選んでください（もう一度押すと取消）',
@@ -2728,8 +2747,9 @@ function renderCalendar() {
     const selLabel = _calKey ? (()=>{const [yy,mm,dd]=_calKey.split('-');return L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd));})() : null;
     const selItems = _calKey ? getCalNotes(_calKey) : [];
 
-    let rh = `<div style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace;margin-bottom:10px">
-      ${selLabel || L('todo_date_ph')}
+    let rh = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <span style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace">${selLabel || L('todo_date_ph')}</span>
+      <button class="todo-help-btn" onclick="openTodoTips()" title="${L('todo_tip_title')}">?</button>
     </div>`;
 
     if (_calKey) {
@@ -2753,11 +2773,9 @@ function renderCalendar() {
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
-      // 드래그앤드롭이 가능하다는 걸 알 수 있도록 안내를 노출
-      if (selItems.length) {
-        rh += _moveSrc
-          ? `<div class="todo-move-tip on">📍 ${L('todo_move_active')}</div>`
-          : `<div class="todo-move-tip">⤴ ${L('todo_move_tip')}</div>`;
+      // 평상시 사용법은 ? 버튼(사용 팁)으로 옮기고, 옮기기 선택 중일 때만 안내를 띄운다
+      if (_moveSrc) {
+        rh += `<div class="todo-move-tip on">📍 ${L('todo_move_active')}</div>`;
       }
 
       rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
@@ -2828,6 +2846,18 @@ function moveItemTo(destKey) {
   toast('info', L('todo_moved_title'),
     L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd)));
   return true;
+}
+
+function openTodoTips() {
+  const body = document.getElementById('todoTipBody');
+  if (body) body.innerHTML = L('todo_tip_html');
+  const el = document.getElementById('todoTipModal');
+  if (el) el.style.display = 'flex';
+}
+function closeTodoTips(e) {
+  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  const el = document.getElementById('todoTipModal');
+  if (el) el.style.display = 'none';
 }
 
 function openDayNote(key) {
