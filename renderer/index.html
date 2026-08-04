@@ -433,6 +433,10 @@ body.theme-mono {
 .sch-label-in:focus { border-bottom-color:var(--yellow); }
 .sch-del-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .sch-del-btn:hover { color:#f66; border-color:#f66; }
+.sch-move-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:12px; cursor:grab; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
+.sch-move-btn:hover { color:var(--mint); border-color:var(--mint); }
+.sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
+.cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 /* Work items */
 .work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
 .drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; }
@@ -861,6 +865,11 @@ select {
                   <button class="btn btn-y" onclick="feedCat('연어')">🍣</button>
                   <button class="btn btn-y" onclick="feedCat('닭')">🍗</button>
                 </div>
+                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:10px 0 5px" data-i18n="cat_touch_lbl">함께 놀기 (무료)</div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="petCat()" data-i18n="cat_pet_btn">🤲 쓰다듬기</button>
+                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="playCat()" data-i18n="cat_play_btn">🧶 놀아주기</button>
+                </div>
               </div>
             </div>
           </div>
@@ -928,7 +937,7 @@ select {
               <div class="card-title" data-i18n="acc_title">👤 계정</div>
               <div id="accountLabel" style="font-size:13px;color:var(--gray);margin-bottom:10px;word-break:break-all">-</div>
               <div id="syncStatus" style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">☁️ 동기화: 확인 중...</div>
-              <button class="btn btn-gr" onclick="doLogout()" data-i18n="logout_btn">로그아웃</button>
+              <button id="acctBtn" class="btn btn-gr" onclick="doLogout()" data-i18n="logout_btn">로그아웃</button>
             </div>
 
             <!-- 작동 방식 안내 (기본 숨김, 접기/펴기) -->
@@ -1175,6 +1184,15 @@ const STRINGS = {
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
+    cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
+    cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
+    cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
+    cat_full_title:'😻 이미 최고!', cat_full_msg:'기분이 이미 100이에요!',
+    login_google_btn:'구글 로그인 하기',
+    vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
+    vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
+    todo_move_btn:'일정 옮기기', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
+    todo_moved_title:'📅 일정을 옮겼어요',
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
@@ -1234,6 +1252,15 @@ const STRINGS = {
     dash_enc_msg:'Syncing with live clock 🕐',
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
+    cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
+    cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
+    cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
+    cat_full_title:'😻 Already great!', cat_full_msg:'Mood is already at 100!',
+    login_google_btn:'Sign in with Google',
+    vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
+    vitamin_bubble:'Time for a vitamin 💊',
+    todo_move_btn:'Move to another day', todo_move_hint:'Tap a date on the calendar to move it',
+    todo_moved_title:'📅 Moved',
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
@@ -1293,6 +1320,15 @@ const STRINGS = {
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
+    cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
+    cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
+    cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
+    cat_full_title:'😻 もう最高！', cat_full_msg:'気分はすでに100です！',
+    login_google_btn:'Googleでログイン',
+    vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
+    vitamin_bubble:'ビタミンを1粒どうぞ 💊',
+    todo_moved_title:'📅 移動しました',
+    todo_move_btn:'予定を移動', todo_move_hint:'移動先の日付をカレンダーで選んでください',
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
@@ -1571,18 +1607,30 @@ function startHealthReminders() {
     toast('info', '💧 수분 보충 시간', msg); // 대시보드 모드에도 표시
     waterBubbleIdx++;
   }, 30 * 60 * 1000); // 30분마다
+
+  // 오후 2시 비타민 알림 (하루 한 번)
+  setInterval(() => {
+    const now = new Date();
+    if (now.getHours() !== 14 || now.getMinutes() !== 0) return;
+    const today = now.toDateString();
+    if (S.lastVitaminDate === today) return;
+    S.lastVitaminDate = today;
+    saveState();
+    showBubble(L('vitamin_bubble'));
+    toast('info', L('vitamin_title'), L('vitamin_msg'));
+  }, 60 * 1000);
 }
 
 function speechBubbleClick() {
   if (_isWaterBubble) {
     _isWaterBubble = false;
     if (S.fruits.length >= 5) {
-      showBubble('물 잘 마셨어요! 🌟 (바구니 가득!)');
+      showBubble('물 잘 마셨어요! 🌟 (바구니 가득!)', true);
     } else {
       addFruit();
       saveState();
       const praised = WATER_PRAISE_MSGS[Math.floor(Math.random() * WATER_PRAISE_MSGS.length)];
-      showBubble(praised);
+      showBubble(praised, true);
     }
   } else {
     openDash();
@@ -1704,6 +1752,7 @@ const S = {
   catFedThisCycle: false,
   lastPenaltyBreakIdx: -1,
   lastMoodResetDate: null,
+  lastVitaminDate: null,
   scheduleItems: null,
   scheduleMemo: '',
   calendarNotes: {},
@@ -1738,7 +1787,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries','diaryTopFolded']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries','diaryTopFolded']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -1873,6 +1922,24 @@ function feedCat(food) {
   S.catFedThisCycle = true;
   S.growthLogs.push(`${food} 먹었어요! 😸`);
   toast('info','🍣 냠냠!',`${food}를 맛있게 먹었어요!`);
+  updateCatUI();
+  saveState();
+}
+
+// 무료 상호작용 — 누를 때마다 기분 +10
+function petCat()  { _catInteract('pet'); }
+function playCat() { _catInteract('play'); }
+function _catInteract(kind) {
+  if (S.cat.mood >= 100) {
+    toast('info', L('cat_full_title'), L('cat_full_msg'));
+    return;
+  }
+  S.cat.mood = Math.min(100, S.cat.mood + 10);
+  addXP(5);
+  const title = kind === 'pet' ? L('cat_pet_title') : L('cat_play_title');
+  const msg   = kind === 'pet' ? L('cat_pet_msg')   : L('cat_play_msg');
+  toast('info', title, msg);
+  if (!window._isDashboard) showBubble(msg);
   updateCatUI();
   saveState();
 }
@@ -2232,31 +2299,42 @@ const BREAK_MSGS = [
 let bubbleTimer = null;
 let lastBubblePhase = null;
 let bubbleShownAt = 0;
-const BUBBLE_MIN_MS = 30 * 1000; // 최소 30초 표시
-const BUBBLE_MAX_MS = 3 * 60 * 1000; // 최대 3분
+const BUBBLE_MS = 10 * 1000;      // 말풍선은 10초간 표시
+const BUBBLE_GAP_MS = 500;        // 다음 알림까지 잠깐 텀
+let bubbleQueue = [];             // 겹치는 알림은 줄 세워 차례대로 표시
+let bubbleBusy = false;
 
 function hideBubbleNow() {
   const el = document.getElementById('speechBubble');
   if (el) el.classList.add('hidden');
 }
 
-function scheduleBubbleHide() {
-  clearTimeout(bubbleTimer);
-  const elapsed = Date.now() - bubbleShownAt;
-  const remaining = Math.max(BUBBLE_MIN_MS - elapsed, 0);
-  const delay = Math.max(BUBBLE_MAX_MS - elapsed, remaining);
-  bubbleTimer = setTimeout(hideBubbleNow, delay);
-}
-
-function showBubble(msg) {
+/** 대기열의 다음 알림을 띄운다 */
+function _showNextBubble() {
   const el = document.getElementById('speechBubble');
-  if (!el) return;
-  el.textContent = msg;
+  if (!el) { bubbleBusy = false; return; }
+  if (!bubbleQueue.length) { bubbleBusy = false; return; }
+  bubbleBusy = true;
+  el.textContent = bubbleQueue.shift();
   el.classList.remove('hidden','bubble-appear');
   void el.offsetWidth;
   el.classList.add('bubble-appear');
   bubbleShownAt = Date.now();
-  scheduleBubbleHide();
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => {
+    hideBubbleNow();
+    setTimeout(_showNextBubble, BUBBLE_GAP_MS);
+  }, BUBBLE_MS);
+}
+
+/**
+ * 말풍선 표시. 이미 떠 있으면 줄을 세워 10초씩 차례대로 보여준다.
+ * @param now true면 대기열을 비우고 즉시 표시 (사용자 클릭 응답 등)
+ */
+function showBubble(msg, now) {
+  if (now) { bubbleQueue.length = 0; clearTimeout(bubbleTimer); bubbleBusy = false; }
+  bubbleQueue.push(msg);
+  if (!bubbleBusy) _showNextBubble();
 }
 
 function updateCycleUI() {
@@ -2628,7 +2706,8 @@ function renderCalendar() {
       const isSun = (firstDow + d - 1) % 7 === 0;
       // 셀 안에는 날짜만 — 할 일이 있는 날은 숫자 아래에 점만 표시 (다이어리와 동일).
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
-      lh += `<div class="cal-day${isToday?' today':''}${isSel?' cal-sel':''}${items.length?' has-note':''}" onclick="openDayNote('${key}')">
+      lh += `<div class="cal-day${isToday?' today':''}${isSel?' cal-sel':''}${items.length?' has-note':''}" onclick="openDayNote('${key}')"
+        ondragover="calDragOver(event)" ondragleave="calDragLeave(event)" ondrop="calDrop(event,'${key}')">
         <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
       </div>`;
     }
@@ -2658,6 +2737,11 @@ function renderCalendar() {
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
           <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>
+          <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}" draggable="true"
+            title="${L('todo_move_btn')}"
+            ondragstart="startMoveItem(event,'${_calKey}',${i})"
+            ondragend="endMoveItem()"
+            onclick="toggleMoveItem(event,'${_calKey}',${i})">⤴</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
@@ -2673,7 +2757,68 @@ function renderCalendar() {
   }
 }
 
-function openDayNote(key) { _calKey = key; renderCalendar(); }
+// ── 일정 옮기기: 버튼을 드래그해 다른 날짜에 놓거나, 눌러서 선택 후 날짜 클릭 ──
+let _moveSrc = null;
+
+function startMoveItem(e, key, idx) {
+  _moveSrc = { key, idx };
+  try {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', key + '|' + idx);
+  } catch(err) {}
+}
+function endMoveItem() { renderCalendar(); }   // 취소됐으면 선택 상태를 화면에 반영
+
+/** 버튼 클릭: 옮길 항목 선택/해제 (터치 기기에서도 사용 가능) */
+function toggleMoveItem(e, key, idx) {
+  if (e) e.stopPropagation();
+  if (_moveSrc && _moveSrc.key === key && _moveSrc.idx === idx) {
+    _moveSrc = null;
+  } else {
+    _moveSrc = { key, idx };
+    toast('info', L('todo_move_btn'), L('todo_move_hint'));
+  }
+  renderCalendar();
+}
+
+function calDragOver(e) {
+  if (!_moveSrc) return;
+  e.preventDefault();
+  e.currentTarget.classList.add('cal-drop');
+}
+function calDragLeave(e) { e.currentTarget.classList.remove('cal-drop'); }
+function calDrop(e, destKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('cal-drop');
+  moveItemTo(destKey);
+}
+
+/** 선택된 항목을 destKey 날짜로 이동 */
+function moveItemTo(destKey) {
+  if (!_moveSrc) return false;
+  const src = _moveSrc; _moveSrc = null;
+  if (src.key === destKey) { renderCalendar(); return false; }
+  const from = getCalNotes(src.key);
+  const item = from[src.idx];
+  if (!item) { renderCalendar(); return false; }
+  from.splice(src.idx, 1);
+  setCalNotes(src.key, from);
+  const to = getCalNotes(destKey);
+  to.push(item);
+  setCalNotes(destKey, to);
+  saveState();
+  _calKey = destKey;
+  renderCalendar();
+  const [yy,mm,dd] = destKey.split('-');
+  toast('info', L('todo_moved_title'),
+    L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd)));
+  return true;
+}
+
+function openDayNote(key) {
+  if (_moveSrc) { moveItemTo(key); return; }   // 옮기기 선택 중이면 그 날짜로 이동
+  _calKey = key; renderCalendar();
+}
 function selectAllDayItems() {
   if (!_calKey) return;
   const items = getCalNotes(_calKey);
@@ -3550,6 +3695,15 @@ function applySession(s){
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
   if (lbl) lbl.textContent = s.guest ? L('acc_guest') : s.email + (s.isAdmin ? L('acc_admin') : '');
+  // 게스트는 아직 로그인 전이므로 '로그아웃'이 아니라 '구글 로그인' 버튼을 보여준다
+  const acctBtn = document.getElementById('acctBtn');
+  if (acctBtn) {
+    const key = s.guest ? 'login_google_btn' : 'logout_btn';
+    acctBtn.setAttribute('data-i18n', key);
+    acctBtn.textContent = L(key);
+    acctBtn.className = s.guest ? 'btn btn-y' : 'btn btn-gr';
+    acctBtn.onclick = s.guest ? doGoogleLogin : doLogout;
+  }
   if (!s.guest && s.email) _tryWelcomeBonus(s.email);
 }
 
@@ -4091,7 +4245,7 @@ async function initCloudSync() {
   try {
     const sb = await window.electronAPI.getSupabaseSession();
     if (!sb || !sb.token) {
-      _syncStatus('걱글 로그인 필요 (로그아웃 후 다시 로그인)');
+      _syncStatus('구글 로그인 필요 (로그아웃 후 다시 로그인)');
       return;
     }
     _cloudSb = sb;
