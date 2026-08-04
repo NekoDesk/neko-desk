@@ -437,6 +437,8 @@ body.theme-mono {
 .sch-move-btn:hover { color:var(--mint); border-color:var(--mint); }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
+.todo-move-tip { font-size:11px; color:var(--gray); line-height:1.55; margin:10px 0 0; padding:7px 9px; background:var(--card); border:1px dashed var(--border); border-radius:4px; }
+.todo-move-tip.on { color:var(--bg); background:var(--mint); border-style:solid; border-color:var(--mint); font-weight:700; }
 /* Work items */
 .work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
 .drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; }
@@ -1191,7 +1193,9 @@ const STRINGS = {
     login_google_btn:'구글 로그인 하기',
     vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
-    todo_move_btn:'일정 옮기기', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
+    todo_move_btn:'일정 옮기기 (드래그 또는 클릭)', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
+    todo_move_tip:'버튼을 <b>캘린더 날짜로 끌어다 놓으면</b> 그 날로 옮겨져요.<br>버튼을 <b>눌러 선택한 뒤 날짜를 클릭</b>해도 됩니다.',
+    todo_move_active:'옮길 날짜를 캘린더에서 눌러주세요 (버튼을 다시 누르면 취소)',
     todo_moved_title:'📅 일정을 옮겼어요',
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
@@ -1259,7 +1263,9 @@ const STRINGS = {
     login_google_btn:'Sign in with Google',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
-    todo_move_btn:'Move to another day', todo_move_hint:'Tap a date on the calendar to move it',
+    todo_move_btn:'Move to another day (drag or click)', todo_move_hint:'Tap a date on the calendar to move it',
+    todo_move_tip:'<b>Drag the button onto a calendar date</b> to move it there.<br>Or <b>click the button, then click a date</b>.',
+    todo_move_active:'Pick the target date on the calendar (click the button again to cancel)',
     todo_moved_title:'📅 Moved',
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
@@ -1328,7 +1334,9 @@ const STRINGS = {
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
     todo_moved_title:'📅 移動しました',
-    todo_move_btn:'予定を移動', todo_move_hint:'移動先の日付をカレンダーで選んでください',
+    todo_move_btn:'予定を移動（ドラッグまたはクリック）', todo_move_hint:'移動先の日付をカレンダーで選んでください',
+    todo_move_tip:'ボタンを<b>カレンダーの日付にドラッグ</b>すると移動します。<br>ボタンを<b>押して選択し、日付をクリック</b>してもOKです。',
+    todo_move_active:'移動先の日付をカレンダーで選んでください（もう一度押すと取消）',
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
@@ -2744,6 +2752,13 @@ function renderCalendar() {
             onclick="toggleMoveItem(event,'${_calKey}',${i})">⤴</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
+
+      // 드래그앤드롭이 가능하다는 걸 알 수 있도록 안내를 노출
+      if (selItems.length) {
+        rh += _moveSrc
+          ? `<div class="todo-move-tip on">📍 ${L('todo_move_active')}</div>`
+          : `<div class="todo-move-tip">⤴ ${L('todo_move_tip')}</div>`;
+      }
 
       rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
         <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
