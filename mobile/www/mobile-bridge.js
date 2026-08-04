@@ -723,11 +723,7 @@
       '#dp-diary .diary-date-label, #dp-diary .diary-lines-area, #dp-diary .diary-btns { padding-left:14px !important; }',
       '#dp-diary .diary-nb { padding:12px !important; }',
 
-      // ── 할 일 목록 캘린더: 셀 안의 체크박스/문구는 숨기고 점으로만 표시 ──
-      '#calLeftGrid .cal-day > div:not(.cal-day-num) { display:none !important; }',
-      '#calLeftGrid .cal-day:has(> div:nth-child(2))::after {',
-      '  content:"\\2022"; display:block; text-align:center; color:var(--yellow); font-size:10px; line-height:1;',
-      '}',
+      // (할 일 캘린더의 '점만 표시'는 이제 renderer 기본 동작이라 별도 규칙 불필요)
 
       // ── 고양이 탭: 잘림/찌그러짐 방지 ──
       '#dp-cat [style*="display:flex"] { flex-wrap:wrap !important; }',
