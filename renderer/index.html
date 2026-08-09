@@ -430,6 +430,27 @@ body.theme-mono {
 #dp-home .prog-track { margin-top: 8px; }
 #dp-home .work-item-row { padding: 3px 0; }
 
+/* 사이클 카드: 왼쪽 타이머 · 오른쪽 물컵 */
+.cycle-body { flex: 1; min-height: 0; display: flex; align-items: center; gap: 10px; }
+.water-col { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.water-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; }
+.water-hd b { color: var(--mint); }
+.water-cups { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+/* 컵: 사다리꼴 픽셀 모양. 물이 차 있으면 민트, 마시면 비워진다 */
+.wcup {
+  width: 22px; height: 28px; padding: 0; border: none; background: var(--border);
+  clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
+  position: relative; cursor: default;
+}
+.wcup::after {
+  content: ''; position: absolute; left: 2px; right: 2px; top: 2px; bottom: 2px;
+  background: var(--mint); clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+}
+.wcup.done::after { background: var(--card); }      /* 다 마신 컵 */
+.wcup.next { background: var(--yellow); cursor: pointer; }
+.wcup.undo { cursor: pointer; }
+.water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center; }
+
 /* 원형 픽셀 포모도로 타이머 — 조각난 블록으로 게임 UI 느낌을 낸다 */
 .pomo-wrap { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
 .pomo { height: 100%; max-height: 230px; max-width: 100%; aspect-ratio: 1; display: block; }
@@ -820,12 +841,19 @@ select {
             <!-- 현재 사이클 (왼쪽) -->
             <div class="card" id="homeCycleCard">
               <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
-              <div class="pomo-wrap">
-                <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"></svg>
-                <div class="pomo-center">
-                  <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
-                  <div class="timer-big" id="hTimerClock">55:00</div>
-                  <div class="pomo-next" id="hNextLabel">다음 휴식까지</div>
+              <div class="cycle-body">
+                <div class="pomo-wrap">
+                  <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"></svg>
+                  <div class="pomo-center">
+                    <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
+                    <div class="timer-big" id="hTimerClock">55:00</div>
+                    <div class="pomo-next" id="hNextLabel">다음 휴식까지</div>
+                  </div>
+                </div>
+                <div class="water-col">
+                  <div class="water-hd"><span data-i18n="water_lbl">💧 오늘 마신 물</span> <b id="waterCount">0</b>/8</div>
+                  <div class="water-cups" id="waterCups"></div>
+                  <div class="water-tip" data-i18n="water_tip">한 잔 마실 때마다 🍋 열매 +1</div>
                 </div>
               </div>
               <div class="pomo-sub" id="cycleLabel">출근 시간 기준 자동 계산</div>
@@ -1262,6 +1290,9 @@ const STRINGS = {
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
+    water_lbl:'💧 오늘 마신 물', water_tip:'한 잔 마실 때마다 🍋 열매 +1',
+    water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
+    water_full_msg:'바구니가 가득 찼어요!',
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
     cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
@@ -1334,6 +1365,9 @@ const STRINGS = {
     dash_enc_msg:'Syncing with live clock 🕐',
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
+    water_lbl:'💧 Water today', water_tip:'Each glass earns a 🍋 fruit',
+    water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
+    water_full_msg:'Your basket is full!',
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
     cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
@@ -1406,6 +1440,9 @@ const STRINGS = {
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
+    water_lbl:'💧 今日の水分', water_tip:'1杯ごとに🍋の実 +1',
+    water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
+    water_full_msg:'かごがいっぱいです！',
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
     cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
@@ -1788,7 +1825,7 @@ function dTab(name) {
     const mt = document.getElementById('scheduleMemoTxt');
     if (mt) mt.value = S.scheduleMemo || '';
   }
-  if (name==='home') { renderCyclePreview(); renderWorkItems(); }   // 스케줄이 홈으로 통합됨
+  if (name==='home') { renderCyclePreview(); renderWorkItems(); renderWaterCups(); }   // 스케줄이 홈으로 통합됨
   if (name==='settings') renderThemeGrid();
   renderAll();
 }
@@ -1846,6 +1883,8 @@ const S = {
   lastPenaltyBreakIdx: -1,
   lastMoodResetDate: null,
   lastVitaminDate: null,
+  waterCups: 0,          // 오늘 마신 물 잔 수
+  waterDate: null,
   scheduleItems: null,
   scheduleMemo: '',
   calendarNotes: {},
@@ -1880,7 +1919,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -2428,6 +2467,53 @@ function showBubble(msg, now) {
   if (now) { bubbleQueue.length = 0; clearTimeout(bubbleTimer); bubbleBusy = false; }
   bubbleQueue.push(msg);
   if (!bubbleBusy) _showNextBubble();
+}
+
+// ── 물 마시기 체크 ──
+const WATER_GOAL = 8;
+
+/** 날짜가 바뀌면 오늘 기록을 새로 시작 */
+function _waterEnsureToday() {
+  const today = new Date().toDateString();
+  if (S.waterDate !== today) { S.waterDate = today; S.waterCups = 0; }
+}
+
+function renderWaterCups() {
+  const el = document.getElementById('waterCups');
+  if (!el) return;
+  _waterEnsureToday();
+  const cur = S.waterCups || 0;
+  let h = '';
+  for (let i = 0; i < WATER_GOAL; i++) {
+    // 다음 한 잔만 마실 수 있고, 방금 마신 잔만 되돌릴 수 있다
+    const cls = i < cur ? (i === cur - 1 ? 'wcup done undo' : 'wcup done')
+                        : (i === cur ? 'wcup next' : 'wcup');
+    h += `<button class="${cls}" onclick="drinkWater(${i})" aria-label="${i + 1}"></button>`;
+  }
+  el.innerHTML = h;
+  const cnt = document.getElementById('waterCount');
+  if (cnt) cnt.textContent = cur;
+}
+
+function drinkWater(i) {
+  _waterEnsureToday();
+  const cur = S.waterCups || 0;
+  if (i === cur) {                    // 한 잔 마심 → 열매 1개
+    S.waterCups = cur + 1;
+    if (S.fruits.length < 5) {
+      addFruit();
+      toast('reward', L('water_reward_title'), L('water_reward_msg'));
+    } else {
+      toast('info', L('water_reward_title'), L('water_full_msg'));
+    }
+  } else if (i === cur - 1) {         // 방금 마신 잔 취소 → 열매도 되돌림
+    S.waterCups = cur - 1;
+    if (S.fruits.length) { S.fruits.pop(); renderFruits(); renderHarvestCount(); }
+  } else {
+    return;                           // 그 외 잔은 건너뛸 수 없음
+  }
+  saveState();
+  renderWaterCups();
 }
 
 // ── 원형 픽셀 타이머 ──
@@ -4037,7 +4123,7 @@ const CLOUD_KEYS = [
   // 기록
   'calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   // 고양이·진행 상태
-  'cat','pts','fruits','harvestedFruits','growthLogs','ownedAccs','redeemedCoupons',
+  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
   'schedule','workItems','scheduleItems','shipping','theme','language'
 ];
@@ -4341,6 +4427,7 @@ function init(){
   // hCycleCount is now static (data-i18n='cycle_home_desc')
   if(typeof updateCatUI==='function') updateCatUI();
   if(typeof renderFruits==='function') renderFruits();
+  if(typeof renderWaterCups==='function') renderWaterCups();
   if(typeof renderHarvestCount==='function') renderHarvestCount();
   updateClock();
   updateCycleUI();
