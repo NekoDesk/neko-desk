@@ -349,6 +349,15 @@ body.theme-mono {
 }
 .header-cat-btn:hover { color: var(--white); border-color: var(--gray); }
 .header-cat-btn.active { color: var(--mint); border-color: var(--mint); }
+.header-pts { position: relative; cursor: pointer; }
+.header-pts:hover { border-color: var(--white); }
+/* 사진 찍기 — 아이콘만 */
+.header-icon-btn {
+  position: relative; margin-left: 8px; font-size: 15px; cursor: pointer; line-height: 1;
+  color: var(--gray); background: var(--card); border: 2px solid var(--border);
+  padding: 5px 10px; border-radius: 0;
+}
+.header-icon-btn:hover { color: var(--white); border-color: var(--gray); }
 
 .dash-tabs {
   display: flex; background: var(--bg); border-bottom: 2px solid var(--border); padding: 0 16px;
@@ -446,7 +455,7 @@ body.theme-mono {
 .sch-move-btn:active { cursor:grabbing; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
-.sch-move-btn::after, .todo-help-btn::after {
+.sch-move-btn::after, .todo-help-btn::after, .header-icon-btn::after, .header-pts::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
@@ -456,7 +465,9 @@ body.theme-mono {
   transition:opacity 0.1s ease 0.08s, visibility 0s linear 0.08s; z-index:60; }
 .sch-move-btn::after { bottom:calc(100% + 6px); }   /* 목록 안이라 위쪽으로 */
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
-.sch-move-btn:hover::after, .todo-help-btn:hover::after { opacity:1; visibility:visible; }
+.header-icon-btn::after, .header-pts::after { top:calc(100% + 6px); }
+.sch-move-btn:hover::after, .todo-help-btn:hover::after,
+.header-icon-btn:hover::after, .header-pts:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
 /* 앞뒤 날짜 요약 */
@@ -742,13 +753,13 @@ select {
         <div id="dashEncMsg" data-i18n="dash_enc_msg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
       </div>
       <button id="headerCatBtn" class="header-cat-btn" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</button>
-      <div class="header-pts">🍋 <span id="ptsDisplay">0</span> pts</div>
+      <div class="header-pts" onclick="openFruitPopup()" data-i18n-tip="home_fruit_title">🍋 <span id="ptsDisplay">0</span> pts</div>
+      <button id="headerPhotoBtn" class="header-icon-btn" onclick="openPhotoBooth()" data-i18n-tip="photo_btn">📸</button>
 
     </div>
 
     <div class="dash-tabs">
       <div class="dtab active" data-page="home" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
-      <div class="dtab" data-page="cycle" onclick="dTab('cycle')" data-i18n="tab_cycle">⏱ 스케줄</div>
       <div class="dtab" data-page="schedule" onclick="dTab('schedule')" data-i18n="tab_todo">📝 할 일 목록</div>
       <div class="dtab" data-page="diary" onclick="dTab('diary')" data-i18n="tab_diary">📔 다이어리</div>
       <!-- 고양이는 탭이 아니라 헤더의 pts 옆 버튼으로 이동 -->
@@ -768,20 +779,16 @@ select {
               <img id="homeCatCanvas" class="big-cat cat-img-render">
               <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)" id="catNameH">냐옹이</div>
             </div>
-            <div class="stat-bar">
-              <div class="stat-row">
-                <span data-i18n="home_mood">❤️ 기분</span>
-                <span><span id="mdValH">60</span> /100</span>
-              </div>
-              <div class="bar-t"><div class="bar-f md-f" id="mdBarH" style="width:60%"></div></div>
-            </div>
-            <button class="btn btn-g" onclick="openPhotoBooth()" style="width:100%;margin-top:10px;font-size:14px" data-i18n="photo_btn">📸 고양이와 사진 찍기</button>
-            <div class="stat-bar">
-
+            <!-- 스케줄 탭 통합: 업무 시간 설정 -->
+            <div class="card" id="homeWorkCard">
+              <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
+              <div id="workItemsList"></div>
+              <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
+              <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
             </div>
           </div>
-          <div>
-            <div class="card" style="margin-bottom:12px">
+          <div id="homeCycleCol">
+            <div class="card">
               <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
               <div class="timer-box" style="padding:14px">
                 <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
@@ -789,38 +796,13 @@ select {
                 <div class="prog-track"><div class="prog-fill" id="hProgFill" style="width:0%"></div></div>
                 <div style="font-size:12px;color:var(--gray);margin-top:8px" id="hNextLabel">다음 휴식까지</div>
               </div>
+              <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
+                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
+                <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
+                <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
+              </div>
               <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:8px;line-height:1.7" id="hCycleCount" data-i18n-html="cycle_home_desc">55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.</div>
             </div>
-            <div class="card">
-              <div class="card-title" data-i18n="home_fruit_title">🍋 열매 바구니</div>
-              <div class="fruit-grid" id="fruitBasket"></div>
-              <div style="font-size:12px;color:var(--gray);margin-top:7px" data-i18n="home_fruit_desc">사이클 완료 또는 할 일 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CYCLE -->
-      <div id="dp-cycle" class="dpage">
-        <div class="grid2">
-          <div class="card">
-            <div class="card-title" data-i18n="cycle_timer_title">⏱ 실시간 사이클 타이머</div>
-            <div class="timer-box">
-              <div class="timer-mode-lbl" id="tTimerMode">💪 집중 중</div>
-              <div class="timer-big" id="tTimerClock">55:00</div>
-              <div class="prog-track"><div class="prog-fill" id="tProgFill" style="width:0%"></div></div>
-            </div>
-            <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
-              <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
-              <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
-              <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
-            <div id="workItemsList"></div>
-            <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
-            <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
           </div>
         </div>
       </div>
@@ -922,17 +904,6 @@ select {
               <div class="card-title" data-i18n="cat_deco_title">👒 꾸미기</div>
               <div style="font-size:12px;color:var(--gray);margin-bottom:5px" data-i18n="cat_breed_lbl">고양이 종류</div>
               <div class="breed-row" id="breedRow"></div>
-            </div>
-            <div class="card">
-              <div class="card-title" data-i18n="cat_sell_title">🍋 열매로 포인트 사기</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                <div style="font-size:13px;color:var(--gray)">
-                  <span data-i18n="cat_harvest_lbl">보유 열매</span> <span id="harvestedCount" style="color:var(--yellow);font-weight:700">0</span><span id="harvestUnit" data-i18n="harvest_unit">개</span>
-                  <span data-i18n="cat_per_unit" style="font-size:11px;opacity:0.6;margin-left:6px">· 1개 = 10pts</span>
-                </div>
-                <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
-              </div>
-              <div style="font-size:11px;color:var(--gray);opacity:0.7" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
             </div>
           </div>
         </div>
@@ -1055,6 +1026,28 @@ select {
 </div>
 
 <!-- 찜 목록 모달 -->
+<!-- 열매 바구니 / 포인트 교환 -->
+<div id="fruitModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeFruitPopup(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="home_fruit_title">🍋 열매 바구니</span>
+      <button onclick="closeFruitPopup()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div class="fruit-grid" id="fruitBasket"></div>
+    <div style="font-size:12px;color:var(--gray);margin-top:7px;line-height:1.6" data-i18n="home_fruit_desc">사이클 완료 또는 할 일 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트</div>
+    <div style="border-top:1px solid var(--border);margin:14px 0 12px"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:8px" data-i18n="cat_sell_title">🍋 열매로 포인트 사기</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="font-size:13px;color:var(--gray)">
+        <span data-i18n="cat_harvest_lbl">보유 열매</span> <span id="harvestedCount" style="color:var(--yellow);font-weight:700">0</span><span id="harvestUnit" data-i18n="harvest_unit">개</span>
+        <span data-i18n="cat_per_unit" style="font-size:11px;opacity:0.6;margin-left:6px">· 1개 = 10pts</span>
+      </div>
+      <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
+    </div>
+    <div style="font-size:11px;color:var(--gray);opacity:0.7;line-height:1.6" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+  </div>
+</div>
+
 <!-- 할 일 목록 사용 팁 -->
 <div id="todoTipModal" style="display:none;position:fixed;inset:0;z-index:9450;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTodoTips(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
@@ -1423,6 +1416,9 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = L(el.dataset.i18nPlaceholder);
   });
+  document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+    el.setAttribute('data-tip', L(el.dataset.i18nTip));   // 자체 툴팁 문구
+  });
   ['ko','en','ja'].forEach(lang => {
     const btn = document.getElementById('langBtn_' + lang);
     if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
@@ -1765,7 +1761,7 @@ function dTab(name) {
     const mt = document.getElementById('scheduleMemoTxt');
     if (mt) mt.value = S.scheduleMemo || '';
   }
-  if (name==='cycle') { renderCyclePreview(); renderWorkItems(); }
+  if (name==='home') { renderCyclePreview(); renderWorkItems(); }   // 스케줄이 홈으로 통합됨
   if (name==='settings') renderThemeGrid();
   renderAll();
 }
@@ -2958,6 +2954,18 @@ function _adjDayHtml(key, labelKey, cls) {
     <div class="todo-adj-hd">${L(labelKey)} · ${parseInt(m)}/${parseInt(d)}</div>
     ${body}
   </div>`;
+}
+
+function openFruitPopup() {
+  if (typeof renderFruits === 'function') renderFruits();
+  if (typeof renderHarvestCount === 'function') renderHarvestCount();
+  const el = document.getElementById('fruitModal');
+  if (el) el.style.display = 'flex';
+}
+function closeFruitPopup(e) {
+  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  const el = document.getElementById('fruitModal');
+  if (el) el.style.display = 'none';
 }
 
 function openTodoTips() {

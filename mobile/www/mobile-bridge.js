@@ -710,8 +710,9 @@
       '}',
       '#dashPanel .dtab .mtab-ico { font-size:17px; line-height:1; }',
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
-      // 업무 사이클(스케줄) 탭 제거 — 위 규칙보다 우선순위 높게
-      '#dashPanel .dtab[onclick*="cycle"] { display:none !important; }',
+      // 모바일은 업무 사이클을 쓰지 않으므로 홈의 사이클/업무시간 영역을 숨긴다
+      // (스케줄 탭은 홈으로 통합되면서 사라짐)
+      '#dp-home #homeCycleCol, #dp-home #homeWorkCard { display:none !important; }',
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',
@@ -750,12 +751,7 @@
 
     initDeepLinkListener();
 
-    // 홈의 '현재 사이클' 카드 숨김 (모바일은 업무 사이클 기능 제외)
-    var tClock = document.getElementById('hTimerClock');
-    if (tClock) {
-      var cycleCard = tClock.closest('.card');
-      if (cycleCard) cycleCard.style.display = 'none';
-    }
+    // (사이클 영역 숨김은 위 CSS에서 처리)
 
     // 포토부스에 전/후면 카메라 전환 버튼 주입
     var facing = 'user';
