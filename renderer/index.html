@@ -418,14 +418,23 @@ body.theme-mono {
 #dp-home .card { padding: 12px 13px; }
 #dp-home .card-title { margin-bottom: 9px; }
 #dp-home .cat-display { padding: 10px; gap: 6px; margin-bottom: 10px !important; }
-#dp-home .big-cat { width: 84px; height: 101px; }
+#dp-home .big-cat { width: 118px; height: 142px; }
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
 #dp-home .prog-track { margin-top: 8px; }
-#dp-home #homeRealClockBox { background: var(--card); border: 1px solid var(--border); padding: 9px 10px; }
 #dp-home #realClock { font-size: 18px; }
 #dp-home .work-item-row { padding: 3px 0; }
 #dp-home .grid2 { margin-bottom: 0 !important; }
+
+/* 좌우 컬럼의 아래 끝을 맞춘다 — 카드가 남는 높이를 채우고,
+   각 카드의 마지막 요소는 바닥에 붙여 빈 공간이 생기지 않게 한다. */
+#dp-home .grid2 > div { display: flex; flex-direction: column; }
+#dp-home #homeCycleCard,
+#dp-home #homeWorkCard { flex: 1; display: flex; flex-direction: column; }
+#dp-home #homeRealClockBox {
+  background: var(--card); border: 1px solid var(--border); padding: 9px 10px; margin-top: auto;
+}
+#dp-home #homeWorkCard #hCycleCount { margin-top: auto; padding-top: 8px; }
 
 .cat-display {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
