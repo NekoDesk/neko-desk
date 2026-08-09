@@ -428,13 +428,11 @@ body.theme-mono {
 
 /* 좌우 컬럼의 아래 끝을 맞춘다 — 카드가 남는 높이를 채우고,
    각 카드의 마지막 요소는 바닥에 붙여 빈 공간이 생기지 않게 한다. */
-#dp-home .grid2 > div { display: flex; flex-direction: column; }
-#dp-home #homeCycleCard,
-#dp-home #homeWorkCard { flex: 1; display: flex; flex-direction: column; }
+#dp-home .grid2 { align-items: start; }   /* 한쪽이 길어져도 반대쪽은 그대로 */
 #dp-home #homeRealClockBox {
-  background: var(--card); border: 1px solid var(--border); padding: 9px 10px; margin-top: auto;
+  background: var(--card); border: 1px solid var(--border); padding: 9px 10px;
 }
-#dp-home #homeWorkCard #hCycleCount { margin-top: auto; padding-top: 8px; }
+#dp-home #homeWorkCard #hCycleCount { padding-top: 8px; }
 
 .cat-display {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -700,7 +698,8 @@ select {
 /* ── Diary ── */
 .diary-nb{position:relative;padding:16px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
 .diary-top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;background:var(--panel);border-radius:10px;padding:12px}
-.diary-mini-cal{width:100%;max-width:440px;margin:0 auto}
+.diary-mini-cal{width:100%}
+.diary-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:44px;margin-bottom:6px}
 .diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-family:'Galmuri14',monospace;font-size:12px;color:var(--white);margin-bottom:8px}
 .cal-nav,.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;line-height:1;padding:2px 8px;border-radius:4px}
 .cal-nav:hover,.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
@@ -719,7 +718,7 @@ select {
 .diary-photo-del-btn:hover{background:rgba(180,0,0,0.75)}
 .diary-fold-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;font-size:12px;font-weight:bold;color:var(--gray);padding:6px 10px;margin-bottom:6px;background:var(--panel);border-radius:8px}
 .diary-fold-hd:hover{color:var(--white)}
-.diary-date-label{font-size:14px;font-weight:bold;color:var(--yellow);margin:4px 0 6px;letter-spacing:1px;padding-left:44px}
+.diary-date-label{font-size:14px;font-weight:bold;color:var(--yellow);letter-spacing:1px}
 .diary-lines-area{padding-left:44px;padding-top:2px}
 .diary-textarea{width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
 .diary-btns{display:flex;gap:8px;margin-top:16px;padding-left:44px}
@@ -829,8 +828,20 @@ select {
       <!-- SCHEDULE -->
       <div id="dp-schedule" class="dpage">
         <div class="grid2" style="align-items:start">
-          <div class="card">
-            <div id="calLeftGrid"></div>
+          <div>
+            <div class="card">
+              <div id="calLeftGrid"></div>
+            </div>
+            <!-- 메모장: 캘린더 아래, 같은 폭 -->
+            <div class="card" style="margin-top:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+                <div class="card-title" style="margin-bottom:0" data-i18n="todo_memo_title">📓 메모장</div>
+                <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveScheduleNotes()" data-i18n="todo_save_btn">💾 저장</button>
+              </div>
+              <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..." data-i18n-placeholder="todo_memo_ph"
+                oninput="S.scheduleMemo=this.value"
+                style="width:100%;min-height:72px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
+            </div>
           </div>
           <div class="card">
             <div id="calRightPanel">
@@ -838,23 +849,21 @@ select {
             </div>
           </div>
         </div>
-        <div class="card" style="margin-top:12px">
-          <div class="card-title" data-i18n="todo_memo_title">📓 메모장</div>
-          <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..." data-i18n-placeholder="todo_memo_ph"
-            oninput="S.scheduleMemo=this.value"
-            style="width:100%;min-height:120px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
-          <button class="btn btn-g" style="width:100%;font-size:11px;padding:6px;margin-top:6px" onclick="saveScheduleNotes()" data-i18n="todo_save_btn">💾 저장</button>
-        </div>
       </div>
 
       <!-- DIARY -->
       <div id="dp-diary" class="dpage">
-        <div class="diary-nb">
-          <div class="diary-fold-hd" onclick="toggleDiaryTop()">
-            <span data-i18n="diary_fold_title">📅 날짜 선택</span>
-            <span id="diaryTopChev">▲</span>
+        <div class="grid2" style="align-items:start">
+          <div class="diary-nb">
+            <div class="diary-hd">
+              <div class="diary-date-label" id="diaryDateLabel"></div>
+              <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
+            </div>
+            <div class="diary-lines-area">
+              <textarea id="diaryText" class="diary-textarea" oninput="diaryGrow(this)" data-i18n-placeholder="diary_ph" placeholder="오늘의 기록..."></textarea>
+            </div>
           </div>
-          <div class="diary-top-row" id="diaryTopRow">
+          <div class="card">
             <div class="diary-mini-cal">
               <div class="diary-cal-header">
                 <button class="diary-cal-nav" onclick="diaryCalNav(-1)">&#9664;</button>
@@ -864,14 +873,6 @@ select {
               <div class="diary-cal-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
               <div class="diary-cal-grid" id="diaryCalGrid"></div>
             </div>
-          </div>
-          <div class="diary-date-label" id="diaryDateLabel"></div>
-          <div class="diary-lines-area">
-            <textarea id="diaryText" class="diary-textarea" oninput="diaryGrow(this)" data-i18n-placeholder="diary_ph" placeholder="오늘의 기록..."></textarea>
-          </div>
-          <div class="diary-btns">
-            <button class="btn btn-g" style="flex:1;font-size:12px;padding:7px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
-            <button class="btn btn-b" style="flex:1;font-size:12px;padding:7px" onclick="exportDiaryImg()">&#128444; <span data-i18n="diary_export_btn">이미지로 저장</span></button>
           </div>
         </div>
       </div>
@@ -1268,9 +1269,9 @@ const STRINGS = {
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
-    diary_save_btn:'저장', diary_export_btn:'이미지로 저장', diary_ph:'오늘의 기록...',
+    diary_save_btn:'저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
-    login_sync_info:'☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span>', diary_fold_title:'📅 날짜 선택', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
+    login_sync_info:'☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span>', autostart_title:'🚀 부팅 시 자동 실행', autostart_desc:'PC를 켜면 NEKO DESK가 자동으로 시작돼요', autostart_on:'켜짐', autostart_off:'꺼짐',
   },
   en: {
     tab_home:'🏠 Home', tab_cycle:'⏱ Schedule', tab_todo:'📝 To Do List',
@@ -1341,8 +1342,8 @@ const STRINGS = {
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
-    login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', diary_fold_title:'📅 Select Date', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
-    diary_save_btn:'Save', diary_export_btn:'Save as Image', diary_ph:'Write today\'s diary...',
+    login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
+    diary_save_btn:'Save', diary_ph:'Write today\'s diary...',
     diary_saved_title:'Saved', diary_saved_msg:'Diary saved!',
   },
   ja: {
@@ -1414,8 +1415,8 @@ const STRINGS = {
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
-    login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', diary_fold_title:'📅 日付選択', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
-    diary_save_btn:'保存', diary_export_btn:'画像で保存', diary_ph:'今日の日記を書かう...',
+    login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
+    diary_save_btn:'保存', diary_ph:'今日の日記を書かう...',
     diary_saved_title:'保存', diary_saved_msg:'ダイアリーを保存しました！',
   }
 };
@@ -1872,7 +1873,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries','diaryTopFolded']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -2594,7 +2595,6 @@ const WORK_DEFAULTS = [
   { time:'12:00', label:'점심 시작' },
   { time:'13:00', label:'점심 끝' },
   { time:'18:00', label:'퇴근' },
-  { time:'19:00', label:'저녁' },
 ];
 
 let _dragWorkIdx = -1;
@@ -3040,25 +3040,6 @@ document.addEventListener('keydown', (e) => {
 // ── 다이어리 ──
 let _diaryDate = '', _diaryCalYear = new Date().getFullYear(), _diaryCalMonth = new Date().getMonth(), _diaryImgData = null;
 
-function syncDiaryFrameHeight() {
-  requestAnimationFrame(() => {
-    const cal = document.querySelector('.diary-mini-cal');
-    const frame = document.getElementById('diaryPhotoFrame');
-    if (cal && frame && cal.offsetHeight > 0) {
-      const h = cal.offsetHeight;
-      frame.style.height = h + 'px';
-      frame.style.maxHeight = h + 'px';
-    }
-  });
-}
-function toggleDiaryTop() {
-  toggleSection('diaryTopRow', 'diaryTopChev');
-  const el = document.getElementById('diaryTopRow');
-  S.diaryTopFolded = !!(el && el.style.display === 'none');
-  saveState();
-  syncDiaryFrameHeight();
-}
-
 /** 다른 날짜로 옮기기 전, 편집 중이던 내용을 자동 저장 */
 function _diaryAutoSave() {
   if (!_diaryDate) return false;
@@ -3079,15 +3060,8 @@ function renderDiary() {
     _diaryDate = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
     _diaryCalYear = t.getFullYear(); _diaryCalMonth = t.getMonth();
   }
-  const _top = document.getElementById('diaryTopRow');
-  const _chev = document.getElementById('diaryTopChev');
-  if (_top) {
-    _top.style.display = S.diaryTopFolded ? 'none' : '';
-    if (_chev) _chev.textContent = S.diaryTopFolded ? '▼' : '▲';
-  }
   renderDiaryCal();
   loadDiaryEntry(_diaryDate);
-  syncDiaryFrameHeight();
 }
 
 function renderDiaryCal() {
@@ -3222,7 +3196,6 @@ function updateDiaryPhoto(dataUrl) {
   if (img) { img.src = dataUrl; img.style.display = 'block'; }
   if (noP) noP.style.display = 'none';
   if (del) del.style.display = '';
-  syncDiaryFrameHeight();
 }
 function diaryDelPhoto() {
   _diaryImgData = null;
@@ -3232,7 +3205,6 @@ function diaryDelPhoto() {
   if (img) { img.src = ''; img.style.display = 'none'; }
   if (noP) noP.style.display = '';
   if (del) del.style.display = 'none';
-  syncDiaryFrameHeight();
 }
 
 function fitDiaryFrame(dataUrl) {
@@ -3251,142 +3223,6 @@ function saveDiary() {
   toast('info', L('diary_saved_title'), L('diary_saved_msg'));
 }
 
-async function exportDiaryImg() {
-  if (!window.electronAPI || !window.electronAPI.captureRegionUrl) {
-    toast('alert', '지원 안됨', ''); return;
-  }
-  const dashBody = document.querySelector('#dashPanel .dash-body');
-  const dpEl = document.getElementById('dp-diary');
-  const dashPanel = document.getElementById('dashPanel');
-  if (!dashBody || !dpEl || !dashPanel) return;
-
-  const hideIds = ['diaryPhotoActions','diaryPhotoDelBtn'];
-  const hideEls = hideIds.map(id=>document.getElementById(id)).filter(Boolean);
-  const dBtns = document.querySelector('.diary-btns');
-  if (dBtns) hideEls.push(dBtns);
-  const prevDisplay = hideEls.map(el=>el.style.display);  // 원래 인라인 display 보존 (예: flex)
-  hideEls.forEach(el=>el.style.display='none');
-  const restore = () => {
-    hideEls.forEach((el,i)=>{ el.style.display = prevDisplay[i]; });
-    dashBody.style.overflowY = '';
-    dashBody.style.borderRadius = '';
-    dashPanel.style.borderRadius = '';
-    dashBody.scrollTop = 0;
-  };
-
-  // 캡처 준비: 스크롤바 숨김(overflow hidden에서도 scrollTop 제어 가능),
-  // 둥근 모서리 임시 제거 (스트립 경계마다 테두리 곡선이 찍히는 것 방지)
-  // 상단 여백은 dash-body 자체 padding(18px)으로 좌우와 동일하게 유지
-  dashBody.style.overflowY = 'hidden';
-  dashBody.style.borderRadius = '0';
-  dashPanel.style.borderRadius = '0';
-  dashBody.scrollTop = 0;
-  await new Promise(r=>setTimeout(r,150));
-
-  const panelRect = dashPanel.getBoundingClientRect();
-  const bodyRect  = dashBody.getBoundingClientRect();
-  const bodyCS = window.getComputedStyle(dashBody);
-  const bTop = parseFloat(bodyCS.borderTopWidth) || 0;
-  const bBot = parseFloat(bodyCS.borderBottomWidth) || 2;
-  const frameCol = bodyCS.borderLeftColor || '#333';
-  const pX = Math.round(panelRect.x);
-  const pY = Math.round(panelRect.y);
-  const pW = Math.round(panelRect.width);
-  const hdrH  = Math.round(bodyRect.top - panelRect.top);
-  const viewH = dashBody.clientHeight;   // 테두리 제외한 보이는 높이 (하단 테두리 캡처 방지)
-  const fullH = dashBody.scrollHeight;   // 전체 콘텐츠 높이
-  const bodyY = Math.round(bodyRect.top + bTop);
-  const bodyBottom = Math.round(bodyRect.bottom);
-  // 하단 프레임 높이: 안쪽 테두리 + 프레임 배경 간격 + 바깥 테두리 (측면과 동일 구조)
-  const frameBotH = Math.round(panelRect.bottom) - (bodyBottom - bBot);
-  const IH = hdrH + fullH + frameBotH;   // 조립된 패널 전체 높이
-  const R = 12;                          // 바깥 프레임 corner radius (CSS와 동일)
-
-  // 4면 동일 흰색 여백 (PAD)
-  const PAD = 24;
-  const cvs = document.createElement('canvas');
-  cvs.width  = pW + PAD * 2;
-  cvs.height = IH + PAD * 2;
-  const ctx = cvs.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, cvs.width, cvs.height);
-  // 상하 꼭짓점 모두 동일한 radius로 클리핑
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(PAD, PAD, pW, IH, R);
-  ctx.clip();
-
-  const loadImg = url => new Promise(ok => {
-    const im = new Image();
-    im.onload = () => ok(im); im.onerror = () => ok(null);
-    im.src = url;
-  });
-
-  try {
-    // 1. 헤더 (고양이 로고 + 탭)
-    const hRes = await window.electronAPI.captureRegionUrl({x:pX, y:pY, width:pW, height:hdrH});
-    if (hRes && hRes.ok) {
-      const hImg = await loadImg(hRes.dataUrl);
-      if (hImg) ctx.drawImage(hImg, 0, 0, hImg.naturalWidth, hImg.naturalHeight, PAD, PAD, pW, hdrH);
-    }
-
-    // 2. body 스트립 캡처 + 스티칭
-    //    실제 scrollTop을 읽어서(끝에서는 클램핑됨) 정확한 위치부터 잘라 붙임
-    let offset = 0;
-    while (offset < fullH) {
-      dashBody.scrollTop = offset;
-      await new Promise(r=>setTimeout(r,110));
-      const actual = dashBody.scrollTop;
-      const rowH = Math.min(viewH - (offset - actual), fullH - offset);
-      if (rowH <= 0) break;
-      const res = await window.electronAPI.captureRegionUrl({x:pX, y:bodyY, width:pW, height:viewH});
-      if (res && res.ok) {
-        const sImg = await loadImg(res.dataUrl);
-        if (sImg) {
-          const scale = sImg.naturalHeight / viewH;  // 실제 캡처 배율 (DPR)
-          ctx.drawImage(sImg,
-            0, Math.round((offset - actual) * scale), sImg.naturalWidth, Math.round(rowH * scale),
-            PAD, PAD + hdrH + offset, pW, rowH);
-        }
-      }
-      offset += rowH;
-    }
-
-    // 3. 하단 프레임을 실제 화면에서 캡처해 붙임
-    //    (안쪽 테두리 → 프레임 배경 간격 → 바깥 테두리, 측면과 동일한 구조)
-    //    OV: 안쪽 카드 하단 radius가 온전히 나오도록 콘텐츠 끝부분과 겹쳐서 캡처
-    dashBody.style.borderRadius = '';   // 안쪽 카드 하단 라운드 복원
-    await new Promise(r=>setTimeout(r,80));
-    const OV = 12;
-    const fRes = await window.electronAPI.captureRegionUrl({
-      x: pX, y: bodyBottom - bBot - OV, width: pW, height: frameBotH + OV
-    });
-    if (fRes && fRes.ok) {
-      const fImg = await loadImg(fRes.dataUrl);
-      if (fImg) ctx.drawImage(fImg, 0, 0, fImg.naturalWidth, fImg.naturalHeight,
-        PAD, PAD + hdrH + fullH - OV, pW, frameBotH + OV);
-    }
-
-    // 4. 클리핑 해제 후 바깥 테두리를 radius 따라 다시 그려 마감
-    ctx.restore();
-    ctx.strokeStyle = frameCol;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(PAD + 1, PAD + 1, pW - 2, IH - 2, R - 1);
-    ctx.stroke();
-
-    restore();
-    const link = document.createElement('a');
-    link.download = `diary-${_diaryDate}.png`;
-    link.href = cvs.toDataURL('image/png');
-    link.click();
-    toast('reward', '📸', `diary-${_diaryDate}.png`);
-
-  } catch(err) {
-    restore();
-    toast('alert', '저장 실패', '');
-  }
-}
 // ── 다이어리 끝 ──
 
 function toggleDayItem(key, i) {

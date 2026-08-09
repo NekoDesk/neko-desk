@@ -503,99 +503,6 @@
   }
 
   // ═══════════════════════════════════════════════
-  // 다이어리 이미지 저장/공유 (모바일 전용 캔버스 렌더)
-  // ═══════════════════════════════════════════════
-  function exportDiaryImgMobile() {
-    var ta = document.getElementById('diaryText');
-    var img = document.getElementById('diaryPhotoImg');
-    var text = ta ? ta.value : '';
-    var dateStr = '';
-    try { if (typeof _diaryDate !== 'undefined') dateStr = _diaryDate || ''; } catch (e) {}
-    var hasImg = img && img.src && img.style.display !== 'none';
-
-    var W = 1080, PAD = 64, CW = W - PAD * 2;
-    var cs = getComputedStyle(document.documentElement);
-    var bg = (cs.getPropertyValue('--bg') || '#fff').trim();
-    var fg = (cs.getPropertyValue('--white') || '#222').trim();
-    var sub = (cs.getPropertyValue('--gray') || '#888').trim();
-    var line = (cs.getPropertyValue('--border') || '#ddd').trim();
-
-    var draw = function (photo) {
-      var meas = document.createElement('canvas').getContext('2d');
-      meas.font = '34px sans-serif';
-      // 텍스트 줄바꿈 계산
-      var rows = [];
-      (text || '').split('\n').forEach(function (para) {
-        if (!para) { rows.push(''); return; }
-        var cur = '';
-        for (var i = 0; i < para.length; i++) {
-          var next = cur + para[i];
-          if (meas.measureText(next).width > CW && cur) { rows.push(cur); cur = para[i]; }
-          else cur = next;
-        }
-        rows.push(cur);
-      });
-
-      var LH = 52;
-      var photoH = 0;
-      if (photo) photoH = Math.min(760, Math.round(CW * photo.naturalHeight / photo.naturalWidth)) + 36;
-      var H = PAD + 60 + photoH + rows.length * LH + PAD;
-      if (H < 700) H = 700;
-
-      var c = document.createElement('canvas');
-      c.width = W; c.height = H;
-      var x = c.getContext('2d');
-      x.fillStyle = bg; x.fillRect(0, 0, W, H);
-
-      // 날짜 헤더
-      x.fillStyle = sub;
-      x.font = 'bold 34px sans-serif';
-      x.fillText(dateStr, PAD, PAD + 26);
-      x.strokeStyle = line; x.lineWidth = 2;
-      x.beginPath(); x.moveTo(PAD, PAD + 48); x.lineTo(W - PAD, PAD + 48); x.stroke();
-
-      var y = PAD + 60;
-      // 사진
-      if (photo) {
-        var ih = Math.min(760, Math.round(CW * photo.naturalHeight / photo.naturalWidth));
-        var iw = Math.round(ih * photo.naturalWidth / photo.naturalHeight);
-        x.drawImage(photo, PAD + Math.round((CW - iw) / 2), y, iw, ih);
-        y += ih + 36;
-      }
-      // 본문
-      x.fillStyle = fg; x.font = '34px sans-serif';
-      rows.forEach(function (r, i) { x.fillText(r, PAD, y + 34 + i * LH); });
-
-      shareCanvas(c, 'diary-' + (dateStr || 'neko') + '.png');
-    };
-
-    if (hasImg) {
-      var p = new Image();
-      p.onload = function () { draw(p); };
-      p.onerror = function () { draw(null); };
-      p.src = img.src;
-    } else draw(null);
-  }
-
-  /** 캔버스를 파일로 저장하고 공유 시트 열기 (인스타 스토리 등) */
-  function shareCanvas(canvas, filename) {
-    var dataUrl = canvas.toDataURL('image/png');
-    var Fs = capPlugin('Filesystem'), Sh = capPlugin('Share');
-    if (!Fs || !Sh) {
-      var a = document.createElement('a');
-      a.download = filename; a.href = dataUrl; a.click();
-      return;
-    }
-    var base64 = dataUrl.split(',')[1];
-    Fs.writeFile({ path: filename, data: base64, directory: 'CACHE' })
-      .then(function (res) {
-        return Sh.share({ title: 'NEKO DESK 다이어리', files: [res.uri] });
-      })
-      .then(function () { toast('reward', '📸', '공유 완료!'); })
-      .catch(function () { toast('alert', '저장 실패', ''); });
-  }
-
-  // ═══════════════════════════════════════════════
   // 포토부스: 고양이 크기 축소 + 하단 4종 선택줄
   // ═══════════════════════════════════════════════
   // 합성 코드가 프레임 높이의 92%로 그리므로, 원본에 투명 여백을 둘러
@@ -720,13 +627,11 @@
       '.dpage * { max-width:100%; box-sizing:border-box; }',
 
       // ── 다이어리: 캘린더를 화면 폭에 꽉 차게 (오른쪽 여백 제거) ──
-      '#dp-diary .diary-top-row { flex-direction:column !important; }',
-      '#dp-diary .diary-mini-cal { flex:1 1 100% !important; width:100% !important; }',
       // 두 캘린더(할 일 목록 · 다이어리)는 완전히 같은 규격으로 보이게 한다
       '#dp-diary .diary-cal-nav, #dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
       '#dp-diary .diary-cal-cell, #calLeftGrid .cal-day { min-height:36px !important; font-size:11px !important; }',
       '#dp-diary .diary-cal-dows span, #dp-schedule .cal-grid > div { font-size:10px !important; }',
-      '#dp-diary .diary-date-label, #dp-diary .diary-lines-area, #dp-diary .diary-btns { padding-left:14px !important; }',
+      '#dp-diary .diary-hd, #dp-diary .diary-lines-area { padding-left:14px !important; }',
       '#dp-diary .diary-nb { padding:12px !important; }',
 
       // (할 일 캘린더의 '점만 표시'는 이제 renderer 기본 동작이라 별도 규칙 불필요)
@@ -743,7 +648,6 @@
       '@media (max-width:700px) {',
       '  .grid2 { grid-template-columns: 1fr !important; }',
       '  .mag-grid { grid-template-columns: repeat(2,1fr) !important; }',
-      '  .diary-top-row { flex-wrap: wrap !important; }',
       '  .dash-body { padding: 12px !important; }',
       '}'
     ].join('\n');
@@ -799,9 +703,6 @@
         window.applyLang = function () { origLang.apply(this, arguments); formatTabs(); };
         window.applyLang._mtabWrapped = true;
       }
-
-      // 3) 다이어리 이미지 저장 → 모바일 공유 시트
-      window.exportDiaryImg = exportDiaryImgMobile;
 
       // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
       hookPhotoBooth();
