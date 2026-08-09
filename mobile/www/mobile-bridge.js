@@ -692,6 +692,9 @@
       '#dashboard { padding:0 !important; }',
       // 창 최소화/닫기 버튼 숨김 (모바일에선 의미 없음)
       '.dtb-btns { display:none !important; }',
+      // 헤더: 고양이 버튼 + 포인트가 좁은 화면에서 넘치지 않도록
+      '#dashPanel .dash-header { flex-wrap:wrap !important; gap:6px 8px; }',
+      '.header-cat-btn, .header-pts { font-size:12px !important; padding:4px 9px !important; }',
       // body transparent(인라인) 무효화
       'body { background: var(--bg) !important; }',
       // 탭이 텍스트 선택으로 인식되는 것 방지 (이모지 파란 선택 현상)

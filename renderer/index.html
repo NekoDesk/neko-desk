@@ -338,9 +338,17 @@ body.theme-mono {
 }
 .dash-logo { font-family: 'Galmuri14', monospace; font-size: 16px; color: var(--mint); text-shadow: 2px 2px 0 var(--acc); }
 .header-pts {
-  margin-left: auto; font-family: 'Galmuri14', monospace; font-size: 14px;
+  font-family: 'Galmuri14', monospace; font-size: 14px;
   color: var(--yellow); background: var(--card); border: 2px solid var(--yellow); padding: 5px 12px;
 }
+/* 고양이 메뉴 — 탭이 아니라 헤더 버튼 */
+.header-cat-btn {
+  margin-left: auto; margin-right: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+  color: var(--gray); background: var(--card); border: 2px solid var(--border);
+  padding: 5px 12px; border-radius: 0; line-height: 1.4; white-space: nowrap;
+}
+.header-cat-btn:hover { color: var(--white); border-color: var(--gray); }
+.header-cat-btn.active { color: var(--mint); border-color: var(--mint); }
 
 .dash-tabs {
   display: flex; background: var(--bg); border-bottom: 2px solid var(--border); padding: 0 16px;
@@ -450,6 +458,17 @@ body.theme-mono {
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
 .sch-move-btn:hover::after, .todo-help-btn:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
+.todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
+/* 앞뒤 날짜 요약 */
+.todo-adj { background:var(--card); border:1px solid var(--border); border-radius:4px;
+  padding:6px 8px; margin-bottom:8px; cursor:pointer; opacity:0.72; }
+.todo-adj.next { margin-bottom:0; margin-top:8px; }
+.todo-adj:hover { opacity:1; border-color:var(--mint); }
+.todo-adj-hd { font-family:'Galmuri14',monospace; font-size:10px; color:var(--gray); margin-bottom:3px; }
+.todo-adj-item { font-size:11px; color:var(--gray); line-height:1.5;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.todo-adj-item.done { text-decoration:line-through; opacity:0.5; }
+.todo-adj-item.empty { opacity:0.5; font-style:italic; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 .todo-help-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
@@ -717,20 +736,21 @@ select {
         <div class="dash-logo">🐱 NEKO DESK</div>
         <div id="dashEncMsg" data-i18n="dash_enc_msg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
       </div>
+      <button id="headerCatBtn" class="header-cat-btn" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</button>
       <div class="header-pts">🍋 <span id="ptsDisplay">0</span> pts</div>
 
     </div>
 
     <div class="dash-tabs">
-      <div class="dtab active" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
-      <div class="dtab" onclick="dTab('cycle')" data-i18n="tab_cycle">⏱ 스케줄</div>
-      <div class="dtab" onclick="dTab('schedule')" data-i18n="tab_todo">📝 할 일 목록</div>
-      <div class="dtab" onclick="dTab('diary')" data-i18n="tab_diary">📔 다이어리</div>
-      <div class="dtab" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</div>
-      <div class="dtab" onclick="dTab('magazine')" data-i18n="tab_magazine">📰 매거진</div>
+      <div class="dtab active" data-page="home" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
+      <div class="dtab" data-page="cycle" onclick="dTab('cycle')" data-i18n="tab_cycle">⏱ 스케줄</div>
+      <div class="dtab" data-page="schedule" onclick="dTab('schedule')" data-i18n="tab_todo">📝 할 일 목록</div>
+      <div class="dtab" data-page="diary" onclick="dTab('diary')" data-i18n="tab_diary">📔 다이어리</div>
+      <!-- 고양이는 탭이 아니라 헤더의 pts 옆 버튼으로 이동 -->
+      <div class="dtab" data-page="magazine" onclick="dTab('magazine')" data-i18n="tab_magazine">📰 매거진</div>
       <!-- SHOP_TAB_HIDDEN: 샵 복원 시 아래 주석 해제, 위 주석 제거 -->
       <!-- <div class="dtab" onclick="dTab('shop')">🛒 샵</div> -->
-      <div class="dtab" onclick="dTab('settings')" data-i18n="tab_settings">⚙ 설정</div>
+      <div class="dtab" data-page="settings" onclick="dTab('settings')" data-i18n="tab_settings">⚙ 설정</div>
     </div>
 
     <div class="dash-body">
@@ -1221,6 +1241,7 @@ const STRINGS = {
     login_google_btn:'구글 로그인 하기',
     vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
+    todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
     todo_tip_html:'<b style="color:var(--white)">⤴ 일정 옮기기</b><br>⤴ 버튼을 누른 채로 캘린더의 원하는 날짜 위로 끌어다 놓으면 일정이 그 날로 옮겨져요.<br>⤴ 버튼을 클릭해서 일정을 선택한 뒤 날짜를 클릭해도 이동이 가능합니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)',
     todo_move_btn:'일정 옮기기 (드래그 또는 클릭)', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
@@ -1293,6 +1314,7 @@ const STRINGS = {
     login_google_btn:'Sign in with Google',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
+    todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
     todo_tip_html:'<b style="color:var(--white)">⤴ Move a task</b><br>Hold the ⤴ button and drop it on any date in the calendar to move the task to that day.<br>Or click the ⤴ button to select the task, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)',
     todo_move_btn:'Move to another day (drag or click)', todo_move_hint:'Tap a date on the calendar to move it',
@@ -1366,6 +1388,7 @@ const STRINGS = {
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
     todo_moved_title:'📅 移動しました',
+    todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
     todo_tip_html:'<b style="color:var(--white)">⤴ 予定を移動</b><br>⤴ ボタンを押したままカレンダーの日付にドロップすると、その日に移動します。<br>⤴ ボタンをクリックして選択し、日付をクリックしても移動できます。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）',
     todo_move_btn:'予定を移動（ドラッグまたはクリック）', todo_move_hint:'移動先の日付をカレンダーで選んでください',
@@ -1718,10 +1741,10 @@ function initClickThrough() {
 // TABS
 // ══════════════════════════════════════════
 function dTab(name) {
-  document.querySelectorAll('.dtab').forEach((t,i)=>{
-    const pages=['home','cycle','schedule','diary','cat','magazine','settings'];
-    t.classList.toggle('active', pages[i]===name);
-  });
+  // 탭 순서/개수에 의존하지 않도록 data-page로 매칭한다
+  document.querySelectorAll('.dtab').forEach(t => t.classList.toggle('active', t.dataset.page === name));
+  const _catBtn = document.getElementById('headerCatBtn');
+  if (_catBtn) _catBtn.classList.toggle('active', name === 'cat');
   document.querySelectorAll('.dpage').forEach(p=>p.classList.remove('active'));
   document.getElementById('dp-'+name).classList.add('active');
   if (name==='diary') renderDiary();
@@ -2767,6 +2790,8 @@ function renderCalendar() {
     </div>`;
 
     if (_calKey) {
+      rh += _adjDayHtml(shiftDateKey(_calKey, -1), 'todo_prev_day', 'prev');
+
       if (selItems.length) {
         const allDone = selItems.every(i => i.done);
         rh += `<div style="display:flex;gap:6px;margin-bottom:10px">
@@ -2775,7 +2800,7 @@ function renderCalendar() {
         </div>`;
       }
       rh += selItems.map((item, i) => `
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div class="todo-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
           <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>
@@ -2784,6 +2809,8 @@ function renderCalendar() {
             onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⤴</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
+
+      rh += _adjDayHtml(shiftDateKey(_calKey, 1), 'todo_next_day', 'next');
 
       // 사용법은 ? 버튼(사용 팁)에서 안내. 선택 상태는 ⤴ 버튼 색으로 표시된다.
 
@@ -2823,21 +2850,30 @@ function _dragMove(e) {
     document.body.classList.add('dragging-item');   // 주먹 쥔 손 커서
   }
   const under = document.elementFromPoint(e.clientX, e.clientY);
+  // 캘린더 날짜 위 → 날짜 이동 / 다른 할 일 위 → 순서 변경
   const cell = (under && under.closest) ? under.closest('.cal-day[data-key]') : null;
-  if (_drag.hover && _drag.hover !== cell) _drag.hover.classList.remove('cal-drop');
+  const row  = (!cell && under && under.closest) ? under.closest('.todo-item[data-idx]') : null;
+  const next = cell || row;
+  if (_drag.hover && _drag.hover !== next) {
+    _drag.hover.classList.remove('cal-drop', 'todo-drop');
+  }
   if (cell) cell.classList.add('cal-drop');
-  _drag.hover = cell;
+  else if (row) row.classList.add('todo-drop');
+  _drag.hover = next;
 }
 
 function _dragEnd() {
   if (!_drag) return;
   const d = _drag; _drag = null;
   document.body.classList.remove('dragging-item');
-  if (d.hover) d.hover.classList.remove('cal-drop');
+  if (d.hover) d.hover.classList.remove('cal-drop', 'todo-drop');
   if (!d.moved) { toggleMoveItem(null, d.key, d.idx); return; }   // 제자리 클릭 → 선택 토글
-  if (d.hover && d.hover.dataset.key) {
+  if (d.hover && d.hover.dataset.key) {          // 캘린더 날짜 → 그 날로 이동
     _moveSrc = { key: d.key, idx: d.idx };
     moveItemTo(d.hover.dataset.key);
+  } else if (d.hover && d.hover.dataset.idx !== undefined) {   // 다른 할 일 → 순서 변경
+    _moveSrc = null;
+    reorderDayItem(d.key, d.idx, Number(d.hover.dataset.idx));
   } else {
     _moveSrc = null;
     renderCalendar();
@@ -2857,6 +2893,17 @@ function toggleMoveItem(e, key, idx) {
     _moveSrc = { key, idx };
     toast('info', L('todo_move_btn'), L('todo_move_hint'));
   }
+  renderCalendar();
+}
+
+/** 같은 날짜 안에서 할 일 순서(우선순위) 변경 */
+function reorderDayItem(key, from, to) {
+  const items = getCalNotes(key);
+  if (from === to || !items[from] || to < 0 || to >= items.length) { renderCalendar(); return; }
+  const [moved] = items.splice(from, 1);
+  items.splice(to, 0, moved);
+  setCalNotes(key, items);
+  saveState();
   renderCalendar();
 }
 
@@ -2880,6 +2927,32 @@ function moveItemTo(destKey) {
   toast('info', L('todo_moved_title'),
     L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd)));
   return true;
+}
+
+/** 'YYYY-MM-DD' 에서 delta일 만큼 이동한 키 (월/연 경계 자동 처리) */
+function shiftDateKey(key, delta) {
+  const [y, m, d] = key.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+/** 앞뒤 날짜의 할 일을 요약해 보여준다 (누르면 그 날짜로 이동) */
+function _adjDayHtml(key, labelKey, cls) {
+  const items = getCalNotes(key);
+  const [, m, d] = key.split('-');
+  const MAX = 4;
+  let body;
+  if (items.length) {
+    body = items.slice(0, MAX).map(it =>
+      `<div class="todo-adj-item${it.done ? ' done' : ''}">· ${it.text.replace(/</g,'&lt;')}</div>`).join('');
+    if (items.length > MAX) body += `<div class="todo-adj-item">· +${items.length - MAX}</div>`;
+  } else {
+    body = `<div class="todo-adj-item empty">${L('todo_adj_empty')}</div>`;
+  }
+  return `<div class="todo-adj ${cls}" onclick="openDayNote('${key}')">
+    <div class="todo-adj-hd">${L(labelKey)} · ${parseInt(m)}/${parseInt(d)}</div>
+    ${body}
+  </div>`;
 }
 
 function openTodoTips() {
