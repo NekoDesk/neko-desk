@@ -460,15 +460,20 @@ body.theme-mono {
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
 /* 앞뒤 날짜 요약 */
-.todo-adj { background:var(--card); border:1px solid var(--border); border-radius:4px;
-  padding:6px 8px; margin-bottom:8px; cursor:pointer; opacity:0.72; }
+/* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
+   (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
+.todo-adj { background:var(--card);
+  background:color-mix(in srgb, var(--card), #fff 12%);
+  border:1px solid var(--border); border-radius:4px;
+  padding:7px 9px; margin-bottom:8px; cursor:pointer; }
 .todo-adj.next { margin-bottom:0; margin-top:8px; }
-.todo-adj:hover { opacity:1; border-color:var(--mint); }
-.todo-adj-hd { font-family:'Galmuri14',monospace; font-size:10px; color:var(--gray); margin-bottom:3px; }
-.todo-adj-item { font-size:11px; color:var(--gray); line-height:1.5;
+.todo-adj:hover { border-color:var(--mint);
+  background:color-mix(in srgb, var(--card), #fff 20%); }
+.todo-adj-hd { font-family:'Galmuri14',monospace; font-size:10px; color:var(--gray); margin-bottom:4px; }
+.todo-adj-item { font-size:11px; color:var(--white); opacity:0.85; line-height:1.55;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.todo-adj-item.done { text-decoration:line-through; opacity:0.5; }
-.todo-adj-item.empty { opacity:0.5; font-style:italic; }
+.todo-adj-item.done { text-decoration:line-through; opacity:0.45; }
+.todo-adj-item.empty { opacity:0.45; font-style:italic; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 .todo-help-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
@@ -2921,7 +2926,7 @@ function moveItemTo(destKey) {
   to.push(item);
   setCalNotes(destKey, to);
   saveState();
-  _calKey = destKey;
+  // 보고 있던 날짜를 그대로 유지한다 (옮긴 날짜로 따라가지 않음)
   renderCalendar();
   const [yy,mm,dd] = destKey.split('-');
   toast('info', L('todo_moved_title'),
