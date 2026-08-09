@@ -432,21 +432,35 @@ body.theme-mono {
 
 /* 사이클 카드: 왼쪽 타이머 · 오른쪽 물컵 */
 .cycle-body { flex: 1; min-height: 0; display: flex; align-items: center; gap: 10px; }
-.water-col { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.water-col { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-right: 12px; }
 .water-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; }
 .water-hd b { color: var(--mint); }
 .water-cups { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-/* 컵: 사다리꼴 픽셀 모양. 물이 차 있으면 민트, 마시면 비워진다 */
+/* 컵: 사다리꼴 픽셀 모양. 물이 차 있고 표면이 일렁인다 */
 .wcup {
   width: 22px; height: 28px; padding: 0; border: none; background: var(--border);
   clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
-  position: relative; cursor: default;
+  position: relative; cursor: default; overflow: hidden;
 }
-.wcup::after {
-  content: ''; position: absolute; left: 2px; right: 2px; top: 2px; bottom: 2px;
-  background: var(--mint); clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+.wcup .wfill {
+  position: absolute; left: 2px; right: 2px; top: 2px; bottom: 2px;
+  background: var(--card); overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
 }
-.wcup.done::after { background: var(--card); }      /* 다 마신 컵 */
+.wcup .wwave { position: absolute; left: 0; right: 0; bottom: 0; height: 74%; background: #4fb8ef; }
+.wcup .wwave::after {
+  content: ''; position: absolute; left: -25%; right: -25%; top: -3px; height: 7px;
+  background: #4fb8ef; border-radius: 50%;
+  animation: wsurf 2.4s ease-in-out infinite;
+}
+@keyframes wsurf {
+  0%, 100% { transform: translateX(-7%) scaleY(1); }
+  50%      { transform: translateX(7%) scaleY(0.65); }
+}
+/* 컵마다 물결 타이밍을 어긋나게 해 한꺼번에 출렁이지 않도록 */
+.water-cups .wcup:nth-child(2n) .wwave::after { animation-delay: -0.8s; }
+.water-cups .wcup:nth-child(3n) .wwave::after { animation-delay: -1.5s; }
+.wcup.done .wwave { display: none; }                /* 다 마신 컵은 비어 있음 */
 .wcup.next { background: var(--yellow); cursor: pointer; }
 .wcup.undo { cursor: pointer; }
 .water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center; }
@@ -464,7 +478,6 @@ body.theme-mono {
 .pomo-center .timer-mode-lbl { margin-bottom: 2px; font-size: 11px; }
 .pomo-center .timer-big { font-size: 26px; letter-spacing: 2px; text-shadow: none; }
 .pomo-next { font-size: 10px; color: var(--gray); margin-top: 3px; }
-.pomo-sub { font-size: 11px; color: var(--gray); text-align: center; margin-top: 8px; }
 
 /* 두 카드가 남는 높이를 나눠 가져 위아래 끝이 맞는다 */
 #dp-home #homeCycleCard,
@@ -856,7 +869,6 @@ select {
                   <div class="water-tip" data-i18n="water_tip">한 잔 마실 때마다 🍋 열매 +1</div>
                 </div>
               </div>
-              <div class="pomo-sub" id="cycleLabel">출근 시간 기준 자동 계산</div>
             </div>
           </div>
           <div id="homeCycleCol">
@@ -2488,7 +2500,8 @@ function renderWaterCups() {
     // 다음 한 잔만 마실 수 있고, 방금 마신 잔만 되돌릴 수 있다
     const cls = i < cur ? (i === cur - 1 ? 'wcup done undo' : 'wcup done')
                         : (i === cur ? 'wcup next' : 'wcup');
-    h += `<button class="${cls}" onclick="drinkWater(${i})" aria-label="${i + 1}"></button>`;
+    h += `<button class="${cls}" onclick="drinkWater(${i})" aria-label="${i + 1}">`
+       + `<span class="wfill"><span class="wwave"></span></span></button>`;
   }
   el.innerHTML = h;
   const cnt = document.getElementById('waterCount');
@@ -2586,11 +2599,6 @@ function updateCycleUI() {
   const nl = document.getElementById('hNextLabel');
   if (nl) nl.textContent = isLunch ? L('next_lunch') : isFocus ? L('next_focus') : isPre ? L('next_pre') : L('next_break');
 
-  const cl = document.getElementById('cycleLabel');
-  if (cl) {
-    if (isPre) cl.textContent = L('cycle_auto');
-    else cl.textContent = nthCycleLabel(Math.floor((nowMinutes() - timeToMinutes(S.schedule.ws))/CYCLE_MINS) + 1);
-  }
 
   // 사이클 완료 감지 — 위젯 창에서만 실행 (대시보드 창 중복 방지)
   if (!window._isDashboard && !isPre && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
