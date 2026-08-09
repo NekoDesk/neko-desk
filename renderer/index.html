@@ -428,15 +428,26 @@ body.theme-mono {
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
 #dp-home .prog-track { margin-top: 8px; }
-#dp-home #realClock { font-size: 18px; }
 #dp-home .work-item-row { padding: 3px 0; }
+
+/* 원형 픽셀 포모도로 타이머 — 조각난 블록으로 게임 UI 느낌을 낸다 */
+.pomo-wrap { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.pomo { height: 100%; max-height: 230px; max-width: 100%; aspect-ratio: 1; display: block; }
+.pomo .pseg { fill: var(--border); }
+.pomo .pseg.on { fill: var(--acc); }
+.pomo.brk .pseg.on { fill: var(--mint); }
+.pomo-center {
+  position: absolute; inset: 0; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.pomo-center .timer-mode-lbl { margin-bottom: 2px; font-size: 11px; }
+.pomo-center .timer-big { font-size: 26px; letter-spacing: 2px; text-shadow: none; }
+.pomo-next { font-size: 10px; color: var(--gray); margin-top: 3px; }
+.pomo-sub { font-size: 11px; color: var(--gray); text-align: center; margin-top: 8px; }
 
 /* 두 카드가 남는 높이를 나눠 가져 위아래 끝이 맞는다 */
 #dp-home #homeCycleCard,
 #dp-home #homeWorkCard { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-#dp-home #homeRealClockBox {
-  background: var(--card); border: 1px solid var(--border); padding: 9px 10px; margin-top: auto;
-}
 /* 업무 항목이 많아지면 화면 전체가 아니라 이 목록만 스크롤된다 */
 #dp-home #workItemsList { flex: 1; min-height: 0; overflow-y: auto; }
 #dp-home #homeWorkCard #hCycleCount { padding-top: 8px; }
@@ -809,17 +820,15 @@ select {
             <!-- 현재 사이클 (왼쪽) -->
             <div class="card" id="homeCycleCard">
               <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
-              <div class="timer-box">
-                <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
-                <div class="timer-big" id="hTimerClock">55:00</div>
-                <div class="prog-track"><div class="prog-fill" id="hProgFill" style="width:0%"></div></div>
-                <div style="font-size:12px;color:var(--gray);margin-top:6px" id="hNextLabel">다음 휴식까지</div>
+              <div class="pomo-wrap">
+                <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"></svg>
+                <div class="pomo-center">
+                  <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
+                  <div class="timer-big" id="hTimerClock">55:00</div>
+                  <div class="pomo-next" id="hNextLabel">다음 휴식까지</div>
+                </div>
               </div>
-              <div id="homeRealClockBox">
-                <div style="font-family:'Galmuri14',monospace;font-size:11px;color:var(--gray);margin-bottom:4px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
-                <div id="realClock" style="font-family:'Galmuri14',monospace;color:var(--white);text-align:center">00:00:00</div>
-                <div style="font-size:12px;color:var(--gray);text-align:center;margin-top:4px" id="cycleLabel">출근 시간 기준 자동 계산</div>
-              </div>
+              <div class="pomo-sub" id="cycleLabel">출근 시간 기준 자동 계산</div>
             </div>
           </div>
           <div id="homeCycleCol">
@@ -1211,7 +1220,6 @@ const STRINGS = {
     home_fruit_desc:'사이클 완료 또는 할 일 완료 = 🍋 열매 획득 (최대 5개) · 고양이 탭에서 판매 → 포인트',
     // 사이클
     cycle_timer_title:'⏱ 실시간 사이클 타이머',
-    cycle_clock_lbl:'현재 실제 시각',
     cycle_settings_title:'⏰ 업무 시간 설정',
     cycle_save_btn:'✓ 저장',
     cycle_desc:'출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!',
@@ -1288,7 +1296,6 @@ const STRINGS = {
     home_fruit_title:'🍋 Fruit Basket',
     home_fruit_desc:'Cycle done or to-do checked = 🍋 fruit (max 5) · Sell at Cat tab → pts',
     cycle_timer_title:'⏱ Live Cycle Timer',
-    cycle_clock_lbl:'Current Time',
     cycle_settings_title:'⏰ Work Schedule',
     cycle_save_btn:'✓ Save',
     cycle_desc:'60-min cycle from work start<br>(55 min focus + 5 min break)<br>auto-calculated in real time!',
@@ -1361,7 +1368,6 @@ const STRINGS = {
     home_fruit_title:'🍋 フルーツ',
     home_fruit_desc:'サイクル完了またはToDo完了 = 🍋 フルーツ獲得 (最大5個) · ねこタブで販売 → pts',
     cycle_timer_title:'⏱ ライブタイマー',
-    cycle_clock_lbl:'現在時刻',
     cycle_settings_title:'⏰ 勤務時間設定',
     cycle_save_btn:'✓ 保存',
     cycle_desc:'出勤時間かだ60分サイクル<br>(55分集中 + 5分休憩)<br>リアルタイムで自動計算！',
@@ -2424,6 +2430,34 @@ function showBubble(msg, now) {
   if (!bubbleBusy) _showNextBubble();
 }
 
+// ── 원형 픽셀 타이머 ──
+const POMO_SEGS = 40;   // 링을 이루는 블록 개수
+
+function buildPomoRing() {
+  const svg = document.getElementById('pomoRing');
+  if (!svg || svg.dataset.built) return svg;
+  const CX = 100, CY = 100, R = 76, W = 9, H = 16;
+  let h = '';
+  for (let i = 0; i < POMO_SEGS; i++) {
+    const a = (360 / POMO_SEGS) * i;
+    h += `<rect class="pseg" x="${CX - W / 2}" y="${CY - R - H / 2}" width="${W}" height="${H}" `
+       + `transform="rotate(${a} ${CX} ${CY})"/>`;
+  }
+  svg.innerHTML = h;
+  svg.dataset.built = '1';
+  return svg;
+}
+
+/** @param ratio 0~1 (남은 시간 비율) @param brk 휴식/점심이면 true */
+function setPomoRing(ratio, brk) {
+  const svg = buildPomoRing();
+  if (!svg) return;
+  svg.classList.toggle('brk', !!brk);
+  const filled = Math.round(Math.max(0, Math.min(1, ratio)) * POMO_SEGS);
+  const segs = svg.querySelectorAll('.pseg');
+  for (let i = 0; i < segs.length; i++) segs[i].classList.toggle('on', i < filled);
+}
+
 function updateCycleUI() {
   if (typeof S === 'undefined') return;
   const c = calcCycle();
@@ -2450,7 +2484,6 @@ function updateCycleUI() {
   const modeLabel = isLunch ? L('mode_lunch') : isFocus ? L('mode_focus') : (isPre ? L('mode_pre') : L('mode_break'));
   const clockClass = isFocus ? 'timer-big' : 'timer-big brk';
   const modeClass  = isFocus ? 'timer-mode-lbl' : 'timer-mode-lbl brk';
-  const pct = isPre ? '0%' : ((1 - c.remaining / c.total) * 100).toFixed(1) + '%';
   const display = isPre ? '--:--' : fmt(c.remaining);
 
   ['hTimerClock','tTimerClock'].forEach(id => {
@@ -2461,10 +2494,8 @@ function updateCycleUI() {
     const el = document.getElementById(id); if(!el) return;
     el.textContent = modeLabel; el.className = modeClass;
   });
-  ['hProgFill','tProgFill'].forEach(id => {
-    const el = document.getElementById(id); if(!el) return;
-    el.style.width = pct;
-  });
+  // 링은 '남은 시간'이 줄어드는 형태로 표시
+  setPomoRing(isPre ? 0 : c.remaining / c.total, !isFocus);
 
   const nl = document.getElementById('hNextLabel');
   if (nl) nl.textContent = isLunch ? L('next_lunch') : isFocus ? L('next_focus') : isPre ? L('next_pre') : L('next_break');
@@ -3981,8 +4012,6 @@ function updateClock(){
   const now=new Date();
   const tb=document.getElementById('tbClock');
   if(tb) tb.textContent=now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const rc=document.getElementById('realClock');
-  if(rc) rc.textContent=now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
 // 고양이 꼬리 흔들기 (위젯)
