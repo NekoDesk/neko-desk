@@ -694,7 +694,9 @@
       '.dtb-btns { display:none !important; }',
       // 헤더: 고양이 버튼 + 포인트가 좁은 화면에서 넘치지 않도록
       '#dashPanel .dash-header { flex-wrap:wrap !important; gap:6px 8px; }',
-      '.header-cat-btn, .header-pts { font-size:12px !important; padding:4px 9px !important; }',
+      '.hdr-btn { height:30px !important; font-size:12px !important; padding:0 10px !important; }',
+      '.hdr-btn.icon { width:34px !important; padding:0 !important; }',
+      '.hdr-actions { gap:6px !important; }',
       // body transparent(인라인) 무효화
       'body { background: var(--bg) !important; }',
       // 탭이 텍스트 선택으로 인식되는 것 방지 (이모지 파란 선택 현상)
@@ -712,7 +714,7 @@
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
       // 모바일은 업무 사이클을 쓰지 않으므로 홈의 사이클/업무시간 영역을 숨긴다
       // (스케줄 탭은 홈으로 통합되면서 사라짐)
-      '#dp-home #homeCycleCol, #dp-home #homeWorkCard { display:none !important; }',
+      '#dp-home #homeCycleCol, #dp-home #homeCycleCard { display:none !important; }',
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',

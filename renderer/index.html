@@ -337,27 +337,21 @@ body.theme-mono {
   display: flex; align-items: center; gap: 14px; background: var(--bg);
 }
 .dash-logo { font-family: 'Galmuri14', monospace; font-size: 16px; color: var(--mint); text-shadow: 2px 2px 0 var(--acc); }
-.header-pts {
-  font-family: 'Galmuri14', monospace; font-size: 14px;
-  color: var(--yellow); background: var(--card); border: 2px solid var(--yellow); padding: 5px 12px;
+/* 헤더 우측 액션 버튼 — 고양이 / 포인트 / 사진을 같은 규격으로 */
+.hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.hdr-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  height: 34px; padding: 0 13px; box-sizing: border-box;
+  font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; white-space: nowrap;
+  color: var(--gray); background: var(--card);
+  border: 2px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: color .15s, border-color .15s, background .15s;
 }
-/* 고양이 메뉴 — 탭이 아니라 헤더 버튼 */
-.header-cat-btn {
-  margin-left: auto; margin-right: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
-  color: var(--gray); background: var(--card); border: 2px solid var(--border);
-  padding: 5px 12px; border-radius: 0; line-height: 1.4; white-space: nowrap;
-}
-.header-cat-btn:hover { color: var(--white); border-color: var(--gray); }
-.header-cat-btn.active { color: var(--mint); border-color: var(--mint); }
-.header-pts { position: relative; cursor: pointer; }
-.header-pts:hover { border-color: var(--white); }
-/* 사진 찍기 — 아이콘만 */
-.header-icon-btn {
-  position: relative; margin-left: 8px; font-size: 15px; cursor: pointer; line-height: 1;
-  color: var(--gray); background: var(--card); border: 2px solid var(--border);
-  padding: 5px 10px; border-radius: 0;
-}
-.header-icon-btn:hover { color: var(--white); border-color: var(--gray); }
+.hdr-btn:hover { color: var(--white); border-color: var(--gray); }
+.hdr-btn.active { color: var(--mint); border-color: var(--mint); }
+.hdr-btn.pts { font-family: 'Galmuri14', monospace; color: var(--yellow); border-color: var(--yellow); }
+.hdr-btn.pts:hover { color: var(--yellow); border-color: var(--yellow); background: rgba(255,255,255,0.07); }
+.hdr-btn.icon { padding: 0; width: 38px; font-size: 16px; }
 
 .dash-tabs {
   display: flex; background: var(--bg); border-bottom: 2px solid var(--border); padding: 0 16px;
@@ -420,6 +414,19 @@ body.theme-mono {
 .btn-gr { border-color: var(--gray); color: var(--gray); }
 
 /* Cat display */
+/* 홈은 스크롤 없이 한 화면에 담기도록 한 단계 작게 */
+#dp-home .card { padding: 12px 13px; }
+#dp-home .card-title { margin-bottom: 9px; }
+#dp-home .cat-display { padding: 10px; gap: 6px; margin-bottom: 10px !important; }
+#dp-home .big-cat { width: 84px; height: 101px; }
+#dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
+#dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
+#dp-home .prog-track { margin-top: 8px; }
+#dp-home #homeRealClockBox { background: var(--card); border: 1px solid var(--border); padding: 9px 10px; }
+#dp-home #realClock { font-size: 18px; }
+#dp-home .work-item-row { padding: 3px 0; }
+#dp-home .grid2 { margin-bottom: 0 !important; }
+
 .cat-display {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   padding: 16px; background: var(--card); border: 2px solid var(--acc);
@@ -455,7 +462,7 @@ body.theme-mono {
 .sch-move-btn:active { cursor:grabbing; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
-.sch-move-btn::after, .todo-help-btn::after, .header-icon-btn::after, .header-pts::after {
+.sch-move-btn::after, .todo-help-btn::after, .hdr-btn::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
@@ -465,9 +472,10 @@ body.theme-mono {
   transition:opacity 0.1s ease 0.08s, visibility 0s linear 0.08s; z-index:60; }
 .sch-move-btn::after { bottom:calc(100% + 6px); }   /* 목록 안이라 위쪽으로 */
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
-.header-icon-btn::after, .header-pts::after { top:calc(100% + 6px); }
+.hdr-btn::after { top:calc(100% + 8px); }
+.hdr-btn:not([data-tip])::after { content:none; }
 .sch-move-btn:hover::after, .todo-help-btn:hover::after,
-.header-icon-btn:hover::after, .header-pts:hover::after { opacity:1; visibility:visible; }
+.hdr-btn:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
 /* 앞뒤 날짜 요약 */
@@ -752,9 +760,11 @@ select {
         <div class="dash-logo">🐱 NEKO DESK</div>
         <div id="dashEncMsg" data-i18n="dash_enc_msg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
       </div>
-      <button id="headerCatBtn" class="header-cat-btn" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</button>
-      <div class="header-pts" onclick="openFruitPopup()" data-i18n-tip="home_fruit_title">🍋 <span id="ptsDisplay">0</span> pts</div>
-      <button id="headerPhotoBtn" class="header-icon-btn" onclick="openPhotoBooth()" data-i18n-tip="photo_btn">📸</button>
+      <div class="hdr-actions">
+        <button id="headerCatBtn" class="hdr-btn" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</button>
+        <button class="hdr-btn pts" onclick="openFruitPopup()" data-i18n-tip="home_fruit_title">🍋 <span id="ptsDisplay">0</span> pts</button>
+        <button id="headerPhotoBtn" class="hdr-btn icon" onclick="openPhotoBooth()" data-i18n-tip="photo_btn">📸</button>
+      </div>
 
     </div>
 
@@ -779,29 +789,29 @@ select {
               <img id="homeCatCanvas" class="big-cat cat-img-render">
               <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)" id="catNameH">냐옹이</div>
             </div>
-            <!-- 스케줄 탭 통합: 업무 시간 설정 -->
+            <!-- 현재 사이클 (왼쪽) -->
+            <div class="card" id="homeCycleCard">
+              <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
+              <div class="timer-box">
+                <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
+                <div class="timer-big" id="hTimerClock">55:00</div>
+                <div class="prog-track"><div class="prog-fill" id="hProgFill" style="width:0%"></div></div>
+                <div style="font-size:12px;color:var(--gray);margin-top:6px" id="hNextLabel">다음 휴식까지</div>
+              </div>
+              <div id="homeRealClockBox">
+                <div style="font-family:'Galmuri14',monospace;font-size:11px;color:var(--gray);margin-bottom:4px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
+                <div id="realClock" style="font-family:'Galmuri14',monospace;color:var(--white);text-align:center">00:00:00</div>
+                <div style="font-size:12px;color:var(--gray);text-align:center;margin-top:4px" id="cycleLabel">출근 시간 기준 자동 계산</div>
+              </div>
+            </div>
+          </div>
+          <div id="homeCycleCol">
+            <!-- 업무 시간 설정 (오른쪽) -->
             <div class="card" id="homeWorkCard">
               <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
               <div id="workItemsList"></div>
               <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
-              <div style="font-size:12px;color:var(--gray);margin-top:10px;line-height:1.8" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
-            </div>
-          </div>
-          <div id="homeCycleCol">
-            <div class="card">
-              <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
-              <div class="timer-box" style="padding:14px">
-                <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
-                <div class="timer-big" id="hTimerClock">55:00</div>
-                <div class="prog-track"><div class="prog-fill" id="hProgFill" style="width:0%"></div></div>
-                <div style="font-size:12px;color:var(--gray);margin-top:8px" id="hNextLabel">다음 휴식까지</div>
-              </div>
-              <div style="background:var(--card);padding:12px;margin-top:10px;border:1px solid var(--border)">
-                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="cycle_clock_lbl">현재 실제 시각</div>
-                <div id="realClock" style="font-family:'Galmuri14',monospace;font-size:22px;color:var(--white);text-align:center">00:00:00</div>
-                <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:6px" id="cycleLabel">출근 시간 기준 자동 계산</div>
-              </div>
-              <div style="font-size:13px;color:var(--gray);text-align:center;margin-top:8px;line-height:1.7" id="hCycleCount" data-i18n-html="cycle_home_desc">55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.</div>
+              <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:8px;line-height:1.6" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
             </div>
           </div>
         </div>
