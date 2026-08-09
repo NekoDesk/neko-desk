@@ -238,7 +238,6 @@
       if (typeof window.renderFruits === 'function') window.renderFruits();
       if (typeof window.renderHarvestCount === 'function') window.renderHarvestCount();
       if (typeof window.renderCalendar === 'function') window.renderCalendar();
-      if (typeof window.renderDiary === 'function') window.renderDiary();
       if (typeof window.renderWorkItems === 'function') window.renderWorkItems();
       ['ptsDisplay', 'shopPts'].forEach(function (id) {
         var el = document.getElementById(id);
@@ -626,13 +625,12 @@
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',
 
-      // ── 다이어리: 캘린더를 화면 폭에 꽉 차게 (오른쪽 여백 제거) ──
-      // 두 캘린더(할 일 목록 · 다이어리)는 완전히 같은 규격으로 보이게 한다
-      '#dp-diary .diary-cal-nav, #dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
-      '#dp-diary .diary-cal-cell, #calLeftGrid .cal-day { min-height:36px !important; font-size:11px !important; }',
-      '#dp-diary .diary-cal-dows span, #dp-schedule .cal-grid > div { font-size:10px !important; }',
-      '#dp-diary .diary-hd, #dp-diary .diary-lines-area { padding-left:14px !important; }',
-      '#dp-diary .diary-nb { padding:12px !important; }',
+      // 할 일 캘린더는 터치에 맞게 조금 크게 (다이어리는 팝업으로 이동)
+      '#dp-schedule .cal-nav { font-size:20px !important; padding:4px 16px !important; }',
+      '#calLeftGrid .cal-day { min-height:36px !important; font-size:11px !important; }',
+      '#dp-schedule .cal-grid > div { font-size:10px !important; }',
+      '#diaryModal .diary-nb { padding:12px !important; }',
+      '#diaryModal .diary-lines-area { padding-left:14px !important; }',
 
       // (할 일 캘린더의 '점만 표시'는 이제 renderer 기본 동작이라 별도 규칙 불필요)
 
@@ -691,8 +689,7 @@
           var saved = JSON.parse(raw);
           if (saved.diaryEntries && !Object.keys(st0.diaryEntries || {}).length) {
             st0.diaryEntries = saved.diaryEntries;
-            if (typeof window.renderDiary === 'function') window.renderDiary();
-          }
+                }
         }
       } catch (e) {}
 

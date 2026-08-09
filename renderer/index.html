@@ -352,6 +352,8 @@ body.theme-mono {
 .hdr-btn.pts { font-family: 'Galmuri14', monospace; color: var(--yellow); border-color: var(--yellow); }
 .hdr-btn.pts:hover { color: var(--yellow); border-color: var(--yellow); background: rgba(255,255,255,0.07); }
 .hdr-btn.icon { padding: 0; width: 38px; font-size: 16px; }
+/* 이모지는 글리프가 baseline 아래로 치우쳐 보이므로 살짝 올려 중앙을 맞춘다 */
+.hdr-btn.icon > span { display: block; line-height: 1; transform: translateY(-1px); }
 
 .dash-tabs {
   display: flex; background: var(--bg); border-bottom: 2px solid var(--border); padding: 0 16px;
@@ -417,8 +419,8 @@ body.theme-mono {
 /* 홈은 스크롤 없이 한 화면에 담기도록 한 단계 작게 */
 #dp-home .card { padding: 12px 13px; }
 #dp-home .card-title { margin-bottom: 9px; }
-#dp-home .cat-display { padding: 10px; gap: 6px; margin-bottom: 10px !important; }
-#dp-home .big-cat { width: 118px; height: 142px; }
+#dp-home .cat-display { padding: 8px; gap: 4px; margin-bottom: 10px !important; }
+#dp-home .big-cat { width: 152px; height: 182px; }
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
 #dp-home .prog-track { margin-top: 8px; }
@@ -502,6 +504,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-adj-item.empty { opacity:0.45; font-style:italic; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
+.todo-diary-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px;
+  cursor:pointer; padding:3px 9px; border-radius:4px; white-space:nowrap; }
+.todo-diary-btn:hover { color:var(--yellow); border-color:var(--yellow); }
 .todo-help-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
 .todo-help-btn:hover { color:var(--yellow); border-color:var(--yellow); }
 .todo-move-tip { font-size:11px; color:var(--gray); line-height:1.55; margin:10px 0 0; padding:7px 9px; background:var(--card); border:1px dashed var(--border); border-radius:4px; }
@@ -771,7 +776,7 @@ select {
       <div class="hdr-actions">
         <button id="headerCatBtn" class="hdr-btn" onclick="dTab('cat')" data-i18n="tab_cat">🐱 고양이</button>
         <button class="hdr-btn pts" onclick="openFruitPopup()" data-i18n-tip="home_fruit_title">🍋 <span id="ptsDisplay">0</span> pts</button>
-        <button id="headerPhotoBtn" class="hdr-btn icon" onclick="openPhotoBooth()" data-i18n-tip="photo_btn">📸</button>
+        <button id="headerPhotoBtn" class="hdr-btn icon" onclick="openPhotoBooth()" data-i18n-tip="photo_btn"><span>📸</span></button>
       </div>
 
     </div>
@@ -779,7 +784,6 @@ select {
     <div class="dash-tabs">
       <div class="dtab active" data-page="home" onclick="dTab('home')" data-i18n="tab_home">🏠 홈</div>
       <div class="dtab" data-page="schedule" onclick="dTab('schedule')" data-i18n="tab_todo">📝 할 일 목록</div>
-      <div class="dtab" data-page="diary" onclick="dTab('diary')" data-i18n="tab_diary">📔 다이어리</div>
       <!-- 고양이는 탭이 아니라 헤더의 pts 옆 버튼으로 이동 -->
       <div class="dtab" data-page="magazine" onclick="dTab('magazine')" data-i18n="tab_magazine">📰 매거진</div>
       <!-- SHOP_TAB_HIDDEN: 샵 복원 시 아래 주석 해제, 위 주석 제거 -->
@@ -839,8 +843,8 @@ select {
                 <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveScheduleNotes()" data-i18n="todo_save_btn">💾 저장</button>
               </div>
               <textarea id="scheduleMemoTxt" placeholder="자유롭게 메모하세요..." data-i18n-placeholder="todo_memo_ph"
-                oninput="S.scheduleMemo=this.value"
-                style="width:100%;min-height:72px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
+                oninput="S.scheduleMemo=this.value; memoGrow(this)"
+                style="width:100%;min-height:72px;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:8px;font-size:13px;resize:none;overflow:hidden;box-sizing:border-box;outline:none;border-radius:4px;line-height:1.6"></textarea>
             </div>
           </div>
           <div class="card">
@@ -852,31 +856,6 @@ select {
       </div>
 
       <!-- DIARY -->
-      <div id="dp-diary" class="dpage">
-        <div class="grid2" style="align-items:start">
-          <div class="diary-nb">
-            <div class="diary-hd">
-              <div class="diary-date-label" id="diaryDateLabel"></div>
-              <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
-            </div>
-            <div class="diary-lines-area">
-              <textarea id="diaryText" class="diary-textarea" oninput="diaryGrow(this)" data-i18n-placeholder="diary_ph" placeholder="오늘의 기록..."></textarea>
-            </div>
-          </div>
-          <div class="card">
-            <div class="diary-mini-cal">
-              <div class="diary-cal-header">
-                <button class="diary-cal-nav" onclick="diaryCalNav(-1)">&#9664;</button>
-                <span id="diaryCalTitle"></span>
-                <button class="diary-cal-nav" onclick="diaryCalNav(1)">&#9654;</button>
-              </div>
-              <div class="diary-cal-dows"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
-              <div class="diary-cal-grid" id="diaryCalGrid"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- CAT -->
       <div id="dp-cat" class="dpage">
         <div class="grid2">
@@ -1046,6 +1025,24 @@ select {
 </div>
 
 <!-- 찜 목록 모달 -->
+<!-- 다이어리 (할 일 목록에서 열림) -->
+<div id="diaryModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeDiary(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:16px 18px;max-width:540px;width:92%;max-height:85vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <span style="font-size:14px;font-weight:700;color:var(--yellow)">📔 <span id="diaryModalDate"></span></span>
+      <span style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
+        <button onclick="closeDiary()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      </span>
+    </div>
+    <div class="diary-nb">
+      <div class="diary-lines-area">
+        <textarea id="diaryText" class="diary-textarea" oninput="diaryGrow(this)" data-i18n-placeholder="diary_ph" placeholder="오늘의 기록..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 열매 바구니 / 포인트 교환 -->
 <div id="fruitModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeFruitPopup(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
@@ -1768,7 +1765,6 @@ function dTab(name) {
   if (_catBtn) _catBtn.classList.toggle('active', name === 'cat');
   document.querySelectorAll('.dpage').forEach(p=>p.classList.remove('active'));
   document.getElementById('dp-'+name).classList.add('active');
-  if (name==='diary') renderDiary();
   if (name==='cat') renderCatPage();
   if (name==='shop') renderShop();
   if (name==='magazine') loadMagazine();
@@ -2806,7 +2802,10 @@ function renderCalendar() {
 
     let rh = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
       <span style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace">${selLabel || L('todo_date_ph')}</span>
-      <button class="todo-help-btn" onclick="openTodoTips()" data-tip="${L('todo_tip_title')}">?</button>
+      <span style="display:flex;align-items:center;gap:6px">
+        <button class="todo-diary-btn" onclick="openDiary()">${L('tab_diary')}</button>
+        <button class="todo-help-btn" onclick="openTodoTips()" data-tip="${L('todo_tip_title')}">?</button>
+      </span>
     </div>`;
 
     if (_calKey) {
@@ -2839,7 +2838,6 @@ function renderCalendar() {
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')"
           style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:6px 8px;font-size:12px;outline:none;border-radius:4px;box-sizing:border-box;margin-bottom:6px">
         <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
-        <button class="btn btn-g" style="width:100%;font-size:11px;padding:6px;margin-top:6px" onclick="saveScheduleNotes()">${L('todo_save_btn')}</button>
       </div>`;
     }
     rightEl.innerHTML = rh;
@@ -2975,6 +2973,26 @@ function _adjDayHtml(key, labelKey, cls) {
   </div>`;
 }
 
+/** 할 일 목록에서 선택한 날짜의 다이어리를 연다 */
+function openDiary() {
+  const t = new Date();
+  const today = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  _diaryDate = _calKey || today;
+  const [y, m, d] = _diaryDate.split('-');
+  const lbl = document.getElementById('diaryModalDate');
+  if (lbl) lbl.textContent = L('date_ymd').replace('{y}', +y).replace('{m}', +m).replace('{d}', +d);
+  loadDiaryEntry(_diaryDate);
+  const el = document.getElementById('diaryModal');
+  if (el) el.style.display = 'flex';
+}
+function closeDiary(e) {
+  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  _diaryAutoSave();          // 저장을 누르지 않고 닫아도 잃지 않게
+  const el = document.getElementById('diaryModal');
+  if (el) el.style.display = 'none';
+  renderCalendar();
+}
+
 function openFruitPopup() {
   if (typeof renderFruits === 'function') renderFruits();
   if (typeof renderHarvestCount === 'function') renderHarvestCount();
@@ -3029,6 +3047,13 @@ function addDayItem(key) {
   // 입력창에 포커스 유지
   setTimeout(()=>document.getElementById('dayNoteInput')?.focus(), 50);
 }
+/** 메모 내용이 길어지면 박스도 함께 늘어나도록 */
+function memoGrow(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(72, el.scrollHeight) + 'px';
+}
+
 function saveScheduleNotes() {
   S.scheduleMemo = (document.getElementById('scheduleMemoTxt')?.value || S.scheduleMemo);
   saveState();
@@ -3052,63 +3077,6 @@ function _diaryAutoSave() {
   S.diaryEntries[_diaryDate] = { text: txt, imageData: _diaryImgData };
   saveState();
   return true;   // 새 내용이 저장됨
-}
-
-function renderDiary() {
-  if (!_diaryDate) {
-    const t = new Date();
-    _diaryDate = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
-    _diaryCalYear = t.getFullYear(); _diaryCalMonth = t.getMonth();
-  }
-  renderDiaryCal();
-  loadDiaryEntry(_diaryDate);
-}
-
-function renderDiaryCal() {
-  const title = document.getElementById('diaryCalTitle');
-  const grid = document.getElementById('diaryCalGrid');
-  if (!title || !grid) return;
-  // 제목·요일은 할 일 목록 캘린더와 동일한 형식 사용
-  title.textContent = L('date_ym').replace('{y}', _diaryCalYear).replace('{m}', _diaryCalMonth + 1);
-  const dow = document.querySelector('.diary-cal-dows');
-  if (dow) dow.innerHTML = L('dows').split(',')
-    .map((d,i)=>`<span style="color:${i===0?'#f88':'var(--gray)'}">${d}</span>`).join('');
-  const first = new Date(_diaryCalYear, _diaryCalMonth, 1).getDay();
-  const days = new Date(_diaryCalYear, _diaryCalMonth+1, 0).getDate();
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  let html = '<div></div>'.repeat(first);
-  for (let d = 1; d <= days; d++) {
-    const ds = `${_diaryCalYear}-${String(_diaryCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    let cls = 'diary-cal-cell';
-    if (ds===todayStr) cls+=' today';
-    if (ds===_diaryDate) cls+=' selected';
-    const e = S.diaryEntries && S.diaryEntries[ds];
-    if (e && (e.text || e.imageData)) cls+=' has-entry';
-    html += `<div class="${cls}" onclick="selectDiaryDate('${ds}')">${d}</div>`;
-  }
-  grid.innerHTML = html;
-}
-
-function diaryCalNav(dir) {
-  _diaryCalMonth += dir;
-  if (_diaryCalMonth < 0) { _diaryCalMonth = 11; _diaryCalYear--; }
-  if (_diaryCalMonth > 11) { _diaryCalMonth = 0; _diaryCalYear++; }
-  renderDiaryCal();
-}
-
-function selectDiaryDate(ds) {
-  // 미저장 내용 보존 — 쓰던 글은 '쓰던 날짜'에 저장되므로 반드시 안내
-  const savedDate = _diaryDate;
-  if (_diaryAutoSave() && savedDate !== ds) {
-    const [sy, sm, sd] = savedDate.split('-');
-    toast('info', '📔 ' + L('diary_saved_title'),
-      L('date_ymd').replace('{y}', parseInt(sy)).replace('{m}', parseInt(sm)).replace('{d}', parseInt(sd))
-      + ' → ' + L('diary_saved_msg'));
-  }
-  _diaryDate = ds;
-  renderDiaryCal();
-  loadDiaryEntry(ds);
 }
 
 function loadDiaryEntry(ds) {
@@ -3219,7 +3187,6 @@ function saveDiary() {
   const ta = document.getElementById('diaryText');
   S.diaryEntries[_diaryDate] = { text: ta ? ta.value : '', imageData: _diaryImgData };
   saveState();
-  renderDiaryCal();
   toast('info', L('diary_saved_title'), L('diary_saved_msg'));
 }
 
@@ -4117,7 +4084,6 @@ function _cloudApply(data) {
     if (typeof renderFruits === 'function') renderFruits();
     if (typeof renderHarvestCount === 'function') renderHarvestCount();
     if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderDiary === 'function') renderDiary();
     if (typeof renderWorkItems === 'function') renderWorkItems();
     ['ptsDisplay','shopPts'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = S.pts; });
     const memo = document.getElementById('scheduleMemoTxt');
@@ -4309,7 +4275,7 @@ function init(){
   }
   renderWorkItems();  // 업무 시간 설정 초기 렌더
   const _mt = document.getElementById('scheduleMemoTxt');
-  if (_mt) _mt.value = S.scheduleMemo || '';
+  if (_mt) { _mt.value = S.scheduleMemo || ''; memoGrow(_mt); }
   updatePhotoPathLabel();
   loadShippingUI();
   // 공개 설정 로드 → Supabase 상품 불러오기
