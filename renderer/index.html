@@ -416,24 +416,29 @@ body.theme-mono {
 .btn-gr { border-color: var(--gray); color: var(--gray); }
 
 /* Cat display */
-/* 홈은 스크롤 없이 한 화면에 담기도록 한 단계 작게 */
+/* ── 홈: 화면 높이에 딱 맞추고, 길어지는 목록은 그 박스 안에서만 스크롤 ── */
+#dp-home.dpage.active { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+#dp-home .grid2 { flex: 1; min-height: 0; align-items: stretch; margin-bottom: 0 !important; }
+#dp-home .grid2 > div { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+
 #dp-home .card { padding: 12px 13px; }
 #dp-home .card-title { margin-bottom: 9px; }
-#dp-home .cat-display { padding: 8px; gap: 4px; margin-bottom: 10px !important; }
-#dp-home .big-cat { width: 152px; height: 182px; }
+#dp-home .cat-display { flex-shrink: 0; padding: 8px; gap: 4px; margin-bottom: 0 !important; }
+#dp-home .big-cat { width: 108px; height: 130px; }
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
 #dp-home .prog-track { margin-top: 8px; }
 #dp-home #realClock { font-size: 18px; }
 #dp-home .work-item-row { padding: 3px 0; }
-#dp-home .grid2 { margin-bottom: 0 !important; }
 
-/* 좌우 컬럼의 아래 끝을 맞춘다 — 카드가 남는 높이를 채우고,
-   각 카드의 마지막 요소는 바닥에 붙여 빈 공간이 생기지 않게 한다. */
-#dp-home .grid2 { align-items: start; }   /* 한쪽이 길어져도 반대쪽은 그대로 */
+/* 두 카드가 남는 높이를 나눠 가져 위아래 끝이 맞는다 */
+#dp-home #homeCycleCard,
+#dp-home #homeWorkCard { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 #dp-home #homeRealClockBox {
-  background: var(--card); border: 1px solid var(--border); padding: 9px 10px;
+  background: var(--card); border: 1px solid var(--border); padding: 9px 10px; margin-top: auto;
 }
+/* 업무 항목이 많아지면 화면 전체가 아니라 이 목록만 스크롤된다 */
+#dp-home #workItemsList { flex: 1; min-height: 0; overflow-y: auto; }
 #dp-home #homeWorkCard #hCycleCount { padding-top: 8px; }
 
 .cat-display {
@@ -724,7 +729,7 @@ select {
 .diary-fold-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;font-size:12px;font-weight:bold;color:var(--gray);padding:6px 10px;margin-bottom:6px;background:var(--panel);border-radius:8px}
 .diary-fold-hd:hover{color:var(--white)}
 .diary-date-label{font-size:14px;font-weight:bold;color:var(--yellow);letter-spacing:1px}
-.diary-lines-area{padding-left:44px;padding-top:2px}
+.diary-lines-area{padding:2px 18px}
 .diary-textarea{width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
 .diary-btns{display:flex;gap:8px;margin-top:16px;padding-left:44px}
 </style>
@@ -1029,7 +1034,7 @@ select {
 <div id="diaryModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeDiary(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:16px 18px;max-width:540px;width:92%;max-height:85vh;overflow:auto" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-      <span style="font-size:14px;font-weight:700;color:var(--yellow)">📔 <span id="diaryModalDate"></span></span>
+      <span id="diaryModalDate" style="font-size:13px;font-weight:700;color:var(--gray)"></span>
       <span style="display:flex;align-items:center;gap:6px">
         <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="saveDiary()">&#128190; <span data-i18n="diary_save_btn">저장</span></button>
         <button onclick="closeDiary()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
