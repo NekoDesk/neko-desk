@@ -554,6 +554,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-adj-item.empty { opacity:0.45; font-style:italic; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
+/* 일정 입력줄 — 입력칸 + 작은 추가 버튼 */
+.todo-add-row { display:flex; align-items:center; gap:6px; margin:10px 0; }
+.todo-add-row input {
+  flex:1; min-width:0; background:var(--panel); border:1px solid var(--border); color:var(--white);
+  padding:6px 8px; font-size:12px; outline:none; border-radius:4px; box-sizing:border-box;
+}
+.todo-add-btn { flex:0 0 auto; font-size:11px; padding:6px 12px; white-space:nowrap; }
 .todo-diary-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px;
   cursor:pointer; padding:3px 9px; border-radius:4px; white-space:nowrap; }
 .todo-diary-btn:hover { color:var(--yellow); border-color:var(--yellow); }
@@ -2959,16 +2966,16 @@ function renderCalendar() {
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
+      // 입력칸은 '어제'와 '내일' 사이에. 추가 버튼은 입력칸 오른쪽에 작게.
+      rh += `<div class="todo-add-row">
+        <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
+          onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')">
+        <button class="btn btn-y todo-add-btn" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
+      </div>`;
+
       rh += _adjDayHtml(shiftDateKey(_calKey, 1), 'todo_next_day', 'next');
 
       // 사용법은 ? 버튼(사용 팁)에서 안내. 선택 상태는 ⤴ 버튼 색으로 표시된다.
-
-      rh += `<div style="margin-top:${selItems.length?'10px':'0'}">
-        <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
-          onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')"
-          style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);padding:6px 8px;font-size:12px;outline:none;border-radius:4px;box-sizing:border-box;margin-bottom:6px">
-        <button class="btn btn-y" style="width:100%;font-size:12px;padding:7px" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
-      </div>`;
     }
     rightEl.innerHTML = rh;
   }
