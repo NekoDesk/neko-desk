@@ -521,20 +521,21 @@ body.theme-mono {
 .sch-move-btn:active { cursor:grabbing; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
-.sch-move-btn::after, .todo-help-btn::after, .hdr-btn::after {
+.sch-move-btn::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
   background:color-mix(in srgb, var(--card), #fff 16%);
   border:1px solid var(--border); border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.22);
   opacity:0; visibility:hidden; pointer-events:none;
-  transition:opacity 0.1s ease 0.08s, visibility 0s linear 0.08s; z-index:60; }
+  transition:opacity 0.1s ease 0.04s, visibility 0s linear 0.04s; z-index:60; }
 .sch-move-btn::after { bottom:calc(100% + 6px); }   /* 목록 안이라 위쪽으로 */
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
 .hdr-btn::after { top:calc(100% + 8px); }
+.todo-text::after { bottom:calc(100% + 4px); left:0; right:auto; }   /* 글씨 위쪽, 왼쪽 정렬 */
 .hdr-btn:not([data-tip])::after { content:none; }
 .sch-move-btn:hover::after, .todo-help-btn:hover::after,
-.hdr-btn:hover::after { opacity:1; visibility:visible; }
+.hdr-btn:hover::after, .todo-text:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
 /* 앞뒤 날짜 요약 */
@@ -555,7 +556,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 /* 일정 글씨: 더블클릭하면 그 자리에서 수정 */
-.todo-text { cursor: text; }
+.todo-text { position: relative; cursor: text; }
 .todo-edit-in {
   flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--yellow); color: var(--white);
   padding: 3px 6px; font-size: 13px; outline: none; border-radius: 3px; font-family: inherit;
@@ -2974,7 +2975,7 @@ function renderCalendar() {
             ? `<input id="dayItemEdit" class="todo-edit-in" value="${item.text.replace(/"/g,'&quot;')}"
                  onkeydown="if(event.key==='Enter')this.blur(); else if(event.key==='Escape'){_editIdx=-1;renderCalendar();}"
                  onblur="commitEditItem('${_calKey}',${i},this.value)">`
-            : `<span class="todo-text" ondblclick="editDayItem(${i})" title="${L('todo_edit_hint')}"
+            : `<span class="todo-text" ondblclick="editDayItem(${i})" data-tip="${L('todo_edit_hint')}"
                  style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>`}
           <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}"
             data-tip="${L('todo_move_btn')}"
