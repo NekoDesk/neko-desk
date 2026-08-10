@@ -554,6 +554,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-adj-item.empty { opacity:0.45; font-style:italic; }
 .sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
+/* 일정 글씨: 더블클릭하면 그 자리에서 수정 */
+.todo-text { cursor: text; }
+.todo-edit-in {
+  flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--yellow); color: var(--white);
+  padding: 3px 6px; font-size: 13px; outline: none; border-radius: 3px; font-family: inherit;
+}
+
 /* 일정 입력줄 — 입력칸 + 작은 추가 버튼 */
 .todo-add-row { display:flex; align-items:center; gap:6px; margin:10px 0; }
 .todo-add-row input {
@@ -1321,10 +1328,11 @@ const STRINGS = {
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
-    todo_tip_html:'<b style="color:var(--white)">⤴ 일정 옮기기</b><br>⤴ 버튼을 누른 채로 캘린더의 원하는 날짜 위로 끌어다 놓으면 일정이 그 날로 옮겨져요.<br>⤴ 버튼을 클릭해서 일정을 선택한 뒤 날짜를 클릭해도 이동이 가능합니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)',
+    todo_tip_html:'<b style="color:var(--white)">⤴ 일정 옮기기</b><br>⤴ 버튼을 누른 채로 캘린더의 원하는 날짜 위로 끌어다 놓으면 일정이 그 날로 옮겨져요.<br>⤴ 버튼을 클릭해서 일정을 선택한 뒤 날짜를 클릭해도 이동이 가능합니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)<br><br><b style="color:var(--white)">✏️ 일정 수정</b><br>일정 <b>글씨를 더블클릭</b>하면 그 자리에서 내용을 고칠 수 있어요.<br>왼쪽의 <b>오전/오후 버튼</b>을 누르면 언제든 바꿀 수 있습니다.',
     todo_move_btn:'일정 옮기기 (드래그 또는 클릭)', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
     todo_move_tip:'버튼을 <b>캘린더 날짜로 끌어다 놓으면</b> 그 날로 옮겨져요.<br>버튼을 <b>눌러 선택한 뒤 날짜를 클릭</b>해도 됩니다.',
     todo_move_active:'옮길 날짜를 캘린더에서 눌러주세요 (⤴을 다시 누르면 취소)',
+    todo_edit_hint:'더블클릭하면 수정할 수 있어요',
     todo_moved_title:'📅 일정을 옮겼어요',
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
@@ -1396,10 +1404,11 @@ const STRINGS = {
     vitamin_bubble:'Time for a vitamin 💊',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
-    todo_tip_html:'<b style="color:var(--white)">⤴ Move a task</b><br>Hold the ⤴ button and drop it on any date in the calendar to move the task to that day.<br>Or click the ⤴ button to select the task, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)',
+    todo_tip_html:'<b style="color:var(--white)">⤴ Move a task</b><br>Hold the ⤴ button and drop it on any date in the calendar to move the task to that day.<br>Or click the ⤴ button to select the task, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)<br><br><b style="color:var(--white)">✏️ Edit a task</b><br><b>Double-click the text</b> to edit it in place.<br>Use the <b>AM/PM button</b> on the left to switch anytime.',
     todo_move_btn:'Move to another day (drag or click)', todo_move_hint:'Tap a date on the calendar to move it',
     todo_move_tip:'<b>Drag the button onto a calendar date</b> to move it there.<br>Or <b>click the button, then click a date</b>.',
     todo_move_active:'Pick the target date on the calendar (click ⤴ again to cancel)',
+    todo_edit_hint:'Double-click to edit',
     todo_moved_title:'📅 Moved',
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
@@ -1469,10 +1478,11 @@ const STRINGS = {
     login_google_btn:'Googleでログイン',
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
+    todo_edit_hint:'ダブルクリックで編集',
     todo_moved_title:'📅 移動しました',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
-    todo_tip_html:'<b style="color:var(--white)">⤴ 予定を移動</b><br>⤴ ボタンを押したままカレンダーの日付にドロップすると、その日に移動します。<br>⤴ ボタンをクリックして選択し、日付をクリックしても移動できます。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）',
+    todo_tip_html:'<b style="color:var(--white)">⤴ 予定を移動</b><br>⤴ ボタンを押したままカレンダーの日付にドロップすると、その日に移動します。<br>⤴ ボタンをクリックして選択し、日付をクリックしても移動できます。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）<br><br><b style="color:var(--white)">✏️ 予定の編集</b><br>予定の<b>文字をダブルクリック</b>するとその場で修正できます。<br>左の<b>午前/午後ボタン</b>でいつでも切り替えられます。',
     todo_move_btn:'予定を移動（ドラッグまたはクリック）', todo_move_hint:'移動先の日付をカレンダーで選んでください',
     todo_move_tip:'ボタンを<b>カレンダーの日付にドラッグ</b>すると移動します。<br>ボタンを<b>押して選択し、日付をクリック</b>してもOKです。',
     todo_move_active:'移動先の日付をカレンダーで選んでください（⤴をもう一度押すと取消）',
@@ -2959,7 +2969,13 @@ function renderCalendar() {
         <div class="todo-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
-          <span style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>
+          <button class="ampm-btn" onclick="toggleItemAmPm('${_calKey}',${i})">${item.ampm === 'pm' ? L('work_pm') : L('work_am')}</button>
+          ${_editIdx === i
+            ? `<input id="dayItemEdit" class="todo-edit-in" value="${item.text.replace(/"/g,'&quot;')}"
+                 onkeydown="if(event.key==='Enter')this.blur(); else if(event.key==='Escape'){_editIdx=-1;renderCalendar();}"
+                 onblur="commitEditItem('${_calKey}',${i},this.value)">`
+            : `<span class="todo-text" ondblclick="editDayItem(${i})" title="${L('todo_edit_hint')}"
+                 style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>`}
           <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}"
             data-tip="${L('todo_move_btn')}"
             onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⤴</button>
@@ -2968,6 +2984,7 @@ function renderCalendar() {
 
       // 입력칸은 '어제'와 '내일' 사이에. 추가 버튼은 입력칸 오른쪽에 작게.
       rh += `<div class="todo-add-row">
+        <button class="ampm-btn" onclick="toggleNewAmPm()">${_newAmPm === 'pm' ? L('work_pm') : L('work_am')}</button>
         <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')">
         <button class="btn btn-y todo-add-btn" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
@@ -3156,6 +3173,7 @@ function closeTodoTips(e) {
 
 function openDayNote(key) {
   if (_moveSrc) { moveItemTo(key); return; }   // 옮기기 선택 중이면 그 날짜로 이동
+  _editIdx = -1;
   _calKey = key; renderCalendar();
 }
 function selectAllDayItems() {
@@ -3172,12 +3190,54 @@ function deleteSelectedDayItems() {
   setCalNotes(_calKey, remaining);
   saveState(); renderCalendar();
 }
+// 새 일정에 붙일 오전/오후 (지금 시각 기준으로 시작)
+let _newAmPm = new Date().getHours() >= 12 ? 'pm' : 'am';
+let _editIdx = -1;   // 수정 중인 항목 (더블클릭)
+
+function toggleNewAmPm() {
+  _newAmPm = _newAmPm === 'pm' ? 'am' : 'pm';
+  renderCalendar();
+  setTimeout(() => document.getElementById('dayNoteInput')?.focus(), 30);
+}
+
+/** 등록된 일정의 오전/오후 전환 */
+function toggleItemAmPm(key, i) {
+  const items = getCalNotes(key);
+  if (!items[i]) return;
+  items[i].ampm = items[i].ampm === 'pm' ? 'am' : 'pm';
+  setCalNotes(key, items);
+  saveState(); renderCalendar();
+}
+
+/** 글씨를 더블클릭하면 그 자리에서 수정 */
+function editDayItem(i) {
+  _editIdx = i;
+  renderCalendar();
+  setTimeout(() => {
+    const el = document.getElementById('dayItemEdit');
+    if (el) { el.focus(); el.select(); }
+  }, 30);
+}
+
+function commitEditItem(key, i, val) {
+  if (_editIdx !== i) return;        // 이미 정리된 상태면 무시
+  _editIdx = -1;
+  const items = getCalNotes(key);
+  const t = (val || '').trim();
+  if (items[i] && t && t !== items[i].text) {
+    items[i].text = t;
+    setCalNotes(key, items);
+    saveState();
+  }
+  renderCalendar();
+}
+
 function addDayItem(key) {
   const inp = document.getElementById('dayNoteInput');
   const text = (inp?.value||'').trim();
   if (!text) return;
   const items = getCalNotes(key);
-  items.push({text, done:false});
+  items.push({text, done:false, ampm:_newAmPm});
   setCalNotes(key, items);
   if (inp) inp.value = '';
   saveState(); renderCalendar();
