@@ -534,17 +534,17 @@ body.theme-mono {
 .todo-handle:hover::after, .todo-help-btn:hover::after,
 .hdr-btn:hover::after, .todo-text:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
-.todo-item { position:relative; }
+.todo-item, .work-item-row { position:relative; }
 .todo-handle { font-size:13px; touch-action:none; }
 .todo-handle:hover { color:var(--white); }
 .todo-handle.on { color:var(--mint); }
-/* 어느 일정 사이로 들어갈지 가로선 하나로 표시 */
-.todo-item.drop-before::before,
-.todo-item.drop-after::after {
+/* 어느 항목 사이로 들어갈지 가로선 하나로 표시 (할 일 목록 / 업무 시간 공용) */
+.todo-item.drop-before::before, .work-item-row.drop-before::before,
+.todo-item.drop-after::after,   .work-item-row.drop-after::after {
   content:''; position:absolute; left:0; right:0; height:2px; background:var(--mint); border-radius:1px;
 }
-.todo-item.drop-before::before { top:-4px; }
-.todo-item.drop-after::after { bottom:-4px; }
+.todo-item.drop-before::before, .work-item-row.drop-before::before { top:-4px; }
+.todo-item.drop-after::after,   .work-item-row.drop-after::after { bottom:-4px; }
 /* 앞뒤 날짜 요약 */
 /* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
    (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
@@ -584,7 +584,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-move-tip.on { color:var(--bg); background:var(--mint); border-style:solid; border-color:var(--mint); font-weight:700; }
 /* Work items */
 .work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
-.drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; }
+.drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; touch-action:none; }
+.work-item-row .drag-handle:hover { color:var(--white); }
 .ti-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px 2px; font-size:13px; flex:1; min-width:0; outline:none; }
 .ti-label-in:focus { border-bottom-color:var(--yellow); }
 .ampm-btn { font-size:11px; color:var(--yellow); background:var(--card); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
@@ -2772,7 +2773,7 @@ const WORK_DEFAULTS = [
   { time:'18:00', label:'퇴근' },
 ];
 
-let _dragWorkIdx = -1;
+let _wdrag = null;
 
 function renderWorkItems() {
   if (!S.workItems) S.workItems = WORK_DEFAULTS.map(x=>({...x}));
@@ -2782,11 +2783,8 @@ function renderWorkItems() {
     const h = parseInt(item.time.split(':')[0]);
     const isAM = h < 12;
     return `
-      <div class="work-item-row" draggable="true"
-        ondragstart="_dragWorkIdx=${i}"
-        ondragover="event.preventDefault()"
-        ondrop="workDrop(${i},event)">
-        <span class="drag-handle">⠿</span>
+      <div class="work-item-row" data-idx="${i}">
+        <span class="drag-handle" onpointerdown="workDragDown(event,${i})">⠿</span>
         <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="${L('work_ph')}"
           oninput="S.workItems[${i}].label=this.value">
         <button class="ampm-btn" onclick="toggleAmPm(${i})">${isAM?L('work_am'):L('work_pm')}</button>
@@ -2798,14 +2796,59 @@ function renderWorkItems() {
   el.innerHTML += '<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">' + L('work_add') + '</button>';
 }
 
-function workDrop(i, e) {
+// ⠿ 핸들 드래그 — 할 일 목록과 동일하게 '어느 사이에 끼울지'를 가로선으로 보여준다
+function workDragDown(e, i) {
+  if (e.button !== undefined && e.button !== 0) return;   // 좌클릭/터치만
   e.preventDefault();
-  if (_dragWorkIdx < 0 || _dragWorkIdx === i) return;
-  const moved = S.workItems.splice(_dragWorkIdx, 1)[0];
-  S.workItems.splice(i, 0, moved);
-  _dragWorkIdx = -1;
+  e.stopPropagation();
+  _wdrag = { idx: i, x0: e.clientX, y0: e.clientY, moved: false, hover: null, dropAt: null };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
+}
+
+function _wdragMove(e) {
+  if (!_wdrag) return;
+  if (!_wdrag.moved) {
+    if (Math.abs(e.clientX - _wdrag.x0) + Math.abs(e.clientY - _wdrag.y0) < DRAG_THRESHOLD) return;
+    _wdrag.moved = true;
+    document.body.classList.add('dragging-item');   // 주먹 쥐은 손 커서
+  }
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const row = (under && under.closest) ? under.closest('.work-item-row[data-idx]') : null;
+  if (_wdrag.hover && _wdrag.hover !== row) _wdrag.hover.classList.remove('drop-before', 'drop-after');
+  if (row) {
+    // 항목의 위/아래 절반 중 어느 쪽인지로 '어느 사이에 끼울지'를 정한다
+    const r = row.getBoundingClientRect();
+    const before = e.clientY < r.top + r.height / 2;
+    row.classList.toggle('drop-before', before);
+    row.classList.toggle('drop-after', !before);
+    _wdrag.dropAt = Number(row.dataset.idx) + (before ? 0 : 1);
+  } else {
+    _wdrag.dropAt = null;
+  }
+  _wdrag.hover = row;
+}
+
+function _wdragEnd() {
+  if (!_wdrag) return;
+  const d = _wdrag; _wdrag = null;
+  document.body.classList.remove('dragging-item');
+  if (d.hover) d.hover.classList.remove('drop-before', 'drop-after');
+  if (d.moved && d.dropAt !== null) reorderWorkItem(d.idx, d.dropAt);
+}
+
+/** @param to 끼워 넣을 자리 (0 = 맨 위, length = 맨 아래) */
+function reorderWorkItem(from, to) {
+  const items = S.workItems;
+  if (!items || !items[from] || to < 0 || to > items.length) return;
+  if (to === from || to === from + 1) return;   // 제자리
+  const [moved] = items.splice(from, 1);
+  items.splice(from < to ? to - 1 : to, 0, moved);
   renderWorkItems();
 }
+
+document.addEventListener('pointermove', _wdragMove);
+document.addEventListener('pointerup', _wdragEnd);
+document.addEventListener('pointercancel', _wdragEnd);
 function toggleAmPm(i) {
   if (!S.workItems) return;
   const parts = S.workItems[i].time.split(':');
