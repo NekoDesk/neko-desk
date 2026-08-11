@@ -163,7 +163,7 @@ body {
 /* 대시보드 패널 내 텍스트는 선택/복사 가능 */
 .dpage { user-select: text; }
 .dpage button, .dpage .drag-handle, .dpage .dtab,
-.dpage .card-title, .dpage .ampm-btn, .dpage .ti-ampm,
+.dpage .card-title, .dpage .ampm-btn,
 #fruitBasket, .fruit-grid { user-select: none; }
 
 /* 테마별 배경 */
@@ -592,12 +592,11 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .ti-label-in:focus { border-bottom-color:var(--yellow); }
 .ampm-btn { font-size:11px; color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 26%); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
 .ampm-btn:hover { background:color-mix(in srgb, var(--card), #fff 38%); }
-.ti-time-box { display:flex; align-items:center; gap:6px; width:150px; flex-shrink:0;
-  background:var(--card); border:1px solid var(--border); padding:4px 6px; }
-.ti-time-box:focus-within { border-color:var(--yellow); }
-.ti-ampm { color:var(--yellow); font-size:12px; cursor:pointer; user-select:none; flex-shrink:0; }
-.ti-ampm:hover { text-decoration:underline; }
-.ti-time-in { flex:1; min-width:0; background:transparent; border:none; color:var(--white); padding:0; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
+.ti-time-in { width:160px; flex-shrink:0; background:var(--card); border:1px solid var(--border); color:var(--white); padding:4px 6px; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
+.ti-time-in:focus { border-color:var(--yellow); }
+/* 시간 입력의 내부 필드는 그림자 DOM이라 별도로 크기를 맞춰야 라벨과 같아진다 */
+.ti-time-in::-webkit-datetime-edit { font-size:13px; padding:0; }
+.ti-time-in::-webkit-calendar-picker-indicator { padding:0; margin-left:2px; }
 .ti-x-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .ti-x-btn:hover { color:#f66; border-color:#f66; }
 .cal-sel { border-color:var(--gray) !important; background:rgba(150,150,150,0.20) !important; }
@@ -2788,18 +2787,13 @@ function renderWorkItems() {
   const el = document.getElementById('workItemsList');
   if (!el) return;
   el.innerHTML = S.workItems.map((item, i) => {
-    const h = parseInt(item.time.split(':')[0]);
-    const isAM = h < 12;
     return `
       <div class="work-item-row" data-idx="${i}">
         <span class="drag-handle" onpointerdown="workDragDown(event,${i})">⠿</span>
         <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="${L('work_ph')}"
           oninput="S.workItems[${i}].label=this.value">
-        <div class="ti-time-box">
-          <span class="ti-ampm" onclick="toggleAmPm(${i})">${isAM?L('work_am'):L('work_pm')}</span>
-          <input type="time" lang="en-GB" value="${item.time}" class="ti-time-in"
-            onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
-        </div>
+        <input type="time" value="${item.time}" class="ti-time-in"
+          onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
         <button class="ti-x-btn" onclick="removeWorkItem(${i})">×</button>
       </div>`;
   }).join('');
@@ -2874,15 +2868,6 @@ function reorderWorkItem(from, to) {
 document.addEventListener('pointermove', _wdragMove);
 document.addEventListener('pointerup', _wdragEnd);
 document.addEventListener('pointercancel', _wdragEnd);
-function toggleAmPm(i) {
-  if (!S.workItems) return;
-  const parts = S.workItems[i].time.split(':');
-  let h = parseInt(parts[0]);
-  h = h >= 12 ? h - 12 : h + 12;
-  if (h >= 24) h -= 24;
-  S.workItems[i].time = String(h).padStart(2,'0') + ':' + (parts[1]||'00');
-  renderWorkItems();
-}
 function addWorkItem() {
   if (!S.workItems) S.workItems = [];
   S.workItems.push({ time:'09:00', label:L('work_new') });
