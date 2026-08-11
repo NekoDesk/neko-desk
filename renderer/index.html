@@ -516,12 +516,9 @@ body.theme-mono {
 .sch-label-in:focus { border-bottom-color:var(--yellow); }
 .sch-del-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .sch-del-btn:hover { color:#f66; border-color:#f66; }
-.sch-move-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:12px; cursor:grab; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; touch-action:none; }
-.sch-move-btn:hover { color:var(--mint); border-color:var(--mint); }
-.sch-move-btn:active { cursor:grabbing; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
-.sch-move-btn::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after {
+.todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
@@ -529,15 +526,25 @@ body.theme-mono {
   border:1px solid var(--border); border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.22);
   opacity:0; visibility:hidden; pointer-events:none;
   transition:opacity 0.1s ease 0.04s, visibility 0s linear 0.04s; z-index:60; }
-.sch-move-btn::after { bottom:calc(100% + 6px); }   /* 목록 안이라 위쪽으로 */
+.todo-handle::after { bottom:calc(100% + 6px); left:0; right:auto; }   /* 목록 안이라 위쪽으로 */
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
 .hdr-btn::after { top:calc(100% + 8px); }
 .todo-text::after { bottom:calc(100% + 4px); left:0; right:auto; }   /* 글씨 위쪽, 왼쪽 정렬 */
 .hdr-btn:not([data-tip])::after { content:none; }
-.sch-move-btn:hover::after, .todo-help-btn:hover::after,
+.todo-handle:hover::after, .todo-help-btn:hover::after,
 .hdr-btn:hover::after, .todo-text:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
-.todo-item.todo-drop { outline:2px solid var(--mint); outline-offset:2px; border-radius:3px; }
+.todo-item { position:relative; }
+.todo-handle { font-size:13px; touch-action:none; }
+.todo-handle:hover { color:var(--white); }
+.todo-handle.on { color:var(--mint); }
+/* 어느 일정 사이로 들어갈지 가로선 하나로 표시 */
+.todo-item.drop-before::before,
+.todo-item.drop-after::after {
+  content:''; position:absolute; left:0; right:0; height:2px; background:var(--mint); border-radius:1px;
+}
+.todo-item.drop-before::before { top:-4px; }
+.todo-item.drop-after::after { bottom:-4px; }
 /* 앞뒤 날짜 요약 */
 /* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
    (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
@@ -553,7 +560,6 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .todo-adj-item.done { text-decoration:line-through; opacity:0.45; }
 .todo-adj-item.empty { opacity:0.45; font-style:italic; }
-.sch-move-btn.on { color:var(--bg); background:var(--mint); border-color:var(--mint); }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 /* 일정 글씨: 더블클릭하면 그 자리에서 수정 */
 .todo-text { position: relative; cursor: text; }
@@ -1019,7 +1025,7 @@ select {
             <div class="card">
               <div class="card-title" data-i18n="acc_title">👤 계정</div>
               <div id="accountLabel" style="font-size:13px;color:var(--gray);margin-bottom:10px;word-break:break-all">-</div>
-              <div id="syncStatus" style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5">☁️ 동기화: 확인 중...</div>
+              <div id="syncStatus" style="font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5"></div>
               <button id="acctBtn" class="btn btn-gr" onclick="doLogout()" data-i18n="logout_btn">로그아웃</button>
             </div>
 
@@ -1317,6 +1323,12 @@ const STRINGS = {
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
+    sync_title:'☁️ 동기화', sync_down:'받기', sync_up:'올리기', sync_idle:'대기 중',
+    sync_connecting:'연결 중...', sync_uptodate:'최신', sync_received:'받음', sync_merged:'내 변경 병합',
+    sync_cloud_empty:'클라우드 비어있음', sync_done:'완료', sync_fail:'실패', sync_failed:'연결 실패',
+    sync_nothing:'올릴 내용 없음', sync_waiting:'연결 대기 중', sync_need_login:'로그인 필요',
+    sync_relogin:'구글 로그인 필요 (로그아웃 후 다시 로그인)', sync_unsupported:'지원 안 됨',
+    sync_config_err:'설정 오류', sync_error:'오류',
     water_lbl:'💧 오늘 마신 물', water_tip:'한 잔 마실 때마다 🍋 열매 +1',
     water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
     water_full_msg:'바구니가 가득 찼어요!',
@@ -1329,8 +1341,8 @@ const STRINGS = {
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
-    todo_tip_html:'<b style="color:var(--white)">⤴ 일정 옮기기</b><br>⤴ 버튼을 누른 채로 캘린더의 원하는 날짜 위로 끌어다 놓으면 일정이 그 날로 옮겨져요.<br>⤴ 버튼을 클릭해서 일정을 선택한 뒤 날짜를 클릭해도 이동이 가능합니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)<br><br><b style="color:var(--white)">✏️ 일정 수정</b><br>일정 <b>글씨를 더블클릭</b>하면 그 자리에서 내용을 고칠 수 있어요.<br>왼쪽의 <b>오전/오후 버튼</b>을 누르면 언제든 바꿀 수 있습니다.',
-    todo_move_btn:'일정 옮기기 (드래그 또는 클릭)', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
+    todo_tip_html:'<b style="color:var(--white)">⠿ 일정 옮기기</b><br>일정 왼쪽의 <b>⠿ 를 잡고 위아래로 끌면</b> 순서를 바꿀 수 있어요. 어느 사이에 들어갈지 선으로 표시됩니다.<br>⠿ 를 <b>캘린더의 날짜 위로 끌면</b> 그 날로 옮겨져요.<br>⠿ 를 눌러 선택한 뒤 날짜를 클릭해도 이동됩니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)<br><br><b style="color:var(--white)">✏️ 일정 수정</b><br>일정 <b>글씨를 더블클릭</b>하면 그 자리에서 내용을 고칠 수 있어요.<br>왼쪽의 <b>오전/오후 버튼</b>을 누르면 언제든 바꿀 수 있습니다.',
+    todo_move_btn:'끌어서 순서·날짜 옮기기', todo_move_hint:'옮길 날짜를 캘린더에서 눌러주세요',
     todo_move_tip:'버튼을 <b>캘린더 날짜로 끌어다 놓으면</b> 그 날로 옮겨져요.<br>버튼을 <b>눌러 선택한 뒤 날짜를 클릭</b>해도 됩니다.',
     todo_move_active:'옮길 날짜를 캘린더에서 눌러주세요 (⤴을 다시 누르면 취소)',
     todo_edit_hint:'더블클릭하면 수정할 수 있어요',
@@ -1393,6 +1405,12 @@ const STRINGS = {
     dash_enc_msg:'Syncing with live clock 🕐',
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
+    sync_title:'☁️ Sync', sync_down:'Down', sync_up:'Up', sync_idle:'Idle',
+    sync_connecting:'Connecting...', sync_uptodate:'Up to date', sync_received:'Received', sync_merged:'Merged',
+    sync_cloud_empty:'Cloud empty', sync_done:'Done', sync_fail:'Failed', sync_failed:'Connection failed',
+    sync_nothing:'Nothing to upload', sync_waiting:'Waiting', sync_need_login:'Sign-in required',
+    sync_relogin:'Sign in with Google (sign out, then sign in again)', sync_unsupported:'Not supported',
+    sync_config_err:'Config error', sync_error:'Error',
     water_lbl:'💧 Water today', water_tip:'Each glass earns a 🍋 fruit',
     water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
     water_full_msg:'Your basket is full!',
@@ -1405,8 +1423,8 @@ const STRINGS = {
     vitamin_bubble:'Time for a vitamin 💊',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
-    todo_tip_html:'<b style="color:var(--white)">⤴ Move a task</b><br>Hold the ⤴ button and drop it on any date in the calendar to move the task to that day.<br>Or click the ⤴ button to select the task, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)<br><br><b style="color:var(--white)">✏️ Edit a task</b><br><b>Double-click the text</b> to edit it in place.<br>Use the <b>AM/PM button</b> on the left to switch anytime.',
-    todo_move_btn:'Move to another day (drag or click)', todo_move_hint:'Tap a date on the calendar to move it',
+    todo_tip_html:'<b style="color:var(--white)">⠿ Move a task</b><br><b>Drag the ⠿ handle up or down</b> to reorder — a line shows where it will land.<br><b>Drag it onto a calendar date</b> to move the task to that day.<br>Or tap ⠿ to select, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)<br><br><b style="color:var(--white)">✏️ Edit a task</b><br><b>Double-click the text</b> to edit it in place.<br>Use the <b>AM/PM button</b> on the left to switch anytime.',
+    todo_move_btn:'Drag to reorder or move', todo_move_hint:'Tap a date on the calendar to move it',
     todo_move_tip:'<b>Drag the button onto a calendar date</b> to move it there.<br>Or <b>click the button, then click a date</b>.',
     todo_move_active:'Pick the target date on the calendar (click ⤴ again to cancel)',
     todo_edit_hint:'Double-click to edit',
@@ -1469,6 +1487,12 @@ const STRINGS = {
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
+    sync_title:'☁️ 同期', sync_down:'受信', sync_up:'送信', sync_idle:'待機中',
+    sync_connecting:'接続中...', sync_uptodate:'最新', sync_received:'受信済み', sync_merged:'変更を統合',
+    sync_cloud_empty:'クラウドが空です', sync_done:'完了', sync_fail:'失敗', sync_failed:'接続失敗',
+    sync_nothing:'送信する内容なし', sync_waiting:'接続待ち', sync_need_login:'ログインが必要',
+    sync_relogin:'Googleでログインしてください（ログアウト後に再ログイン）', sync_unsupported:'非対応',
+    sync_config_err:'設定エラー', sync_error:'エラー',
     water_lbl:'💧 今日の水分', water_tip:'1杯ごとに🍋の実 +1',
     water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
     water_full_msg:'かごがいっぱいです！',
@@ -1483,8 +1507,8 @@ const STRINGS = {
     todo_moved_title:'📅 移動しました',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
-    todo_tip_html:'<b style="color:var(--white)">⤴ 予定を移動</b><br>⤴ ボタンを押したままカレンダーの日付にドロップすると、その日に移動します。<br>⤴ ボタンをクリックして選択し、日付をクリックしても移動できます。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）<br><br><b style="color:var(--white)">✏️ 予定の編集</b><br>予定の<b>文字をダブルクリック</b>するとその場で修正できます。<br>左の<b>午前/午後ボタン</b>でいつでも切り替えられます。',
-    todo_move_btn:'予定を移動（ドラッグまたはクリック）', todo_move_hint:'移動先の日付をカレンダーで選んでください',
+    todo_tip_html:'<b style="color:var(--white)">⠿ 予定を移動</b><br>左の <b>⠿ を上下にドラッグ</b>すると並び順を変えられます。挿入位置は線で表示されます。<br><b>カレンダーの日付にドラッグ</b>するとその日に移動します。<br>⠿ を押して選択し、日付をクリックしてもOKです。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）<br><br><b style="color:var(--white)">✏️ 予定の編集</b><br>予定の<b>文字をダブルクリック</b>するとその場で修正できます。<br>左の<b>午前/午後ボタン</b>でいつでも切り替えられます。',
+    todo_move_btn:'ドラッグで並び替え・移動', todo_move_hint:'移動先の日付をカレンダーで選んでください',
     todo_move_tip:'ボタンを<b>カレンダーの日付にドラッグ</b>すると移動します。<br>ボタンを<b>押して選択し、日付をクリック</b>してもOKです。',
     todo_move_active:'移動先の日付をカレンダーで選んでください（⤴をもう一度押すと取消）',
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
@@ -1518,6 +1542,13 @@ function applyLang() {
     const btn = document.getElementById('langBtn_' + lang);
     if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
   });
+  // 계정 이메일/게스트 라벨과 동기화 상태는 스크립트로 채우므로 여기서 다시 그린다
+  const _s = window._session;
+  if (_s) {
+    const _lbl = document.getElementById('accountLabel');
+    if (_lbl) _lbl.textContent = _s.guest ? L('acc_guest') : _s.email + (_s.isAdmin ? L('acc_admin') : '');
+  }
+  if (typeof _renderSyncStatus === 'function') _renderSyncStatus();
   renderGuideBody();
   renderThemeGrid();
   renderCatPage();
@@ -2968,6 +2999,8 @@ function renderCalendar() {
       }
       rh += selItems.map((item, i) => `
         <div class="todo-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span class="drag-handle todo-handle${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}"
+            data-tip="${L('todo_move_btn')}" onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⠿</span>
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
           <button class="ampm-btn" onclick="toggleItemAmPm('${_calKey}',${i})">${item.ampm === 'pm' ? L('work_pm') : L('work_am')}</button>
@@ -2977,9 +3010,6 @@ function renderCalendar() {
                  onblur="commitEditItem('${_calKey}',${i},this.value)">`
             : `<span class="todo-text" ondblclick="editDayItem(${i})" data-tip="${L('todo_edit_hint')}"
                  style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>`}
-          <button class="sch-move-btn${_moveSrc && _moveSrc.key===_calKey && _moveSrc.idx===i ? ' on' : ''}"
-            data-tip="${L('todo_move_btn')}"
-            onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⤴</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
@@ -3028,10 +3058,21 @@ function _dragMove(e) {
   const row  = (!cell && under && under.closest) ? under.closest('.todo-item[data-idx]') : null;
   const next = cell || row;
   if (_drag.hover && _drag.hover !== next) {
-    _drag.hover.classList.remove('cal-drop', 'todo-drop');
+    _drag.hover.classList.remove('cal-drop', 'drop-before', 'drop-after');
   }
-  if (cell) cell.classList.add('cal-drop');
-  else if (row) row.classList.add('todo-drop');
+  if (cell) {
+    cell.classList.add('cal-drop');
+    _drag.dropAt = null;
+  } else if (row) {
+    // 항목의 위/아래 절반 중 어느 쪽인지로 '어느 사이에 끼울지'를 정한다
+    const r = row.getBoundingClientRect();
+    const before = e.clientY < r.top + r.height / 2;
+    row.classList.toggle('drop-before', before);
+    row.classList.toggle('drop-after', !before);
+    _drag.dropAt = Number(row.dataset.idx) + (before ? 0 : 1);
+  } else {
+    _drag.dropAt = null;
+  }
   _drag.hover = next;
 }
 
@@ -3039,14 +3080,14 @@ function _dragEnd() {
   if (!_drag) return;
   const d = _drag; _drag = null;
   document.body.classList.remove('dragging-item');
-  if (d.hover) d.hover.classList.remove('cal-drop', 'todo-drop');
-  if (!d.moved) { toggleMoveItem(null, d.key, d.idx); return; }   // 제자리 클릭 → 선택 토글
+  if (d.hover) d.hover.classList.remove('cal-drop', 'drop-before', 'drop-after');
+  if (!d.moved) { toggleMoveItem(null, d.key, d.idx); return; }   // 제자리 탭 → 선택 토글
   if (d.hover && d.hover.dataset.key) {          // 캘린더 날짜 → 그 날로 이동
     _moveSrc = { key: d.key, idx: d.idx };
     moveItemTo(d.hover.dataset.key);
-  } else if (d.hover && d.hover.dataset.idx !== undefined) {   // 다른 할 일 → 순서 변경
+  } else if (d.dropAt !== null && d.dropAt !== undefined) {   // 항목 사이 → 순서 변경
     _moveSrc = null;
-    reorderDayItem(d.key, d.idx, Number(d.hover.dataset.idx));
+    reorderDayItem(d.key, d.idx, d.dropAt);
   } else {
     _moveSrc = null;
     renderCalendar();
@@ -3070,11 +3111,13 @@ function toggleMoveItem(e, key, idx) {
 }
 
 /** 같은 날짜 안에서 할 일 순서(우선순위) 변경 */
+/** @param to 끼워 넣을 자리 (0 = 맨 위, items.length = 맨 아래) */
 function reorderDayItem(key, from, to) {
   const items = getCalNotes(key);
-  if (from === to || !items[from] || to < 0 || to >= items.length) { renderCalendar(); return; }
+  if (!items[from] || to < 0 || to > items.length) { renderCalendar(); return; }
+  if (to === from || to === from + 1) { renderCalendar(); return; }   // 제자리
   const [moved] = items.splice(from, 1);
-  items.splice(to, 0, moved);
+  items.splice(from < to ? to - 1 : to, 0, moved);   // 앞에서 빼낸 만큼 보정
   setCalNotes(key, items);
   saveState();
   renderCalendar();
@@ -4314,9 +4357,9 @@ function _renderSyncStatus() {
   const el = document.getElementById('syncStatus');
   if (!el) return;
   const parts = [];
-  if (_stPull) parts.push('받기 ' + _stPull);
-  if (_stPush) parts.push('올리기 ' + _stPush);
-  el.textContent = '☁️ 동기화: ' + (parts.length ? parts.join(' · ') : '대기 중');
+  if (_stPull) parts.push(L('sync_down') + ' ' + _stPull);
+  if (_stPush) parts.push(L('sync_up') + ' ' + _stPush);
+  el.textContent = L('sync_title') + ': ' + (parts.length ? parts.join(' · ') : L('sync_idle'));
 }
 function _syncStatus(msg) { _stPull = msg; _renderSyncStatus(); }
 function _pushStatus(msg) { _stPush = msg; _renderSyncStatus(); }
@@ -4330,7 +4373,7 @@ async function cloudPull(notify) {
   if (!_cloudSb) return false;
   const r = await _cloudFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' });
   if (!r || !r.ok) {
-    _syncStatus('연결 실패' + (r ? ' (HTTP ' + r.status + ')' : ''));
+    _syncStatus(L('sync_failed') + (r ? ' (HTTP ' + r.status + ')' : ''));
     return false;
   }
   const rows = await r.json();
@@ -4338,7 +4381,7 @@ async function cloudPull(notify) {
   const remote = (rows && rows.length) ? rows[0].data : null;
   if (_cloudIsEmpty(remote)) {
     cloudPush(true);                           // 클라우드가 비어있으면 내 것을 올림
-    _syncStatus('클라우드 비어있음 (' + _syncNow() + ')');
+    _syncStatus(L('sync_cloud_empty') + ' (' + _syncNow() + ')');
     return false;
   }
   // 안 올라간 내 변경이 있으면(재시작 포함) 원격으로 덮어쓰지 않고,
@@ -4347,7 +4390,7 @@ async function cloudPull(notify) {
     const localData = {};
     CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) localData[k] = S[k]; });
     _cloudApply(_cloudMerge(remote, localData));
-    _syncStatus('내 변경 병합 (' + _syncNow() + ')');
+    _syncStatus(L('sync_merged') + ' (' + _syncNow() + ')');
     return cloudPush(true);
   }
   // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
@@ -4358,20 +4401,20 @@ async function cloudPull(notify) {
     const ok = _cloudApply(remote);
     localStorage.setItem(CLOUD_TS_KEY, remoteTs);
     if (ok && notify) toast('info', '☁️ 동기화', '최신 내용을 가져왔어요');
-    _syncStatus('받음 (' + _syncNow() + ')');
+    _syncStatus(L('sync_received') + ' (' + _syncNow() + ')');
     return ok;
   }
-  _syncStatus('최신 (' + _syncNow() + ')');
+  _syncStatus(L('sync_uptodate') + ' (' + _syncNow() + ')');
   return false;
 }
 
 async function cloudPush(force) {
-  if (!_cloudSb) { _pushStatus('로그인 필요'); return false; }
-  if (!_cloudReady && !force) { _pushStatus('연결 대기 중'); return false; }
+  if (!_cloudSb) { _pushStatus(L('sync_need_login')); return false; }
+  if (!_cloudReady && !force) { _pushStatus(L('sync_waiting')); return false; }
   const data = {};
   CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
   // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
-  if (_cloudIsEmpty(data)) { _pushStatus('올릴 내용 없음'); return false; }
+  if (_cloudIsEmpty(data)) { _pushStatus(L('sync_nothing')); return false; }
   // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
   // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
   try {
@@ -4398,9 +4441,9 @@ async function cloudPush(force) {
       if (back && back[0] && back[0].updated_at) localStorage.setItem(CLOUD_TS_KEY, String(back[0].updated_at));
     } catch(e) {}
     localStorage.removeItem(CLOUD_DIRTY_KEY);   // 내 변경이 클라우드에 반영됨
-    _pushStatus('완료 (' + _syncNow() + ')');
+    _pushStatus(L('sync_done') + ' (' + _syncNow() + ')');
   } else {
-    _pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
+    _pushStatus(L('sync_fail') + (r ? ' HTTP ' + r.status : ''));
   }
   return ok;
 }
@@ -4408,7 +4451,7 @@ async function cloudPush(force) {
 function cloudSchedulePush() {
   if (!_cloudSb) return;
   localStorage.setItem(CLOUD_DIRTY_KEY, '1');   // 창이 닫혀도 '안 올라간 변경 있음'이 남도록
-  if (!_cloudReady) { _pushStatus('연결 대기 중'); return; }
+  if (!_cloudReady) { _pushStatus(L('sync_waiting')); return; }
   clearTimeout(_cloudTimer);
   _cloudTimer = setTimeout(() => { _cloudTimer = null; cloudPush(); }, 2500);   // 편집이 멈추면 올림
 }
@@ -4420,20 +4463,20 @@ window.addEventListener('beforeunload', () => {
 
 async function initCloudSync() {
   if (!window.electronAPI || !window.electronAPI.getSupabaseSession) {
-    _syncStatus('지원 안 됨'); return;
+    _syncStatus(L('sync_unsupported')); return;
   }
   // 위젯 창은 대시보드의 최신 편집을 모를 수 있으므로 대시보드에서만 동기화
   if (!window._isDashboard) return;
   try {
     const sb = await window.electronAPI.getSupabaseSession();
     if (!sb || !sb.token) {
-      _syncStatus('구글 로그인 필요 (로그아웃 후 다시 로그인)');
+      _syncStatus(L('sync_relogin'));
       return;
     }
     _cloudSb = sb;
     _cloudCfg = await window.electronAPI.getPublicConfig();
-    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) { _syncStatus('설정 오류'); return; }
-    _syncStatus('연결 중...');
+    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) { _syncStatus(L('sync_config_err')); return; }
+    _syncStatus(L('sync_connecting'));
     if (!saveState._cloudWrapped) {
       const _origSave = saveState;
       saveState = function () { _origSave.apply(this, arguments); cloudSchedulePush(); };
@@ -4442,7 +4485,7 @@ async function initCloudSync() {
     await cloudPull(false);
     setInterval(() => cloudPull(false), 15000);   // 15초마다 최신 내용 확인
     window.addEventListener('focus', () => cloudPull(false));   // 창을 다시 볼 때 즉시
-  } catch(e) { _syncStatus('오류: ' + (e && e.message || e)); }
+  } catch(e) { _syncStatus(L('sync_error')); }
 }
 
 function refreshAutoLaunchBtn(on) {
