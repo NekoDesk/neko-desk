@@ -163,7 +163,7 @@ body {
 /* 대시보드 패널 내 텍스트는 선택/복사 가능 */
 .dpage { user-select: text; }
 .dpage button, .dpage .drag-handle, .dpage .dtab,
-.dpage .card-title, .dpage .ampm-btn,
+.dpage .card-title, .dpage .ampm-btn, .dpage .ti-ampm,
 #fruitBasket, .fruit-grid { user-select: none; }
 
 /* 테마별 배경 */
@@ -543,8 +543,10 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item.drop-after::after,   .work-item-row.drop-after::after {
   content:''; position:absolute; left:0; right:0; height:2px; background:var(--mint); border-radius:1px;
 }
-.todo-item.drop-before::before, .work-item-row.drop-before::before { top:-4px; }
-.todo-item.drop-after::after,   .work-item-row.drop-after::after { bottom:-4px; }
+.todo-item.drop-before::before { top:-4px; }
+.todo-item.drop-after::after { bottom:-4px; }
+.work-item-row.drop-before::before { top:0; }
+.work-item-row.drop-after::after { bottom:0; }
 /* 앞뒤 날짜 요약 */
 /* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
    (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
@@ -583,13 +585,19 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-move-tip { font-size:11px; color:var(--gray); line-height:1.55; margin:10px 0 0; padding:7px 9px; background:var(--card); border:1px dashed var(--border); border-radius:4px; }
 .todo-move-tip.on { color:var(--bg); background:var(--mint); border-style:solid; border-color:var(--mint); font-weight:700; }
 /* Work items */
-.work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; border-bottom:1px solid var(--border); }
+.work-item-row { display:flex; align-items:center; gap:7px; padding:5px 0; }
 .drag-handle { color:var(--gray); cursor:grab; font-size:14px; flex-shrink:0; user-select:none; touch-action:none; }
 .work-item-row .drag-handle:hover { color:var(--white); }
 .ti-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px 2px; font-size:13px; flex:1; min-width:0; outline:none; }
 .ti-label-in:focus { border-bottom-color:var(--yellow); }
-.ampm-btn { font-size:11px; color:var(--yellow); background:var(--card); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
-.ti-time-in { width:145px; flex-shrink:0; background:var(--card); border:1px solid var(--border); color:var(--white); padding:4px 6px; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
+.ampm-btn { font-size:11px; color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 26%); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
+.ampm-btn:hover { background:color-mix(in srgb, var(--card), #fff 38%); }
+.ti-time-box { display:flex; align-items:center; gap:6px; width:150px; flex-shrink:0;
+  background:var(--card); border:1px solid var(--border); padding:4px 6px; }
+.ti-time-box:focus-within { border-color:var(--yellow); }
+.ti-ampm { color:var(--yellow); font-size:12px; cursor:pointer; user-select:none; flex-shrink:0; }
+.ti-ampm:hover { text-decoration:underline; }
+.ti-time-in { flex:1; min-width:0; background:transparent; border:none; color:var(--white); padding:0; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
 .ti-x-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .ti-x-btn:hover { color:#f66; border-color:#f66; }
 .cal-sel { border-color:var(--gray) !important; background:rgba(150,150,150,0.20) !important; }
@@ -2787,9 +2795,11 @@ function renderWorkItems() {
         <span class="drag-handle" onpointerdown="workDragDown(event,${i})">⠿</span>
         <input class="ti-label-in" value="${item.label.replace(/"/g,'&quot;')}" placeholder="${L('work_ph')}"
           oninput="S.workItems[${i}].label=this.value">
-        <button class="ampm-btn" onclick="toggleAmPm(${i})">${isAM?L('work_am'):L('work_pm')}</button>
-        <input type="time" value="${item.time}" class="ti-time-in"
-          onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
+        <div class="ti-time-box">
+          <span class="ti-ampm" onclick="toggleAmPm(${i})">${isAM?L('work_am'):L('work_pm')}</span>
+          <input type="time" lang="en-GB" value="${item.time}" class="ti-time-in"
+            onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
+        </div>
         <button class="ti-x-btn" onclick="removeWorkItem(${i})">×</button>
       </div>`;
   }).join('');
@@ -2813,12 +2823,27 @@ function _wdragMove(e) {
     document.body.classList.add('dragging-item');   // 주먹 쥐은 손 커서
   }
   const under = document.elementFromPoint(e.clientX, e.clientY);
-  const row = (under && under.closest) ? under.closest('.work-item-row[data-idx]') : null;
+  let row = (under && under.closest) ? under.closest('.work-item-row[data-idx]') : null;
+  // 항목의 위/아래 절반 중 어느 쪽인지로 '어느 사이에 끼울지'를 정한다
+  let before = false;
+  if (row) {
+    const r = row.getBoundingClientRect();
+    before = e.clientY < r.top + r.height / 2;
+  } else {
+    // 목록 위쪽·아래쪽 여백으로 끌면 맨 위·맨 아래로 보내려는 것으로 본다
+    const list = document.getElementById('workItemsList');
+    const rows = list ? list.querySelectorAll('.work-item-row[data-idx]') : [];
+    if (rows.length) {
+      const lr = list.getBoundingClientRect();
+      if (e.clientX >= lr.left - 24 && e.clientX <= lr.right + 24) {
+        const first = rows[0], last = rows[rows.length - 1];
+        if (e.clientY < first.getBoundingClientRect().top) { row = first; before = true; }
+        else if (e.clientY > last.getBoundingClientRect().bottom) { row = last; before = false; }
+      }
+    }
+  }
   if (_wdrag.hover && _wdrag.hover !== row) _wdrag.hover.classList.remove('drop-before', 'drop-after');
   if (row) {
-    // 항목의 위/아래 절반 중 어느 쪽인지로 '어느 사이에 끼울지'를 정한다
-    const r = row.getBoundingClientRect();
-    const before = e.clientY < r.top + r.height / 2;
     row.classList.toggle('drop-before', before);
     row.classList.toggle('drop-after', !before);
     _wdrag.dropAt = Number(row.dataset.idx) + (before ? 0 : 1);
