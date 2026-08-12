@@ -2279,6 +2279,7 @@ function loadCustomBreeds() {
     }
     renderCatPage();
     renderAll();
+    restoreFollow();
 
     // 고양이 이미지가 실제로 그려진 것을 확인한 후 로딩 닫기
     const catEl = document.getElementById('widgetCanvas');
@@ -3563,6 +3564,25 @@ function toggleFollow(){
   badge.classList.add('show');
   setTimeout(()=>badge.classList.remove('show'),2200);
   toast('info',S.follow?'🐱 팔로우 ON!':'🐱 팔로우 OFF',S.follow?'고양이가 따라다녀요~':'제자리로!');
+}
+// 앱을 껐다 켜도 팔로우는 직전 상태 그대로 (S.follow는 저장되지만 켜는 동작이 없었다)
+let _followRestored = false;
+function restoreFollow(){
+  if(_followRestored || window._isDashboard || !S.follow) return;
+  const cat=document.getElementById('cursorCat');
+  if (window.electronAPI && window.electronAPI.setFollow) {
+    const _fc = window._customBreeds && S.cat.breed && window._customBreeds[S.cat.breed];
+    const url = (_fc && _fc.image_url) || '';
+    if (!url) return;   // 고양이 이미지가 아직 준비되지 않았으면 다음 기회에
+    _followRestored = true;
+    if (cat) cat.style.display='none';
+    window.electronAPI.setFollow(true, url);
+  } else {
+    _followRestored = true;
+    if (cat) cat.style.display='block';
+  }
+  const label=document.getElementById('followLabel');
+  if(label)label.textContent='ON';
 }
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey&&(e.key==='0'||e.code==='Digit0')){e.preventDefault();toggleFollow();}
