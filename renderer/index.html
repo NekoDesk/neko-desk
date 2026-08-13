@@ -337,6 +337,10 @@ body.theme-mono {
   display: flex; align-items: center; gap: 14px; background: var(--bg);
 }
 .dash-logo { font-family: 'Galmuri14', monospace; font-size: 16px; color: var(--mint); text-shadow: 2px 2px 0 var(--acc); }
+/* 로고 영역을 누르면 홈으로 */
+.dash-home-link { cursor: pointer; transition: opacity 0.15s; }
+.dash-home-link:hover { opacity: 0.75; }
+.dash-home-link:hover .dash-logo { color: var(--yellow); }
 /* 헤더 우측 액션 버튼 — 고양이 / 포인트 / 사진을 같은 규격으로 */
 .hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .hdr-btn {
@@ -852,8 +856,9 @@ select {
       </div>
     </div>
     <div class="dash-header">
-      <img id="dashHeaderCat" class="cat-img-render" style="width:48px;height:58px">
-      <div>
+      <img id="dashHeaderCat" class="cat-img-render dash-home-link" style="width:48px;height:58px"
+        onclick="dTab('home')">
+      <div class="dash-home-link" onclick="dTab('home')">
         <div class="dash-logo">🐱 NEKO DESK</div>
         <div id="dashEncMsg" data-i18n="dash_enc_msg" style="font-size:14px;color:var(--gray);margin-top:2px">실시간 시계와 동기화 중 🕐</div>
       </div>
