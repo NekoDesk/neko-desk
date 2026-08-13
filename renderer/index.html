@@ -423,7 +423,9 @@ body.theme-mono {
 
 #dp-home .card { padding: 12px 13px; }
 #dp-home .card-title { margin-bottom: 9px; }
-#dp-home .cat-display { flex-shrink: 0; padding: 8px; gap: 4px; margin-bottom: 0 !important; }
+#dp-home .cat-display { flex-shrink: 0; padding: 8px; gap: 4px; margin-bottom: 0 !important;
+  position: relative; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+#dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 8%); }
 #dp-home .big-cat { width: 108px; height: 130px; }
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
@@ -518,7 +520,8 @@ body.theme-mono {
 .sch-del-btn:hover { color:#f66; border-color:#f66; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
-.todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after {
+.todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after,
+.cat-display[data-tip]::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
@@ -531,8 +534,10 @@ body.theme-mono {
 .hdr-btn::after { top:calc(100% + 8px); }
 .todo-text::after { bottom:calc(100% + 4px); left:0; right:auto; }   /* 글씨 위쪽, 왼쪽 정렬 */
 .hdr-btn:not([data-tip])::after { content:none; }
+.cat-display[data-tip]::after { top:calc(100% + 6px); }
 .todo-handle:hover::after, .todo-help-btn:hover::after,
-.hdr-btn:hover::after, .todo-text:hover::after { opacity:1; visibility:visible; }
+.hdr-btn:hover::after, .todo-text:hover::after,
+.cat-display[data-tip]:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item, .work-item-row { position:relative; }
 .todo-handle { font-size:13px; touch-action:none; }
@@ -876,7 +881,7 @@ select {
       <div id="dp-home" class="dpage active">
         <div class="grid2" style="margin-bottom:14px">
           <div>
-            <div class="cat-display" style="margin-bottom:12px">
+            <div class="cat-display" style="margin-bottom:12px" onclick="dTab('cat')" data-i18n-tip="tab_cat">
               <img id="homeCatCanvas" class="big-cat cat-img-render">
               <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)" id="catNameH">냐옹이</div>
             </div>
