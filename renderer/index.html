@@ -1353,7 +1353,7 @@ const STRINGS = {
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
     cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
-    cat_full_title:'😻 이미 최고!', cat_full_msg:'기분이 이미 100이에요!',
+    cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
     login_google_btn:'구글 로그인 하기',
     vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
@@ -1435,7 +1435,7 @@ const STRINGS = {
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
     cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
-    cat_full_title:'😻 Already great!', cat_full_msg:'Mood is already at 100!',
+    cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
     login_google_btn:'Sign in with Google',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
@@ -1517,7 +1517,7 @@ const STRINGS = {
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
     cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
-    cat_full_title:'😻 もう最高！', cat_full_msg:'気分はすでに100です！',
+    cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
     login_google_btn:'Googleでログイン',
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
@@ -1861,6 +1861,9 @@ function toggleSection(contentId, chevronId) {
 function initClickThrough() {
   if (!window.electronAPI || !window.electronAPI.setIgnoreMouseEvents) return;
   const hitTest = (x, y) => {
+    // 위젯을 끄는 중에는 판정하지 않는다. 창이 커서를 따라오는 사이 커서가
+    // 고양이 밖(투명 영역)으로 잠깐 벗어나면 클릭 통과가 켜져 드래그가 끊긴다.
+    if (window._widgetDragging) return;
     // 대시보드 모드: 클릭 통과 절대 금지 (모든 버튼 먹통 방지)
     if (document.body.classList.contains('electron-dashboard')) {
       window.electronAPI.setIgnoreMouseEvents(false);
@@ -4677,13 +4680,31 @@ function installCatDrag(){
   const wrap = document.getElementById('widgetCatWrap');
   if (!wrap) return;
   let ds = null;
-  wrap.addEventListener('mousedown', e => {
+
+  const end = () => {
+    if (!ds) return;
+    const wasClick = !ds.moved;
+    ds = null;
+    window._widgetDragging = false;
+    if (wasClick) openDash();   // 움직이지 않았으면 클릭으로 본다
+  };
+
+  wrap.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
     ds = { x: e.screenX, y: e.screenY, moved: false };
+    // 끄는 동안 클릭 통과가 켜지면 마우스 이벤트가 끊겨 드래그를 놓친다
+    window._widgetDragging = true;
+    if (window.electronAPI && window.electronAPI.setIgnoreMouseEvents) {
+      window.electronAPI.setIgnoreMouseEvents(false);
+    }
+    // 고양이 이미지가 바뀌어도 포인터를 놓치지 않도록 캡처
+    try { wrap.setPointerCapture(e.pointerId); } catch(err) {}
     e.preventDefault();
   });
-  window.addEventListener('mousemove', e => {
+
+  window.addEventListener('pointermove', e => {
     if (!ds) return;
+    if (e.buttons === 0) { end(); return; }   // 창 밖에서 버튼을 뗀 경우
     const dx = e.screenX - ds.x, dy = e.screenY - ds.y;
     if (!ds.moved && Math.abs(dx) + Math.abs(dy) > 4) ds.moved = true;
     if (ds.moved && window.electronAPI) {
@@ -4691,10 +4712,9 @@ function installCatDrag(){
       ds.x = e.screenX; ds.y = e.screenY;
     }
   });
-  window.addEventListener('mouseup', () => {
-    if (ds && !ds.moved) openDash();
-    ds = null;
-  });
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+  window.addEventListener('blur', end);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
