@@ -3997,6 +3997,19 @@ function enforceDataOwner(email) {
       location.reload();
       return true;
     }
+    if (!owner) {
+      // 게스트로 쓰던 기록을 이 계정 것으로 승계한다.
+      // 클라우드에 이미 기록이 있어도 덮어쓰지 않고 합치도록 표시해 둔다.
+      let hasLocal = false;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        hasLocal = !!raw && !_cloudIsEmpty(JSON.parse(raw));
+      } catch(e2) {}
+      if (hasLocal) {
+        localStorage.setItem(CLOUD_CLAIM_KEY, '1');
+        localStorage.setItem(CLOUD_DIRTY_KEY, '1');
+      }
+    }
     localStorage.setItem(DATA_OWNER_KEY, email);
   } catch(e) {}
   return false;
@@ -4333,6 +4346,7 @@ const CLOUD_KEYS = [
   'schedule','workItems','scheduleItems','shipping','theme','language'
 ];
 const CLOUD_TS_KEY = 'nekodesk_sync_pushed_at';
+const CLOUD_CLAIM_KEY = 'nekodesk_sync_claim';   // 게스트 기록을 계정에 합쳐야 함
 const CLOUD_DIRTY_KEY = 'nekodesk_sync_dirty';   // 안 올라간 변경 존재 표시 (재시작에도 유지)
 let _cloudSb = null, _cloudCfg = null, _cloudReady = false, _cloudTimer = null;
 
@@ -4390,6 +4404,47 @@ function _cloudMerge(remote, local) {
     } else {
       out[k] = lv;                          // 그 외는 로컬(내 변경) 우선
     }
+  });
+  return out;
+}
+
+// 게스트 기록을 계정에 합칠 때만 쓰는 병합 — 어느 쪽도 버리지 않는다.
+// (평소 동기화는 _cloudMerge: 내 변경 우선)
+const CLAIM_JOIN_FIELDS = ['scheduleMemo','text','memo','note','content'];
+function _claimMergeVal(rv, lv, field) {
+  if (rv === undefined || rv === null) return lv;
+  if (lv === undefined || lv === null) return rv;
+  if (typeof rv === 'number' && typeof lv === 'number') return Math.max(rv, lv);
+  if (Array.isArray(rv) && Array.isArray(lv)) {
+    const out = rv.slice();
+    lv.forEach(x => {
+      const s = JSON.stringify(x);
+      if (!out.some(y => JSON.stringify(y) === s)) out.push(x);
+    });
+    return out;
+  }
+  if (typeof rv === 'string' && typeof lv === 'string') {
+    // 일정 메모·다이어리 본문만 이어붙인다. 테마·언어 같은 설정은 로컬 값 유지.
+    if (CLAIM_JOIN_FIELDS.indexOf(field) < 0) return lv;
+    if (rv === lv || rv.indexOf(lv) >= 0) return rv;
+    if (lv.indexOf(rv) >= 0) return lv;
+    return rv + '\n' + lv;
+  }
+  if (typeof rv === 'object' && typeof lv === 'object'
+      && !Array.isArray(rv) && !Array.isArray(lv)) {
+    const out = Object.assign({}, rv);
+    Object.keys(lv).forEach(k => {
+      out[k] = (k in rv) ? _claimMergeVal(rv[k], lv[k], k) : lv[k];
+    });
+    return out;
+  }
+  return lv;
+}
+function _cloudClaimMerge(remote, local) {
+  const out = {};
+  CLOUD_KEYS.forEach(k => {
+    const v = _claimMergeVal(remote ? remote[k] : undefined, local ? local[k] : undefined, k);
+    if (v !== undefined) out[k] = v;
   });
   return out;
 }
@@ -4466,6 +4521,7 @@ async function cloudPull(notify) {
   _cloudReady = true;                         // 조회 성공 → 업로드 허용
   const remote = (rows && rows.length) ? rows[0].data : null;
   if (_cloudIsEmpty(remote)) {
+    localStorage.removeItem(CLOUD_CLAIM_KEY);  // 합칠 원격 기록이 없음
     cloudPush(true);                           // 클라우드가 비어있으면 내 것을 올림
     _syncStatus(L('sync_cloud_empty') + ' (' + _syncNow() + ')');
     return false;
@@ -4475,7 +4531,10 @@ async function cloudPull(notify) {
   if (_cloudTimer || localStorage.getItem(CLOUD_DIRTY_KEY) === '1') {
     const localData = {};
     CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) localData[k] = S[k]; });
-    _cloudApply(_cloudMerge(remote, localData));
+    const claim = localStorage.getItem(CLOUD_CLAIM_KEY) === '1';
+    _cloudApply(claim ? _cloudClaimMerge(remote, localData) : _cloudMerge(remote, localData));
+    localStorage.removeItem(CLOUD_CLAIM_KEY);
+    if (claim) toast('info', '☁️ 동기화', '게스트로 쓴 기록을 계정에 합쳤어요');
     _syncStatus(L('sync_merged') + ' (' + _syncNow() + ')');
     return cloudPush(true);
   }

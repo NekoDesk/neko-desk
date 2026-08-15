@@ -13,6 +13,7 @@
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
   var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
   var OWNER_KEY = 'neko_data_owner';      // 이 기기 데이터의 주인 계정 (계정별 데이터 분리)
+  var CLAIM_KEY = 'neko_sync_claim';      // 게스트로 쓴 기록을 계정에 합쳐야 함
 
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
@@ -55,6 +56,19 @@
         localStorage.setItem(OWNER_KEY, email);
         location.reload();
         return true;
+      }
+      if (!owner) {
+        // 게스트로 쓰던 기록을 이 계정 것으로 승계한다.
+        // 클라우드에 이미 기록이 있어도 덮어쓰지 않고 합치도록 표시해 둔다.
+        var hasLocal = false;
+        try {
+          var raw0 = localStorage.getItem(STORAGE_KEY);
+          hasLocal = !!raw0 && !isEmptyPayload(JSON.parse(raw0));
+        } catch (e2) {}
+        if (hasLocal) {
+          localStorage.setItem(CLAIM_KEY, '1');
+          localStorage.setItem(DIRTY_KEY, '1');
+        }
       }
       localStorage.setItem(OWNER_KEY, email);
     } catch (e) {}
@@ -270,6 +284,47 @@
     return out;
   }
 
+  // 게스트 기록을 계정에 합칠 때만 쓰는 병합 — 어느 쪽도 버리지 않는다.
+  var CLAIM_JOIN_FIELDS = ['scheduleMemo', 'text', 'memo', 'note', 'content'];
+  function claimMergeVal(rv, lv, field) {
+    if (rv === undefined || rv === null) return lv;
+    if (lv === undefined || lv === null) return rv;
+    if (typeof rv === 'number' && typeof lv === 'number') return Math.max(rv, lv);
+    if (Array.isArray(rv) && Array.isArray(lv)) {
+      var out = rv.slice();
+      lv.forEach(function (x) {
+        var s = JSON.stringify(x);
+        for (var i = 0; i < out.length; i++) { if (JSON.stringify(out[i]) === s) return; }
+        out.push(x);
+      });
+      return out;
+    }
+    if (typeof rv === 'string' && typeof lv === 'string') {
+      // 메모·다이어리 본문만 이어붙인다. 테마·언어 같은 설정은 기기 값 유지.
+      if (CLAIM_JOIN_FIELDS.indexOf(field) < 0) return lv;
+      if (rv === lv || rv.indexOf(lv) >= 0) return rv;
+      if (lv.indexOf(rv) >= 0) return lv;
+      return rv + '\n' + lv;
+    }
+    if (typeof rv === 'object' && typeof lv === 'object'
+        && !Array.isArray(rv) && !Array.isArray(lv)) {
+      var o = Object.assign({}, rv);
+      Object.keys(lv).forEach(function (k) {
+        o[k] = (k in rv) ? claimMergeVal(rv[k], lv[k], k) : lv[k];
+      });
+      return o;
+    }
+    return lv;
+  }
+  function claimMerge(remote, local) {
+    var out = {};
+    SYNC_KEYS.forEach(function (k) {
+      var v = claimMergeVal(remote ? remote[k] : undefined, local ? local[k] : undefined, k);
+      if (v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+
   /** 클라우드 → 기기 */
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);
@@ -286,6 +341,7 @@
         _syncReady = true;                       // 조회 성공 → 이제 push 허용
         var remote = (rows && rows.length) ? rows[0].data : null;
         if (isEmptyPayload(remote)) {
+          localStorage.removeItem(CLAIM_KEY);     // 합칠 원격 기록이 없음
           syncPush(true);                        // 클라우드가 비어 있으면 로컬을 올림
           syncStatus('클라우드 비어있음 (' + nowHHMM() + ')');
           return false;
@@ -293,8 +349,12 @@
         // 아직 안 올라간 내 변경이 있으면(앱을 껐다 켠 경우 포함) 원격으로 덮어쓰지 않고,
         // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
         if (_pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
-          var merged = mergePayload(remote, collectLocal());
+          var claim = localStorage.getItem(CLAIM_KEY) === '1';
+          var merged = claim ? claimMerge(remote, collectLocal())
+                             : mergePayload(remote, collectLocal());
           applyRemote(merged);
+          localStorage.removeItem(CLAIM_KEY);
+          if (claim) toast('info', '☁️ 동기화', '게스트로 쓴 기록을 계정에 합쳤어요');
           syncStatus('내 변경 병합 (' + nowHHMM() + ')');
           return syncPush(true);
         }
@@ -502,6 +562,29 @@
   }
 
   // ═══════════════════════════════════════════════
+  // 일정 수정: PC는 더블클릭, 모바일은 길게 누르기
+  // ═══════════════════════════════════════════════
+  function installLongPressEdit() {
+    var timer = null;
+    var cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
+    document.addEventListener('touchstart', function (e) {
+      var el = e.target && e.target.closest ? e.target.closest('.todo-text') : null;
+      if (!el) return;
+      var row = el.closest('.todo-item[data-idx]');
+      if (!row) return;
+      var idx = Number(row.dataset.idx);
+      cancel();
+      timer = setTimeout(function () {
+        timer = null;
+        if (typeof window.editDayItem === 'function') window.editDayItem(idx);
+      }, 500);
+    }, { passive: true });
+    ['touchend', 'touchmove', 'touchcancel', 'scroll'].forEach(function (ev) {
+      document.addEventListener(ev, cancel, { passive: true });
+    });
+  }
+
+  // ═══════════════════════════════════════════════
   // 포토부스: 고양이 크기 축소 + 하단 4종 선택줄
   // ═══════════════════════════════════════════════
   // 합성 코드가 프레임 높이의 92%로 그리므로, 원본에 투명 여백을 둘러
@@ -618,9 +701,26 @@
       '}',
       '#dashPanel .dtab .mtab-ico { font-size:17px; line-height:1; }',
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
-      // 모바일은 업무 사이클을 쓰지 않으므로 홈의 사이클/업무시간 영역을 숨긴다
-      // (스케줄 탭은 홈으로 통합되면서 사라짐)
-      '#dp-home #homeCycleCol, #dp-home #homeCycleCard { display:none !important; }',
+      // 모바일에는 홈 화면이 없다 — 할 일 목록이 첫 화면
+      '#dashPanel .dtab[data-page="home"] { display:none !important; }',
+      '#dp-home { display:none !important; }',
+
+      // ── 할 일 목록: 좁은 화면에서 잘리지 않게 ──
+      '#dp-schedule .grid2 { gap:12px !important; }',
+      '#dp-schedule .todo-item { gap:6px !important; flex-wrap:nowrap !important; }',
+      '#dp-schedule .todo-item .todo-text { min-width:0 !important; flex:1 1 auto !important;',
+      '  white-space:normal !important; word-break:break-word; }',
+      '#dp-schedule .todo-item input[type="checkbox"] { width:20px !important; height:20px !important; flex-shrink:0 !important; }',
+      '#dp-schedule .todo-handle { flex-shrink:0 !important; padding:2px 3px; font-size:15px !important; }',
+      '#dp-schedule .ampm-btn { flex-shrink:0 !important; padding:2px 4px !important; font-size:10px !important; }',
+      '#dp-schedule .sch-del-btn { flex-shrink:0 !important; }',
+      // 입력 줄: 오전/오후 + 입력칸 + 추가 버튼이 넘치면 두 줄로
+      '#dp-schedule .todo-add-row { flex-wrap:wrap !important; gap:6px !important; }',
+      '#dp-schedule .todo-add-row input { min-width:0 !important; flex:1 1 140px !important; }',
+      '#dp-schedule .todo-add-row .todo-add-btn { flex-shrink:0 !important; }',
+      // 패널 안의 어떤 줄도 가로로 삐져나가지 않게
+      '#dp-schedule .card { min-width:0 !important; overflow-x:hidden !important; }',
+      '#calRightPanel > div { min-width:0 !important; }',
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',
@@ -703,6 +803,29 @@
 
       // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
       hookPhotoBooth();
+
+      // 3-2) 모바일 첫 화면은 할 일 목록. 메모장은 목록 아래로 내린다.
+      try {
+        var page = document.getElementById('dp-schedule');
+        var memo = document.getElementById('scheduleMemoTxt');
+        var memoCard = memo && memo.closest ? memo.closest('.card') : null;
+        if (page && memoCard && memoCard.parentElement !== page) {
+          memoCard.style.marginTop = '12px';
+          page.appendChild(memoCard);          // .grid2 밖 → 항상 맨 아래
+        }
+        // 홈이 없으므로 홈으로 가는 동작(헤더 로고 등)은 할 일 목록으로 보낸다
+        if (typeof window.dTab === 'function' && !window.dTab._mNoHome) {
+          var origTab = window.dTab;
+          window.dTab = function (name) {
+            return origTab.call(this, name === 'home' ? 'schedule' : name);
+          };
+          window.dTab._mNoHome = true;
+        }
+        if (typeof window.dTab === 'function') window.dTab('schedule');
+      } catch (e) {}
+
+      // 3-3) 모바일엔 더블클릭이 없다 — 일정을 길게 눌러 수정
+      installLongPressEdit();
 
       // 4) 클라우드 동기화 시작 (구글 로그인 상태일 때만)
       initSync();
