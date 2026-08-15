@@ -325,6 +325,17 @@
     return out;
   }
 
+  /** 내 클라우드 행만 삭제 (RLS가 user_id = auth.uid()로 제한).
+   *  renderer의 resetAllData()가 초기화할 때 호출한다. */
+  window._mobileCloudDeleteMine = function () {
+    var s = readSession();
+    if (!s || s.guest || !s.uid) return Promise.resolve(false);
+    if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
+    return authFetch('/rest/v1/nekodesk_sync?user_id=eq.' + s.uid, { method: 'DELETE' })
+      .then(function (r) { return !!(r && r.ok); })
+      .catch(function () { return false; });
+  };
+
   /** 클라우드 → 기기 */
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);

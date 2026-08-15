@@ -1292,6 +1292,7 @@ const STRINGS = {
     acc_title:'👤 계정', logout_btn:'로그아웃',
     guide_title:'⚙️ 작동 방식 안내',
     reset_btn:'🔄 데이터 초기화',
+    reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
     home_mood:'❤️ 기분', photo_btn:'📸 고양이와 사진 찍기',
     home_cycle_title:'⏱ 현재 사이클',
@@ -1380,6 +1381,7 @@ const STRINGS = {
     acc_title:'👤 Account', logout_btn:'Log out',
     guide_title:'⚙️ How it works',
     reset_btn:'🔄 Reset Data',
+    reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
     home_cycle_title:'⏱ Current Cycle',
     home_fruit_title:'🍋 Fruit Basket',
@@ -1462,6 +1464,7 @@ const STRINGS = {
     acc_title:'👤 アカウント', logout_btn:'ログアウト',
     guide_title:'⚙️ 使い方',
     reset_btn:'🔄 データ初期化',
+    reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
     home_cycle_title:'⏱ 現在サイクル',
     home_fruit_title:'🍋 フルーツ',
@@ -2026,9 +2029,18 @@ function loadState() {
 // 두 창 모두 닫힐 때는 저장
 window.addEventListener('beforeunload', saveState);
 
-function resetAllData(){
-  if(!confirm('정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!')) return;
+async function resetAllData(){
+  if(!confirm(L('reset_confirm'))) return;
   _skipSave = true;            // beforeunload/자동저장이 다시 쓰지 못하게 차단
+  // 예약된 업로드가 남아 있으면 지운 뒤 다시 올라간다 — 먼저 취소
+  try { if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; } } catch(e) {}
+  // 로그인 상태면 클라우드에 저장된 내 기록도 함께 지운다 (RLS로 내 행만 대상)
+  for (const fn of [window._cloudDeleteMine, window._mobileCloudDeleteMine]) {
+    if (typeof fn === 'function') { try { await fn(); } catch(e) {} }
+  }
+  ['nekodesk_sync_pushed_at','nekodesk_sync_dirty','nekodesk_sync_claim',
+   'neko_sync_pushed_at','neko_sync_dirty','neko_sync_claim']
+    .forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
   localStorage.removeItem(STORAGE_KEY);
   if (window.electronAPI && window.electronAPI.resetWidgetPos) {
     window.electronAPI.resetWidgetPos();
@@ -4592,6 +4604,13 @@ async function cloudPush(force) {
   }
   return ok;
 }
+
+/** 내 클라우드 행만 삭제 (RLS가 user_id = auth.uid()로 제한) */
+window._cloudDeleteMine = async function() {
+  if (!_cloudSb || !_cloudSb.uid) return false;
+  const r = await _cloudFetch('/rest/v1/nekodesk_sync?user_id=eq.' + _cloudSb.uid, { method: 'DELETE' });
+  return !!(r && r.ok);
+};
 
 function cloudSchedulePush() {
   if (!_cloudSb) return;
