@@ -159,6 +159,20 @@ ipcMain.on('close-dashboard', () => {
 
 ipcMain.on('quit-app', () => { app.isQuitting = true; app.quit(); });
 
+// ═══ 스토어(Microsoft Store) 빌드 판별 ═══
+// 스토어는 (1) 스토어 밖에서 실행 코드를 내려받아 설치하는 것을 금지하고,
+// (2) 부팅 시 자동 실행은 레지스트리가 아니라 매니페스트의 StartupTask로 선언하게 한다.
+// 그래서 스토어용 빌드에서는 두 기능을 끈다. GitHub 배포판은 지금 그대로 동작한다.
+//   · MSIX로 패키징되면 Electron이 process.windowsStore를 true로 세팅한다
+//   · 그 외에는 `npm run build:store`가 package.json에 storeBuild를 주입한다
+const IS_STORE_BUILD = (() => {
+  if (process.windowsStore === true) return true;
+  try {
+    const v = require('./package.json').storeBuild;
+    return v === true || v === 'true';
+  } catch (e) { return false; }
+})();
+
 // ═══ 부팅 시 자동 실행 설정 ═══
 // 사용자의 의도(켬/끔)를 파일에 저장해두고, 실행할 때마다 실제 등록 상태와 맞춘다.
 // 업데이트·재설치 등으로 등록이 사라져도 다음 실행에서 자동 복구된다.
@@ -183,6 +197,7 @@ function applyAutoLaunch(on) {
 }
 
 function syncAutoLaunch() {
+  if (IS_STORE_BUILD) return;    // 스토어 빌드: StartupTask로만 가능
   if (!app.isPackaged) return;   // 개발 중에는 등록하지 않음
   try {
     const want = getAutoLaunchPref();
@@ -190,9 +205,11 @@ function syncAutoLaunch() {
   } catch (e) {}
 }
 
-ipcMain.handle('get-auto-launch', () => isAutoLaunchOn());
+// null을 돌려주면 렌더러가 '지원 안 함'으로 보고 설정 항목을 숨긴다
+ipcMain.handle('get-auto-launch', () => IS_STORE_BUILD ? null : isAutoLaunchOn());
 
 ipcMain.handle('set-auto-launch', (e, on) => {
+  if (IS_STORE_BUILD) return null;
   writeJSON(AUTOLAUNCH_FILE(), { enabled: !!on });
   applyAutoLaunch(on);
   return isAutoLaunchOn();
@@ -708,7 +725,9 @@ app.whenReady().then(() => {
   syncAutoLaunch();
 
   // ═══ 자동 업데이트 (GitHub Releases) ═══
+  // 스토어 빌드는 업데이트를 스토어가 담당한다 (직접 내려받아 설치하면 정책 위반)
   try {
+    if (IS_STORE_BUILD) throw new Error('store build: updater disabled');
     autoUpdater = require('electron-updater').autoUpdater;
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;

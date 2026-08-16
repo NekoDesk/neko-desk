@@ -1056,7 +1056,12 @@ select {
               <div id="guideBody" style="display:none;margin-top:14px"></div>
             </div>
 
-            <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:18px;width:100%;opacity:0.75" data-i18n="reset_btn">🔄 데이터 초기화</button>
+            <div style="margin-top:16px;text-align:center">
+              <a href="#" onclick="openPrivacy();return false"
+                 style="font-size:12px;color:var(--gray);text-decoration:underline;cursor:pointer"
+                 data-i18n="privacy_link">🔒 개인정보처리방침</a>
+            </div>
+            <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:12px;width:100%;opacity:0.75" data-i18n="reset_btn">🔄 데이터 초기화</button>
             <div id="appVersionLabel" style="margin-top:14px;text-align:center;font-size:11px;color:var(--gray);opacity:0.6"></div>
           </div>
         </div>
@@ -1291,6 +1296,7 @@ const STRINGS = {
     lang_title:'🌐 언어',
     acc_title:'👤 계정', logout_btn:'로그아웃',
     guide_title:'⚙️ 작동 방식 안내',
+    privacy_link:'🔒 개인정보처리방침',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1380,6 +1386,7 @@ const STRINGS = {
     lang_title:'🌐 Language',
     acc_title:'👤 Account', logout_btn:'Log out',
     guide_title:'⚙️ How it works',
+    privacy_link:'🔒 Privacy Policy',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1463,6 +1470,7 @@ const STRINGS = {
     lang_title:'🌐 言語',
     acc_title:'👤 アカウント', logout_btn:'ログアウト',
     guide_title:'⚙️ 使い方',
+    privacy_link:'🔒 プライバシーポリシー',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -2028,6 +2036,12 @@ function loadState() {
 // 자동 저장은 DOMContentLoaded 이후 위젯 창에서만 시작 (대시보드 자동저장 덮어쓰기 방지)
 // 두 창 모두 닫힐 때는 저장
 window.addEventListener('beforeunload', saveState);
+
+const PRIVACY_URL = 'https://goodenergykr.com/nekodesk/privacy';
+function openPrivacy(){
+  if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(PRIVACY_URL);
+  else window.open(PRIVACY_URL, '_blank');
+}
 
 async function resetAllData(){
   if(!confirm(L('reset_confirm'))) return;
@@ -4723,10 +4737,14 @@ function init(){
   initCloudSync();
 
   // 부팅 시 자동 실행 토글 초기화 (데스크톱 전용)
+  // null이면 지원하지 않는 빌드(스토어) — 설정 항목을 아예 보여주지 않는다
   if (window.electronAPI && window.electronAPI.getAutoLaunch) {
-    const _alc = document.getElementById('autoLaunchCard');
-    if (_alc) _alc.style.display = '';
-    window.electronAPI.getAutoLaunch().then(refreshAutoLaunchBtn);
+    window.electronAPI.getAutoLaunch().then(on => {
+      if (on === null || on === undefined) return;
+      const _alc = document.getElementById('autoLaunchCard');
+      if (_alc) _alc.style.display = '';
+      refreshAutoLaunchBtn(on);
+    });
   }
 
   // 설정 탭 버전 표시

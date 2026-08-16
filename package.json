@@ -1,6 +1,6 @@
 {
   "name": "neko-desk",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "cat desk app",
   "main": "main.js",
   "author": "Siwon",
@@ -12,7 +12,8 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "release": "electron-builder --win --publish always"
+    "release": "electron-builder --win --publish always",
+    "build:store": "electron-builder --win --publish never --config.extraMetadata.storeBuild=true --config.win.artifactName=NEKO-DESK-Store-${version}.${ext}"
   },
   "dependencies": {
     "electron-updater": "^6.3.0"
