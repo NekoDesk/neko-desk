@@ -13,7 +13,10 @@
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "release": "electron-builder --win --publish always",
-    "build:store": "electron-builder --win --publish never --config.extraMetadata.storeBuild=true --config.win.artifactName=NEKO-DESK-Store-${version}.${ext}"
+    "appx:assets": "node scripts/make-appx-assets.js",
+    "build:store": "electron-builder --win nsis --publish never --config.extraMetadata.storeBuild=true --config.win.artifactName=NEKO-DESK-Store-${version}.${ext}",
+    "build:msix": "electron-builder --win appx --publish never --config.extraMetadata.storeBuild=true",
+    "build:msix:test": "electron-builder --win appx --publish never --config.extraMetadata.storeBuild=true --config.appx.publisher=\"CN=NEKO DESK Test\""
   },
   "dependencies": {
     "electron-updater": "^6.3.0"
@@ -50,6 +53,23 @@
       ],
       "icon": "assets/icon.ico",
       "artifactName": "NEKO-DESK-Setup-${version}.${ext}"
+    },
+    "appx": {
+      "identityName": "NekoDesk.NEKODESK",
+      "publisher": "CN=970F98AC-B684-4E05-8E19-353A4FEC7D68",
+      "publisherDisplayName": "NekoDesk",
+      "applicationId": "NEKODESK",
+      "displayName": "NEKO DESK",
+      "backgroundColor": "#2b2b2b",
+      "languages": [
+        "ko-KR",
+        "en-US",
+        "ja-JP"
+      ],
+      "addAutoLaunchExtension": false,
+      "showNameOnTiles": false,
+      "setBuildNumber": false,
+      "artifactName": "NEKO-DESK-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
