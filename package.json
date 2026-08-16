@@ -1,6 +1,6 @@
 {
   "name": "neko-desk",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "cat desk app",
   "main": "main.js",
   "author": "Siwon",
@@ -15,8 +15,8 @@
     "release": "electron-builder --win --publish always",
     "appx:assets": "node scripts/make-appx-assets.js",
     "build:store": "electron-builder --win nsis --publish never --config.extraMetadata.storeBuild=true --config.win.artifactName=NEKO-DESK-Store-${version}.${ext}",
-    "build:msix": "electron-builder --win appx --publish never --config.extraMetadata.storeBuild=true",
-    "build:msix:test": "electron-builder --win appx --publish never --config.extraMetadata.storeBuild=true --config.appx.publisher=\"CN=NEKO DESK Test\""
+    "build:msix": "electron-builder --win appx --publish never --config electron-builder.config.js --config.extraMetadata.storeBuild=true",
+    "build:msix:test": "electron-builder --win appx --publish never --config electron-builder.config.js --config.extraMetadata.storeBuild=true --config.appx.publisher=\"CN=NEKO DESK Test\""
   },
   "dependencies": {
     "electron-updater": "^6.3.0"
