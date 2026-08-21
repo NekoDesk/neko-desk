@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.5-mobile';
+  var APP_VERSION = '2.1.6-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -20,7 +20,7 @@
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
     // 기록
-    'calendarNotes', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
+    'calendarNotes', 'calendarDeleted', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
     // 고양이·진행 상태
     'cat', 'pts', 'fruits', 'harvestedFruits', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
@@ -300,6 +300,64 @@
    * diaryEntries/calendarNotes처럼 날짜별 객체는 항목 단위로 합쳐
    * 양쪽 기기의 기록을 모두 보존한다.
    */
+  // ── 일정 병합: 항목별 최신 우선 (main.js와 같은 규칙) ──
+  function mergeTombs(a, b) {
+    var out = Object.assign({}, a || {});
+    Object.keys(b || {}).forEach(function (id) {
+      if (!(id in out) || b[id] > out[id]) out[id] = b[id];
+    });
+    return out;
+  }
+  function pruneTombs(tombs, keepMs) {
+    var cut = Date.now() - (keepMs || 30 * 24 * 60 * 60 * 1000);
+    var out = {};
+    Object.keys(tombs || {}).forEach(function (id) { if (tombs[id] >= cut) out[id] = tombs[id]; });
+    return out;
+  }
+  function mergeNotes(lNotes, lTombs, rNotes, rTombs) {
+    var tombs = mergeTombs(lTombs, rTombs);
+    var best = {};
+    var collect = function (notes) {
+      Object.keys(notes || {}).forEach(function (date) {
+        var arr = notes[date];
+        if (!Array.isArray(arr)) return;
+        arr.forEach(function (it, idx) {
+          if (!it || !it.id) return;
+          var ts = it.ts || 0;
+          var cur = best[it.id];
+          if (!cur || ts > cur.ts) {
+            best[it.id] = { item: it, date: date, ts: ts, ord: it.ord != null ? it.ord : idx };
+          }
+        });
+      });
+    };
+    collect(lNotes);
+    collect(rNotes);
+    var byDate = {};
+    Object.keys(best).forEach(function (id) {
+      var e = best[id];
+      var dead = tombs[id];
+      if (dead !== undefined && dead >= e.ts) return;   // 삭제 확정
+      if (!byDate[e.date]) byDate[e.date] = [];
+      byDate[e.date].push(e);
+    });
+    var out = {};
+    Object.keys(byDate).forEach(function (date) {
+      byDate[date].sort(function (a, b) { return (a.ord - b.ord) || (a.ts - b.ts); });
+      out[date] = byDate[date].map(function (e) { return e.item; });
+    });
+    return { notes: out, tombs: pruneTombs(tombs) };
+  }
+  /** 병합 결과에서 일정 부분만 항목별 규칙으로 덮어쓴다 */
+  function applyNotesMerge(merged, local, remote) {
+    var r = mergeNotes(
+      local && local.calendarNotes, local && local.calendarDeleted,
+      remote && remote.calendarNotes, remote && remote.calendarDeleted);
+    merged.calendarNotes = r.notes;
+    merged.calendarDeleted = r.tombs;
+    return merged;
+  }
+
   // ── 3방향 병합 (main.js의 merge3와 같은 규칙) ──
   // base와 비교해야 '내가 지웠다'와 '상대가 더했다'를 구분할 수 있다.
   function jeq(a, b) {
@@ -444,8 +502,10 @@
         // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
         if (_pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
           var claim = localStorage.getItem(CLAIM_KEY) === '1';
-          var merged = claim ? claimMerge(remote, collectLocal())
-                             : merge3(readBase(), collectLocal(), remote);
+          var loc = collectLocal();
+          var merged = claim ? claimMerge(remote, loc)
+                             : merge3(readBase(), loc, remote);
+          merged = applyNotesMerge(merged, loc, remote);   // 일정은 항목별로 다시 판정
           applyRemote(merged);
           setBase(merged);
           localStorage.removeItem(CLAIM_KEY);
@@ -487,6 +547,7 @@
       .then(function (rows) {
         var remote = (rows && rows.length) ? rows[0].data : null;
         var payload = remote ? merge3(readBase(), local, remote) : local;
+        if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
         return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {

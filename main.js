@@ -736,7 +736,7 @@ const CLOUD_PULL_MS = 15 * 1000;
 const CLOUD_PUSH_DEBOUNCE_MS = 2500;
 
 const CLOUD_KEYS = [
-  'calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone',
+  'calendarNotes','calendarDeleted','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
   'schedule','workItems','scheduleItems','shipping','theme','language'
 ];
@@ -811,6 +811,67 @@ function cloudMerge(remote, local) {
     }
   });
   return out;
+}
+
+// ── 일정 병합: 항목별 최신 우선 ────────────────────────────────
+// 항목마다 id와 수정 시각(ts)이 있고, 삭제는 무덤(calendarDeleted)에 남는다.
+// 같은 id면 ts가 큰 쪽이 이기고, 무덤 시각이 항목 ts 이상이면 삭제로 확정한다.
+// 이렇게 해야 "한쪽에서 지운 것"과 "상대가 새로 더한 것"을 구분할 수 있다.
+function mergeTombs(a, b) {
+  const out = Object.assign({}, a || {});
+  Object.keys(b || {}).forEach(id => {
+    if (!(id in out) || b[id] > out[id]) out[id] = b[id];
+  });
+  return out;
+}
+function pruneTombs(tombs, keepMs) {
+  const cut = Date.now() - (keepMs || 30 * 24 * 60 * 60 * 1000);
+  const out = {};
+  Object.keys(tombs || {}).forEach(id => { if (tombs[id] >= cut) out[id] = tombs[id]; });
+  return out;
+}
+function mergeNotes(lNotes, lTombs, rNotes, rTombs) {
+  const tombs = mergeTombs(lTombs, rTombs);
+  const best = {};
+  const collect = (notes) => {
+    Object.keys(notes || {}).forEach(date => {
+      const arr = notes[date];
+      if (!Array.isArray(arr)) return;
+      arr.forEach((it, idx) => {
+        if (!it || !it.id) return;
+        const ts = it.ts || 0;
+        const cur = best[it.id];
+        if (!cur || ts > cur.ts) {
+          best[it.id] = { item: it, date: date, ts: ts, ord: it.ord != null ? it.ord : idx };
+        }
+      });
+    });
+  };
+  collect(lNotes);
+  collect(rNotes);
+  const byDate = {};
+  Object.keys(best).forEach(id => {
+    const e = best[id];
+    const dead = tombs[id];
+    if (dead !== undefined && dead >= e.ts) return;   // 삭제 확정
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  });
+  const out = {};
+  Object.keys(byDate).forEach(date => {
+    byDate[date].sort((a, b) => (a.ord - b.ord) || (a.ts - b.ts));
+    out[date] = byDate[date].map(e => e.item);
+  });
+  return { notes: out, tombs: pruneTombs(tombs) };
+}
+/** 병합 결과에서 일정 부분만 항목별 규칙으로 덮어쓴다 */
+function applyNotesMerge(merged, local, remote) {
+  const r = mergeNotes(
+    local && local.calendarNotes, local && local.calendarDeleted,
+    remote && remote.calendarNotes, remote && remote.calendarDeleted);
+  merged.calendarNotes = r.notes;
+  merged.calendarDeleted = r.tombs;
+  return merged;
 }
 
 // ── 3방향 병합 ────────────────────────────────────────────────
@@ -968,8 +1029,9 @@ async function cloudPull(notify) {
     // 안 올라간 내 변경이 있으면 원격으로 덮어쓰지 않고 병합해서 올린다
     if (cloudPushTimer || st.dirty) {
       const local = await cloudReadLocal();
-      const merged = st.claim ? cloudClaimMerge(remote, local)
-                              : merge3(st.base, local, remote);
+      let merged = st.claim ? cloudClaimMerge(remote, local)
+                            : merge3(st.base, local, remote);
+      merged = applyNotesMerge(merged, local, remote);   // 일정은 항목별로 다시 판정
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
       setCloudBase(merged);
@@ -1012,7 +1074,8 @@ async function cloudPush(force) {
       const remoteNow = (rows && rows.length) ? rows[0].data : null;
       if (remoteNow) {
         // 내가 지운 것은 지운 채로, 상대가 더한 것은 살린 채로 올린다
-        const merged = merge3(syncState().base, data, remoteNow);
+        let merged = merge3(syncState().base, data, remoteNow);
+        merged = applyNotesMerge(merged, data, remoteNow);   // 일정은 항목별로
         CLOUD_KEYS.forEach(k => { delete data[k]; });
         Object.keys(merged).forEach(k => { data[k] = merged[k]; });
       }

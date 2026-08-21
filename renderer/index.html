@@ -2252,6 +2252,7 @@ const S = {
   scheduleItems: null,
   scheduleMemo: '',
   calendarNotes: {},
+  calendarDeleted: {},   // 지운 일정의 무덤 {id: 지운시각} — 삭제를 다른 기기에 전달하는 용도
   wishlist: [],
   diaryEntries: {},
   wishlistDone: [],
@@ -2283,7 +2284,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -2301,6 +2302,8 @@ function loadState() {
       S.lastDate = today;
       saveState();
     }
+    migrateCalNotes();   // 구버전 일정에 id 부여
+    pruneTombs();
   } catch(e) { console.warn('불러오기 실패:', e); }
 }
 
@@ -3374,6 +3377,62 @@ let _calYear = new Date().getFullYear();
 let _calMonth = new Date().getMonth();
 let _calKey = '';
 
+// ── 일정 항목의 신원 ────────────────────────────────────────
+// 항목마다 id와 수정 시각을 갖는다. 그래야 다른 기기와 합칠 때
+// "누가 무엇을 언제 건드렸는지"로 판정할 수 있다.
+function newItemId() {
+  try {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  } catch(e) {}
+  return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+/** 항목을 건드렸다고 표시 (수정 시각 갱신) */
+function touchItem(it) {
+  if (!it) return it;
+  if (!it.id) it.id = newItemId();
+  it.ts = Date.now();
+  return it;
+}
+/** 지운 항목을 무덤에 남긴다 — 이게 없으면 상대 기기가 되살린다 */
+function tombItem(it) {
+  if (!it || !it.id) return;
+  if (!S.calendarDeleted) S.calendarDeleted = {};
+  S.calendarDeleted[it.id] = Date.now();
+}
+/** 30일보다 오래된 무덤은 버린다 (무한정 쌓이지 않도록) */
+function pruneTombs() {
+  const cut = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const d = S.calendarDeleted || {};
+  Object.keys(d).forEach(id => { if (d[id] < cut) delete d[id]; });
+}
+/**
+ * 구버전 일정에 id/ts/ord를 채운다.
+ * id는 무작위가 아니라 내용에서 만든다 — PC와 폰이 같은 항목에 같은 id를
+ * 붙여야 합칠 때 중복이 생기지 않는다.
+ */
+function migrateCalNotes() {
+  const notes = S.calendarNotes || {};
+  let changed = false;
+  Object.keys(notes).forEach(date => {
+    let arr = notes[date];
+    if (typeof arr === 'string') { arr = [{ text: arr, done: false }]; changed = true; }
+    if (!Array.isArray(arr)) return;
+    const seen = {};
+    notes[date] = arr.map((it, i) => {
+      if (it && it.id) return it;
+      changed = true;
+      const text = (it && it.text) || '';
+      seen[text] = (seen[text] || 0) + 1;
+      return Object.assign({}, it, {
+        id: 'L:' + date + ':' + seen[text] + ':' + text,
+        ts: 0,                    // 구버전은 가장 오래된 것으로 취급
+        ord: (it && it.ord != null) ? it.ord : i,
+      });
+    });
+  });
+  if (changed) saveState();
+}
+
 function getCalNotes(key) {
   const val = (S.calendarNotes||{})[key];
   if (!val) return [];
@@ -3568,6 +3627,8 @@ function reorderDayItem(key, from, to) {
   if (to === from || to === from + 1) { renderCalendar(); return; }   // 제자리
   const [moved] = items.splice(from, 1);
   items.splice(from < to ? to - 1 : to, 0, moved);   // 앞에서 빼낸 만큼 보정
+  // 순서는 항목마다 들고 다니므로, 바뀐 날짜의 전체에 새 순서·시각을 준다
+  items.forEach((it, idx) => { it.ord = idx; touchItem(it); });
   setCalNotes(key, items);
   saveState();
   renderCalendar();
@@ -3584,6 +3645,8 @@ function moveItemTo(destKey) {
   from.splice(src.idx, 1);
   setCalNotes(src.key, from);
   const to = getCalNotes(destKey);
+  item.ord = to.length;
+  touchItem(item);               // 옮긴 것도 '건드린 것'
   to.push(item);
   setCalNotes(destKey, to);
   saveState();
@@ -3680,7 +3743,9 @@ function selectAllDayItems() {
 }
 function deleteSelectedDayItems() {
   if (!_calKey) return;
-  const remaining = getCalNotes(_calKey).filter(i => !i.done);
+  const all = getCalNotes(_calKey);
+  all.forEach(i => { if (i.done) tombItem(i); });   // 지운 것들을 무덤에
+  const remaining = all.filter(i => !i.done);
   setCalNotes(_calKey, remaining);
   saveState(); renderCalendar();
 }
@@ -3699,6 +3764,7 @@ function toggleItemAmPm(key, i) {
   const items = getCalNotes(key);
   if (!items[i]) return;
   items[i].ampm = items[i].ampm === 'pm' ? 'am' : 'pm';
+  touchItem(items[i]);
   setCalNotes(key, items);
   saveState(); renderCalendar();
 }
@@ -3720,6 +3786,7 @@ function commitEditItem(key, i, val) {
   const t = (val || '').trim();
   if (items[i] && t && t !== items[i].text) {
     items[i].text = t;
+    touchItem(items[i]);
     setCalNotes(key, items);
     saveState();
   }
@@ -3731,7 +3798,7 @@ function addDayItem(key) {
   const text = (inp?.value||'').trim();
   if (!text) return;
   const items = getCalNotes(key);
-  items.push({text, done:false, ampm:_newAmPm});
+  items.push(touchItem({ text, done:false, ampm:_newAmPm, ord: items.length }));
   setCalNotes(key, items);
   if (inp) inp.value = '';
   saveState(); renderCalendar();
@@ -3888,6 +3955,7 @@ function toggleDayItem(key, i) {
   if (!items[i]) return;
   const wasDone = items[i].done;
   items[i].done = !items[i].done;
+  touchItem(items[i]);
   setCalNotes(key, items);
   if (!wasDone && items[i].done) {
     if (S.fruits.length < 5) {
@@ -3899,6 +3967,7 @@ function toggleDayItem(key, i) {
 }
 function deleteDayItem(key, i) {
   const items = getCalNotes(key);
+  tombItem(items[i]);            // 지웠다는 사실을 남겨야 다른 기기에서도 지워진다
   items.splice(i, 1);
   setCalNotes(key, items);
   saveState(); renderCalendar();
@@ -4729,7 +4798,7 @@ function wiggleCat(){
 // ══════════════════════════════
 const CLOUD_KEYS = [
   // 기록
-  'calendarNotes','scheduleMemo','diaryEntries','wishlist','wishlistDone',
+  'calendarNotes','calendarDeleted','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
