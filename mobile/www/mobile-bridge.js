@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.0.11-mobile';
+  var APP_VERSION = '2.0.12-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -500,6 +500,8 @@
     wrapSaveState(0);
     syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
     setInterval(function () {
+      _tick++;
+      renderSyncStatus();       // 아무 일이 없어도 t가 올라가는 게 보이도록
       syncPull(false);
       try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
       catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
