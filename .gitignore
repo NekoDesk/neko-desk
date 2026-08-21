@@ -16,3 +16,20 @@ out/
 Thumbs.db
 .claude/
 supabase/.temp/
+# 코드 서명 인증서·개인키 (Apple / Windows / Android)
+# 실제 파일은 저장소 밖(D:/NekoDesk/secrets)에 두고 GitHub Secrets로만 사용한다.
+# 아래 규칙은 실수로 저장소 안에 복사했을 때를 위한 안전망이다.
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+*.keystore
+*.jks
+secrets/
+certs/
