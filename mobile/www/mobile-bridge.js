@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.0.10-mobile';
+  var APP_VERSION = '2.0.11-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -245,14 +245,17 @@
   /** 마지막으로 올린 내용과 달라졌으면 올린다.
    *  saveState 훅이 어떤 이유로 안 걸려도 업로드가 되도록 하는 안전망. */
   function pushIfChanged() {
-    if (!loggedIn() || !_syncReady) return;
-    if (_pushTimer) return;             // 이미 예약돼 있으면 그쪽에 맡긴다
+    if (!loggedIn()) { pushStatus('\ub300\uae30(\ub85c\uadf8\uc778X)'); return; }
+    if (!_syncReady) { pushStatus('\ub300\uae30(\ubc1b\uae30\uc804)'); return; }
+    if (_pushTimer) { pushStatus('\uc608\uc57d\ub428'); return; }
     var now = '';
-    try { now = JSON.stringify(collectLocal()); } catch (e) { return; }
-    if (!now || now === '{}') return;
+    try { now = JSON.stringify(collectLocal()); }
+    catch (e) { pushStatus('\uc77d\uae30\uc624\ub958'); return; }
+    if (!now || now === '{}') { pushStatus('\ub85c\uceec\ube44\uc5b4\uc788\uc74c'); return; }
     var last = '';
     try { last = localStorage.getItem(LAST_PUSH_KEY) || ''; } catch (e) {}
-    if (now === last) return;
+    if (now === last) { pushStatus('\ubcc0\uacbd\uc5c6\uc74c (' + nowHHMM() + ')'); return; }
+    pushStatus('\uc62c\ub9ac\ub294 \uc911...');
     syncPush();
   }
 
@@ -495,10 +498,11 @@
     syncStatus('연결 중...');
     // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
     wrapSaveState(0);
-    syncPull(false);
+    syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
     setInterval(function () {
       syncPull(false);
-      pushIfChanged();     // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
+      try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
+      catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
     }, 15000);
     // 앱을 열면 최신 내용 확인, 백그라운드로 가면 예약된 업로드 즉시 실행
     var App = capPlugin('App');
