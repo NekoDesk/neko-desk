@@ -1386,6 +1386,8 @@ const STRINGS = {
     sync_pulled_msg:'최신 내용을 가져왔어요',
     update_found_title:'업데이트 발견',
     update_found_msg:'새 버전 {v} 다운로드를 시작해요',
+    autostart_win_btn:'Windows 설정 열기',
+    autostart_win_desc:'PC를 켜면 자동으로 시작돼요. 켜고 끄는 것은 Windows 시작 프로그램 설정에서 바꿀 수 있어요.',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1565,6 +1567,8 @@ const STRINGS = {
     sync_pulled_msg:'Pulled the latest changes',
     update_found_title:'Update found',
     update_found_msg:'Downloading version {v}',
+    autostart_win_btn:'Open Windows settings',
+    autostart_win_desc:'It starts automatically when your PC boots. Turn it on or off in Windows startup app settings.',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1738,6 +1742,8 @@ const STRINGS = {
     sync_pulled_msg:'最新の内容を取得しました',
     update_found_title:'アップデート発見',
     update_found_msg:'新しいバージョン {v} のダウンロードを開始します',
+    autostart_win_btn:'Windows 設定を開く',
+    autostart_win_desc:'PCを起動すると自動で始まります。オン/オフはWindowsのスタートアップ設定で変更できます。',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -5092,6 +5098,18 @@ function init(){
       if (on === null || on === undefined) return;
       const _alc = document.getElementById('autoLaunchCard');
       if (_alc) _alc.style.display = '';
+      if (on === 'store') {
+        // 스토어 버전은 Windows 시작 프로그램 설정이 켜고 끈다
+        const b = document.getElementById('autoLaunchBtn');
+        if (b) {
+          b.textContent = L('autostart_win_btn');
+          b.className = 'btn btn-gr';
+          b.onclick = () => window.electronAPI.openStartupSettings && window.electronAPI.openStartupSettings();
+        }
+        const d = document.querySelector('#autoLaunchCard [data-i18n="autostart_desc"]');
+        if (d) { d.removeAttribute('data-i18n'); d.textContent = L('autostart_win_desc'); }
+        return;
+      }
       refreshAutoLaunchBtn(on);
     });
   }

@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 부팅 시 자동 실행
   getAutoLaunch:  () => ipcRenderer.invoke('get-auto-launch'),
+  openStartupSettings: () => ipcRenderer.send('open-startup-settings'),
   setAutoLaunch:  (on) => ipcRenderer.invoke('set-auto-launch', on),
 
   // 기기 간 동기화 (Supabase 세션)

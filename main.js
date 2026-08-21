@@ -205,8 +205,14 @@ function syncAutoLaunch() {
   } catch (e) {}
 }
 
-// null을 돌려주면 렌더러가 '지원 안 함'으로 보고 설정 항목을 숨긴다
-ipcMain.handle('get-auto-launch', () => IS_STORE_BUILD ? null : isAutoLaunchOn());
+// 스토어(MSIX) 빌드는 매니페스트의 StartupTask로 자동 실행되고, 켜고 끄는 것은
+// Windows 설정이 관리한다. 렌더러가 그 상태를 구분할 수 있도록 'store'를 돌려준다.
+ipcMain.handle('get-auto-launch', () => IS_STORE_BUILD ? 'store' : isAutoLaunchOn());
+
+// 스토어 빌드용: Windows의 시작 프로그램 설정을 연다
+ipcMain.on('open-startup-settings', () => {
+  shell.openExternal('ms-settings:startupapps').catch(() => {});
+});
 
 ipcMain.handle('set-auto-launch', (e, on) => {
   if (IS_STORE_BUILD) return null;

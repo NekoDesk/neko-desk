@@ -1,0 +1,3 @@
+<desktop:Extension Category="windows.startupTask" Executable="app\NEKO DESK.exe" EntryPoint="Windows.FullTrustApplication">
+  <desktop:StartupTask TaskId="NekoDeskStartup" Enabled="true" DisplayName="NEKO DESK" />
+</desktop:Extension>
