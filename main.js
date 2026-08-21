@@ -955,6 +955,16 @@ async function cloudPull(notify) {
       cloudBusy = false;
       return cloudPush(true);
     }
+    // 기준선이 없으면(새로 설치·초기화 직후) 비교할 근거가 없다.
+    // 이때 병합하면 상대가 지운 항목을 되살리게 되므로, 클라우드를 그대로 받아
+    // 기준선으로 삼는다. 다음 동기화부터 삭제가 정상 전파된다.
+    if (!st.base) {
+      cloudBroadcast('cloud-apply', { data: remote, notify: '' });
+      setSyncState({ seenTs: String(rows[0].updated_at || ''), claim: false });
+      setCloudBase(remote);
+      cloudStatus('pull', 'sync_received');
+      return true;
+    }
     // 안 올라간 내 변경이 있으면 원격으로 덮어쓰지 않고 병합해서 올린다
     if (cloudPushTimer || st.dirty) {
       const local = await cloudReadLocal();

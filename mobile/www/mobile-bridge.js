@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.4-mobile';
+  var APP_VERSION = '2.1.5-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -429,6 +429,16 @@
           syncPush(true);                        // 클라우드가 비어 있으면 로컬을 올림
           syncStatus('클라우드 비어있음 (' + nowHHMM() + ')');
           return false;
+        }
+        // 기준선이 없으면(새로 설치·초기화 직후) 비교할 근거가 없다.
+        // 병합하면 상대가 지운 항목을 되살리므로, 클라우드를 그대로 받아 기준선으로 삼는다.
+        if (!readBase()) {
+          var ok0 = applyRemote(remote);
+          setBase(remote);
+          localStorage.setItem(SYNC_TS_KEY, String(rows[0].updated_at || ''));
+          localStorage.removeItem(CLAIM_KEY);
+          syncStatus('받음 (' + nowHHMM() + ')');
+          return ok0;
         }
         // 아직 안 올라간 내 변경이 있으면(앱을 껐다 켠 경우 포함) 원격으로 덮어쓰지 않고,
         // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
