@@ -7,13 +7,14 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.4.3-mobile';
+  var APP_VERSION = '2.0.10-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
   var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
   var OWNER_KEY = 'neko_data_owner';      // 이 기기 데이터의 주인 계정 (계정별 데이터 분리)
-  var CLAIM_KEY = 'neko_sync_claim';      // 게스트로 쓴 기록을 계정에 합쳐야 함
+  var CLAIM_KEY = 'neko_sync_claim';
+  var LAST_PUSH_KEY = 'neko_sync_last_push';   // 마지막으로 올린 내용(비교용)      // 게스트로 쓴 기록을 계정에 합쳐야 함
 
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
@@ -225,12 +226,34 @@
 
   /** 로컬 S에서 동기화 대상만 추출 */
   function collectLocal() {
-    var out = {}, st = getS();
-    if (!st) return out;
+    // localStorage가 사실상의 원본이다 (saveState가 매번 여기에 쓴다).
+    // 메모리의 S를 못 잡는 상황에서도 업로드가 멈추지 않도록 이쪽을 먼저 본다.
+    var src = null;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) src = JSON.parse(raw);
+    } catch (e) {}
+    if (!src) src = getS();
+    var out = {};
+    if (!src) return out;
     SYNC_KEYS.forEach(function (k) {
-      if (st[k] !== undefined) out[k] = st[k];
+      if (src[k] !== undefined) out[k] = src[k];
     });
     return out;
+  }
+
+  /** 마지막으로 올린 내용과 달라졌으면 올린다.
+   *  saveState 훅이 어떤 이유로 안 걸려도 업로드가 되도록 하는 안전망. */
+  function pushIfChanged() {
+    if (!loggedIn() || !_syncReady) return;
+    if (_pushTimer) return;             // 이미 예약돼 있으면 그쪽에 맡긴다
+    var now = '';
+    try { now = JSON.stringify(collectLocal()); } catch (e) { return; }
+    if (!now || now === '{}') return;
+    var last = '';
+    try { last = localStorage.getItem(LAST_PUSH_KEY) || ''; } catch (e) {}
+    if (now === last) return;
+    syncPush();
   }
 
   /** 원격 데이터를 S에 반영하고 화면 갱신 */
@@ -419,6 +442,8 @@
             localStorage.setItem(SYNC_TS_KEY, String(back[0].updated_at));
           }
         }).catch(function () {});
+        // 방금 올린 로컬 상태를 기억해 둔다 (다음 비교 기준)
+        try { localStorage.setItem(LAST_PUSH_KEY, JSON.stringify(local)); } catch (e) {}
         pushStatus('완료 (' + nowHHMM() + ')');
       } else {
         pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
@@ -442,7 +467,21 @@
   function flushPush() {
     if (!loggedIn() || !_syncReady) return;
     if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
-    if (localStorage.getItem(DIRTY_KEY) === '1') syncPush();
+    if (localStorage.getItem(DIRTY_KEY) === '1') { syncPush(); return; }
+    pushIfChanged();
+  }
+
+  /** saveState에 업로드 훅을 건다. 아직 정의 전이면 잠시 뒤 다시 시도한다. */
+  function wrapSaveState(tries) {
+    if (typeof window.saveState === 'function') {
+      if (!window.saveState._syncWrapped) {
+        var orig = window.saveState;
+        window.saveState = function () { orig.apply(this, arguments); schedulePush(); };
+        window.saveState._syncWrapped = true;
+      }
+      return;
+    }
+    if (tries < 10) setTimeout(function () { wrapSaveState(tries + 1); }, 500);
   }
 
   function initSync() {
@@ -455,13 +494,12 @@
     if (ses && ses.email && enforceDataOwner(ses.email)) return;
     syncStatus('연결 중...');
     // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
-    if (typeof window.saveState === 'function' && !window.saveState._syncWrapped) {
-      var orig = window.saveState;
-      window.saveState = function () { orig.apply(this, arguments); schedulePush(); };
-      window.saveState._syncWrapped = true;
-    }
+    wrapSaveState(0);
     syncPull(false);
-    setInterval(function () { syncPull(false); }, 15000);   // 15초마다 최신 내용 확인
+    setInterval(function () {
+      syncPull(false);
+      pushIfChanged();     // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
+    }, 15000);
     // 앱을 열면 최신 내용 확인, 백그라운드로 가면 예약된 업로드 즉시 실행
     var App = capPlugin('App');
     if (App) {
