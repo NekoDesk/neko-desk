@@ -2317,11 +2317,13 @@ function openPrivacy(){
 async function resetAllData(){
   if(!confirm(L('reset_confirm'))) return;
   _skipSave = true;            // beforeunload/자동저장이 다시 쓰지 못하게 차단
-  // 예약된 업로드가 남아 있으면 지운 뒤 다시 올라간다 — 먼저 취소
-  try { if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; } } catch(e) {}
-  // 로그인 상태면 클라우드에 저장된 내 기록도 함께 지운다 (RLS로 내 행만 대상)
-  for (const fn of [window._cloudDeleteMine, window._mobileCloudDeleteMine]) {
-    if (typeof fn === 'function') { try { await fn(); } catch(e) {} }
+  // 로그인 상태면 클라우드에 저장된 내 기록도 함께 지운다 (RLS로 내 행만 대상).
+  // 예약된 업로드 취소까지 메인이 처리한다 — 안 그러면 지운 직후 다시 올라간다.
+  if (window.electronAPI && window.electronAPI.cloudDeleteMine) {
+    try { await window.electronAPI.cloudDeleteMine(); } catch(e) {}
+  }
+  if (typeof window._mobileCloudDeleteMine === 'function') {
+    try { await window._mobileCloudDeleteMine(); } catch(e) {}
   }
   ['nekodesk_sync_pushed_at','nekodesk_sync_dirty','nekodesk_sync_claim',
    'neko_sync_pushed_at','neko_sync_dirty','neko_sync_claim']
@@ -4384,11 +4386,14 @@ function enforceDataOwner(email) {
       let hasLocal = false;
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        hasLocal = !!raw && !_cloudIsEmpty(JSON.parse(raw));
+        const saved = raw ? JSON.parse(raw) : null;
+        // 일정·다이어리 중 하나라도 있으면 승계할 기록이 있다고 본다
+        hasLocal = !!saved && ['calendarNotes','diaryEntries','scheduleMemo','wishlist']
+          .some(k => saved[k] && Object.keys(saved[k]).length);
       } catch(e2) {}
       if (hasLocal) {
-        localStorage.setItem(CLOUD_CLAIM_KEY, '1');
-        localStorage.setItem(CLOUD_DIRTY_KEY, '1');
+        if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim();
+        if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim();
       }
     }
     localStorage.setItem(DATA_OWNER_KEY, email);
@@ -4715,8 +4720,12 @@ function wiggleCat(){
 // INIT
 // ══════════════════════════════════════════
 // ══════════════════════════════
-// 클라우드 동기화 (PC ↔ 모바일) — 대시보드 창에서만 동작
-// 구글 로그인 상태일 때 할 일 목록 / 메모 / 다이어리를 Supabase에 저장·복원
+// 클라우드 동기화 (PC ↔ 모바일)
+// 주기·네트워크·토큰은 메인 프로세스가 소유한다 (main.js).
+// 렌더러가 맡는 일은 두 가지뿐:
+//   1) 저장이 일어나면 메인에 알리기 (cloudMarkDirty)
+//   2) 메인이 내려준 내용을 화면에 반영하기 (_cloudApply)
+// 덕분에 대시보드를 닫아두고 위젯만 띄워도 동기화가 계속 돈다.
 // ══════════════════════════════
 const CLOUD_KEYS = [
   // 기록
@@ -4726,109 +4735,6 @@ const CLOUD_KEYS = [
   // 설정
   'schedule','workItems','scheduleItems','shipping','theme','language'
 ];
-const CLOUD_TS_KEY = 'nekodesk_sync_pushed_at';
-const CLOUD_CLAIM_KEY = 'nekodesk_sync_claim';   // 게스트 기록을 계정에 합쳐야 함
-const CLOUD_DIRTY_KEY = 'nekodesk_sync_dirty';   // 안 올라간 변경 존재 표시 (재시작에도 유지)
-let _cloudSb = null, _cloudCfg = null, _cloudReady = false, _cloudTimer = null;
-
-async function _cloudRefreshToken() {
-  if (!_cloudSb || !_cloudSb.refresh) return null;
-  try {
-    const r = await fetch(_cloudCfg.SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: _cloudCfg.SUPABASE_KEY },
-      body: JSON.stringify({ refresh_token: _cloudSb.refresh })
-    });
-    if (!r.ok) return null;
-    const d = await r.json();
-    if (!d || !d.access_token) return null;
-    _cloudSb.token = d.access_token;
-    if (d.refresh_token) _cloudSb.refresh = d.refresh_token;
-    if (window.electronAPI.saveSupabaseSession) window.electronAPI.saveSupabaseSession(_cloudSb);
-    return _cloudSb.token;
-  } catch(e) { return null; }
-}
-
-async function _cloudFetch(path, opts, retry) {
-  if (!_cloudSb || !_cloudCfg) return null;
-  opts = opts || {};
-  // 헤더는 매 호출마다 재구성 — 재시도 시 새 토큰이 반영되도록
-  opts.headers = Object.assign({}, opts.headers || {}, {
-    apikey: _cloudCfg.SUPABASE_KEY,
-    Authorization: 'Bearer ' + _cloudSb.token,
-    'Content-Type': 'application/json'
-  });
-  try {
-    const r = await fetch(_cloudCfg.SUPABASE_URL + path, opts);
-    if (r.status === 401 && !retry) {
-      const t = await _cloudRefreshToken();
-      return t ? _cloudFetch(path, opts, true) : null;
-    }
-    return r;
-  } catch(e) { return null; }
-}
-
-/**
- * 원격과 로컬을 병합 (로컬 우선).
- * diaryEntries/calendarNotes처럼 날짜별 객체는 항목 단위로 합쳐
- * 양쪽 기기의 기록을 모두 보존한다.
- */
-function _cloudMerge(remote, local) {
-  const out = {};
-  CLOUD_KEYS.forEach(k => {
-    const rv = remote ? remote[k] : undefined;
-    const lv = local ? local[k] : undefined;
-    if (lv === undefined) { if (rv !== undefined) out[k] = rv; return; }
-    if (rv && lv && typeof rv === 'object' && typeof lv === 'object'
-        && !Array.isArray(rv) && !Array.isArray(lv)) {
-      out[k] = Object.assign({}, rv, lv);   // 원격 + 로컬, 겹치면 로컬 우선
-    } else {
-      out[k] = lv;                          // 그 외는 로컬(내 변경) 우선
-    }
-  });
-  return out;
-}
-
-// 게스트 기록을 계정에 합칠 때만 쓰는 병합 — 어느 쪽도 버리지 않는다.
-// (평소 동기화는 _cloudMerge: 내 변경 우선)
-const CLAIM_JOIN_FIELDS = ['scheduleMemo','text','memo','note','content'];
-function _claimMergeVal(rv, lv, field) {
-  if (rv === undefined || rv === null) return lv;
-  if (lv === undefined || lv === null) return rv;
-  if (typeof rv === 'number' && typeof lv === 'number') return Math.max(rv, lv);
-  if (Array.isArray(rv) && Array.isArray(lv)) {
-    const out = rv.slice();
-    lv.forEach(x => {
-      const s = JSON.stringify(x);
-      if (!out.some(y => JSON.stringify(y) === s)) out.push(x);
-    });
-    return out;
-  }
-  if (typeof rv === 'string' && typeof lv === 'string') {
-    // 일정 메모·다이어리 본문만 이어붙인다. 테마·언어 같은 설정은 로컬 값 유지.
-    if (CLAIM_JOIN_FIELDS.indexOf(field) < 0) return lv;
-    if (rv === lv || rv.indexOf(lv) >= 0) return rv;
-    if (lv.indexOf(rv) >= 0) return lv;
-    return rv + '\n' + lv;
-  }
-  if (typeof rv === 'object' && typeof lv === 'object'
-      && !Array.isArray(rv) && !Array.isArray(lv)) {
-    const out = Object.assign({}, rv);
-    Object.keys(lv).forEach(k => {
-      out[k] = (k in rv) ? _claimMergeVal(rv[k], lv[k], k) : lv[k];
-    });
-    return out;
-  }
-  return lv;
-}
-function _cloudClaimMerge(remote, local) {
-  const out = {};
-  CLOUD_KEYS.forEach(k => {
-    const v = _claimMergeVal(remote ? remote[k] : undefined, local ? local[k] : undefined, k);
-    if (v !== undefined) out[k] = v;
-  });
-  return out;
-}
 
 function _cloudApply(data) {
   if (!data) return false;
@@ -4853,25 +4759,6 @@ function _cloudApply(data) {
   return true;
 }
 
-// '실질적으로 아무 기록도 없는가' 판단에 쓰는 항목들.
-// cat 같이 항상 기본값이 들어있는 키는 제외해야 판정이 유효하다.
-const CLOUD_CONTENT_KEYS = ['calendarNotes','diaryEntries','wishlist','wishlistDone',
-  'scheduleMemo','growthLogs','ownedAccs','fruits','harvestedFruits','pts'];
-
-/** 기록이 하나도 없는 페이로드인가 (빈 기기가 클라우드를 지우는 것 방지) */
-function _cloudIsEmpty(d) {
-  if (!d || !Object.keys(d).length) return true;
-  return CLOUD_CONTENT_KEYS.every(k => {
-    const v = d[k];
-    if (v === null || v === undefined) return true;
-    if (typeof v === 'string') return v.trim() === '';
-    if (typeof v === 'number') return v === 0;
-    if (Array.isArray(v)) return v.length === 0;
-    if (typeof v === 'object') return Object.keys(v).length === 0;
-    return false;
-  });
-}
-
 // 받기/올리기 결과를 각각 보관 — 주기적인 '받기'가 업로드 실패 메시지를
 // 지워버려 원인을 알 수 없던 문제를 막는다.
 let _stPull = '', _stPush = '';
@@ -4883,142 +4770,52 @@ function _renderSyncStatus() {
   if (_stPush) parts.push(L('sync_up') + ' ' + _stPush);
   el.textContent = L('sync_title') + ': ' + (parts.length ? parts.join(' · ') : L('sync_idle'));
 }
-function _syncStatus(msg) { _stPull = msg; _renderSyncStatus(); }
-function _pushStatus(msg) { _stPush = msg; _renderSyncStatus(); }
 
 function _syncNow() {
   const d = new Date();
   return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
-async function cloudPull(notify) {
-  if (!_cloudSb) return false;
-  const r = await _cloudFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' });
-  if (!r || !r.ok) {
-    _syncStatus(L('sync_failed') + (r ? ' (HTTP ' + r.status + ')' : ''));
-    return false;
-  }
-  const rows = await r.json();
-  _cloudReady = true;                         // 조회 성공 → 업로드 허용
-  const remote = (rows && rows.length) ? rows[0].data : null;
-  if (_cloudIsEmpty(remote)) {
-    localStorage.removeItem(CLOUD_CLAIM_KEY);  // 합칠 원격 기록이 없음
-    cloudPush(true);                           // 클라우드가 비어있으면 내 것을 올림
-    _syncStatus(L('sync_cloud_empty') + ' (' + _syncNow() + ')');
-    return false;
-  }
-  // 안 올라간 내 변경이 있으면(재시작 포함) 원격으로 덮어쓰지 않고,
-  // 원격과 병합한 결과를 올린다 — 양쪽 기기 기록이 모두 살아남는다.
-  if (_cloudTimer || localStorage.getItem(CLOUD_DIRTY_KEY) === '1') {
-    const localData = {};
-    CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) localData[k] = S[k]; });
-    const claim = localStorage.getItem(CLOUD_CLAIM_KEY) === '1';
-    _cloudApply(claim ? _cloudClaimMerge(remote, localData) : _cloudMerge(remote, localData));
-    localStorage.removeItem(CLOUD_CLAIM_KEY);
-    if (claim) toast('info', L('sync_title'), L('claim_merged_msg'));
-    _syncStatus(L('sync_merged') + ' (' + _syncNow() + ')');
-    return cloudPush(true);
-  }
-  // 기기 시계와 서버 시계를 비교하면 시간차로 최신글을 놓칠 수 있음.
-  // 서버가 돌려준 값이 마지막으로 본 값과 다르면 갱신한다.
-  const remoteTs = String(rows[0].updated_at || '');
-  const seenTs = localStorage.getItem(CLOUD_TS_KEY) || '';
-  if (remoteTs && remoteTs !== seenTs) {
-    const ok = _cloudApply(remote);
-    localStorage.setItem(CLOUD_TS_KEY, remoteTs);
-    if (ok && notify) toast('info', L('sync_title'), L('sync_pulled_msg'));
-    _syncStatus(L('sync_received') + ' (' + _syncNow() + ')');
-    return ok;
-  }
-  _syncStatus(L('sync_uptodate') + ' (' + _syncNow() + ')');
-  return false;
+/** 메인이 보내온 상태를 사람이 읽는 문구로 (시각은 여기서 붙인다) */
+function _cloudStatusFromMain(p) {
+  if (!p || !p.key) return;
+  const withTime = ['sync_uptodate','sync_received','sync_merged','sync_cloud_empty','sync_done'];
+  let msg = L(p.key);
+  if (withTime.indexOf(p.key) >= 0) msg += ' (' + _syncNow() + ')';
+  if (p.extra) msg += p.extra;
+  if (p.kind === 'push') _stPush = msg; else _stPull = msg;
+  _renderSyncStatus();
 }
 
-async function cloudPush(force) {
-  if (!_cloudSb) { _pushStatus(L('sync_need_login')); return false; }
-  if (!_cloudReady && !force) { _pushStatus(L('sync_waiting')); return false; }
-  const data = {};
-  CLOUD_KEYS.forEach(k => { if (S[k] !== undefined) data[k] = S[k]; });
-  // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
-  if (_cloudIsEmpty(data)) { _pushStatus(L('sync_nothing')); return false; }
-  // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
-  // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
-  try {
-    const rg = await _cloudFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' });
-    if (rg && rg.ok) {
-      const rows = await rg.json();
-      const remoteNow = (rows && rows.length) ? rows[0].data : null;
-      if (remoteNow) {
-        const merged = _cloudMerge(remoteNow, data);
-        Object.keys(merged).forEach(k => { data[k] = merged[k]; });
-      }
-    }
-  } catch(e) {}
-  data._device = 'pc';                       // 어느 기기가 올렸는지 진단용
-  const r = await _cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
-    method: 'POST',
-    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-    body: JSON.stringify({ user_id: _cloudSb.uid, data, updated_at: new Date().toISOString() })
-  });
-  const ok = !!(r && r.ok);
-  if (ok) {
-    try {
-      const back = await r.json();
-      if (back && back[0] && back[0].updated_at) localStorage.setItem(CLOUD_TS_KEY, String(back[0].updated_at));
-    } catch(e) {}
-    localStorage.removeItem(CLOUD_DIRTY_KEY);   // 내 변경이 클라우드에 반영됨
-    _pushStatus(L('sync_done') + ' (' + _syncNow() + ')');
-  } else {
-    _pushStatus(L('sync_fail') + (r ? ' HTTP ' + r.status : ''));
+function initCloudSync() {
+  // 모바일은 mobile-bridge가 자체 동기화를 돌린다 (여기서 건드리지 않는다)
+  if (window.Capacitor) return;
+  if (!window.electronAPI || !window.electronAPI.cloudMarkDirty) {
+    _stPull = L('sync_unsupported'); _renderSyncStatus();
+    return;
   }
-  return ok;
-}
-
-/** 내 클라우드 행만 삭제 (RLS가 user_id = auth.uid()로 제한) */
-window._cloudDeleteMine = async function() {
-  if (!_cloudSb || !_cloudSb.uid) return false;
-  const r = await _cloudFetch('/rest/v1/nekodesk_sync?user_id=eq.' + _cloudSb.uid, { method: 'DELETE' });
-  return !!(r && r.ok);
-};
-
-function cloudSchedulePush() {
-  if (!_cloudSb) return;
-  localStorage.setItem(CLOUD_DIRTY_KEY, '1');   // 창이 닫혀도 '안 올라간 변경 있음'이 남도록
-  if (!_cloudReady) { _pushStatus(L('sync_waiting')); return; }
-  clearTimeout(_cloudTimer);
-  _cloudTimer = setTimeout(() => { _cloudTimer = null; cloudPush(); }, 2500);   // 편집이 멈추면 올림
-}
-
-// 대시보드 창이 닫히기 직전, 예약만 되고 안 올라간 변경을 즉시 올림
-window.addEventListener('beforeunload', () => {
-  if (_cloudTimer) { clearTimeout(_cloudTimer); _cloudTimer = null; cloudPush(); }
-});
-
-async function initCloudSync() {
-  if (!window.electronAPI || !window.electronAPI.getSupabaseSession) {
-    _syncStatus(L('sync_unsupported')); return;
+  // 저장이 일어나면 메인에 알린다. 위젯·대시보드 두 창 모두에서 건다.
+  if (!saveState._cloudWrapped) {
+    const _origSave = saveState;
+    saveState = function () {
+      _origSave.apply(this, arguments);
+      try { window.electronAPI.cloudMarkDirty(); } catch(e) {}
+    };
+    saveState._cloudWrapped = true;
   }
-  // 위젯 창은 대시보드의 최신 편집을 모를 수 있으므로 대시보드에서만 동기화
-  if (!window._isDashboard) return;
-  try {
-    const sb = await window.electronAPI.getSupabaseSession();
-    if (!sb || !sb.token) {
-      _syncStatus(L('sync_relogin'));
-      return;
-    }
-    _cloudSb = sb;
-    _cloudCfg = await window.electronAPI.getPublicConfig();
-    if (!_cloudCfg || !_cloudCfg.SUPABASE_URL) { _syncStatus(L('sync_config_err')); return; }
-    _syncStatus(L('sync_connecting'));
-    if (!saveState._cloudWrapped) {
-      const _origSave = saveState;
-      saveState = function () { _origSave.apply(this, arguments); cloudSchedulePush(); };
-      saveState._cloudWrapped = true;
-    }
-    await cloudPull(false);
-    setInterval(() => cloudPull(false), 15000);   // 15초마다 최신 내용 확인
-    window.addEventListener('focus', () => cloudPull(false));   // 창을 다시 볼 때 즉시
-  } catch(e) { _syncStatus(L('sync_error')); }
+  if (window.electronAPI.onCloudApply) {
+    window.electronAPI.onCloudApply(p => {
+      if (!p) return;
+      const ok = _cloudApply(p.data);
+      if (!ok) return;
+      if (p.notify === 'claim') toast('info', L('sync_title'), L('claim_merged_msg'));
+      else if (p.notify === 'pulled') toast('info', L('sync_title'), L('sync_pulled_msg'));
+    });
+  }
+  if (window.electronAPI.onCloudStatus) {
+    window.electronAPI.onCloudStatus(_cloudStatusFromMain);
+  }
+  if (window.electronAPI.cloudStart) window.electronAPI.cloudStart();
 }
 
 function refreshAutoLaunchBtn(on) {
@@ -5042,8 +4839,8 @@ function init(){
   if (!window._isDashboard && S.cat && S.cat.mood !== 60) {
     S.cat.mood = 60;
     saveState();
-    // 다른 기기에도 반영되도록 '올릴 변경 있음'으로 표시
-    try { localStorage.setItem(CLOUD_DIRTY_KEY, '1'); } catch(e) {}
+    // 다른 기기에도 반영되도록 '올릴 변경 있음'으로 표시 (saveState가 이미 알리지만 명시적으로)
+    try { if (window.electronAPI && window.electronAPI.cloudMarkDirty) window.electronAPI.cloudMarkDirty(); } catch(e) {}
   }
   renderWorkItems();  // 업무 시간 설정 초기 렌더
   const _mt = document.getElementById('scheduleMemoTxt');

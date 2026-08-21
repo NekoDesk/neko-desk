@@ -34,6 +34,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 부팅 시 자동 실행
   getAutoLaunch:  () => ipcRenderer.invoke('get-auto-launch'),
   openStartupSettings: () => ipcRenderer.send('open-startup-settings'),
+  // 클라우드 동기화 — 주기와 네트워크는 메인이 소유한다
+  cloudMarkDirty:  () => ipcRenderer.send('cloud-mark-dirty'),
+  cloudMarkClaim:  () => ipcRenderer.send('cloud-mark-claim'),
+  cloudStart:      () => ipcRenderer.send('cloud-start'),
+  cloudSyncNow:    () => ipcRenderer.invoke('cloud-sync-now'),
+  cloudDeleteMine: () => ipcRenderer.invoke('cloud-delete-mine'),
+  onCloudApply:    (cb) => ipcRenderer.on('cloud-apply', (e, p) => cb(p)),
+  onCloudStatus:   (cb) => ipcRenderer.on('cloud-status', (e, p) => cb(p)),
   setAutoLaunch:  (on) => ipcRenderer.invoke('set-auto-launch', on),
 
   // 기기 간 동기화 (Supabase 세션)
