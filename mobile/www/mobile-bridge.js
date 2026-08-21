@@ -7,14 +7,15 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.0.13-mobile';
+  var APP_VERSION = '2.0.14-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
   var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
   var OWNER_KEY = 'neko_data_owner';      // 이 기기 데이터의 주인 계정 (계정별 데이터 분리)
   var CLAIM_KEY = 'neko_sync_claim';
-  var LAST_PUSH_KEY = 'neko_sync_last_push';   // 마지막으로 올린 내용(비교용)      // 게스트로 쓴 기록을 계정에 합쳐야 함
+  var LAST_PUSH_KEY = 'neko_sync_last_push';   // 마지막으로 올린 내용(비교용)
+  var BASE_KEY = 'neko_sync_base';             // 두 기기가 마지막으로 합의한 상태      // 게스트로 쓴 기록을 계정에 합쳐야 함
 
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
@@ -299,6 +300,47 @@
    * diaryEntries/calendarNotes처럼 날짜별 객체는 항목 단위로 합쳐
    * 양쪽 기기의 기록을 모두 보존한다.
    */
+  // ── 3방향 병합 (main.js의 merge3와 같은 규칙) ──
+  // base와 비교해야 '내가 지웠다'와 '상대가 더했다'를 구분할 수 있다.
+  function jeq(a, b) {
+    try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return a === b; }
+  }
+  function isPlainObj(v) {
+    return v !== null && typeof v === 'object' && !Array.isArray(v);
+  }
+  function merge3(base, local, remote) {
+    if (jeq(local, base)) return remote;   // 내가 안 건드렸으면 상대 것 (상대의 삭제도 수용)
+    if (jeq(remote, base)) return local;   // 상대가 안 건드렸으면 내 것 (내 삭제도 반영)
+    if (isPlainObj(local) && isPlainObj(remote)) {
+      var out = {}, keys = {};
+      [base, local, remote].forEach(function (o) {
+        if (isPlainObj(o)) Object.keys(o).forEach(function (k) { keys[k] = 1; });
+      });
+      Object.keys(keys).forEach(function (k) {
+        var v = merge3(isPlainObj(base) ? base[k] : undefined, local[k], remote[k]);
+        if (v !== undefined) out[k] = v;
+      });
+      return out;
+    }
+    if (Array.isArray(local) && Array.isArray(remote)) {
+      var arr = local.slice();
+      remote.forEach(function (x) {
+        for (var i = 0; i < arr.length; i++) { if (jeq(arr[i], x)) return; }
+        arr.push(x);
+      });
+      return arr;
+    }
+    return local;
+  }
+  function readBase() {
+    try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; }
+  }
+  function setBase(payload) {
+    var b = {};
+    SYNC_KEYS.forEach(function (k) { if (payload && payload[k] !== undefined) b[k] = payload[k]; });
+    try { localStorage.setItem(BASE_KEY, JSON.stringify(b)); } catch (e) {}
+  }
+
   function mergePayload(remote, local) {
     var out = {};
     SYNC_KEYS.forEach(function (k) {
@@ -393,8 +435,9 @@
         if (_pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
           var claim = localStorage.getItem(CLAIM_KEY) === '1';
           var merged = claim ? claimMerge(remote, collectLocal())
-                             : mergePayload(remote, collectLocal());
+                             : merge3(readBase(), collectLocal(), remote);
           applyRemote(merged);
+          setBase(merged);
           localStorage.removeItem(CLAIM_KEY);
           if (claim) toast('info', '☁️ 동기화', '게스트로 쓴 기록을 계정에 합쳤어요');
           syncStatus('내 변경 병합 (' + nowHHMM() + ')');
@@ -406,6 +449,7 @@
         var seenTs = localStorage.getItem(SYNC_TS_KEY) || '';
         if (remoteTs && remoteTs !== seenTs) {
           var ok = applyRemote(remote);
+          setBase(remote);
           localStorage.setItem(SYNC_TS_KEY, remoteTs);
           if (ok && notify) toast('info', '☁️ 동기화', 'PC의 최신 내용을 가져왔어요');
           syncStatus('받음 (' + nowHHMM() + ')');
@@ -432,7 +476,7 @@
       .then(function (rg) { return rg && rg.ok ? rg.json() : null; })
       .then(function (rows) {
         var remote = (rows && rows.length) ? rows[0].data : null;
-        var payload = remote ? mergePayload(remote, local) : local;
+        var payload = remote ? merge3(readBase(), local, remote) : local;
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
         return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
@@ -452,6 +496,7 @@
         }).catch(function () {});
         // 방금 올린 로컬 상태를 기억해 둔다 (다음 비교 기준)
         try { localStorage.setItem(LAST_PUSH_KEY, JSON.stringify(local)); } catch (e) {}
+        setBase(local);
         pushStatus('완료 (' + nowHHMM() + ')');
       } else {
         pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));

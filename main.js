@@ -750,7 +750,7 @@ let cloudReady = false;        // 최초 pull 성공 전에는 push 금지
 let cloudBusy = false;         // pull 중복 실행 방지
 
 function syncState() {
-  return readJSON(SYNC_STATE_FILE(), { dirty: false, claim: false, seenTs: '' });
+  return readJSON(SYNC_STATE_FILE(), { dirty: false, claim: false, seenTs: '', base: null });
 }
 function setSyncState(patch) {
   writeJSON(SYNC_STATE_FILE(), Object.assign(syncState(), patch));
@@ -811,6 +811,44 @@ function cloudMerge(remote, local) {
     }
   });
   return out;
+}
+
+// ── 3방향 병합 ────────────────────────────────────────────────
+// base = 두 기기가 마지막으로 합의했던 상태.
+// base와 비교하면 "내가 지웠다"와 "상대가 추가했다"를 구분할 수 있다.
+// 이게 없으면 삭제가 영원히 되살아난다(로컬 우선) 또는 추가가 사라진다(원격 우선).
+function jeq(a, b) {
+  try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return a === b; }
+}
+function isPlainObj(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+function merge3(base, local, remote) {
+  if (jeq(local, base)) return remote;    // 내가 안 건드렸으면 상대 것 (상대의 삭제도 수용)
+  if (jeq(remote, base)) return local;    // 상대가 안 건드렸으면 내 것 (내 삭제도 반영)
+  // 양쪽 다 바뀐 경우
+  if (isPlainObj(local) && isPlainObj(remote)) {
+    const out = {};
+    const keys = {};
+    [base, local, remote].forEach(o => { if (isPlainObj(o)) Object.keys(o).forEach(k => { keys[k] = 1; }); });
+    Object.keys(keys).forEach(k => {
+      const v = merge3(isPlainObj(base) ? base[k] : undefined, local[k], remote[k]);
+      if (v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  if (Array.isArray(local) && Array.isArray(remote)) {
+    const out = local.slice();            // 양쪽이 동시에 고친 목록은 합집합으로 (기록 우선)
+    remote.forEach(x => { if (!out.some(y => jeq(x, y))) out.push(x); });
+    return out;
+  }
+  return local;                           // 그 외에는 이 기기 값
+}
+/** 동기화가 끝난 시점의 상태를 기준선으로 저장 */
+function setCloudBase(payload) {
+  const b = {};
+  CLOUD_KEYS.forEach(k => { if (payload && payload[k] !== undefined) b[k] = payload[k]; });
+  setSyncState({ base: b });
 }
 
 // 게스트 기록을 계정에 합칠 때만 쓰는 병합 — 어느 쪽도 버리지 않는다
@@ -920,9 +958,11 @@ async function cloudPull(notify) {
     // 안 올라간 내 변경이 있으면 원격으로 덮어쓰지 않고 병합해서 올린다
     if (cloudPushTimer || st.dirty) {
       const local = await cloudReadLocal();
-      const merged = st.claim ? cloudClaimMerge(remote, local) : cloudMerge(remote, local);
+      const merged = st.claim ? cloudClaimMerge(remote, local)
+                              : merge3(st.base, local, remote);
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
+      setCloudBase(merged);
       cloudStatus('pull', 'sync_merged');
       cloudBusy = false;
       return cloudPush(true);
@@ -932,6 +972,7 @@ async function cloudPull(notify) {
     if (remoteTs && remoteTs !== st.seenTs) {
       cloudBroadcast('cloud-apply', { data: remote, notify: notify ? 'pulled' : '' });
       setSyncState({ seenTs: remoteTs });
+      setCloudBase(remote);
       cloudStatus('pull', 'sync_received');
       return true;
     }
@@ -960,7 +1001,9 @@ async function cloudPush(force) {
       const rows = await rg.json();
       const remoteNow = (rows && rows.length) ? rows[0].data : null;
       if (remoteNow) {
-        const merged = cloudMerge(remoteNow, data);
+        // 내가 지운 것은 지운 채로, 상대가 더한 것은 살린 채로 올린다
+        const merged = merge3(syncState().base, data, remoteNow);
+        CLOUD_KEYS.forEach(k => { delete data[k]; });
         Object.keys(merged).forEach(k => { data[k] = merged[k]; });
       }
     }
@@ -978,6 +1021,7 @@ async function cloudPush(force) {
       if (back && back[0] && back[0].updated_at) setSyncState({ seenTs: String(back[0].updated_at) });
     } catch (e) {}
     setSyncState({ dirty: false });
+    setCloudBase(data);
     cloudStatus('push', 'sync_done');
   } else {
     cloudStatus('push', 'sync_fail', r ? ' HTTP ' + r.status : '');
@@ -1008,7 +1052,7 @@ ipcMain.handle('cloud-delete-mine', async () => {
   const sb = cloudSession();
   if (!sb || !sb.uid) return false;
   if (cloudPushTimer) { clearTimeout(cloudPushTimer); cloudPushTimer = null; }
-  setSyncState({ dirty: false, claim: false, seenTs: '' });
+  setSyncState({ dirty: false, claim: false, seenTs: '', base: null });
   const r = await cloudFetch('/rest/v1/nekodesk_sync?user_id=eq.' + sb.uid, { method: 'DELETE' });
   return !!(r && r.ok);
 });
