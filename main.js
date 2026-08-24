@@ -132,6 +132,7 @@ function openDashboardWindow() {
   });
   dashboardWindow.loadFile('renderer/index.html', { query: { mode: 'dashboard' } });
   dashboardWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  if (typeof attachCloudFocusPull === 'function') attachCloudFocusPull(dashboardWindow);
   dashboardWindow.on('closed', () => {
     dashboardWindow = null;
     isDashboardOpen = false;
@@ -732,8 +733,8 @@ ipcMain.on('ga-event', (e, name, params) => gaTrack(name, params || {}));
 // ═══════════════════════════════════════════════════════════════
 const SYNC_STATE_FILE = () => path.join(app.getPath('userData'), 'sync-state.json');
 const CLOUD_STORAGE_KEY = 'nekodesk_v3';
-const CLOUD_PULL_MS = 15 * 1000;
-const CLOUD_PUSH_DEBOUNCE_MS = 2500;
+const CLOUD_PULL_MS = 6 * 1000;          // 확인은 가볍게 하므로 자주 돌아도 부담이 적다
+const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
 
 const CLOUD_KEYS = [
   'calendarNotes','calendarDeleted','scheduleMemo','diaryEntries','wishlist','wishlistDone',
@@ -1000,6 +1001,18 @@ async function cloudPull(notify) {
   if (cloudBusy || !cloudSession()) return false;
   cloudBusy = true;
   try {
+    // 올릴 것도 없고 기준선도 있으면, 먼저 updated_at만 확인한다.
+    // 바뀐 게 없으면 본문(수십 KB)을 받지 않으므로 자주 돌려도 가볍다.
+    const st0 = syncState();
+    if (!cloudPushTimer && !st0.dirty && st0.base) {
+      const rh = await cloudFetch('/rest/v1/nekodesk_sync?select=updated_at', { method: 'GET' });
+      if (rh && rh.ok) {
+        const hrows = await rh.json();
+        const hts = (hrows && hrows.length) ? String(hrows[0].updated_at || '') : '';
+        cloudReady = true;
+        if (hts && hts === st0.seenTs) { cloudStatus('pull', 'sync_uptodate'); return false; }
+      }
+    }
     const r = await cloudFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' });
     if (!r || !r.ok) {
       cloudStatus('pull', 'sync_failed', r ? ' (HTTP ' + r.status + ')' : '');
@@ -1111,9 +1124,24 @@ function cloudSchedulePush() {
   cloudPushTimer = setTimeout(() => { cloudPushTimer = null; cloudPush(); }, CLOUD_PUSH_DEBOUNCE_MS);
 }
 
+/** 창을 다시 보면 즉시 받아온다 — 열자마자 최신이 보이도록 */
+let cloudLastFocusPull = 0;
+function attachCloudFocusPull(w) {
+  if (!w || w.isDestroyed()) return;
+  const onFocus = () => {
+    const now = Date.now();
+    if (now - cloudLastFocusPull < 2000) return;   // 연타 방지
+    cloudLastFocusPull = now;
+    cloudPull(false);
+  };
+  w.on('focus', onFocus);
+  w.on('show', onFocus);
+}
+
 function startCloudSync() {
   if (cloudTimer) return;
   if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return;
+  attachCloudFocusPull(mainWindow);
   cloudPull(false);
   cloudTimer = setInterval(() => cloudPull(false), CLOUD_PULL_MS);
 }

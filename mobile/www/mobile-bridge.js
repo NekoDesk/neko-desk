@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.6-mobile';
+  var APP_VERSION = '2.1.7-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -470,6 +470,31 @@
   /** 클라우드 → 기기 */
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);
+    // 올릴 것도 없고 기준선도 있으면 updated_at만 먼저 본다.
+    // 바뀐 게 없으면 본문(수십 KB)을 받지 않으므로 자주 돌려도 가볍다.
+    var quick = Promise.resolve(false);
+    if (!_pushTimer && localStorage.getItem(DIRTY_KEY) !== '1' && readBase()) {
+      quick = authFetch('/rest/v1/nekodesk_sync?select=updated_at', { method: 'GET' })
+        .then(function (rh) { return rh && rh.ok ? rh.json() : null; })
+        .then(function (hrows) {
+          if (!hrows) return false;
+          _syncReady = true;
+          var hts = hrows.length ? String(hrows[0].updated_at || '') : '';
+          if (hts && hts === (localStorage.getItem(SYNC_TS_KEY) || '')) {
+            syncStatus('최신 (' + nowHHMM() + ')');
+            return true;   // 더 받을 것 없음
+          }
+          return false;
+        })
+        .catch(function () { return false; });
+    }
+    return quick.then(function (done) {
+      if (done) return false;
+      return syncPullFull(notify);
+    });
+  }
+
+  function syncPullFull(notify) {
     return authFetch('/rest/v1/nekodesk_sync?select=data,updated_at', { method: 'GET' })
       .then(function (r) {
         if (!r || !r.ok) {
@@ -584,7 +609,7 @@
     _pushTimer = setTimeout(function () {
       _pushTimer = null;
       syncPush();
-    }, 2500);   // 편집이 멎으면 올림
+    }, 1000);   // 편집이 멎고 1초 뒤 올림
   }
 
   /** 예약된 업로드를 기다리지 않고 즉시 실행 (앱이 백그라운드로 갈 때) */
@@ -626,7 +651,7 @@
       syncPull(false);
       try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
       catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
-    }, 15000);
+    }, 6000);   // 확인이 가벼워서 자주 돌아도 부담이 적다
     // 앱을 열면 최신 내용 확인, 백그라운드로 가면 예약된 업로드 즉시 실행
     var App = capPlugin('App');
     if (App) {
