@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.8-mobile';
+  var APP_VERSION = '2.1.9-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -24,7 +24,7 @@
     // 고양이·진행 상태
     'cat', 'pts', 'fruits', 'harvestedFruits', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
-    'schedule', 'workItems', 'scheduleItems', 'shipping', 'theme', 'language'
+    'schedule', 'workItems', 'scheduleItems', 'theme', 'language'
   ];
 
   // 공개 설정만 포함 (비밀키 없음 — Supabase anon key는 공개용으로 설계됨)

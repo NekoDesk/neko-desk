@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════
 // NEKO DESK - Electron 메인 프로세스
 // ═══════════════════════════════════════════════
-const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 let autoUpdater = null;
@@ -536,6 +536,42 @@ const http = require('http');
 const CFG = (() => { try { return require('./config'); } catch(e) { return {}; } })();
 
 const SESSION_FILE = () => path.join(app.getPath('userData'), 'session.json');
+
+// ── 세션 파일 암호화 ────────────────────────────────────────────
+// 갱신 토큰이 평문으로 있으면 그 파일만 빼내도 계정을 쓸 수 있다.
+// safeStorage는 OS 계정 키(Windows DPAPI)로 암호화하므로, 파일이 유출돼도
+// 다른 PC나 다른 사용자 계정에서는 풀 수 없다.
+const SESSION_ENC_PREFIX = 'enc:v1:';
+
+function readSessionFile() {
+  let raw;
+  try { raw = fs.readFileSync(SESSION_FILE(), 'utf8'); } catch (e) { return null; }
+  if (raw.startsWith(SESSION_ENC_PREFIX)) {
+    try {
+      const buf = Buffer.from(raw.slice(SESSION_ENC_PREFIX.length), 'base64');
+      return JSON.parse(safeStorage.decryptString(buf));
+    } catch (e) { return null; }   // 다른 계정/PC에서 복호화 실패 → 재로그인
+  }
+  // 예전 평문 파일 — 읽어서 바로 암호화해 다시 쓴다
+  try {
+    const s = JSON.parse(raw);
+    writeSessionFile(s);
+    return s;
+  } catch (e) { return null; }
+}
+
+function writeSessionFile(s) {
+  try {
+    const json = JSON.stringify(s);
+    let out = json;
+    try {
+      if (safeStorage.isEncryptionAvailable()) {
+        out = SESSION_ENC_PREFIX + safeStorage.encryptString(json).toString('base64');
+      }
+    } catch (e) {}   // 암호화를 못 쓰는 환경이면 평문으로라도 저장
+    fs.writeFileSync(SESSION_FILE(), out, 'utf8');
+  } catch (e) {}
+}
 const CLAIMED_FILE = () => path.join(app.getPath('userData'), 'claimed_accounts.json');
 
 function readJSON(file, fallback) {
@@ -553,7 +589,7 @@ function sessionInfo(email, guest) {
 }
 
 ipcMain.handle('get-session', () => {
-  const s = readJSON(SESSION_FILE(), null);
+  const s = readSessionFile();
   if (!s || !s.email) return null;
   return sessionInfo(s.email, s.guest);
 });
@@ -565,7 +601,7 @@ ipcMain.handle('logout', () => {
 
 ipcMain.handle('guest-login', () => {
   const s = { email: 'guest', guest: true };
-  writeJSON(SESSION_FILE(), s);
+  writeSessionFile(s);
   return sessionInfo(s.email, true);
 });
 
@@ -668,7 +704,7 @@ ipcMain.handle('google-login', async () => {
     }
 
     const s = { email: info.email, guest: false, sb };
-    writeJSON(SESSION_FILE(), s);
+    writeSessionFile(s);
     return sessionInfo(info.email, false);
   } catch (err) {
     return { error: String(err.message || err) };
@@ -677,15 +713,15 @@ ipcMain.handle('google-login', async () => {
 
 // ═══ 기기 간 동기화용 Supabase 세션 ═══
 ipcMain.handle('get-supabase-session', () => {
-  const s = readJSON(SESSION_FILE(), null);
+  const s = readSessionFile();
   return (s && s.sb && s.sb.token) ? s.sb : null;
 });
 
 ipcMain.handle('save-supabase-session', (e, sb) => {
-  const s = readJSON(SESSION_FILE(), null);
+  const s = readSessionFile();
   if (!s) return false;
   s.sb = sb;
-  writeJSON(SESSION_FILE(), s);
+  writeSessionFile(s);
   return true;
 });
 
@@ -739,7 +775,7 @@ const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
 const CLOUD_KEYS = [
   'calendarNotes','calendarDeleted','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
-  'schedule','workItems','scheduleItems','shipping','theme','language'
+  'schedule','workItems','scheduleItems','theme','language'
 ];
 // '실질적으로 아무 기록도 없는가' 판정용 (cat처럼 항상 기본값이 있는 키는 제외)
 const CLOUD_CONTENT_KEYS = ['calendarNotes','diaryEntries','wishlist','wishlistDone',
@@ -953,7 +989,7 @@ function cloudClaimMerge(remote, local) {
 }
 
 function cloudSession() {
-  const s = readJSON(SESSION_FILE(), null);
+  const s = readSessionFile();
   return (s && s.sb && s.sb.token) ? s.sb : null;
 }
 
@@ -970,9 +1006,9 @@ async function cloudRefreshToken() {
     if (!r.ok) return null;
     const j = await r.json();
     if (!j || !j.access_token) return null;
-    const s = readJSON(SESSION_FILE(), null) || {};
+    const s = readSessionFile() || {};
     s.sb = { token: j.access_token, refresh: j.refresh_token || sb.refresh, uid: sb.uid };
-    writeJSON(SESSION_FILE(), s);
+    writeSessionFile(s);
     return s.sb;
   } catch (e) { return null; }
 }

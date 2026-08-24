@@ -1372,10 +1372,6 @@ const STRINGS = {
     desktop_only_msg:'이 기능은 데스크탑 앱에서만 사용 가능해요',
     photodir_title:'📁 변경!',
     photodir_msg:'사진 저장 위치가 변경됐어요',
-    ship_check_title:'입력 확인',
-    ship_check_msg:'받는 사람, 연락처, 주소는 필수예요!',
-    ship_saved_title:'📦 저장!',
-    ship_saved_msg:'배송지가 저장됐어요. 주문 시 자동으로 사용돼요',
     cam_none_title:'카메라 없음',
     cam_none_msg:'카메라가 연결되어 있는지 확인해주세요!',
     shot_title:'📸 찰칵!',
@@ -1554,10 +1550,6 @@ const STRINGS = {
     desktop_only_msg:'This feature works in the desktop app only',
     photodir_title:'📁 Changed!',
     photodir_msg:'Photo save location was changed',
-    ship_check_title:'Check your input',
-    ship_check_msg:'Name, phone and address are required!',
-    ship_saved_title:'📦 Saved!',
-    ship_saved_msg:'Address saved. It will be used automatically for orders',
     cam_none_title:'No camera',
     cam_none_msg:'Please check that a camera is connected!',
     shot_title:'📸 Snap!',
@@ -1730,10 +1722,6 @@ const STRINGS = {
     desktop_only_msg:'この機能はデスクトップアプリでのみ使えます',
     photodir_title:'📁 変更！',
     photodir_msg:'写真の保存先を変更しました',
-    ship_check_title:'入力確認',
-    ship_check_msg:'受取人・連絡先・住所は必須です！',
-    ship_saved_title:'📦 保存！',
-    ship_saved_msg:'配送先を保存しました。注文時に自動で使われます',
     cam_none_title:'カメラなし',
     cam_none_msg:'カメラが接続されているか確認してください！',
     shot_title:'📸 パシャ！',
@@ -2242,7 +2230,6 @@ const S = {
   growthLogs: [],
   ownedAccs: [],
   products: [],      // 실제 상품 (관리자 등록)
-  shipping: null,    // 배송지 {name, phone, postal, addr1, addr2}
   photoPath: null,   // null = 바탕화면
   lastCycleIdx: -1,
   lastDate: new Date().toDateString(),
@@ -2287,7 +2274,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','shipping','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -2305,6 +2292,8 @@ function loadState() {
       S.lastDate = today;
       saveState();
     }
+    // 샵 기능이 없어졌으므로 남아 있던 배송지 정보는 지운다
+    if (S.shipping !== undefined) { delete S.shipping; saveState(); }
     migrateCalNotes();   // 구버전 일정에 id 부여
     pruneTombs();
   } catch(e) { console.warn('불러오기 실패:', e); }
@@ -4535,25 +4524,6 @@ function choosePhotoDir(){
   });
 }
 
-function saveShipping(){
-  const get = id => document.getElementById(id).value.trim();
-  const sh = { name:get('shipName'), phone:get('shipPhone'), postal:get('shipPostal'), addr1:get('shipAddr1'), addr2:get('shipAddr2') };
-  if (!sh.name || !sh.phone || !sh.addr1) { toast('alert', L('ship_check_title'), L('ship_check_msg')); return; }
-  S.shipping = sh;
-  saveState();
-  toast('info', L('ship_saved_title'), L('ship_saved_msg'));
-}
-
-function loadShippingUI(){
-  if (!S.shipping) return;
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-  set('shipName', S.shipping.name);
-  set('shipPhone', S.shipping.phone);
-  set('shipPostal', S.shipping.postal);
-  set('shipAddr1', S.shipping.addr1);
-  set('shipAddr2', S.shipping.addr2);
-}
-
 function updatePhotoPathLabel(){
   const el = document.getElementById('photoPathLabel');
   if (el) el.textContent = S.photoPath || '바탕화면 (기본)';
@@ -4810,7 +4780,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','shipping','theme','language'
+  'schedule','workItems','scheduleItems','theme','language'
 ];
 
 function _cloudApply(data) {
@@ -4923,7 +4893,6 @@ function init(){
   const _mt = document.getElementById('scheduleMemoTxt');
   if (_mt) { _mt.value = S.scheduleMemo || ''; memoGrow(_mt); }
   updatePhotoPathLabel();
-  loadShippingUI();
   // 공개 설정 로드 → Supabase 상품 불러오기
   if (window.electronAPI && window.electronAPI.getPublicConfig) {
     window.electronAPI.getPublicConfig().then(cfg => {
