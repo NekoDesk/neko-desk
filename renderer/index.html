@@ -584,9 +584,10 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .memo-doc td, .memo-doc th { word-break:break-word; }
 /* 경계선 근처에서는 좌우 드래그 커서 */
 .memo-table-wrap.resizing, .memo-table-wrap.resizing * { cursor:col-resize !important; user-select:none; }
-.memo-doc th, .memo-doc td { border:1px solid var(--border); padding:4px 8px;
-  font-size:13px; line-height:22px; background:var(--panel); }
-.memo-doc th { background:var(--card); font-weight:700; }
+.memo-doc th, .memo-doc td { border:1px solid var(--border); padding:0 8px;
+  height:30px; line-height:30px; font-size:13px; background:var(--panel);
+  box-sizing:border-box; vertical-align:middle; }
+.memo-doc th { background:var(--panel); font-weight:700; }   /* 본문 셀과 같은 톤 */
 /* 표 감싸기 — 오른쪽에 열 추가, 아래에 행 추가 버튼 */
 .memo-table-wrap { position:relative; margin:10px 0; padding:0 16px 16px 0;
   background:var(--panel); }
@@ -4154,6 +4155,7 @@ function loadMemoDoc() {
     if (old) saveState();
   }
   el.innerHTML = S.memoDoc || '';
+  setTimeout(memoSnapAll, 0);
 }
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -4249,6 +4251,7 @@ function runSlash(i) {
       '<details open><summary>' + L('slash_toggle_ph') + '</summary><div><br></div></details>');
   else if (c.key === 'table') {
     document.execCommand('insertHTML', false, memoTableHtml(3, 2) + '<div><br></div>');
+    setTimeout(memoSnapAll, 0);
   }
   memoChanged();
 }
@@ -4293,6 +4296,8 @@ function memoAddCol(btn) {
     cell.innerHTML = '&nbsp;';
     tr.appendChild(cell);
   });
+  memoSyncCols(tbl);
+  memoSnapTable(btn.parentElement);
   memoChanged();
 }
 
@@ -4367,19 +4372,34 @@ function memoTableAct(act) {
       memoSyncCols(tbl);
     }
   }
+  memoSnapAll();
   memoChanged();
 }
 
+/** 색은 우클릭한 셀 하나에만 적용한다 */
 function memoTableColor(color) {
   closeSlashMenu();
   const cell = _mtCtxCell;
   if (!cell) return;
-  const tbl = cell.closest('table');
-  if (!tbl) return;
-  const bg = (color === 'transparent') ? '' : color;
-  tbl.querySelectorAll('td').forEach(td => { td.style.background = bg; });
-  tbl.style.background = bg || 'var(--panel)';
+  cell.style.background = (color === 'transparent') ? '' : color;
   memoChanged();
+}
+
+/** 표가 차지하는 높이를 줄 간격(30px)의 배수로 맞춘다.
+ *  표 높이가 어중간하면 그 아래 글줄이 배경 줄에서 밀린다. */
+const MEMO_LINE = 30;
+function memoSnapTable(wrap) {
+  if (!wrap) return;
+  wrap.style.marginBottom = '0px';
+  const h = wrap.offsetHeight;
+  const pad = (MEMO_LINE - (h % MEMO_LINE)) % MEMO_LINE;
+  wrap.style.marginBottom = pad + 'px';
+}
+/** 메모 안의 모든 표를 다시 맞춘다 */
+function memoSnapAll() {
+  const el = memoEl();
+  if (!el) return;
+  el.querySelectorAll('.memo-table-wrap').forEach(memoSnapTable);
 }
 
 /** 열 개수가 바뀌면 colgroup을 다시 맞춘다 */
@@ -4482,6 +4502,7 @@ function initMemo() {
   el.addEventListener('mousedown', memoResizeStart);
   document.addEventListener('mousemove', (e) => { if (_mtResize) memoResizeMove(e); });
   document.addEventListener('mouseup', memoResizeEnd);
+  window.addEventListener('resize', () => setTimeout(memoSnapAll, 60));
 }
 
 // ══════════════════════════════════════════

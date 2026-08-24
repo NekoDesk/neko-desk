@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.2-mobile';
+  var APP_VERSION = '2.2.3-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -917,6 +917,14 @@
       // 패널 안의 어떤 줄도 가로로 삐져나가지 않게
       '#dp-schedule .card { min-width:0 !important; overflow-x:hidden !important; }',
       '#calRightPanel > div { min-width:0 !important; }',
+      // 메모장 표: 폰 화면에서는 글씨를 줄여야 세로로 덜 길어진다 (약 60%)
+      '#dp-memo .memo-doc th, #dp-memo .memo-doc td { font-size:8px !important; height:20px !important;',
+      '  line-height:20px !important; padding:0 4px !important; }',
+      // 표는 좁은 화면에서 가로로 넘칠 수 있으니 그 안에서만 스크롤
+      '#dp-memo .memo-table-wrap { overflow-x:auto; }',
+      // 행·열 추가 버튼은 터치로 누르기 좋게
+      '#dp-memo .mt-addcol { width:20px !important; }',
+      '#dp-memo .mt-addrow { height:20px !important; }',
       // 가로 스크롤 방지: 어떤 페이지도 기기 폭을 넘지 않게
       'html, body, .dash-body, .dpage { max-width:100vw; overflow-x:hidden !important; }',
       '.dpage * { max-width:100%; box-sizing:border-box; }',
