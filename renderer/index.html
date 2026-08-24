@@ -586,8 +586,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .memo-table-wrap.resizing, .memo-table-wrap.resizing * { cursor:col-resize !important; user-select:none; }
 .memo-doc th, .memo-doc td { border:1px solid var(--border); padding:0 8px;
   height:30px; line-height:30px; font-size:13px; background:var(--panel);
-  box-sizing:border-box; vertical-align:middle; }
-.memo-doc th { background:var(--panel); font-weight:700; }   /* 본문 셀과 같은 톤 */
+  box-sizing:border-box; vertical-align:middle;
+  font-weight:400; text-align:left; }   /* 머리글도 본문과 같은 글씨 */
+.memo-doc th { background:var(--panel); }   /* 본문 셀과 같은 톤·굵기 */
 /* 표 감싸기 — 오른쪽에 열 추가, 아래에 행 추가 버튼 */
 .memo-table-wrap { position:relative; margin:10px 0; padding:0 16px 16px 0;
   background:var(--panel); }
@@ -601,6 +602,27 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .memo-doc summary { cursor:pointer; }
 .memo-doc .memo-todo { display:flex; align-items:flex-start; gap:7px; line-height:30px; }
 .memo-doc .memo-todo input { margin-top:9px; accent-color:var(--yellow); flex-shrink:0; }
+/* 고른 셀 표시 — 한 칸이든 여러 칸이든 같은 표시 */
+.memo-doc td.mt-sel, .memo-doc th.mt-sel {
+  outline:2px solid #3b82f6; outline-offset:-2px;
+  background-color:rgba(59,130,246,0.10);
+}
+/* 글씨를 고르면 뜨는 서식 막대 */
+.memo-fmt {
+  position:fixed; z-index:9999; display:none; gap:2px; padding:4px;
+  background:color-mix(in srgb, var(--card), #fff 10%);
+  border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.25);
+}
+.memo-fmt button {
+  width:28px; height:26px; background:transparent; border:none; color:var(--white);
+  cursor:pointer; border-radius:4px; font-size:13px; line-height:1;
+}
+.memo-fmt button:hover { background:var(--yellow); color:var(--bg); }
+.memo-fmt .ff-b { font-weight:800; }
+.memo-fmt .ff-i { font-style:italic; }
+.memo-fmt .ff-u { text-decoration:underline; }
+.memo-fmt .ff-s { text-decoration:line-through; }
+
 /* 표 우클릭 메뉴 · 색 고르기 */
 .mt-swatches { display:flex; gap:6px; padding:6px 9px; }
 .mt-swatch { width:18px; height:18px; border-radius:4px; border:1px solid var(--border); cursor:pointer; }
@@ -1045,6 +1067,12 @@ select {
                data-ph="여기에 자유롭게 적어보세요..."></div>
         </div>
         <div id="slashMenu" class="slash-menu" style="display:none"></div>
+        <div id="memoFmt" class="memo-fmt">
+          <button type="button" class="ff-b" title="굵게"      data-i18n-tip="fmt_bold"   onmousedown="event.preventDefault();memoFmt('bold')">B</button>
+          <button type="button" class="ff-i" title="기울임"    data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')">I</button>
+          <button type="button" class="ff-u" title="밑줄"      data-i18n-tip="fmt_under"  onmousedown="event.preventDefault();memoFmt('underline')">U</button>
+          <button type="button" class="ff-s" title="취소선"    data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')">S</button>
+        </div>
       </div>
 
       <!-- DIARY -->
@@ -1505,6 +1533,7 @@ const STRINGS = {
     memo_add_row:'행 추가 (클릭)', memo_add_col:'열 추가 (클릭)',
     mt_row_below:'아래에 행 추가', mt_col_right:'오른쪽에 열 추가', mt_row_del:'이 행 삭제',
     mt_col_del:'이 열 삭제', mt_table_del:'표 삭제', mt_color:'표 색 바꾸기',
+    fmt_bold:'굵게', fmt_italic:'기울임', fmt_under:'밑줄', fmt_strike:'취소선',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1696,6 +1725,7 @@ const STRINGS = {
     memo_add_row:'Click to add a new row', memo_add_col:'Click to add a new column',
     mt_row_below:'Insert row below', mt_col_right:'Insert column right', mt_row_del:'Delete row',
     mt_col_del:'Delete column', mt_table_del:'Delete table', mt_color:'Change table color',
+    fmt_bold:'Bold', fmt_italic:'Italic', fmt_under:'Underline', fmt_strike:'Strikethrough',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1881,6 +1911,7 @@ const STRINGS = {
     memo_add_row:'行を追加（クリック）', memo_add_col:'列を追加（クリック）',
     mt_row_below:'下に行を追加', mt_col_right:'右に列を追加', mt_row_del:'この行を削除',
     mt_col_del:'この列を削除', mt_table_del:'表を削除', mt_color:'表の色を変更',
+    fmt_bold:'太字', fmt_italic:'斜体', fmt_under:'下線', fmt_strike:'取り消し線',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -4301,6 +4332,70 @@ function memoAddCol(btn) {
   memoChanged();
 }
 
+// ── 셀 고르기: 한 칸 클릭 / 여러 칸 드래그 ──────────────
+let _mtAnchor = null;     // 드래그 시작 셀
+let _mtDragging = false;  // 셀 범위 고르는 중
+
+function mtClearSel() {
+  const el = memoEl();
+  if (!el) return;
+  el.querySelectorAll('.mt-sel').forEach(c => c.classList.remove('mt-sel'));
+}
+function mtSelected() {
+  const el = memoEl();
+  return el ? Array.from(el.querySelectorAll('.mt-sel')) : [];
+}
+/** 두 셀이 만드는 직사각형 범위 안의 셀들 */
+function mtCellsBetween(a, b) {
+  const tbl = a.closest('table');
+  if (!tbl || b.closest('table') !== tbl) return [a];
+  const rows = Array.from(tbl.querySelectorAll('tr'));
+  const pos = (cell) => {
+    const tr = cell.parentElement;
+    return { r: rows.indexOf(tr), c: Array.prototype.indexOf.call(tr.children, cell) };
+  };
+  const pa = pos(a), pb = pos(b);
+  const r0 = Math.min(pa.r, pb.r), r1 = Math.max(pa.r, pb.r);
+  const c0 = Math.min(pa.c, pb.c), c1 = Math.max(pa.c, pb.c);
+  const out = [];
+  for (let r = r0; r <= r1; r++) {
+    const tr = rows[r];
+    if (!tr) continue;
+    for (let c = c0; c <= c1; c++) if (tr.children[c]) out.push(tr.children[c]);
+  }
+  return out;
+}
+function mtMarkRange(a, b) {
+  mtClearSel();
+  mtCellsBetween(a, b).forEach(c => c.classList.add('mt-sel'));
+}
+
+// ── 글씨를 고르면 뜨는 서식 막대 ──────────────────────
+function memoFmt(cmd) {
+  document.execCommand(cmd);
+  memoChanged();
+  showMemoFmtBar();   // 누른 뒤에도 선택이 남아 있으면 계속 보여준다
+}
+function hideMemoFmtBar() {
+  const b = document.getElementById('memoFmt');
+  if (b) b.style.display = 'none';
+}
+function showMemoFmtBar() {
+  const bar = document.getElementById('memoFmt');
+  const el = memoEl();
+  if (!bar || !el) return;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) { hideMemoFmtBar(); return; }
+  const r = sel.getRangeAt(0);
+  if (!el.contains(r.commonAncestorContainer)) { hideMemoFmtBar(); return; }
+  const box = r.getBoundingClientRect();
+  if (!box.width && !box.height) { hideMemoFmtBar(); return; }
+  bar.style.display = 'flex';
+  const w = bar.offsetWidth || 130;
+  bar.style.left = Math.max(8, Math.min(box.left + box.width / 2 - w / 2, window.innerWidth - w - 8)) + 'px';
+  bar.style.top = Math.max(8, box.top - bar.offsetHeight - 8) + 'px';
+}
+
 // ── 표: 우클릭 메뉴 ────────────────────────────────────────
 const MEMO_TABLE_COLORS = ['transparent', '#e8f1fb', '#eaf6ec', '#fdf3e3', '#fbeaea', '#f0ecfa'];
 let _mtCtxCell = null;
@@ -4311,6 +4406,7 @@ function memoTableMenu(e) {
   if (!cell || !wrap) return false;
   e.preventDefault();
   _mtCtxCell = cell;
+  if (!cell.classList.contains('mt-sel')) { mtClearSel(); cell.classList.add('mt-sel'); }
   const menu = slashMenuEl();
   if (!menu) return false;
   const items = [
@@ -4376,12 +4472,14 @@ function memoTableAct(act) {
   memoChanged();
 }
 
-/** 색은 우클릭한 셀 하나에만 적용한다 */
+/** 고른 셀들에 색을 칠한다 (고른 게 없으면 우클릭한 셀 하나) */
 function memoTableColor(color) {
   closeSlashMenu();
-  const cell = _mtCtxCell;
-  if (!cell) return;
-  cell.style.background = (color === 'transparent') ? '' : color;
+  let cells = mtSelected();
+  if (!cells.length && _mtCtxCell) cells = [_mtCtxCell];
+  if (!cells.length) return;
+  const bg = (color === 'transparent') ? '' : color;
+  cells.forEach(c => { c.style.background = bg; });
   memoChanged();
 }
 
@@ -4429,8 +4527,18 @@ function memoResizeMove(e) {
     _mtResize.colB.style.width = (b / total * 100) + '%';
     return;
   }
+  // 셀을 끌고 있으면 범위를 넓힌다
+  const over = e.target.closest ? e.target.closest('td,th') : null;
+  if (_mtAnchor && (e.buttons & 1) && over && over !== _mtAnchor) {
+    _mtDragging = true;
+    e.preventDefault();
+    const s = window.getSelection();
+    if (s) s.removeAllRanges();          // 글자 선택과 겹치지 않게
+    mtMarkRange(_mtAnchor, over);
+    return;
+  }
   // 커서가 경계선 근처면 모양을 바꿔 끌 수 있다고 알린다
-  const cell = e.target.closest ? e.target.closest('td,th') : null;
+  const cell = over;
   if (!cell || !cell.closest('.memo-table-wrap')) return;
   const r = cell.getBoundingClientRect();
   cell.style.cursor = (r.right - e.clientX <= MT_EDGE) ? 'col-resize' : '';
@@ -4439,9 +4547,16 @@ function memoResizeMove(e) {
 function memoResizeStart(e) {
   const cell = e.target.closest ? e.target.closest('td,th') : null;
   const wrap = cell && cell.closest('.memo-table-wrap');
-  if (!cell || !wrap) return;
+  if (!cell || !wrap) { mtClearSel(); return; }   // 표 밖을 누르면 선택 해제
   const r = cell.getBoundingClientRect();
-  if (r.right - e.clientX > MT_EDGE) return;    // 경계선이 아니면 그냥 편집
+  if (r.right - e.clientX > MT_EDGE) {
+    // 경계선이 아니면 셀 고르기 시작 (끌면 여러 칸)
+    if (e.button === 0) {
+      _mtAnchor = cell; _mtDragging = false;
+      mtClearSel(); cell.classList.add('mt-sel');
+    }
+    return;
+  }
   const tbl = wrap.querySelector('table');
   const tr = cell.parentElement;
   const idx = Array.prototype.indexOf.call(tr.children, cell);
@@ -4459,6 +4574,8 @@ function memoResizeStart(e) {
 }
 
 function memoResizeEnd() {
+  _mtAnchor = null;
+  _mtDragging = false;
   if (!_mtResize) return;
   document.querySelectorAll('.memo-table-wrap.resizing').forEach(w => w.classList.remove('resizing'));
   _mtResize = null;
@@ -4503,6 +4620,12 @@ function initMemo() {
   document.addEventListener('mousemove', (e) => { if (_mtResize) memoResizeMove(e); });
   document.addEventListener('mouseup', memoResizeEnd);
   window.addEventListener('resize', () => setTimeout(memoSnapAll, 60));
+  // 글씨를 고르면 서식 막대를 띄운다
+  document.addEventListener('selectionchange', () => {
+    if (document.getElementById('dp-memo') && document.getElementById('dp-memo').classList.contains('active'))
+      setTimeout(showMemoFmtBar, 0);
+  });
+  el.addEventListener('scroll', hideMemoFmtBar);
 }
 
 // ══════════════════════════════════════════
