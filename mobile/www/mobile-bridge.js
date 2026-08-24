@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.7-mobile';
+  var APP_VERSION = '2.2.8-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -645,17 +645,21 @@
   }
 
   // ══════════════════════════════════════════════
-  // 바탕화면 위젯 — 가장 가까운 D-day와 오늘 할 일을 내보낸다
+  // 바탕화면 위젯 — D-day 전부와 어제·오늘·내일 할 일을 내보낸다
   // 네이티브(NekoWidget.java)가 이 내용을 받아 홈 화면에 그린다.
   // ══════════════════════════════════════════════
-  var WIDGET_MAX_TODOS = 4;
+  var WIDGET_MAX_TODOS = 4;    // 오늘 칸에 보여줄 줄 수
+  var WIDGET_MAX_SIDE = 3;     // 어제·내일 칸에 보여줄 줄 수
   var _widgetLast = '';
 
   // 위젯에 쓰는 낱말 — 앱 언어를 따라간다
   var WIDGET_WORDS = {
-    ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료', am: '오전', pm: '오후' },
-    en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done', am: 'AM', pm: 'PM' },
-    ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了', am: '午前', pm: '午後' }
+    ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
+          am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음' },
+    en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
+          am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None' },
+    ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
+          am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし' }
   };
 
   var _widgetPlugin;   // undefined = 아직 안 찾아봄
@@ -674,24 +678,38 @@
     return _widgetPlugin;
   }
 
-  function todayKey() {
+  /** 오늘에서 며칠 떨어진 날의 "yyyy-mm-dd" */
+  function dayKey(offset) {
     var d = new Date();
+    d.setDate(d.getDate() + (offset || 0));
     return d.getFullYear() + '-' +
            ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
            ('0' + d.getDate()).slice(-2);
   }
+  function todayKey() { return dayKey(0); }
 
-  function dayDiff(dateKey) {
-    var p = String(dateKey).split('-');
-    var target = new Date(+p[0], +p[1] - 1, +p[2]);
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return Math.round((target - today) / 86400000);
+  /** 그 날짜의 살아 있는 일정을 순서대로 */
+  function liveNotes(src, dateKey) {
+    var tombs = src.calendarDeleted || {};
+    var items = (src.calendarNotes || {})[dateKey];
+    if (typeof items === 'string') items = [{ text: items, done: false }];
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter(function (it) { return it && it.text && !(it.id && tombs[it.id]); })
+      .slice()
+      .sort(function (a, b) { return (a.ord || 0) - (b.ord || 0); });
   }
 
-  function ddayText(diff) {
-    if (diff === 0) return 'D-DAY';
-    return diff > 0 ? ('D-' + diff) : ('D+' + (-diff));
+  /** 어제·내일 칸 하나 분량 */
+  function sideData(src, offset, label) {
+    var list = liveNotes(src, dayKey(offset));
+    return {
+      label: label,
+      total: list.length,
+      todos: list.slice(0, WIDGET_MAX_SIDE).map(function (it) {
+        return { text: String(it.text), done: !!it.done };
+      })
+    };
   }
 
   /** 위젯에 보낼 내용을 만든다 */
@@ -705,57 +723,41 @@
 
     var w = WIDGET_WORDS[src.language] || WIDGET_WORDS.ko;
     var out = {
-      ddayTitle: '', ddayBadge: '', ddayDate: '',
+      ddays: [],
       emptyText: w.empty,
       headTitle: w.head,
       doneWord: w.done,
-      todoTotal: 0,               // 오늘 전체 개수 (화면에는 네 줄만 보여도)
+      noneWord: w.none,
+      todoTotal: 0,               // 오늘 전체 개수 (화면에는 몇 줄만 보여도)
       todoDone: 0,
       todosDate: todayKey(),      // 위젯이 '어제 것'을 계속 보여주지 않도록
       todos: []
     };
 
-    // 오늘 이후 중 가장 가까운 것, 없으면 가장 최근에 지난 것
-    var list = (src.ddays || []).filter(function (d) { return d && d.date && d.title; });
-    var pick = null, best = Infinity;
-    list.forEach(function (d) {
-      var diff = dayDiff(d.date);
-      if (diff >= 0 && diff < best) { best = diff; pick = d; }
-    });
-    if (!pick) {
-      var past = -Infinity;
-      list.forEach(function (d) {
-        var diff = dayDiff(d.date);
-        if (diff < 0 && diff > past) { past = diff; pick = d; }
-      });
-    }
-    if (pick) {
-      out.ddayTitle = String(pick.title);
-      out.ddayBadge = ddayText(dayDiff(pick.date));
-      out.ddayDate = String(pick.date);
-    }
+    // D-day — 등록된 것 전부, 대시보드와 같은 날짜순
+    out.ddays = (src.ddays || [])
+      .filter(function (d) { return d && d.date && d.title; })
+      .slice()
+      .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); })
+      .map(function (d) { return { title: String(d.title), date: String(d.date) }; });
 
-    // 오늘 할 일 (삭제 표시된 항목 제외)
-    var tombs = src.calendarDeleted || {};
-    var items = (src.calendarNotes || {})[todayKey()];
-    if (typeof items === 'string') items = [{ text: items, done: false }];
-    if (Array.isArray(items)) {
-      var live = items.filter(function (it) { return it && it.text && !(it.id && tombs[it.id]); });
-      out.todoTotal = live.length;
-      out.todoDone = live.filter(function (it) { return !!it.done; }).length;
-      live.slice()
-        .sort(function (a, b) { return (a.ord || 0) - (b.ord || 0); })
-        .slice(0, WIDGET_MAX_TODOS)
-        .forEach(function (it) {
-          var pm = it.ampm === 'pm';
-          out.todos.push({
-            text: String(it.text),
-            done: !!it.done,
-            ampm: pm ? 'pm' : 'am',
-            ampmLabel: pm ? w.pm : w.am
-          });
-        });
-    }
+    // 오늘 할 일
+    var today = liveNotes(src, todayKey());
+    out.todoTotal = today.length;
+    out.todoDone = today.filter(function (it) { return !!it.done; }).length;
+    out.todos = today.slice(0, WIDGET_MAX_TODOS).map(function (it) {
+      var pm = it.ampm === 'pm';
+      return {
+        text: String(it.text),
+        done: !!it.done,
+        ampm: pm ? 'pm' : 'am',
+        ampmLabel: pm ? w.pm : w.am
+      };
+    });
+
+    // 어제 · 내일
+    out.yesterday = sideData(src, -1, w.yday);
+    out.tomorrow = sideData(src, 1, w.tmr);
     return out;
   }
 
@@ -777,7 +779,7 @@
   function startWidgetFeed() {
     if (!widgetBridge()) return;
     pushWidget(true);
-    // 날짜가 바뀌면 D-day 숫자도 달라지므로 주기적으로 다시 계산한다
+    // 날짜가 바뀌면 D-day 숫자도 어제·내일 칸도 달라지므로 주기적으로 다시 계산한다
     setInterval(function () { pushWidget(false); }, 30000);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) pushWidget(true);

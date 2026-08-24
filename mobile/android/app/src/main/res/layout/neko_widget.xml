@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   홈 화면 위젯.
-  RemoteViews가 다룰 수 있는 뷰(LinearLayout/TextView/ImageView)만 쓴다.
-  체크 상자와 오전·오후 딱지는 배경 그림을 바꿔 상태를 표현한다.
+  줄 수가 정해지지 않은 부분(D-day, 오늘 할 일, 어제·내일)은 빈 칸만 두고
+  코드에서 개수만큼 붙인다. RemoteViews가 다루는 뷰만 쓴다.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
@@ -12,50 +12,13 @@
     android:background="@drawable/w_bg"
     android:padding="10dp">
 
-    <!-- D-day -->
+    <!-- D-day — 등록된 만큼 전부 -->
     <LinearLayout
-        android:id="@+id/w_dday_box"
+        android:id="@+id/w_dday_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/w_dday_bg"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/w_dday_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#E4665F"
-            android:layout_marginEnd="9dp"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_dday_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_dday_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="10sp"
-            android:textColor="#E88C86"
-            android:layout_marginStart="6dp"
-            android:text="" />
-    </LinearLayout>
+        android:orientation="vertical"
+        android:layout_marginBottom="3dp" />
 
     <!-- 오늘 할 일 머리글 -->
     <LinearLayout
@@ -66,244 +29,98 @@
         android:gravity="center_vertical"
         android:paddingLeft="3dp"
         android:paddingRight="4dp"
-        android:layout_marginBottom="7dp">
-
-        <TextView
-            android:id="@+id/w_head_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_head_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="10sp"
-            android:textColor="#9AA0A6"
-            android:text="" />
-    </LinearLayout>
-
-    <!-- 할 일 1 -->
-    <LinearLayout
-        android:id="@+id/w_row1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/w_row_bg"
-        android:paddingLeft="10dp"
-        android:paddingRight="8dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
+        android:paddingTop="3dp"
         android:layout_marginBottom="6dp">
 
-        <TextView
-            android:id="@+id/w_chk1"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:background="@drawable/w_check_off"
-            android:gravity="center"
-            android:textSize="11sp"
-            android:textColor="#FFFFFF"
-            android:includeFontPadding="false"
-            android:layout_marginEnd="9dp"
-            android:text="" />
+        <TextView android:id="@+id/w_head_title"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="12sp" android:textColor="#3E3A39"
+            android:maxLines="1" android:ellipsize="end" android:text="" />
 
-        <TextView
-            android:id="@+id/w_todo1"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_badge1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/w_pill_am"
-            android:paddingLeft="7dp"
-            android:paddingRight="7dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:layout_marginStart="6dp"
-            android:textSize="9sp"
-            android:textColor="#5B8DD9"
-            android:text="" />
+        <TextView android:id="@+id/w_head_count"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="10sp" android:textColor="#9AA0A6" android:text="" />
     </LinearLayout>
 
-    <!-- 할 일 2 -->
+    <!-- 오늘 할 일 -->
     <LinearLayout
-        android:id="@+id/w_row2"
+        android:id="@+id/w_today_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/w_row_bg"
-        android:paddingLeft="10dp"
-        android:paddingRight="8dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
-        android:layout_marginBottom="6dp">
-
-        <TextView
-            android:id="@+id/w_chk2"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:background="@drawable/w_check_off"
-            android:gravity="center"
-            android:textSize="11sp"
-            android:textColor="#FFFFFF"
-            android:includeFontPadding="false"
-            android:layout_marginEnd="9dp"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_todo2"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_badge2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/w_pill_am"
-            android:paddingLeft="7dp"
-            android:paddingRight="7dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:layout_marginStart="6dp"
-            android:textSize="9sp"
-            android:textColor="#5B8DD9"
-            android:text="" />
-    </LinearLayout>
-
-    <!-- 할 일 3 -->
-    <LinearLayout
-        android:id="@+id/w_row3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/w_row_bg"
-        android:paddingLeft="10dp"
-        android:paddingRight="8dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
-        android:layout_marginBottom="6dp">
-
-        <TextView
-            android:id="@+id/w_chk3"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:background="@drawable/w_check_off"
-            android:gravity="center"
-            android:textSize="11sp"
-            android:textColor="#FFFFFF"
-            android:includeFontPadding="false"
-            android:layout_marginEnd="9dp"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_todo3"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_badge3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/w_pill_am"
-            android:paddingLeft="7dp"
-            android:paddingRight="7dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:layout_marginStart="6dp"
-            android:textSize="9sp"
-            android:textColor="#5B8DD9"
-            android:text="" />
-    </LinearLayout>
-
-    <!-- 할 일 4 -->
-    <LinearLayout
-        android:id="@+id/w_row4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/w_row_bg"
-        android:paddingLeft="10dp"
-        android:paddingRight="8dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
-        android:layout_marginBottom="6dp">
-
-        <TextView
-            android:id="@+id/w_chk4"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:background="@drawable/w_check_off"
-            android:gravity="center"
-            android:textSize="11sp"
-            android:textColor="#FFFFFF"
-            android:includeFontPadding="false"
-            android:layout_marginEnd="9dp"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_todo4"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="12sp"
-            android:textColor="#3E3A39"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/w_badge4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/w_pill_am"
-            android:paddingLeft="7dp"
-            android:paddingRight="7dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:layout_marginStart="6dp"
-            android:textSize="9sp"
-            android:textColor="#5B8DD9"
-            android:text="" />
-    </LinearLayout>
+        android:orientation="vertical" />
 
     <TextView
         android:id="@+id/w_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingTop="14dp"
-        android:paddingBottom="14dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:textSize="11sp"
         android:textColor="#9AA0A6"
         android:text="" />
+
+    <!-- 어제 · 내일 -->
+    <LinearLayout
+        android:id="@+id/w_sides"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/w_side_bg"
+            android:paddingLeft="9dp"
+            android:paddingRight="9dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp">
+
+            <TextView android:id="@+id/w_yday_title"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="10sp" android:textColor="#9AA0A6"
+                android:paddingBottom="3dp"
+                android:maxLines="1" android:ellipsize="end" android:text="" />
+
+            <LinearLayout android:id="@+id/w_yday_list"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView android:id="@+id/w_yday_empty"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="10sp" android:textColor="#BDC1C6"
+                android:paddingTop="2dp" android:text="" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/w_side_bg"
+            android:paddingLeft="9dp"
+            android:paddingRight="9dp"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+        android:layout_marginStart="6dp">
+
+            <TextView android:id="@+id/w_tmr_title"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="10sp" android:textColor="#9AA0A6"
+                android:paddingBottom="3dp"
+                android:maxLines="1" android:ellipsize="end" android:text="" />
+
+            <LinearLayout android:id="@+id/w_tmr_list"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView android:id="@+id/w_tmr_empty"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="10sp" android:textColor="#BDC1C6"
+                android:paddingTop="2dp" android:text="" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>
