@@ -91,7 +91,15 @@
       ],
       "icon": "assets/icon-mac.png",
       "category": "public.app-category.productivity",
-      "artifactName": "NEKO-DESK-${version}-${arch}.${ext}"
+      "artifactName": "NEKO-DESK-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.inherit.plist",
+      "notarize": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "고양이와 사진을 찍을 때 카메라를 사용합니다."
+      }
     },
     "linux": {
       "target": "AppImage",

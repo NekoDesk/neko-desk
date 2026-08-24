@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Electron은 자바스크립트를 실행 중에 기계어로 바꿔 쓰므로 아래 셋이 필요하다 -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+
+  <!-- 고양이와 사진찍기(포토부스)에서 카메라를 쓴다 -->
+  <key>com.apple.security.device.camera</key>
+  <true/>
+</dict>
+</plist>

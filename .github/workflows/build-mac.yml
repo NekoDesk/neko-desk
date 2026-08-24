@@ -28,11 +28,59 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build macOS (dmg, arm64 + x64)
-        run: npx electron-builder --mac --publish never
+      # 인증서가 등록돼 있으면 서명하고, 애플 계정까지 있으면 공증까지 받는다.
+      # 없으면 예전처럼 서명 없이 빌드한다 (빌드가 멈추지 않도록).
+      - name: Prepare signing
+        id: signing
         env:
-          # 서명 없이 빌드 (Apple Developer 인증서 없음)
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          P12: ${{ secrets.APPLE_CERT_P12_B64 }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          if [ -n "$P12" ]; then
+            echo "$P12" | base64 -d > "$RUNNER_TEMP/developerID.p12"
+            echo "sign=true" >> "$GITHUB_OUTPUT"
+            echo "서명: 함"
+          else
+            echo "sign=false" >> "$GITHUB_OUTPUT"
+            echo "서명: 안 함 (APPLE_CERT_P12_B64 없음)"
+          fi
+          if [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_SPECIFIC_PASSWORD" ]; then
+            echo "notarize=true" >> "$GITHUB_OUTPUT"
+            echo "공증: 함"
+          else
+            echo "notarize=false" >> "$GITHUB_OUTPUT"
+            echo "공증: 안 함 (APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD 없음)"
+          fi
+
+      - name: Build macOS (dmg, arm64 + x64)
+        env:
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -e
+          ARGS="--mac --publish never"
+          if [ "${{ steps.signing.outputs.sign }}" = "true" ]; then
+            export CSC_LINK="$RUNNER_TEMP/developerID.p12"
+          else
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
+          if [ "${{ steps.signing.outputs.notarize }}" = "true" ]; then
+            ARGS="$ARGS --config.mac.notarize=true"
+          fi
+          npx electron-builder $ARGS
+
+      # 실제로 서명이 붙었는지 눈으로 확인할 수 있게 남긴다
+      - name: Verify signature
+        if: steps.signing.outputs.sign == 'true'
+        run: |
+          APP=$(find dist -maxdepth 2 -name "*.app" | head -1)
+          echo "앱: $APP"
+          codesign -dv --verbose=4 "$APP" 2>&1 | grep -E "Authority|TeamIdentifier|Identifier|flags" || true
+          echo "--- 게이트키퍼 판정 (공증 전이면 rejected가 정상) ---"
+          spctl -a -vvv -t exec "$APP" 2>&1 || true
 
       - name: Upload artifacts (no tag)
         if: github.event_name == 'workflow_dispatch' && inputs.release_tag == ''

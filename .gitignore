@@ -27,9 +27,16 @@ supabase/.temp/
 *.crt
 *.der
 *.certSigningRequest
+p12-password.txt
+*-password.txt
 *.mobileprovision
 *.provisionprofile
 *.keystore
 *.jks
 secrets/
 certs/
+
+# 스토어 제출 파일 — 용량이 커서 저장소에 두지 않는다
+store-submit/
+play-submit/
+test-build/
