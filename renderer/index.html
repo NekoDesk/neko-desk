@@ -1003,6 +1003,14 @@ select {
 
       <!-- SETTINGS -->
       <div id="dp-settings" class="dpage">
+        <!-- 기기 간 연동 안내 — 이 앱에 다른 기기용 버전이 있다는 걸 모르는 사용자가 많다 -->
+        <div class="card" id="crossDeviceCard" style="margin-bottom:14px">
+          <div class="card-title" data-i18n="cross_title">🔗 다른 기기와 함께 쓰기</div>
+          <div style="font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:10px"
+               data-i18n="cross_desc">로그인 없이도 쓸 수 있지만, 구글로 로그인하면 할 일·다이어리가 기기 간에 자동으로 이어져요.</div>
+          <button class="btn btn-y" style="width:100%;font-size:12px" onclick="openOtherApp()"
+                  id="crossDeviceBtn" data-i18n="cross_btn_mobile">📱 모바일 앱 설치하러 가기</button>
+        </div>
         <div class="grid2">
           <div>
             <!-- 배경 테마 (접기/펴기) -->
@@ -1385,6 +1393,10 @@ const STRINGS = {
     autostart_win_btn:'Windows 설정 열기',
     autostart_win_desc:'PC를 켜면 자동으로 시작돼요. 켜고 끄는 것은 Windows 시작 프로그램 설정에서 바꿀 수 있어요.',
     reset_cloud_fail:'이 기기의 기록은 지웠지만, 클라우드에 저장된 기록은 지우지 못했어요. 잠시 후 다시 시도해 주세요.',
+    cross_title:'🔗 다른 기기와 함께 쓰기',
+    cross_desc:'로그인 없이도 쓸 수 있지만, 구글로 로그인하면 할 일·다이어리·고양이가 기기 간에 자동으로 이어져요. 로그인하지 않으면 이 기기에만 저장돼요.',
+    cross_btn_mobile:'📱 모바일 앱 설치하러 가기',
+    cross_btn_pc:'💻 PC 앱 설치하러 가기',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1563,6 +1575,10 @@ const STRINGS = {
     autostart_win_btn:'Open Windows settings',
     autostart_win_desc:'It starts automatically when your PC boots. Turn it on or off in Windows startup app settings.',
     reset_cloud_fail:'Local data was cleared, but the copy in the cloud could not be removed. Please try again in a moment.',
+    cross_title:'🔗 Use it on your other devices',
+    cross_desc:'You can use the app without signing in, but signing in with Google keeps your to-dos, diary and cat in sync across devices. Without sign-in, everything stays on this device only.',
+    cross_btn_mobile:'📱 Get the mobile app',
+    cross_btn_pc:'💻 Get the desktop app',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1735,6 +1751,10 @@ const STRINGS = {
     autostart_win_btn:'Windows 設定を開く',
     autostart_win_desc:'PCを起動すると自動で始まります。オン/オフはWindowsのスタートアップ設定で変更できます。',
     reset_cloud_fail:'この端末の記録は削除しましたが、クラウドの記録は削除できませんでした。しばらくしてからもう一度お試しください。',
+    cross_title:'🔗 ほかの端末でも使う',
+    cross_desc:'ログインしなくても使えますが、Googleでログインするとやること・日記・ネコが端末間で自動的に同期されます。ログインしない場合はこの端末にのみ保存されます。',
+    cross_btn_mobile:'📱 モバイルアプリを入手',
+    cross_btn_pc:'💻 PCアプリを入手',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -1842,6 +1862,7 @@ function applyLang() {
     if (_lbl) _lbl.textContent = _s.guest ? L('acc_guest') : _s.email + (_s.isAdmin ? L('acc_admin') : '');
   }
   if (typeof _renderSyncStatus === 'function') _renderSyncStatus();
+  if (typeof applyCrossDeviceLabel === 'function') applyCrossDeviceLabel();
   renderGuideBody();
   renderThemeGrid();
   renderCatPage();
@@ -2302,6 +2323,21 @@ function loadState() {
 // 자동 저장은 DOMContentLoaded 이후 위젯 창에서만 시작 (대시보드 자동저장 덮어쓰기 방지)
 // 두 창 모두 닫힐 때는 저장
 window.addEventListener('beforeunload', saveState);
+
+const NEKODESK_SITE_URL = 'https://goodenergykr.com/nekodesk';
+/** 지금 쓰는 기기의 반대편 앱 안내로 보낸다 */
+function openOtherApp(){
+  if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(NEKODESK_SITE_URL);
+  else window.open(NEKODESK_SITE_URL, '_blank');
+}
+/** 모바일이면 'PC 앱', 데스크톱이면 '모바일 앱'을 권한다 */
+function applyCrossDeviceLabel(){
+  const b = document.getElementById('crossDeviceBtn');
+  if (!b) return;
+  const key = window.Capacitor ? 'cross_btn_pc' : 'cross_btn_mobile';
+  b.setAttribute('data-i18n', key);
+  b.textContent = L(key);
+}
 
 const PRIVACY_URL = 'https://goodenergykr.com/nekodesk/privacy';
 function openPrivacy(){
@@ -4911,6 +4947,7 @@ function init(){
   } else {
     // 브라우저 모드: 게이트 없음
   }
+  applyCrossDeviceLabel();
   applyTheme(S.theme || 'white'); // 기본 테마: 화이트
   applyLang();
   renderAll();
