@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.10-mobile';
+  var APP_VERSION = '2.2.0-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -20,7 +20,7 @@
   // 계정 간 동기화 대상 — renderer의 CLOUD_KEYS와 동일하게 유지할 것
   var SYNC_KEYS = [
     // 기록
-    'calendarNotes', 'calendarDeleted', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
+    'calendarNotes', 'calendarDeleted', 'ddays', 'memoDoc', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
     // 고양이·진행 상태
     'cat', 'pts', 'fruits', 'harvestedFruits', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정

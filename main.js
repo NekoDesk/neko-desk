@@ -773,7 +773,7 @@ const CLOUD_PULL_MS = 3 * 1000;          // 확인은 수백 바이트뿐이라 
 const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
 
 const CLOUD_KEYS = [
-  'calendarNotes','calendarDeleted','scheduleMemo','diaryEntries','wishlist','wishlistDone',
+  'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
   'schedule','workItems','scheduleItems','theme','language'
 ];
