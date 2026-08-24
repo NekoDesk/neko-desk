@@ -380,6 +380,8 @@ body.theme-mono {
 .dash-body { padding: 18px; }
 .dpage { display: none; }
 .dpage.active { display: block; }
+/* 메모장이 창 높이를 꽉 채울 수 있도록 부모가 높이를 넘겨준다 */
+.dash-body:has(> #dp-memo.active) { display:flex; flex-direction:column; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -557,23 +559,31 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .work-item-row.drop-before::before { top:0; }
 .work-item-row.drop-after::after { bottom:0; }
 /* 메모장 탭 — 큰 줄노트 */
-#dp-memo { display:flex; flex-direction:column; min-height:0; }
+/* .dpage보다 선택자가 강하면 늘 보이게 되므로 .active를 함께 건다 */
+#dp-memo.active { display:flex; flex-direction:column; min-height:0; height:100%; }
 .memo-card { display:flex; flex-direction:column; flex:1; min-height:0; }
 .memo-head { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
 .memo-hint { font-size:11px; color:var(--gray); }
 .memo-doc {
-  flex:1; min-height:320px; overflow-y:auto; outline:none;
-  padding:6px 10px; font-size:14px; line-height:30px; color:var(--white);
-  /* 줄노트 느낌 — 글줄 높이에 맞춘 가로줄 */
+  flex:1; min-height:0; overflow-y:auto; outline:none;
+  /* 위쪽 여백을 0으로 둬야 글줄과 배경 줄이 어긋나지 않는다 */
+  padding:0 10px; font-size:14px; line-height:30px; color:var(--white);
   background-image:linear-gradient(to bottom, transparent 29px, var(--border) 29px, var(--border) 30px);
   background-size:100% 30px;
+  background-position:0 0;
 }
+/* 안쪽 요소도 같은 줄 높이여야 배경 줄과 맞는다 */
+.memo-doc > div, .memo-doc p, .memo-doc li, .memo-doc summary { line-height:30px; margin:0; }
 .memo-doc:empty::before { content:attr(data-ph); color:var(--gray); }
 .memo-doc ul, .memo-doc ol { margin:0 0 0 22px; padding:0; }
 .memo-doc li { line-height:30px; }
 .memo-doc hr { border:none; border-top:2px solid var(--border); margin:14px 0; }
 .memo-doc table { border-collapse:collapse; width:100%; margin:0;
+  table-layout:fixed;                 /* 열 너비를 직접 정하려면 필요 */
   background:var(--panel); }          /* 불투명 배경 — 아래 줄노트 선을 가린다 */
+.memo-doc td, .memo-doc th { word-break:break-word; }
+/* 경계선 근처에서는 좌우 드래그 커서 */
+.memo-table-wrap.resizing, .memo-table-wrap.resizing * { cursor:col-resize !important; user-select:none; }
 .memo-doc th, .memo-doc td { border:1px solid var(--border); padding:4px 8px;
   font-size:13px; line-height:22px; background:var(--panel); }
 .memo-doc th { background:var(--card); font-weight:700; }
@@ -590,6 +600,11 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .memo-doc summary { cursor:pointer; }
 .memo-doc .memo-todo { display:flex; align-items:flex-start; gap:7px; line-height:30px; }
 .memo-doc .memo-todo input { margin-top:9px; accent-color:var(--yellow); flex-shrink:0; }
+/* 표 우클릭 메뉴 · 색 고르기 */
+.mt-swatches { display:flex; gap:6px; padding:6px 9px; }
+.mt-swatch { width:18px; height:18px; border-radius:4px; border:1px solid var(--border); cursor:pointer; }
+.mt-swatch:hover { outline:2px solid var(--yellow); }
+
 /* '/' 명령 메뉴 */
 .slash-menu {
   position:fixed; z-index:9998; min-width:210px; padding:5px;
@@ -1487,6 +1502,8 @@ const STRINGS = {
     slash_bullet:'글머리 기호 목록', slash_number:'번호 매기기 목록', slash_todo:'할 일 목록',
     slash_toggle:'토글 목록', slash_table:'표', slash_divider:'구분선', slash_toggle_ph:'토글 제목',
     memo_add_row:'행 추가 (클릭)', memo_add_col:'열 추가 (클릭)',
+    mt_row_below:'아래에 행 추가', mt_col_right:'오른쪽에 열 추가', mt_row_del:'이 행 삭제',
+    mt_col_del:'이 열 삭제', mt_table_del:'표 삭제', mt_color:'표 색 바꾸기',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1676,6 +1693,8 @@ const STRINGS = {
     slash_bullet:'Bulleted list', slash_number:'Numbered list', slash_todo:'To-do list',
     slash_toggle:'Toggle list', slash_table:'Table', slash_divider:'Divider', slash_toggle_ph:'Toggle',
     memo_add_row:'Click to add a new row', memo_add_col:'Click to add a new column',
+    mt_row_below:'Insert row below', mt_col_right:'Insert column right', mt_row_del:'Delete row',
+    mt_col_del:'Delete column', mt_table_del:'Delete table', mt_color:'Change table color',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1859,6 +1878,8 @@ const STRINGS = {
     slash_bullet:'箇条書きリスト', slash_number:'番号付きリスト', slash_todo:'ToDoリスト',
     slash_toggle:'トグルリスト', slash_table:'表', slash_divider:'区切り線', slash_toggle_ph:'トグル',
     memo_add_row:'行を追加（クリック）', memo_add_col:'列を追加（クリック）',
+    mt_row_below:'下に行を追加', mt_col_right:'右に列を追加', mt_row_del:'この行を削除',
+    mt_col_del:'この列を削除', mt_table_del:'表を削除', mt_color:'表の色を変更',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -4235,7 +4256,9 @@ function runSlash(i) {
 /** 표 한 벌 (행·열 추가 버튼 포함). 버튼은 편집 대상이 아니므로 contenteditable=false */
 function memoTableHtml(cols, rows) {
   let h = '<div class="memo-table-wrap" contenteditable="false">';
-  h += '<table contenteditable="true"><thead><tr>';
+  h += '<table contenteditable="true"><colgroup>';
+  for (let k = 0; k < cols; k++) h += '<col style="width:' + (100 / cols) + '%">';
+  h += '</colgroup><thead><tr>';
   for (let k = 0; k < cols; k++) h += '<th>&nbsp;</th>';
   h += '</tr></thead><tbody>';
   for (let r = 0; r < rows; r++) {
@@ -4273,6 +4296,159 @@ function memoAddCol(btn) {
   memoChanged();
 }
 
+// ── 표: 우클릭 메뉴 ────────────────────────────────────────
+const MEMO_TABLE_COLORS = ['transparent', '#e8f1fb', '#eaf6ec', '#fdf3e3', '#fbeaea', '#f0ecfa'];
+let _mtCtxCell = null;
+
+function memoTableMenu(e) {
+  const cell = e.target.closest ? e.target.closest('td,th') : null;
+  const wrap = cell && cell.closest('.memo-table-wrap');
+  if (!cell || !wrap) return false;
+  e.preventDefault();
+  _mtCtxCell = cell;
+  const menu = slashMenuEl();
+  if (!menu) return false;
+  const items = [
+    ['↓', L('mt_row_below'), 'rowBelow'],
+    ['→', L('mt_col_right'), 'colRight'],
+    ['⌫', L('mt_row_del'), 'rowDel'],
+    ['⌦', L('mt_col_del'), 'colDel'],
+    ['🗑', L('mt_table_del'), 'tableDel'],
+  ];
+  menu.innerHTML =
+    items.map(([ico, label, act]) =>
+      `<div class="slash-item" onmousedown="event.preventDefault();memoTableAct('${act}')">
+         <span class="si-ico">${ico}</span><span>${label}</span></div>`).join('') +
+    `<div class="mt-swatches">` +
+    MEMO_TABLE_COLORS.map(c =>
+      `<div class="mt-swatch" style="background:${c === 'transparent' ? 'var(--panel)' : c}"
+            title="${L('mt_color')}" onmousedown="event.preventDefault();memoTableColor('${c}')"></div>`).join('') +
+    `</div>`;
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 230) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 250) + 'px';
+  _slashOpen = true;
+  return true;
+}
+
+function memoTableAct(act) {
+  closeSlashMenu();
+  const cell = _mtCtxCell;
+  if (!cell) return;
+  const tr = cell.parentElement;
+  const wrap = cell.closest('.memo-table-wrap');
+  const tbl = wrap && wrap.querySelector('table');
+  if (!tbl) return;
+  const idx = Array.prototype.indexOf.call(tr.children, cell);
+
+  if (act === 'tableDel') {
+    wrap.remove();
+  } else if (act === 'rowBelow') {
+    const nr = document.createElement('tr');
+    for (let k = 0; k < tr.children.length; k++) {
+      const td = document.createElement('td'); td.innerHTML = '&nbsp;'; nr.appendChild(td);
+    }
+    (tr.parentElement.tagName === 'THEAD' ? tbl.querySelector('tbody') : tr.parentElement)
+      .insertBefore(nr, tr.parentElement.tagName === 'THEAD' ? null : tr.nextSibling);
+  } else if (act === 'colRight') {
+    tbl.querySelectorAll('tr').forEach(row => {
+      const c = document.createElement(row.parentElement.tagName === 'THEAD' ? 'th' : 'td');
+      c.innerHTML = '&nbsp;';
+      row.insertBefore(c, row.children[idx + 1] || null);
+    });
+    memoSyncCols(tbl);
+  } else if (act === 'rowDel') {
+    if (tr.parentElement.tagName === 'THEAD') return;   // 머리글은 남긴다
+    tr.remove();
+  } else if (act === 'colDel') {
+    if (tr.children.length <= 1) { wrap.remove(); }
+    else {
+      tbl.querySelectorAll('tr').forEach(row => { if (row.children[idx]) row.children[idx].remove(); });
+      memoSyncCols(tbl);
+    }
+  }
+  memoChanged();
+}
+
+function memoTableColor(color) {
+  closeSlashMenu();
+  const cell = _mtCtxCell;
+  if (!cell) return;
+  const tbl = cell.closest('table');
+  if (!tbl) return;
+  const bg = (color === 'transparent') ? '' : color;
+  tbl.querySelectorAll('td').forEach(td => { td.style.background = bg; });
+  tbl.style.background = bg || 'var(--panel)';
+  memoChanged();
+}
+
+/** 열 개수가 바뀌면 colgroup을 다시 맞춘다 */
+function memoSyncCols(tbl) {
+  const n = tbl.querySelectorAll('thead th').length || tbl.querySelectorAll('tr')[0].children.length;
+  let cg = tbl.querySelector('colgroup');
+  if (!cg) { cg = document.createElement('colgroup'); tbl.insertBefore(cg, tbl.firstChild); }
+  cg.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('col');
+    c.style.width = (100 / n) + '%';
+    cg.appendChild(c);
+  }
+}
+
+// ── 표: 경계선을 끌어 너비 조절 ──────────────────────────
+let _mtResize = null;
+const MT_EDGE = 5;   // 경계선으로 인식할 여유 폭(px)
+
+function memoResizeMove(e) {
+  if (_mtResize) {
+    const dx = e.clientX - _mtResize.x0;
+    const total = _mtResize.tableW;
+    let a = _mtResize.w0 + dx, b = _mtResize.w1 - dx;
+    if (a < 40 || b < 40) return;               // 너무 좁아지지 않게
+    _mtResize.colA.style.width = (a / total * 100) + '%';
+    _mtResize.colB.style.width = (b / total * 100) + '%';
+    return;
+  }
+  // 커서가 경계선 근처면 모양을 바꿔 끌 수 있다고 알린다
+  const cell = e.target.closest ? e.target.closest('td,th') : null;
+  if (!cell || !cell.closest('.memo-table-wrap')) return;
+  const r = cell.getBoundingClientRect();
+  cell.style.cursor = (r.right - e.clientX <= MT_EDGE) ? 'col-resize' : '';
+}
+
+function memoResizeStart(e) {
+  const cell = e.target.closest ? e.target.closest('td,th') : null;
+  const wrap = cell && cell.closest('.memo-table-wrap');
+  if (!cell || !wrap) return;
+  const r = cell.getBoundingClientRect();
+  if (r.right - e.clientX > MT_EDGE) return;    // 경계선이 아니면 그냥 편집
+  const tbl = wrap.querySelector('table');
+  const tr = cell.parentElement;
+  const idx = Array.prototype.indexOf.call(tr.children, cell);
+  if (idx >= tr.children.length - 1) return;    // 마지막 열은 오른쪽 짝이 없다
+  memoSyncColsIfNeeded(tbl);
+  const cols = tbl.querySelectorAll('col');
+  if (!cols[idx] || !cols[idx + 1]) return;
+  e.preventDefault();
+  const next = tr.children[idx + 1].getBoundingClientRect();
+  _mtResize = {
+    x0: e.clientX, colA: cols[idx], colB: cols[idx + 1],
+    w0: r.width, w1: next.width, tableW: tbl.getBoundingClientRect().width,
+  };
+  wrap.classList.add('resizing');
+}
+
+function memoResizeEnd() {
+  if (!_mtResize) return;
+  document.querySelectorAll('.memo-table-wrap.resizing').forEach(w => w.classList.remove('resizing'));
+  _mtResize = null;
+  memoChanged();
+}
+
+function memoSyncColsIfNeeded(tbl) {
+  if (!tbl.querySelector('colgroup')) memoSyncCols(tbl);
+}
+
 function initMemo() {
   const el = memoEl();
   if (!el || el._memoWired) return;
@@ -4300,6 +4476,12 @@ function initMemo() {
   document.addEventListener('mousedown', (e) => {
     if (_slashOpen && !slashMenuEl().contains(e.target)) closeSlashMenu();
   });
+  // 표: 우클릭 메뉴 / 경계선 드래그로 너비 조절
+  el.addEventListener('contextmenu', (e) => { memoTableMenu(e); });
+  el.addEventListener('mousemove', memoResizeMove);
+  el.addEventListener('mousedown', memoResizeStart);
+  document.addEventListener('mousemove', (e) => { if (_mtResize) memoResizeMove(e); });
+  document.addEventListener('mouseup', memoResizeEnd);
 }
 
 // ══════════════════════════════════════════
