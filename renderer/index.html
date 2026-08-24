@@ -572,9 +572,20 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .memo-doc ul, .memo-doc ol { margin:0 0 0 22px; padding:0; }
 .memo-doc li { line-height:30px; }
 .memo-doc hr { border:none; border-top:2px solid var(--border); margin:14px 0; }
-.memo-doc table { border-collapse:collapse; width:100%; margin:8px 0; }
-.memo-doc th, .memo-doc td { border:1px solid var(--border); padding:4px 8px; font-size:13px; line-height:22px; }
+.memo-doc table { border-collapse:collapse; width:100%; margin:0;
+  background:var(--panel); }          /* 불투명 배경 — 아래 줄노트 선을 가린다 */
+.memo-doc th, .memo-doc td { border:1px solid var(--border); padding:4px 8px;
+  font-size:13px; line-height:22px; background:var(--panel); }
 .memo-doc th { background:var(--card); font-weight:700; }
+/* 표 감싸기 — 오른쪽에 열 추가, 아래에 행 추가 버튼 */
+.memo-table-wrap { position:relative; margin:10px 0; padding:0 16px 16px 0;
+  background:var(--panel); }
+.mt-add { position:absolute; background:var(--card); border:1px solid var(--border);
+  color:var(--gray); cursor:pointer; padding:0; font-size:12px; line-height:1;
+  display:flex; align-items:center; justify-content:center; }
+.mt-add:hover { background:var(--yellow); color:var(--bg); border-color:var(--yellow); }
+.mt-addcol { top:0; right:0; width:14px; bottom:16px; border-radius:0 4px 4px 0; }
+.mt-addrow { left:0; right:16px; bottom:0; height:14px; border-radius:0 0 4px 4px; }
 .memo-doc details { margin:2px 0; }
 .memo-doc summary { cursor:pointer; }
 .memo-doc .memo-todo { display:flex; align-items:flex-start; gap:7px; line-height:30px; }
@@ -998,6 +1009,7 @@ select {
                 <button class="btn btn-y dday-add-btn" onclick="addDday()" data-i18n="dday_add">+ 추가</button>
               </div>
             </div>
+          </div>
           <div class="card">
             <div id="calRightPanel">
               <div style="font-size:12px;color:var(--gray);text-align:center;padding:20px 0">날짜를 선택해 주세요 ◀</div>
@@ -1474,6 +1486,7 @@ const STRINGS = {
     memo_hint:'/ 를 입력하면 목록·표를 넣을 수 있어요',
     slash_bullet:'글머리 기호 목록', slash_number:'번호 매기기 목록', slash_todo:'할 일 목록',
     slash_toggle:'토글 목록', slash_table:'표', slash_divider:'구분선', slash_toggle_ph:'토글 제목',
+    memo_add_row:'행 추가 (클릭)', memo_add_col:'열 추가 (클릭)',
     reset_btn:'🔄 데이터 초기화',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
@@ -1662,6 +1675,7 @@ const STRINGS = {
     memo_hint:'Type / to insert lists and tables',
     slash_bullet:'Bulleted list', slash_number:'Numbered list', slash_todo:'To-do list',
     slash_toggle:'Toggle list', slash_table:'Table', slash_divider:'Divider', slash_toggle_ph:'Toggle',
+    memo_add_row:'Click to add a new row', memo_add_col:'Click to add a new column',
     reset_btn:'🔄 Reset Data',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
@@ -1844,6 +1858,7 @@ const STRINGS = {
     memo_hint:'/ を入力するとリストや表を挿入できます',
     slash_bullet:'箇条書きリスト', slash_number:'番号付きリスト', slash_todo:'ToDoリスト',
     slash_toggle:'トグルリスト', slash_table:'表', slash_divider:'区切り線', slash_toggle_ph:'トグル',
+    memo_add_row:'行を追加（クリック）', memo_add_col:'列を追加（クリック）',
     reset_btn:'🔄 データ初期化',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
@@ -4212,17 +4227,49 @@ function runSlash(i) {
     document.execCommand('insertHTML', false,
       '<details open><summary>' + L('slash_toggle_ph') + '</summary><div><br></div></details>');
   else if (c.key === 'table') {
-    let html = '<table><thead><tr>';
-    for (let k = 0; k < 3; k++) html += '<th>&nbsp;</th>';
-    html += '</tr></thead><tbody>';
-    for (let r = 0; r < 2; r++) {
-      html += '<tr>';
-      for (let k = 0; k < 3; k++) html += '<td>&nbsp;</td>';
-      html += '</tr>';
-    }
-    html += '</tbody></table><div><br></div>';
-    document.execCommand('insertHTML', false, html);
+    document.execCommand('insertHTML', false, memoTableHtml(3, 2) + '<div><br></div>');
   }
+  memoChanged();
+}
+
+/** 표 한 벌 (행·열 추가 버튼 포함). 버튼은 편집 대상이 아니므로 contenteditable=false */
+function memoTableHtml(cols, rows) {
+  let h = '<div class="memo-table-wrap" contenteditable="false">';
+  h += '<table contenteditable="true"><thead><tr>';
+  for (let k = 0; k < cols; k++) h += '<th>&nbsp;</th>';
+  h += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    h += '<tr>';
+    for (let k = 0; k < cols; k++) h += '<td>&nbsp;</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  h += '<button type="button" class="mt-add mt-addcol" title="' + L('memo_add_col') + '" onclick="memoAddCol(this)">+</button>';
+  h += '<button type="button" class="mt-add mt-addrow" title="' + L('memo_add_row') + '" onclick="memoAddRow(this)">+</button>';
+  h += '</div>';
+  return h;
+}
+function memoAddRow(btn) {
+  const tb = btn.parentElement.querySelector('tbody');
+  if (!tb) return;
+  const cols = btn.parentElement.querySelectorAll('thead th').length || 3;
+  const tr = document.createElement('tr');
+  for (let k = 0; k < cols; k++) {
+    const td = document.createElement('td');
+    td.innerHTML = '&nbsp;';
+    tr.appendChild(td);
+  }
+  tb.appendChild(tr);
+  memoChanged();
+}
+function memoAddCol(btn) {
+  const tbl = btn.parentElement.querySelector('table');
+  if (!tbl) return;
+  tbl.querySelectorAll('tr').forEach(tr => {
+    const cell = document.createElement(tr.parentElement.tagName === 'THEAD' ? 'th' : 'td');
+    cell.innerHTML = '&nbsp;';
+    tr.appendChild(cell);
+  });
   memoChanged();
 }
 
