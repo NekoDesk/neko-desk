@@ -41,26 +41,34 @@ jobs:
       - name: Restore signing keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > /tmp/nekodesk.p12
 
-      - name: Build APK (signed release)
+      # APK는 직접 배포용, AAB는 구글 플레이 제출용 (플레이는 AAB만 받는다)
+      - name: Build APK + AAB (signed release)
         working-directory: mobile/android
         env:
           RELEASE_KEYSTORE_PATH: /tmp/nekodesk.p12
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Rename APK
-        run: cp mobile/android/app/build/outputs/apk/release/app-release.apk NEKO-DESK-mobile.apk
+      - name: Rename outputs
+        run: |
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk NEKO-DESK-mobile.apk
+          cp mobile/android/app/build/outputs/bundle/release/app-release.aab NEKO-DESK-mobile.aab
+          ls -l NEKO-DESK-mobile.apk NEKO-DESK-mobile.aab
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: NEKO-DESK-mobile-apk
-          path: NEKO-DESK-mobile.apk
+          path: |
+            NEKO-DESK-mobile.apk
+            NEKO-DESK-mobile.aab
 
       - name: Upload to GitHub Release
         if: inputs.release_tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ inputs.release_tag }}" NEKO-DESK-mobile.apk --clobber
+        # AAB는 릴리즈에 올리지 않는다 — 플레이 콘솔에 직접 업로드하는 파일이라
+        # 공개 릴리즈에 두면 사용자가 받아서 설치하려다 실패한다
