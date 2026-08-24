@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.1.7-mobile';
+  var APP_VERSION = '2.1.8-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -107,18 +107,14 @@
   // 받기/올리기 결과를 각각 보관해 한쪽이 다른 쪽을 덮어쓰지 않게 한다
   // (예전에는 15초 주기의 '받기'가 업로드 실패 메시지를 지워버려 원인을 알 수 없었음)
   var _stPull = '', _stPush = '';
-  var _tick = 0;                     // 15초 주기가 실제로 돈 횟수
   function renderSyncStatus() {
     var el = document.getElementById('syncStatus');
     if (!el) return;
     var parts = [];
     if (_stPull) parts.push('받기 ' + _stPull);
     if (_stPush) parts.push('올리기 ' + _stPush);
-    // 진단 표시: t=주기 횟수, r=받기 준비, w=저장 훅 연결
-    var probe = ' [t' + _tick + ' r' + (_syncReady ? 1 : 0)
-      + ' w' + ((window.saveState && window.saveState._syncWrapped) ? 1 : 0) + ']';
     el.textContent = '☁️ 동기화: '
-      + (parts.length ? parts.join(' · ') : '대기 중') + probe;
+      + (parts.length ? parts.join(' · ') : '대기 중');
   }
   function syncStatus(msg) { _stPull = msg; renderSyncStatus(); }
   function pushStatus(msg) { _stPush = msg; renderSyncStatus(); }
@@ -646,12 +642,11 @@
     wrapSaveState(0);
     syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
     setInterval(function () {
-      _tick++;
       renderSyncStatus();       // 아무 일이 없어도 t가 올라가는 게 보이도록
       syncPull(false);
       try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
       catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
-    }, 6000);   // 확인이 가벼워서 자주 돌아도 부담이 적다
+    }, 3000);   // 확인이 가벼워서 자주 돌아도 부담이 적다
     // 앱을 열면 최신 내용 확인, 백그라운드로 가면 예약된 업로드 즉시 실행
     var App = capPlugin('App');
     if (App) {

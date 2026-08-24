@@ -733,7 +733,7 @@ ipcMain.on('ga-event', (e, name, params) => gaTrack(name, params || {}));
 // ═══════════════════════════════════════════════════════════════
 const SYNC_STATE_FILE = () => path.join(app.getPath('userData'), 'sync-state.json');
 const CLOUD_STORAGE_KEY = 'nekodesk_v3';
-const CLOUD_PULL_MS = 6 * 1000;          // 확인은 가볍게 하므로 자주 돌아도 부담이 적다
+const CLOUD_PULL_MS = 3 * 1000;          // 확인은 수백 바이트뿐이라 자주 돌아도 부담이 적다
 const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
 
 const CLOUD_KEYS = [
