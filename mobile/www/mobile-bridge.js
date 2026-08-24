@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.5-mobile';
+  var APP_VERSION = '2.2.6-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -297,6 +297,7 @@
       }
       var memo = document.getElementById('scheduleMemoTxt');
       if (memo) memo.value = st.scheduleMemo || '';
+      pushWidget(false);          // PC에서 바뀐 내용도 바탕화면 위젯에 반영
     } catch (e) {}
     return true;
   }
@@ -631,12 +632,143 @@
     if (typeof window.saveState === 'function') {
       if (!window.saveState._syncWrapped) {
         var orig = window.saveState;
-        window.saveState = function () { orig.apply(this, arguments); schedulePush(); };
+        window.saveState = function () {
+          orig.apply(this, arguments);
+          schedulePush();
+          try { pushWidget(false); } catch (e) {}
+        };
         window.saveState._syncWrapped = true;
       }
       return;
     }
     if (tries < 10) setTimeout(function () { wrapSaveState(tries + 1); }, 500);
+  }
+
+  // ══════════════════════════════════════════════
+  // 바탕화면 위젯 — 가장 가까운 D-day와 오늘 할 일을 내보낸다
+  // 네이티브(NekoWidget.java)가 이 내용을 받아 홈 화면에 그린다.
+  // ══════════════════════════════════════════════
+  var WIDGET_MAX_TODOS = 4;
+  var _widgetLast = '';
+
+  var WIDGET_EMPTY = {
+    ko: '오늘 할 일이 없어요',
+    en: 'Nothing scheduled today',
+    ja: '今日の予定はありません'
+  };
+
+  var _widgetPlugin;   // undefined = 아직 안 찾아봄
+  /** 안드로이드 네이티브 위젯 플러그인 (없으면 null) */
+  function widgetBridge() {
+    if (_widgetPlugin !== undefined) return _widgetPlugin;
+    _widgetPlugin = null;
+    try {
+      var C = window.Capacitor;
+      var android = C && (typeof C.getPlatform === 'function') && C.getPlatform() === 'android';
+      if (android) {
+        if (typeof C.registerPlugin === 'function') _widgetPlugin = C.registerPlugin('NekoWidget');
+        else if (C.Plugins && C.Plugins.NekoWidget) _widgetPlugin = C.Plugins.NekoWidget;
+      }
+    } catch (e) {}
+    return _widgetPlugin;
+  }
+
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+           ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+           ('0' + d.getDate()).slice(-2);
+  }
+
+  function dayDiff(dateKey) {
+    var p = String(dateKey).split('-');
+    var target = new Date(+p[0], +p[1] - 1, +p[2]);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+  }
+
+  function ddayText(diff) {
+    if (diff === 0) return 'D-DAY';
+    return diff > 0 ? ('D-' + diff) : ('D+' + (-diff));
+  }
+
+  /** 위젯에 보낼 내용을 만든다 */
+  function buildWidgetData() {
+    var src = null;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) src = JSON.parse(raw);
+    } catch (e) {}
+    if (!src) src = getS() || {};
+
+    var lang = src.language || 'ko';
+    var out = {
+      ddayTitle: '', ddayBadge: '', ddayDate: '',
+      emptyText: WIDGET_EMPTY[lang] || WIDGET_EMPTY.ko,
+      todosDate: todayKey(),      // 위젯이 '어제 것'을 계속 보여주지 않도록
+      todos: []
+    };
+
+    // 오늘 이후 중 가장 가까운 것, 없으면 가장 최근에 지난 것
+    var list = (src.ddays || []).filter(function (d) { return d && d.date && d.title; });
+    var pick = null, best = Infinity;
+    list.forEach(function (d) {
+      var diff = dayDiff(d.date);
+      if (diff >= 0 && diff < best) { best = diff; pick = d; }
+    });
+    if (!pick) {
+      var past = -Infinity;
+      list.forEach(function (d) {
+        var diff = dayDiff(d.date);
+        if (diff < 0 && diff > past) { past = diff; pick = d; }
+      });
+    }
+    if (pick) {
+      out.ddayTitle = String(pick.title);
+      out.ddayBadge = ddayText(dayDiff(pick.date));
+      out.ddayDate = String(pick.date);
+    }
+
+    // 오늘 할 일 (삭제 표시된 항목 제외)
+    var tombs = src.calendarDeleted || {};
+    var items = (src.calendarNotes || {})[todayKey()];
+    if (typeof items === 'string') items = [{ text: items, done: false }];
+    if (Array.isArray(items)) {
+      items.slice()
+        .filter(function (it) { return it && it.text && !(it.id && tombs[it.id]); })
+        .sort(function (a, b) { return (a.ord || 0) - (b.ord || 0); })
+        .slice(0, WIDGET_MAX_TODOS)
+        .forEach(function (it) {
+          out.todos.push({ text: String(it.text), done: !!it.done });
+        });
+    }
+    return out;
+  }
+
+  /** 내용이 달라졌을 때만 네이티브로 넘긴다 */
+  function pushWidget(force) {
+    var nb = widgetBridge();
+    if (!nb) return;                     // 안드로이드가 아니거나 플러그인 없음
+    var json;
+    try { json = JSON.stringify(buildWidgetData()); } catch (e) { return; }
+    if (!force && json === _widgetLast) return;
+    _widgetLast = json;
+    try {
+      var p = nb.push({ json: json });
+      // 실패하면 다음 번에 다시 보내도록 기억해 둔 값을 지운다
+      if (p && typeof p.catch === 'function') p.catch(function () { _widgetLast = ''; });
+    } catch (e) { _widgetLast = ''; }
+  }
+
+  function startWidgetFeed() {
+    if (!widgetBridge()) return;
+    pushWidget(true);
+    // 날짜가 바뀌면 D-day 숫자도 달라지므로 주기적으로 다시 계산한다
+    setInterval(function () { pushWidget(false); }, 30000);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) pushWidget(true);
+    });
   }
 
   function initSync() {
@@ -1043,6 +1175,9 @@
 
       // 4) 클라우드 동기화 시작 (구글 로그인 상태일 때만)
       initSync();
+
+      // 5) 바탕화면 위젯에 내용 전달
+      startWidgetFeed();
     }, 400);
   });
 })();
