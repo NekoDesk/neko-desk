@@ -5519,8 +5519,17 @@ function _cloudApply(data) {
     if (typeof renderCalendar === 'function') renderCalendar();
     if (typeof renderWorkItems === 'function') renderWorkItems();
     ['ptsDisplay','shopPts'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = S.pts; });
-    const memo = document.getElementById('scheduleMemoTxt');
-    if (memo) memo.value = S.scheduleMemo || '';
+    if (typeof renderDdays === 'function') renderDdays();
+    // 메모장은 편집 중이면 건드리지 않는다 (커서가 튀고 입력이 끊긴다).
+    // 지금 쓰고 있지 않을 때만 받아온 내용으로 바꾼다.
+    const doc = (typeof memoEl === 'function') ? memoEl() : null;
+    if (doc && document.activeElement !== doc) {
+      const incoming = S.memoDoc || '';
+      if (doc.innerHTML !== incoming) {
+        doc.innerHTML = incoming;
+        if (typeof memoSnapAll === 'function') setTimeout(memoSnapAll, 0);
+      }
+    }
   } catch(e) {}
   return true;
 }

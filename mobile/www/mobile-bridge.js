@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.4-mobile';
+  var APP_VERSION = '2.2.5-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -285,6 +285,16 @@
         var el = document.getElementById(id);
         if (el) el.textContent = st.pts;
       });
+      if (typeof window.renderDdays === 'function') window.renderDdays();
+      // 메모장은 편집 중이면 건드리지 않는다 (커서가 튀고 입력이 끊긴다)
+      var doc = document.getElementById('memoDoc');
+      if (doc && document.activeElement !== doc) {
+        var incoming = st.memoDoc || '';
+        if (doc.innerHTML !== incoming) {
+          doc.innerHTML = incoming;
+          if (typeof window.memoSnapAll === 'function') setTimeout(window.memoSnapAll, 0);
+        }
+      }
       var memo = document.getElementById('scheduleMemoTxt');
       if (memo) memo.value = st.scheduleMemo || '';
     } catch (e) {}
