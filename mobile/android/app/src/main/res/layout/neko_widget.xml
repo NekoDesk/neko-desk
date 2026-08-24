@@ -1,103 +1,299 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 홈 화면 위젯. RemoteViews는 쓸 수 있는 뷰가 제한적이라 단순한 구조로 만든다. -->
+<!--
+  홈 화면 위젯.
+  RemoteViews가 다룰 수 있는 뷰(LinearLayout/TextView/ImageView)만 쓴다.
+  체크 상자와 오전·오후 딱지는 배경 그림을 바꿔 상태를 표현한다.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/w_bg"
-    android:padding="14dp">
+    android:padding="10dp">
 
     <!-- D-day -->
     <LinearLayout
         android:id="@+id/w_dday_box"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="10dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_dday_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/w_dday_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#E4665F"
+            android:layout_marginEnd="9dp"
+            android:text="" />
 
         <TextView
             android:id="@+id/w_dday_title"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textSize="13sp"
-            android:textColor="#4a4a4a"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
             android:maxLines="1"
             android:ellipsize="end"
             android:text="" />
 
         <TextView
-            android:id="@+id/w_dday_badge"
-            android:layout_width="match_parent"
+            android:id="@+id/w_dday_date"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#d9736e"
+            android:textSize="10sp"
+            android:textColor="#E88C86"
+            android:layout_marginStart="6dp"
+            android:text="" />
+    </LinearLayout>
+
+    <!-- 오늘 할 일 머리글 -->
+    <LinearLayout
+        android:id="@+id/w_head_box"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="3dp"
+        android:paddingRight="4dp"
+        android:layout_marginBottom="7dp">
+
+        <TextView
+            android:id="@+id/w_head_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:text="" />
 
         <TextView
-            android:id="@+id/w_dday_date"
-            android:layout_width="match_parent"
+            android:id="@+id/w_head_count"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:textSize="10sp"
-            android:textColor="#9a9a9a"
+            android:textColor="#9AA0A6"
             android:text="" />
     </LinearLayout>
 
-    <!-- 가름선. RemoteViews가 확실히 다루는 ImageView로 그린다 -->
-    <ImageView
-        android:id="@+id/w_div"
+    <!-- 할 일 1 -->
+    <LinearLayout
+        android:id="@+id/w_row1"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#e2e2e2"
-        android:contentDescription="@null"
-        android:layout_marginBottom="8dp" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_row_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="8dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:layout_marginBottom="6dp">
 
-    <!-- 오늘 할 일 -->
-    <LinearLayout android:id="@+id/w_row1" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:orientation="horizontal"
-        android:paddingBottom="5dp">
-        <ImageView android:id="@+id/w_dot1" android:layout_width="14dp" android:layout_height="14dp"
-            android:layout_marginEnd="8dp" android:layout_gravity="center_vertical"
-            android:src="@drawable/w_check_off" />
-        <TextView android:id="@+id/w_todo1" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#4a4a4a"
-            android:maxLines="1" android:ellipsize="end" android:text="" />
+        <TextView
+            android:id="@+id/w_chk1"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/w_check_off"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:includeFontPadding="false"
+            android:layout_marginEnd="9dp"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_todo1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_badge1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/w_pill_am"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:layout_marginStart="6dp"
+            android:textSize="9sp"
+            android:textColor="#5B8DD9"
+            android:text="" />
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/w_row2" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:orientation="horizontal"
-        android:paddingBottom="5dp">
-        <ImageView android:id="@+id/w_dot2" android:layout_width="14dp" android:layout_height="14dp"
-            android:layout_marginEnd="8dp" android:layout_gravity="center_vertical"
-            android:src="@drawable/w_check_off" />
-        <TextView android:id="@+id/w_todo2" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#4a4a4a"
-            android:maxLines="1" android:ellipsize="end" android:text="" />
+    <!-- 할 일 2 -->
+    <LinearLayout
+        android:id="@+id/w_row2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_row_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="8dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/w_chk2"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/w_check_off"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:includeFontPadding="false"
+            android:layout_marginEnd="9dp"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_todo2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_badge2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/w_pill_am"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:layout_marginStart="6dp"
+            android:textSize="9sp"
+            android:textColor="#5B8DD9"
+            android:text="" />
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/w_row3" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:orientation="horizontal"
-        android:paddingBottom="5dp">
-        <ImageView android:id="@+id/w_dot3" android:layout_width="14dp" android:layout_height="14dp"
-            android:layout_marginEnd="8dp" android:layout_gravity="center_vertical"
-            android:src="@drawable/w_check_off" />
-        <TextView android:id="@+id/w_todo3" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#4a4a4a"
-            android:maxLines="1" android:ellipsize="end" android:text="" />
+    <!-- 할 일 3 -->
+    <LinearLayout
+        android:id="@+id/w_row3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_row_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="8dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/w_chk3"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/w_check_off"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:includeFontPadding="false"
+            android:layout_marginEnd="9dp"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_todo3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_badge3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/w_pill_am"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:layout_marginStart="6dp"
+            android:textSize="9sp"
+            android:textColor="#5B8DD9"
+            android:text="" />
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/w_row4" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:orientation="horizontal">
-        <ImageView android:id="@+id/w_dot4" android:layout_width="14dp" android:layout_height="14dp"
-            android:layout_marginEnd="8dp" android:layout_gravity="center_vertical"
-            android:src="@drawable/w_check_off" />
-        <TextView android:id="@+id/w_todo4" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#4a4a4a"
-            android:maxLines="1" android:ellipsize="end" android:text="" />
+    <!-- 할 일 4 -->
+    <LinearLayout
+        android:id="@+id/w_row4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_row_bg"
+        android:paddingLeft="10dp"
+        android:paddingRight="8dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/w_chk4"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/w_check_off"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:includeFontPadding="false"
+            android:layout_marginEnd="9dp"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_todo4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#3E3A39"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/w_badge4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/w_pill_am"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:layout_marginStart="6dp"
+            android:textSize="9sp"
+            android:textColor="#5B8DD9"
+            android:text="" />
     </LinearLayout>
 
     <TextView
@@ -105,8 +301,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingTop="10dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
         android:textSize="11sp"
-        android:textColor="#9a9a9a"
-        android:text="앱을 열어 일정을 등록해 보세요" />
+        android:textColor="#9AA0A6"
+        android:text="" />
 </LinearLayout>

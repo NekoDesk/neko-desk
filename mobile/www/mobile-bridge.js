@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.6-mobile';
+  var APP_VERSION = '2.2.7-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -651,10 +651,11 @@
   var WIDGET_MAX_TODOS = 4;
   var _widgetLast = '';
 
-  var WIDGET_EMPTY = {
-    ko: '오늘 할 일이 없어요',
-    en: 'Nothing scheduled today',
-    ja: '今日の予定はありません'
+  // 위젯에 쓰는 낱말 — 앱 언어를 따라간다
+  var WIDGET_WORDS = {
+    ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료', am: '오전', pm: '오후' },
+    en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done', am: 'AM', pm: 'PM' },
+    ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了', am: '午前', pm: '午後' }
   };
 
   var _widgetPlugin;   // undefined = 아직 안 찾아봄
@@ -702,10 +703,14 @@
     } catch (e) {}
     if (!src) src = getS() || {};
 
-    var lang = src.language || 'ko';
+    var w = WIDGET_WORDS[src.language] || WIDGET_WORDS.ko;
     var out = {
       ddayTitle: '', ddayBadge: '', ddayDate: '',
-      emptyText: WIDGET_EMPTY[lang] || WIDGET_EMPTY.ko,
+      emptyText: w.empty,
+      headTitle: w.head,
+      doneWord: w.done,
+      todoTotal: 0,               // 오늘 전체 개수 (화면에는 네 줄만 보여도)
+      todoDone: 0,
       todosDate: todayKey(),      // 위젯이 '어제 것'을 계속 보여주지 않도록
       todos: []
     };
@@ -735,12 +740,20 @@
     var items = (src.calendarNotes || {})[todayKey()];
     if (typeof items === 'string') items = [{ text: items, done: false }];
     if (Array.isArray(items)) {
-      items.slice()
-        .filter(function (it) { return it && it.text && !(it.id && tombs[it.id]); })
+      var live = items.filter(function (it) { return it && it.text && !(it.id && tombs[it.id]); });
+      out.todoTotal = live.length;
+      out.todoDone = live.filter(function (it) { return !!it.done; }).length;
+      live.slice()
         .sort(function (a, b) { return (a.ord || 0) - (b.ord || 0); })
         .slice(0, WIDGET_MAX_TODOS)
         .forEach(function (it) {
-          out.todos.push({ text: String(it.text), done: !!it.done });
+          var pm = it.ampm === 'pm';
+          out.todos.push({
+            text: String(it.text),
+            done: !!it.done,
+            ampm: pm ? 'pm' : 'am',
+            ampmLabel: pm ? w.pm : w.am
+          });
         });
     }
     return out;

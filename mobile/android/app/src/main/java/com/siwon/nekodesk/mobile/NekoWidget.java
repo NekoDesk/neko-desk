@@ -7,10 +7,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.StrikethroughSpan;
 import android.view.View;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -78,8 +82,19 @@ public class NekoWidget extends AppWidgetProvider {
     /** 오늘 날짜를 "yyyy-MM-dd"로 */
     private static String todayKey() {
         Calendar c = Calendar.getInstance();
-        return String.format("%04d-%02d-%02d",
+        return String.format(Locale.US, "%04d-%02d-%02d",
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /** "2026-07-05" -> "07.05" */
+    private static String shortDate(String dateKey) {
+        String[] p = dateKey.split("-");
+        return (p.length == 3) ? (p[1] + "." + p[2]) : dateKey;
+    }
+
+    /** RemoteViews에는 배경을 바꾸는 전용 메서드가 없어 setInt로 부른다 */
+    private static void setBg(RemoteViews v, int viewId, int resId) {
+        v.setInt(viewId, "setBackgroundResource", resId);
     }
 
     private void render(Context ctx, AppWidgetManager mgr, int id) {
@@ -94,6 +109,9 @@ public class NekoWidget extends AppWidgetProvider {
         String ddayDate = "";
         String emptyText = "";   // 앱 언어에 맞춘 안내 문구
         String todosDate = "";   // 저장된 할 일이 어느 날 것인지
+        String headTitle = "";   // "📝 오늘 할 일"
+        String doneWord = "";    // "완료" — 앱 언어를 따른다
+        int todoTotal = -1, todoDone = -1;   // 앱이 알려준 오늘 전체 개수
         JSONArray todos = null;
 
         if (json != null) {
@@ -104,6 +122,10 @@ public class NekoWidget extends AppWidgetProvider {
                 ddayDate  = o.optString("ddayDate", "");
                 emptyText = o.optString("emptyText", "");
                 todosDate = o.optString("todosDate", "");
+                headTitle = o.optString("headTitle", "");
+                doneWord  = o.optString("doneWord", "");
+                todoTotal = o.optInt("todoTotal", -1);
+                todoDone  = o.optInt("todoDone", -1);
                 todos     = o.optJSONArray("todos");
             } catch (Exception ignored) {}
         }
@@ -115,41 +137,84 @@ public class NekoWidget extends AppWidgetProvider {
         // 어제 것이 남아 있지 않도록, 오늘 할 일만 보여준다
         if (todosDate.length() > 0 && !todosDate.equals(todayKey())) todos = null;
 
+        // ── D-day 칸 ──
         boolean hasDday = ddayTitle.length() > 0;
         v.setViewVisibility(R.id.w_dday_box, hasDday ? View.VISIBLE : View.GONE);
-        v.setViewVisibility(R.id.w_div,     hasDday ? View.VISIBLE : View.GONE);
         if (hasDday) {
-            v.setTextViewText(R.id.w_dday_title, ddayTitle);
             v.setTextViewText(R.id.w_dday_badge, ddayBadge);
-            v.setTextViewText(R.id.w_dday_date, ddayDate);
+            v.setTextViewText(R.id.w_dday_title, ddayTitle);
+            v.setTextViewText(R.id.w_dday_date, shortDate(ddayDate));
         }
 
-        int[] rowIds  = { R.id.w_row1,  R.id.w_row2,  R.id.w_row3,  R.id.w_row4 };
-        int[] txtIds  = { R.id.w_todo1, R.id.w_todo2, R.id.w_todo3, R.id.w_todo4 };
-        int[] dotIds  = { R.id.w_dot1,  R.id.w_dot2,  R.id.w_dot3,  R.id.w_dot4 };
+        // ── 할 일 ──
+        // 머리글 개수는 오늘 전체 기준 — 위젯에는 네 줄까지만 보여준다
+        int listed = (todos == null) ? 0 : todos.length();
+        int total = listed;
+        int doneCount = 0;
+        for (int i = 0; i < listed; i++) {
+            JSONObject it = todos.optJSONObject(i);
+            if (it != null && it.optBoolean("done", false)) doneCount++;
+        }
+        if (todos != null && todoTotal >= listed) {
+            total = todoTotal;
+            if (todoDone >= 0) doneCount = todoDone;
+        }
+
+        v.setViewVisibility(R.id.w_head_box, total > 0 ? View.VISIBLE : View.GONE);
+        if (total > 0) {
+            v.setTextViewText(R.id.w_head_title, headTitle);
+            v.setTextViewText(R.id.w_head_count,
+                    doneCount + " / " + total + (doneWord.length() > 0 ? " " + doneWord : ""));
+        }
+
+        int[] rowIds   = { R.id.w_row1,   R.id.w_row2,   R.id.w_row3,   R.id.w_row4 };
+        int[] chkIds   = { R.id.w_chk1,   R.id.w_chk2,   R.id.w_chk3,   R.id.w_chk4 };
+        int[] txtIds   = { R.id.w_todo1,  R.id.w_todo2,  R.id.w_todo3,  R.id.w_todo4 };
+        int[] badgeIds = { R.id.w_badge1, R.id.w_badge2, R.id.w_badge3, R.id.w_badge4 };
+
         int shown = 0;
         for (int i = 0; i < rowIds.length; i++) {
-            String text = null;
-            boolean done = false;
-            if (todos != null && i < todos.length()) {
-                JSONObject it = todos.optJSONObject(i);
-                if (it != null) {
-                    text = it.optString("text", "");
-                    done = it.optBoolean("done", false);
-                }
-            }
-            if (text != null && text.length() > 0) {
-                v.setViewVisibility(rowIds[i], View.VISIBLE);
-                v.setTextViewText(txtIds[i], text);
-                // 끝낸 일은 흐리게 — RemoteViews는 취소선을 못 줘서 색으로 구분한다
-                v.setTextColor(txtIds[i], done ? 0xFF9A9A9A : 0xFF4A4A4A);
-                v.setImageViewResource(dotIds[i],
-                        done ? R.drawable.w_check_on : R.drawable.w_check_off);
-                shown++;
-            } else {
+            JSONObject it = (todos != null && i < todos.length()) ? todos.optJSONObject(i) : null;
+            String text = (it == null) ? "" : it.optString("text", "");
+            if (text.length() == 0) {
                 v.setViewVisibility(rowIds[i], View.GONE);
+                continue;
             }
+            boolean done = it.optBoolean("done", false);
+            boolean pm = "pm".equals(it.optString("ampm", ""));
+            String badge = it.optString("ampmLabel", "");
+
+            v.setViewVisibility(rowIds[i], View.VISIBLE);
+            setBg(v, rowIds[i], done ? R.drawable.w_row_done_bg : R.drawable.w_row_bg);
+
+            // 체크 상자 — 켜면 초록 바탕에 흰 체크
+            setBg(v, chkIds[i], done ? R.drawable.w_check_on : R.drawable.w_check_off);
+            v.setTextViewText(chkIds[i], done ? "\u2713" : "");
+
+            // 끝낸 일은 흐린 글씨에 가로줄
+            if (done) {
+                SpannableString s = new SpannableString(text);
+                s.setSpan(new StrikethroughSpan(), 0, text.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                v.setTextViewText(txtIds[i], s);
+                v.setTextColor(txtIds[i], 0xFF9AA0A6);
+            } else {
+                v.setTextViewText(txtIds[i], text);
+                v.setTextColor(txtIds[i], 0xFF3E3A39);
+            }
+
+            // 오전 / 오후 딱지
+            if (badge.length() > 0) {
+                v.setViewVisibility(badgeIds[i], View.VISIBLE);
+                v.setTextViewText(badgeIds[i], badge);
+                setBg(v, badgeIds[i], pm ? R.drawable.w_pill_pm : R.drawable.w_pill_am);
+                v.setTextColor(badgeIds[i], pm ? 0xFFE09A4B : 0xFF5B8DD9);
+            } else {
+                v.setViewVisibility(badgeIds[i], View.GONE);
+            }
+            shown++;
         }
+
         if (shown == 0) {
             v.setViewVisibility(R.id.w_empty, View.VISIBLE);
             if (emptyText.length() > 0) v.setTextViewText(R.id.w_empty, emptyText);
