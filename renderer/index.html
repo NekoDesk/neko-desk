@@ -3465,6 +3465,30 @@ function toggleAlarmDow(btn) {
   btn.classList.toggle('on');
 }
 
+// ── 알람 소리 ────────────────────────────────────────
+// 직접 등록한 알람에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
+// 데스크톱은 renderer/ 기준 ../assets, 모바일은 www/ 기준 assets 라
+// 폴더 위치가 달라서 브리지가 알려주면 그 값을 쓴다.
+let _alarmAudio = null;
+
+function alarmSoundSrc() {
+  const base = (typeof window !== 'undefined' && window.NEKO_ASSET_BASE) || '../assets/';
+  return base + 'sound/cat01.MP3';
+}
+
+function playAlarmSound() {
+  try {
+    if (!_alarmAudio) {
+      _alarmAudio = new Audio(alarmSoundSrc());
+      _alarmAudio.preload = 'auto';
+    }
+    _alarmAudio.currentTime = 0;
+    const p = _alarmAudio.play();
+    // 브라우저가 자동 재생을 막으면 조용히 넘어간다 (알람 자체는 그대로 뜬다)
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch (e) {}
+}
+
 /** 1분마다 불려 지금 울릴 알람이 있는지 본다 */
 function checkAlarms() {
   const list = alarmList();
@@ -3483,6 +3507,7 @@ function checkAlarms() {
     if (S.alarmFired[a.id] === today + ' ' + hhmm) return;   // 같은 시각 중복 방지
     S.alarmFired[a.id] = today + ' ' + hhmm;
     changed = true;
+    playAlarmSound();
     showBubble('⏰ ' + a.label);
     toast('info', L('alarm_ring_title'), a.label);
   });

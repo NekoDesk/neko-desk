@@ -34,3 +34,17 @@ for (const name of fs.readdirSync(RDIR)) {
   fs.copyFileSync(src, path.join(WWW, name));
   console.log('OK: www/' + name + ' (' + Math.round(fs.statSync(src).size / 1024) + ' KB)');
 }
+
+// 소리 파일 (알람). 데스크톱은 renderer/ 옆의 assets/ 를 쓰지만
+// 모바일 www 는 한 겹 얕아서 www/assets/ 로 옮겨 둔다.
+const SND_SRC = path.join(ROOT, '..', 'assets', 'sound');
+const SND_OUT = path.join(WWW, 'assets', 'sound');
+if (fs.existsSync(SND_SRC)) {
+  fs.mkdirSync(SND_OUT, { recursive: true });
+  for (const name of fs.readdirSync(SND_SRC)) {
+    const src = path.join(SND_SRC, name);
+    if (!fs.statSync(src).isFile()) continue;
+    fs.copyFileSync(src, path.join(SND_OUT, name));
+    console.log('OK: www/assets/sound/' + name + ' (' + Math.round(fs.statSync(src).size / 1024) + ' KB)');
+  }
+}

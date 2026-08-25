@@ -7,7 +7,11 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.3.3-mobile';
+  var APP_VERSION = '2.3.4-mobile';
+
+  // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
+  // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
+  window.NEKO_ASSET_BASE = 'assets/';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
