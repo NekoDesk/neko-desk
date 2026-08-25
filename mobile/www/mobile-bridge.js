@@ -1172,6 +1172,9 @@
       '  .mag-grid { grid-template-columns: repeat(2,1fr) !important; }',
       '  .dash-body { padding: 12px !important; }',
       '}',
+      // 좁은 화면에서는 D-day 날짜 칸이 한 줄을 다 쓰게 한다.
+      // 날짜와 펼침 화살표가 같이 들어가야 해서 옆에 다른 걸 두면 잘린다.
+      '#ddayDate { flex:1 1 100% !important; min-width:0 !important; }',
       // ── 포토부스: 화면에 다 들어오게 ──
       // 세로 화면에서는 내용이 화면보다 길어 위아래가 잘렸다.
       // 위에서부터 쌓고, 넘치면 스크롤되게 하고, 시스템 바 자리를 비워둔다.
