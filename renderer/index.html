@@ -773,17 +773,17 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 오전/오후 단추 — 할 일 목록 버튼과 같은 색 */
 .ampm-chip { font-size:11px; border-radius:3px; padding:2px 6px; cursor:pointer;
   flex-shrink:0; white-space:nowrap; font-weight:700; border:1px solid transparent;
-  color:#0e2c52; background:#8ec5ff; border-color:#6aa9ee; }
-.ampm-chip.pm { color:#4a2503; background:#ffc078; border-color:#e8a252; }
-.ampm-chip:hover { filter:brightness(1.08); }
+  color:#000; background:var(--mint); border-color:var(--mint); }
+.ampm-chip.pm { color:#000; background:var(--yellow); border-color:var(--yellow); }
+.ampm-chip:hover { filter:brightness(1.1); }
 
-/* 오전은 파랑(아침 하늘), 오후는 주황(해질녘) — 눌러 바꿀 때 한눈에 보이도록 */
+/* 오전·오후는 앱 테마색을 그대로 쓴다 — 오전은 민트, 오후는 노랑.
+   따로 만든 색을 쓰면 화면 전체에서 이 단추만 튄다. */
 .ampm-btn { font-size:11px; border-radius:3px; padding:2px 5px; cursor:pointer;
   flex-shrink:0; white-space:nowrap; font-weight:700; border:1px solid transparent; }
-.ampm-btn.am { color:#0e2c52; background:#8ec5ff; border-color:#6aa9ee; }
-.ampm-btn.pm { color:#4a2503; background:#ffc078; border-color:#e8a252; }
-.ampm-btn.am:hover { background:#a8d3ff; }
-.ampm-btn.pm:hover { background:#ffd0a0; }
+.ampm-btn.am { color:#000; background:var(--mint);   border-color:var(--mint); }
+.ampm-btn.pm { color:#000; background:var(--yellow); border-color:var(--yellow); }
+.ampm-btn:hover { filter:brightness(1.1); }
 .work-item-row .tctl { width:150px; }
 .work-item-row .tctl input[type="time"] { flex:1; width:auto; }
 /* 시간 입력의 내부 필드는 그림자 DOM이라 별도로 크기를 맞춰야 라벨과 같아진다 */
