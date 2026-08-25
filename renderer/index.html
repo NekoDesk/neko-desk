@@ -757,19 +757,19 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .work-item-row .drag-handle:hover { color:var(--white); }
 .ti-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px 2px; font-size:13px; flex:1; min-width:0; outline:none; }
 .ti-label-in:focus { border-bottom-color:var(--yellow); }
-/* 시각 고르기 = 오전/오후 버튼 + 시각 입력칸을 한 박스로 묶은 것.
-   브라우저가 만드는 오전/오후 글자는 눌러도 안 바뀌므로 감추고,
-   할 일 목록과 같은 진짜 버튼을 그 자리에 둔다. */
-.tctl { display:inline-flex; align-items:center; gap:5px; flex-shrink:0;
+/* 시각 고르기 = 오전/오후 버튼 + 시·분 고르개.
+   브라우저가 만드는 시각 칸(input type=time)은 오전/오후 글자를 제 마음대로
+   그리고 감출 수도 없어서, PC와 폰에서 서로 다르게 보였다. 직접 만들어 쓴다. */
+.tctl { display:inline-flex; align-items:center; gap:4px; flex-shrink:0;
   background:var(--card); border:1px solid var(--border); border-radius:3px; padding:3px 5px; }
 .tctl:focus-within { border-color:var(--yellow); }
-.tctl input[type="time"] {
-  background:transparent; border:none; outline:none; padding:0; width:76px;
+.tctl select {
+  background:transparent; border:none; outline:none; padding:0 1px; cursor:pointer;
   color:var(--white); font-size:13px; font-family:'Galmuri14',monospace;
+  -webkit-appearance:none; appearance:none; text-align:center;
 }
-.tctl input[type="time"]::-webkit-datetime-edit-ampm-field { display:none; }
-.tctl input[type="time"]::-webkit-datetime-edit { padding:0; }
-.tctl input[type="time"]::-webkit-calendar-picker-indicator { padding:0; margin:0; cursor:pointer; }
+.tctl select option { background:var(--panel); color:var(--white); }
+.tctl .tctl-sep { color:var(--white); font-size:13px; font-family:'Galmuri14',monospace; }
 /* 오전/오후 단추 — 할 일 목록 버튼과 같은 색 */
 .ampm-chip { font-size:11px; border-radius:3px; padding:2px 6px; cursor:pointer;
   flex-shrink:0; white-space:nowrap; font-weight:700; border:1px solid transparent;
@@ -1130,10 +1130,7 @@ select {
               <div id="alarmList"></div>
               <div class="alarm-dows" id="alarmDows"></div>
               <div class="alarm-add">
-                <span class="tctl">
-                  <button type="button" class="ampm-chip" onclick="toggleTimeAmPm(this)" data-i18n="work_am">오전</button>
-                  <input type="time" id="alarmTime" value="09:00">
-                </span>
+                <span id="alarmTimeCtl"></span>
                 <input id="alarmName" class="dday-name" placeholder="알람 이름" data-i18n-placeholder="alarm_ph"
                   onkeydown="if(event.key==='Enter')addAlarm()">
                 <button class="btn btn-y dday-add-btn" onclick="addAlarm()" data-i18n="alarm_add">+ 추가</button>
@@ -1419,10 +1416,7 @@ select {
     <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="remind_vita_time">알림 시각</div>
     <div id="rsTimeList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
     <div style="display:flex;gap:6px;margin-bottom:14px">
-      <span class="tctl" style="flex:1">
-        <button type="button" class="ampm-chip" onclick="toggleTimeAmPm(this)" data-i18n="work_am">오전</button>
-        <input type="time" id="rsNewTime" style="flex:1" value="09:00" oninput="rsMarkDirty(true)">
-      </span>
+      <span id="rsNewTimeCtl" style="flex:1"></span>
       <button class="btn btn-y" style="font-size:11px;padding:4px 14px" onclick="addVitaminTime()" data-i18n="remind_time_add">+ 추가</button>
     </div>
 
@@ -3400,48 +3394,81 @@ function drinkWater(i) {
 
 
 
-// ── 시각 고르기: 오전/오후 버튼 ────────────────────────
-/** 시각 입력칸 하나를 오전/오후 버튼과 함께 감싼 마크업 */
+// ── 시각 고르기 (오전/오후 + 시 + 분) ────────────────
+// 값은 예전처럼 "HH:MM"(24시간)로 숨은 칸에 담아 둔다. 기존 onchange 는
+// 그 칸에 그대로 걸리므로 저장 흐름은 바뀌지 않는다.
+function _tPad(n) { return ('0' + n).slice(-2); }
+
+/**
+ * @param value "HH:MM"
+ * @param attrs 숨은 칸에 붙일 속성 (id, onchange 등)
+ */
 function timeCtlHtml(value, attrs) {
-  const pm = parseInt(String(value || '').split(':')[0], 10) >= 12;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(value || '09:00'));
+  const H = m ? Number(m[1]) : 9;
+  const M = m ? Number(m[2]) : 0;
+  const pm = H >= 12;
+  const h12 = ((H + 11) % 12) + 1;
+
+  let hs = '';
+  for (let i = 1; i <= 12; i++) hs += `<option value="${i}"${i === h12 ? ' selected' : ''}>${_tPad(i)}</option>`;
+  let ms = '';
+  for (let i = 0; i < 60; i++) ms += `<option value="${i}"${i === M ? ' selected' : ''}>${_tPad(i)}</option>`;
+
   return `<span class="tctl">`
-       + `<button type="button" class="ampm-chip${pm ? ' pm' : ''}" onclick="toggleTimeAmPm(this)">`
+       + `<button type="button" class="ampm-chip${pm ? ' pm' : ''}" onclick="tctlToggleAmPm(this)">`
        + `${pm ? L('work_pm') : L('work_am')}</button>`
-       + `<input type="time" value="${value}" ${attrs || ''}></span>`;
+       + `<select class="tctl-h" onchange="tctlChanged(this)">${hs}</select>`
+       + `<span class="tctl-sep">:</span>`
+       + `<select class="tctl-m" onchange="tctlChanged(this)">${ms}</select>`
+       + `<input type="hidden" class="tctl-val" value="${_tPad(H)}:${_tPad(M)}" ${attrs || ''}></span>`;
 }
 
-/** 버튼 옆 시각 입력칸의 오전/오후를 뒤집는다 (12시간 더하거나 빼기) */
-function toggleTimeAmPm(btn) {
-  const inp = btn.parentElement && btn.parentElement.querySelector('input[type="time"]');
-  if (!inp) return;
-  const m = /^(\d{2}):(\d{2})$/.exec(inp.value || '');
+/** 고르개 상태를 "HH:MM" 으로 모아 숨은 칸에 넣고 알린다 */
+function tctlApply(wrap) {
+  if (!wrap) return;
+  const chip = wrap.querySelector('.ampm-chip');
+  const hs = wrap.querySelector('.tctl-h');
+  const ms = wrap.querySelector('.tctl-m');
+  const val = wrap.querySelector('.tctl-val');
+  if (!chip || !hs || !ms || !val) return;
+  const pm = chip.classList.contains('pm');
+  let H = Number(hs.value) % 12;
+  if (pm) H += 12;
+  const next = _tPad(H) + ':' + _tPad(Number(ms.value));
+  if (val.value === next) return;
+  val.value = next;
+  // 원래 걸려 있던 onchange(저장 등)가 그대로 돌도록
+  val.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function tctlChanged(el) { tctlApply(el.closest('.tctl')); }
+
+/** 오전 ↔ 오후 */
+function tctlToggleAmPm(btn) {
+  const pm = !btn.classList.contains('pm');
+  btn.classList.toggle('pm', pm);
+  btn.textContent = pm ? L('work_pm') : L('work_am');
+  tctlApply(btn.closest('.tctl'));
+}
+
+/** 숨은 칸의 값에 맞춰 고르개를 되돌려 놓는다 (밖에서 값을 바꿨을 때) */
+function syncTimeAmPm(val) {
+  if (!val) return;
+  const wrap = val.closest ? val.closest('.tctl') : null;
+  if (!wrap) return;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(val.value || ''));
   if (!m) return;
-  const h = (Number(m[1]) + 12) % 24;
-  inp.value = ('0' + h).slice(-2) + ':' + m[2];
-  syncTimeAmPm(inp);
-  // 원래 걸려 있던 onchange(저장 등)가 그대로 돌도록 알려준다
-  inp.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
-/** 시각 값에 맞춰 버튼 글자와 색을 맞춘다 */
-function syncTimeAmPm(el) {
-  if (!el || el.type !== 'time') return;
-  const wrap = el.closest ? el.closest('.tctl') : null;
-  const chip = wrap && wrap.querySelector('.ampm-chip');
-  if (!chip) return;
-  const pm = parseInt(String(el.value || '').split(':')[0], 10) >= 12;
-  chip.classList.toggle('pm', pm);
-  chip.textContent = pm ? L('work_pm') : L('work_am');
+  const H = Number(m[1]), M = Number(m[2]), pm = H >= 12;
+  const chip = wrap.querySelector('.ampm-chip');
+  const hs = wrap.querySelector('.tctl-h');
+  const ms = wrap.querySelector('.tctl-m');
+  if (chip) { chip.classList.toggle('pm', pm); chip.textContent = pm ? L('work_pm') : L('work_am'); }
+  if (hs) hs.value = String(((H + 11) % 12) + 1);
+  if (ms) ms.value = String(M);
 }
 function syncAllTimeAmPm(root) {
-  (root || document).querySelectorAll('.tctl input[type="time"]').forEach(syncTimeAmPm);
+  (root || document).querySelectorAll('.tctl .tctl-val').forEach(syncTimeAmPm);
 }
-document.addEventListener('input', (e) => {
-  if (e.target && e.target.type === 'time') syncTimeAmPm(e.target);
-});
-document.addEventListener('change', (e) => {
-  if (e.target && e.target.type === 'time') syncTimeAmPm(e.target);
-});
 
 // ── 같은 항목이 여러 번 들어간 것 정리 ──────────────────
 /**
@@ -3521,6 +3548,11 @@ function renderAlarmDows() {
 
 function renderAlarms() {
   renderAlarmDows();
+  // 시각 고르개는 한 번만 만들고, 이미 있으면 그대로 둔다 (고른 값이 지워지지 않게)
+  const tc = document.getElementById('alarmTimeCtl');
+  if (tc && !tc.querySelector('.tctl')) {
+    tc.innerHTML = timeCtlHtml('09:00', 'id="alarmTime"');
+  }
   const el = document.getElementById('alarmList');
   if (!el) return;
   const list = alarmList().slice().sort((a, b) => String(a.time).localeCompare(String(b.time)));
@@ -3747,6 +3779,8 @@ function openRemindSettings() {
   if (on) on.checked = S.vitaminOn !== false;
   if (gl) gl.value = vitaGoal();
   if (ww) ww.checked = S.waterWorkOnly !== false;
+  const tc = document.getElementById('rsNewTimeCtl');
+  if (tc) tc.innerHTML = timeCtlHtml('09:00', 'id="rsNewTime" onchange="rsMarkDirty(true)"');
   _rsTimes = vitaminTimes();
   renderRsTimes();
   rsMarkDirty(false);
@@ -5299,6 +5333,12 @@ function renderDdays() {
   // 알람과 같은 이유로 중복이 들어올 수 있어 함께 정리한다
   const clean = dedupeById(S.ddays || [], d => d.date + '|' + (d.title || ''));
   if (clean.length !== (S.ddays || []).length) { S.ddays = clean; saveState(); }
+  // 날짜 칸이 비어 있으면 폰에서는 아무 글씨도 안 보인다 — 오늘 날짜로 채워 둔다
+  const dIn = document.getElementById('ddayDate');
+  if (dIn && !dIn.value) {
+    const n = new Date();
+    dIn.value = n.getFullYear() + '-' + ('0' + (n.getMonth() + 1)).slice(-2) + '-' + ('0' + n.getDate()).slice(-2);
+  }
   const list = clean.slice().sort((a, b) => a.date.localeCompare(b.date));
   if (!list.length) {
     el.innerHTML = '<div class="dday-empty">' + L('dday_empty') + '</div>';
