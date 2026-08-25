@@ -22,3 +22,15 @@ html = html.replace('</title>', '</title>\n' + INJECT);
 
 fs.writeFileSync(OUT, html);
 console.log('OK: www/app.html (' + Math.round(html.length / 1024) + ' KB)');
+
+// renderer가 파일 이름으로 직접 불러오는 그림들도 함께 옮긴다.
+// (예: 포토부스의 냥냥이 배경 bg-cats.png — 없으면 모바일에서만 안 뜬다)
+const RDIR = path.join(ROOT, '..', 'renderer');
+const IMG = /\.(png|jpe?g|gif|webp|svg)$/i;
+for (const name of fs.readdirSync(RDIR)) {
+  if (!IMG.test(name)) continue;
+  const src = path.join(RDIR, name);
+  if (!fs.statSync(src).isFile()) continue;
+  fs.copyFileSync(src, path.join(WWW, name));
+  console.log('OK: www/' + name + ' (' + Math.round(fs.statSync(src).size / 1024) + ' KB)');
+}

@@ -62,5 +62,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 포토부스(고양이와 사진찍기): WebView getUserMedia 카메라 접근 -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 사진을 갤러리에 저장. 안드로이드 10부터는 MediaStore라 권한이 필요 없다 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

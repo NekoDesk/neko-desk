@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.2.9-mobile';
+  var APP_VERSION = '2.3.0-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -786,6 +786,63 @@
     });
   }
 
+  // ══════════════════════════════════════════════
+  // 포토부스: 찍은 사진을 폰 갤러리에 저장
+  // 웹뷰에서는 <a download> 가 아무 일도 하지 않아서, 캔버스 그림을
+  // 네이티브(PhotoPlugin)로 넘겨 MediaStore에 넣는다.
+  // ══════════════════════════════════════════════
+  var _photoPlugin;
+  function photoPlugin() {
+    if (_photoPlugin !== undefined) return _photoPlugin;
+    _photoPlugin = null;
+    try {
+      var C = window.Capacitor;
+      if (C && typeof C.getPlatform === 'function' && C.getPlatform() === 'android'
+          && typeof C.registerPlugin === 'function') {
+        _photoPlugin = C.registerPlugin('NekoPhoto');
+      }
+    } catch (e) {}
+    return _photoPlugin;
+  }
+
+  function stamp() {
+    var d = new Date(), p = function (n) { return ('0' + n).slice(-2); };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
+           p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
+
+  /** renderer의 capturePhoto를 모바일용으로 감싼다 */
+  function wrapCapturePhoto(tries) {
+    var nb = photoPlugin();
+    if (!nb) return;
+    if (typeof window.capturePhoto === 'function' && !window.capturePhoto._mobile) {
+      var orig = window.capturePhoto;
+      window.capturePhoto = function () {
+        var canvas = document.getElementById('photoCanvas');
+        // 다이어리 사진 고르기처럼 콜백이 걸린 경우엔 원래 동작 그대로
+        var hasCb = false;
+        try { hasCb = (typeof _photoBoothCallback !== 'undefined') && !!_photoBoothCallback; }
+        catch (e) {}
+        if (hasCb || !canvas || !canvas.width) { return orig.apply(this, arguments); }
+
+        var name = 'neko-' + stamp() + '.png';
+        var data;
+        try { data = canvas.toDataURL('image/png'); }
+        catch (e) { toast('alert', '저장 실패', '사진을 만들지 못했어요'); return; }
+
+        nb.save({ data: data, name: name }).then(function () {
+          toast('reward', '찰칵!', '갤러리에 저장했어요 · ' + name);
+        }).catch(function (err) {
+          var m = (err && (err.message || err.errorMessage)) || '';
+          toast('alert', '저장 실패', m || '갤러리에 저장하지 못했어요');
+        });
+      };
+      window.capturePhoto._mobile = true;
+      return;
+    }
+    if (tries < 20) setTimeout(function () { wrapCapturePhoto(tries + 1); }, 300);
+  }
+
   function initSync() {
     if (!loggedIn()) {
       syncStatus(readSession() ? '구글 로그인 필요 (지금은 게스트)' : '로그인 필요');
@@ -1108,11 +1165,32 @@
       '  .grid2 { grid-template-columns: 1fr !important; }',
       '  .mag-grid { grid-template-columns: repeat(2,1fr) !important; }',
       '  .dash-body { padding: 12px !important; }',
-      '}'
+      '}',
+      // ── 포토부스: 화면에 다 들어오게 ──
+      // 세로 화면에서는 내용이 화면보다 길어 위아래가 잘렸다.
+      // 위에서부터 쌓고, 넘치면 스크롤되게 하고, 시스템 바 자리를 비워둔다.
+      '#photoModal {',
+      '  align-items:flex-start !important;',
+      '  overflow-y:auto !important;',
+      '  -webkit-overflow-scrolling:touch;',
+      '  padding-top:calc(env(safe-area-inset-top, 0px) + 8px) !important;',
+      '  padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px) !important;',
+      '}',
+      '#photoFrame { width:96% !important; margin:auto !important; }',
+      // 카메라 그림은 화면 절반을 넘지 않게 — 아래 버튼이 밀려나지 않도록
+      '#photoCanvas { max-height:52vh !important; object-fit:contain !important;',
+      '  aspect-ratio:auto !important; }',
+      '#photoModal button { min-height:34px !important; }'
     ].join('\n');
     var st = document.createElement('style');
     st.textContent = css;
     document.head.appendChild(st);
+
+    // env(safe-area-inset-*)가 0이 아니려면 viewport-fit=cover 가 있어야 한다
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (vp && vp.content.indexOf('viewport-fit') < 0) {
+      vp.setAttribute('content', vp.content + ', viewport-fit=cover');
+    }
 
     initDeepLinkListener();
 
@@ -1193,6 +1271,9 @@
 
       // 5) 바탕화면 위젯에 내용 전달
       startWidgetFeed();
+
+      // 6) 사진을 갤러리에 저장하도록 교체
+      wrapCapturePhoto(0);
     }, 400);
   });
 })();

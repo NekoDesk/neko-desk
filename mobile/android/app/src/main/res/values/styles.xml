@@ -11,6 +11,9 @@
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
+        <!-- 안드로이드 15는 기본이 화면 끝까지 그리기라 상태바·내비게이션바가
+             화면을 덮는다. 앱이 시스템 바를 피해 배치되도록 끈다. -->
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
     </style>
@@ -18,5 +21,6 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
     </style>
 </resources>

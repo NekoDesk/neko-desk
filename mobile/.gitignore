@@ -1,2 +1,9 @@
 node_modules/
 www/app.html
+# prepare-www.js 가 renderer/ 에서 복사해 오는 그림들 (원본은 renderer/ 에 있다)
+www/*.png
+www/*.jpg
+www/*.jpeg
+www/*.gif
+www/*.webp
+www/*.svg
