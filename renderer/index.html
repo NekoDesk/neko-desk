@@ -473,6 +473,29 @@ body.theme-mono {
 .wcup.undo { cursor: pointer; }
 .water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center; }
 
+/* 비타민: 물컵과 같은 자리, 알약 모양 픽셀 그림 */
+.vita-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; margin-top: 2px; }
+.vita-hd b { color: var(--yellow); }
+.vita-pills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+/* 알약: 위 절반은 주황, 아래 절반은 흰색. 안 먹은 알은 회색으로 잠들어 있다 */
+.vpill {
+  width: 22px; height: 14px; padding: 0; border: 1px solid var(--border);
+  border-radius: 7px; background: var(--card); position: relative;
+  cursor: default; overflow: hidden;
+}
+.vpill::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
+  background: var(--border);
+}
+.vpill::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 50%;
+  background: color-mix(in srgb, var(--border), #fff 25%);
+}
+.vpill.done::before { background: #f0913f; }
+.vpill.done::after  { background: #fdf6ec; }
+.vpill.next { border-color: var(--yellow); cursor: pointer; }
+.vpill.undo { cursor: pointer; }
+
 /* 원형 픽셀 포모도로 타이머 — 조각난 블록으로 게임 UI 느낌을 낸다 */
 .pomo-wrap { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
 .pomo { height: 100%; max-height: 230px; max-width: 100%; aspect-ratio: 1; display: block; }
@@ -665,7 +688,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   background:color-mix(in srgb, var(--card), #fff 12%);
   border:1px solid var(--border); border-radius:4px;
   padding:7px 9px; margin-bottom:8px; cursor:pointer; }
-.todo-adj.next { margin-bottom:0; margin-top:8px; }
+/* 어제·내일은 목록 아래에 반반씩 나란히 */
+.todo-adj-row { display:flex; gap:8px; margin-top:10px; align-items:stretch; }
+.todo-adj-row .todo-adj { flex:1 1 0; min-width:0; margin-bottom:0; }
 .todo-adj:hover { border-color:var(--mint);
   background:color-mix(in srgb, var(--card), #fff 20%); }
 .todo-adj-hd { font-family:'Galmuri14',monospace; font-size:10px; color:var(--gray); margin-bottom:4px; }
@@ -999,7 +1024,10 @@ select {
             </div>
             <!-- 현재 사이클 (왼쪽) -->
             <div class="card" id="homeCycleCard">
-              <div class="card-title" data-i18n="home_cycle_title">⏱ 현재 사이클</div>
+              <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span data-i18n="home_cycle_title">⏱ 현재 사이클</span>
+                <button class="todo-diary-btn" onclick="openRemindSettings()" data-i18n="remind_btn">🔔 알림 설정</button>
+              </div>
               <div class="cycle-body">
                 <div class="pomo-wrap">
                   <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"></svg>
@@ -1013,6 +1041,8 @@ select {
                   <div class="water-hd"><span data-i18n="water_lbl">💧 오늘 마신 물</span> <b id="waterCount">0</b>/8</div>
                   <div class="water-cups" id="waterCups"></div>
                   <div class="water-tip" data-i18n="water_tip">한 잔 마실 때마다 🍋 열매 +1</div>
+                  <div class="vita-hd" id="vitaHd"><span data-i18n="vita_lbl">💊 오늘 먹은 비타민</span> <b id="vitaCount">0</b>/<span id="vitaGoal">1</span></div>
+                  <div class="vita-pills" id="vitaPills"></div>
                 </div>
               </div>
             </div>
@@ -1295,6 +1325,37 @@ select {
       <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
     </div>
     <div style="font-size:11px;color:var(--gray);opacity:0.7;line-height:1.6" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+  </div>
+</div>
+
+<!-- 알림 설정 (물·비타민) -->
+<div id="remindModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeRemindSettings(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:380px;width:88%" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="remind_title">🔔 알림 설정</span>
+      <button onclick="closeRemindSettings()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--white);margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="rsVitaOn" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
+      <span data-i18n="remind_vita_on">비타민 먹을 시간 알려주기</span>
+    </label>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+      <span style="font-size:12px;color:var(--gray)" data-i18n="remind_vita_time">알림 시각</span>
+      <input type="time" id="rsVitaTime" class="todo-edit-in" style="width:130px;text-align:center">
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--gray)" data-i18n="remind_vita_goal">하루에 먹는 알 수</span>
+      <input type="number" id="rsVitaGoal" min="1" max="12" step="1" class="todo-edit-in" style="width:70px;text-align:center">
+    </div>
+    <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-bottom:16px" data-i18n="remind_vita_hint">영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)</div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeRemindSettings()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="flex:1;font-size:12px" onclick="saveRemindSettings()" data-i18n="remind_save">✓ 저장</button>
+    </div>
   </div>
 </div>
 
@@ -1599,6 +1660,13 @@ const STRINGS = {
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
     login_google_btn:'구글 로그인 하기',
+    remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
+    remind_vita_on:'비타민 먹을 시간 알려주기', remind_vita_time:'알림 시각',
+    remind_vita_goal:'하루에 먹는 알 수',
+    remind_vita_hint:'영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)',
+    remind_cancel:'취소', remind_save:'✓ 저장', remind_saved:'설정을 저장했어요',
+    vita_lbl:'💊 오늘 먹은 비타민', vita_done_title:'💊 잘했어요!',
+    vita_done_msg:'오늘 비타민 다 챙겨 먹었어요',
     vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
@@ -1785,6 +1853,13 @@ const STRINGS = {
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
     login_google_btn:'Sign in with Google',
+    remind_btn:'🔔 Reminders', remind_title:'🔔 Reminders',
+    remind_vita_on:'Remind me to take my vitamins', remind_vita_time:'Time',
+    remind_vita_goal:'Pills per day',
+    remind_vita_hint:'Taking several supplements? Set the number you take (up to 12)',
+    remind_cancel:'Cancel', remind_save:'✓ Save', remind_saved:'Settings saved',
+    vita_lbl:'💊 Vitamins today', vita_done_title:'💊 Nice work!',
+    vita_done_msg:'You took all your vitamins today',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
@@ -1971,6 +2046,13 @@ const STRINGS = {
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
     login_google_btn:'Googleでログイン',
+    remind_btn:'🔔 お知らせ設定', remind_title:'🔔 お知らせ設定',
+    remind_vita_on:'ビタミンの時間を知らせる', remind_vita_time:'時刻',
+    remind_vita_goal:'1日に飲む錠数',
+    remind_vita_hint:'サプリを何錠か飲む方はその数に合わせてください（最大12錠）',
+    remind_cancel:'キャンセル', remind_save:'✓ 保存', remind_saved:'設定を保存しました',
+    vita_lbl:'💊 今日飲んだビタミン', vita_done_title:'💊 えらい！',
+    vita_done_msg:'今日のビタミンを全部飲みました',
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
     todo_edit_hint:'ダブルクリックで編集',
@@ -2269,10 +2351,12 @@ function startHealthReminders() {
     waterBubbleIdx++;
   }, 30 * 60 * 1000); // 30분마다
 
-  // 오후 2시 비타민 알림 (하루 한 번)
+  // 비타민 알림 (하루 한 번, 설정한 시각에)
   setInterval(() => {
+    if (S.vitaminOn === false) return;
+    const [vh, vm] = String(S.vitaminTime || '14:00').split(':').map(Number);
     const now = new Date();
-    if (now.getHours() !== 14 || now.getMinutes() !== 0) return;
+    if (now.getHours() !== vh || now.getMinutes() !== vm) return;
     const today = now.toDateString();
     if (S.lastVitaminDate === today) return;
     S.lastVitaminDate = today;
@@ -2359,7 +2443,8 @@ function dTab(name) {
     const mt = document.getElementById('scheduleMemoTxt');
     if (mt) mt.value = S.scheduleMemo || '';
   }
-  if (name==='home') { renderCyclePreview(); renderWorkItems(); renderWaterCups(); }   // 스케줄이 홈으로 통합됨
+  if (name==='home') { renderCyclePreview(); renderWorkItems(); renderWaterCups();
+  renderVitamins(); }   // 스케줄이 홈으로 통합됨
   if (name==='settings') renderThemeGrid();
   renderAll();
 }
@@ -2418,6 +2503,11 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
+  vitaminOn: true,       // 비타민 알림 켜기
+  vitaminTime: '14:00',  // 알림 시각 (HH:MM)
+  vitaminGoal: 1,        // 하루에 먹는 알 수 (사람마다 다름)
+  vitaminTaken: 0,       // 오늘 먹은 알 수
+  vitaminDate: null,
   scheduleItems: null,
   scheduleMemo: '',
   calendarNotes: {},
@@ -2455,7 +2545,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','vitaminOn','vitaminTime','vitaminGoal','vitaminTaken','vitaminDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3165,6 +3255,92 @@ function drinkWater(i) {
   }
   saveState();
   renderWaterCups();
+  renderVitamins();
+}
+
+
+// ── 비타민 챙겨 먹기 ──────────────────────────────────
+const VITA_MAX = 12;   // 알 수 상한 (화면에 들어가는 만큼)
+
+function vitaGoal() {
+  const n = parseInt(S.vitaminGoal, 10);
+  return (n >= 1 && n <= VITA_MAX) ? n : 1;
+}
+/** 날짜가 바뀌면 오늘 기록을 새로 시작 */
+function _vitaEnsureToday() {
+  const today = new Date().toDateString();
+  if (S.vitaminDate !== today) { S.vitaminDate = today; S.vitaminTaken = 0; }
+}
+
+function renderVitamins() {
+  const el = document.getElementById('vitaPills');
+  if (!el) return;
+  _vitaEnsureToday();
+  const goal = vitaGoal();
+  const cur = Math.min(S.vitaminTaken || 0, goal);
+  let h = '';
+  for (let i = 0; i < goal; i++) {
+    // 물컵과 같은 규칙 — 다음 한 알만 먹을 수 있고, 방금 먹은 알만 되돌릴 수 있다
+    const cls = i < cur ? (i === cur - 1 ? 'vpill done undo' : 'vpill done')
+                        : (i === cur ? 'vpill next' : 'vpill');
+    h += `<button class="${cls}" onclick="takeVitamin(${i})" aria-label="${i + 1}"></button>`;
+  }
+  el.innerHTML = h;
+  const cnt = document.getElementById('vitaCount');
+  if (cnt) cnt.textContent = cur;
+  const gl = document.getElementById('vitaGoal');
+  if (gl) gl.textContent = goal;
+}
+
+function takeVitamin(i) {
+  _vitaEnsureToday();
+  const cur = S.vitaminTaken || 0;
+  if (i === cur) {
+    S.vitaminTaken = cur + 1;
+    if (S.vitaminTaken >= vitaGoal()) toast('reward', L('vita_done_title'), L('vita_done_msg'));
+  } else if (i === cur - 1) {
+    S.vitaminTaken = cur - 1;
+  } else {
+    return;                           // 건너뛸 수 없음
+  }
+  saveState();
+  renderVitamins();
+}
+
+// ── 알림 설정 팝업 ───────────────────────────────────
+function openRemindSettings() {
+  const on = document.getElementById('rsVitaOn');
+  const tm = document.getElementById('rsVitaTime');
+  const gl = document.getElementById('rsVitaGoal');
+  if (on) on.checked = S.vitaminOn !== false;
+  if (tm) tm.value = S.vitaminTime || '14:00';
+  if (gl) gl.value = vitaGoal();
+  const el = document.getElementById('remindModal');
+  if (el) el.style.display = 'flex';
+}
+function closeRemindSettings(e) {
+  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  const el = document.getElementById('remindModal');
+  if (el) el.style.display = 'none';
+}
+function saveRemindSettings() {
+  const on = document.getElementById('rsVitaOn');
+  const tm = document.getElementById('rsVitaTime');
+  const gl = document.getElementById('rsVitaGoal');
+
+  S.vitaminOn = on ? !!on.checked : true;
+  if (tm && /^\d{2}:\d{2}$/.test(tm.value)) S.vitaminTime = tm.value;
+
+  const n = gl ? parseInt(gl.value, 10) : NaN;
+  if (n >= 1 && n <= VITA_MAX) {
+    S.vitaminGoal = n;
+    // 개수를 줄였는데 이미 그보다 많이 먹었다면 맞춰서 줄인다
+    if ((S.vitaminTaken || 0) > n) S.vitaminTaken = n;
+  }
+  saveState();
+  renderVitamins();
+  closeRemindSettings();
+  toast('info', L('remind_title'), L('remind_saved'));
 }
 
 // ── 원형 픽셀 타이머 ──
@@ -3690,8 +3866,6 @@ function renderCalendar() {
     </div>`;
 
     if (_calKey) {
-      rh += _adjDayHtml(shiftDateKey(_calKey, -1), 'todo_prev_day', 'prev');
-
       if (selItems.length) {
         const allDone = selItems.every(i => i.done);
         rh += `<div style="display:flex;gap:6px;margin-bottom:10px">
@@ -3723,7 +3897,11 @@ function renderCalendar() {
         <button class="btn btn-y todo-add-btn" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
       </div>`;
 
-      rh += _adjDayHtml(shiftDateKey(_calKey, 1), 'todo_next_day', 'next');
+      // 어제는 왼쪽, 내일은 오른쪽에 반반씩
+      rh += `<div class="todo-adj-row">`
+          + _adjDayHtml(shiftDateKey(_calKey, -1), 'todo_prev_day', 'prev')
+          + _adjDayHtml(shiftDateKey(_calKey, 1), 'todo_next_day', 'next')
+          + `</div>`;
 
       // 사용법은 ? 버튼(사용 팁)에서 안내. 선택 상태는 ⤴ 버튼 색으로 표시된다.
     }
@@ -5497,7 +5675,7 @@ const CLOUD_KEYS = [
   // 기록
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   // 고양이·진행 상태
-  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','growthLogs','ownedAccs','redeemedCoupons',
+  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminGoal','vitaminTaken','vitaminDate','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
   'schedule','workItems','scheduleItems','theme','language'
 ];
@@ -5653,6 +5831,7 @@ function init(){
   if(typeof updateCatUI==='function') updateCatUI();
   if(typeof renderFruits==='function') renderFruits();
   if(typeof renderWaterCups==='function') renderWaterCups();
+  if(typeof renderVitamins==='function') renderVitamins();
   if(typeof renderHarvestCount==='function') renderHarvestCount();
   updateClock();
   updateCycleUI();
