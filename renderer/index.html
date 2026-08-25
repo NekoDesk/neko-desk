@@ -762,6 +762,10 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 시각 고르기 = 오전/오후 버튼 + 시·분 고르개.
    브라우저가 만드는 시각 칸(input type=time)은 오전/오후 글자를 제 마음대로
    그리고 감출 수도 없어서, PC와 폰에서 서로 다르게 보였다. 직접 만들어 쓴다. */
+/* 시각 고르개 · + 추가 · 알 수 칸을 줄의 딱 절반씩으로 맞춘다 (사이 간격 8px) */
+.rs-half { flex:0 0 calc(50% - 4px) !important; box-sizing:border-box !important; min-width:0 !important; }
+#rsNewTimeCtl .tctl { flex:1 1 0; min-width:0; justify-content:center; box-sizing:border-box; }
+#rsNewTimeCtl .tctl select { font-size:14px; }
 .tctl { display:inline-flex; align-items:center; gap:4px; flex-shrink:0;
   background:var(--card); border:1px solid var(--border); border-radius:3px; padding:3px 5px; }
 .tctl:focus-within { border-color:var(--yellow); }
@@ -1417,14 +1421,14 @@ select {
 
     <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="remind_vita_time">알림 시각</div>
     <div id="rsTimeList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
-    <div style="display:flex;gap:6px;margin-bottom:14px">
-      <span id="rsNewTimeCtl" style="flex:1"></span>
-      <button class="btn btn-y" style="font-size:11px;padding:4px 14px" onclick="addVitaminTime()" data-i18n="remind_time_add">+ 추가</button>
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:stretch">
+      <span id="rsNewTimeCtl" class="rs-half" style="display:flex"></span>
+      <button id="rsAddTimeBtn" class="btn btn-y rs-half" style="font-size:11px;padding:4px 0" onclick="addVitaminTime()" data-i18n="remind_time_add">+ 추가</button>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
-      <span style="font-size:12px;color:var(--gray)" data-i18n="remind_vita_goal">하루에 먹는 알 수</span>
-      <input type="number" id="rsVitaGoal" min="1" max="12" step="1" class="todo-edit-in" style="width:70px;text-align:center" oninput="rsMarkDirty(true)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="flex:1 1 auto;min-width:0;font-size:12px;color:var(--gray)" data-i18n="remind_vita_goal">하루에 먹는 영양제 알 수</span>
+      <input type="number" id="rsVitaGoal" min="1" max="12" step="1" class="todo-edit-in rs-half" style="text-align:center" oninput="rsMarkDirty(true)">
     </div>
     <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-bottom:14px" data-i18n="remind_vita_hint">영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)</div>
 
@@ -1759,7 +1763,7 @@ const STRINGS = {
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
     remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
     remind_vita_on:'비타민 먹을 시간 알려주기', remind_vita_time:'알림 시각',
-    remind_vita_goal:'하루에 먹는 알 수',
+    remind_vita_goal:'하루에 먹는 영양제 알 수',
     remind_vita_hint:'영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)',
     remind_cancel:'취소', remind_save:'✓ 저장', remind_saved:'설정을 저장했어요',
     vita_lbl:'💊 오늘 먹은 비타민', vita_done_title:'💊 잘했어요!',
@@ -1964,7 +1968,7 @@ const STRINGS = {
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
     remind_btn:'🔔 Reminders', remind_title:'🔔 Reminders',
     remind_vita_on:'Remind me to take my vitamins', remind_vita_time:'Time',
-    remind_vita_goal:'Pills per day',
+    remind_vita_goal:'Supplement pills per day',
     remind_vita_hint:'Taking several supplements? Set the number you take (up to 12)',
     remind_cancel:'Cancel', remind_save:'✓ Save', remind_saved:'Settings saved',
     vita_lbl:'💊 Vitamins today', vita_done_title:'💊 Nice work!',
@@ -2169,7 +2173,7 @@ const STRINGS = {
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
     remind_btn:'🔔 お知らせ設定', remind_title:'🔔 お知らせ設定',
     remind_vita_on:'ビタミンの時間を知らせる', remind_vita_time:'時刻',
-    remind_vita_goal:'1日に飲む錠数',
+    remind_vita_goal:'1日に飲むサプリの錠数',
     remind_vita_hint:'サプリを何錠か飲む方はその数に合わせてください（最大12錠）',
     remind_cancel:'キャンセル', remind_save:'✓ 保存', remind_saved:'設定を保存しました',
     vita_lbl:'💊 今日飲んだビタミン', vita_done_title:'💊 えらい！',
@@ -3725,15 +3729,29 @@ function takeVitamin(i) {
 
 // ── 알림 설정 팝업 ───────────────────────────────────
 let _rsTimes = [];        // 팝업에서 편집 중인 시각 목록
-let _rsDirty = false;     // 아직 저장하지 않은 변경이 있는가
+let _rsDirty = false;      // 아직 저장하지 않은 변경이 있는가
+let _rsTimeTouched = false;  // 시각 고르개를 건드렸는가
 
-/** 저장 안 한 변경이 있으면 저장 버튼을 두근거리게 한다 */
+/** 저장 안 한 변경이 있으면 안내 문구를 띄운다 */
 function rsMarkDirty(on) {
   _rsDirty = on !== false;
-  const btn = document.getElementById('rsSaveBtn');
   const note = document.getElementById('rsDirtyNote');
-  if (btn) btn.classList.toggle('btn-dirty', _rsDirty);
   if (note) note.classList.toggle('on', _rsDirty);
+}
+
+/**
+ * 고른 시각이 아직 목록에 없으면 '+ 추가'를 두근거리게 한다.
+ * 저장이 대신 넣어주지 않으므로, 눌러야 한다는 걸 여기서 알린다.
+ */
+function rsSyncAddBtn(touched) {
+  if (touched) _rsTimeTouched = true;
+  const btn = document.getElementById('rsAddTimeBtn');
+  const el = document.getElementById('rsNewTime');
+  if (!btn || !el) return;
+  const v = el.value || '';
+  // 아직 아무것도 안 건드렸으면 조용히 둔다
+  const need = _rsTimeTouched && /^\d{2}:\d{2}$/.test(v) && _rsTimes.indexOf(v) < 0;
+  btn.classList.toggle('btn-dirty', need);
 }
 
 function renderRsTimes() {
@@ -3741,8 +3759,10 @@ function renderRsTimes() {
   if (!el) return;
   if (!_rsTimes.length) {
     el.innerHTML = `<div style="font-size:11px;color:var(--gray);opacity:0.7">${L('remind_time_none')}</div>`;
+    rsSyncAddBtn();
     return;
   }
+  rsSyncAddBtn();
   el.innerHTML = _rsTimes.map((tm, i) => `
     <div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:5px 8px">
       <span style="flex:1;font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)">${tm}</span>
@@ -3764,7 +3784,7 @@ function addVitaminTime(quiet) {
   }
   _rsTimes.push(v);
   _rsTimes.sort();
-  renderRsTimes();
+  renderRsTimes();      // 안에서 '+ 추가' 두근거림도 다시 본다
   rsMarkDirty(true);
   return true;
 }
@@ -3782,10 +3802,12 @@ function openRemindSettings() {
   if (gl) gl.value = vitaGoal();
   if (ww) ww.checked = S.waterWorkOnly !== false;
   const tc = document.getElementById('rsNewTimeCtl');
-  if (tc) tc.innerHTML = timeCtlHtml('09:00', 'id="rsNewTime" onchange="rsMarkDirty(true)"');
+  if (tc) tc.innerHTML = timeCtlHtml('09:00', 'id="rsNewTime" onchange="rsSyncAddBtn(true)"');
+  _rsTimeTouched = false;
   _rsTimes = vitaminTimes();
   renderRsTimes();
   rsMarkDirty(false);
+  rsSyncAddBtn();
   const el = document.getElementById('remindModal');
   if (el) el.style.display = 'flex';
   syncAllTimeAmPm(el);
@@ -3796,9 +3818,8 @@ function closeRemindSettings(e) {
   if (el) el.style.display = 'none';
 }
 function saveRemindSettings() {
-  // '+ 추가'를 잊고 저장을 누르는 일이 잦아서, 적어둔 시각이 있으면 함께 넣는다
-  addVitaminTime(true);
-
+  // 저장은 목록에 들어 있는 것만 저장한다.
+  // 고른 시각을 넣으려면 '+ 추가'를 눌러야 한다 (버튼이 두근거려 알려준다).
   const on = document.getElementById('rsVitaOn');
   const gl = document.getElementById('rsVitaGoal');
   const ww = document.getElementById('rsWaterWork');
@@ -3817,6 +3838,8 @@ function saveRemindSettings() {
   saveState();
   renderVitamins();
   rsMarkDirty(false);
+  const ab = document.getElementById('rsAddTimeBtn');
+  if (ab) ab.classList.remove('btn-dirty');
   closeRemindSettings();
   toast('info', L('remind_title'), L('remind_saved'));
 }
