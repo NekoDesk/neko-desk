@@ -726,8 +726,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .work-item-row .drag-handle:hover { color:var(--white); }
 .ti-label-in { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--white); padding:3px 2px; font-size:13px; flex:1; min-width:0; outline:none; }
 .ti-label-in:focus { border-bottom-color:var(--yellow); }
-.ampm-btn { font-size:11px; color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 26%); border:1px solid var(--yellow); border-radius:3px; padding:2px 5px; cursor:pointer; flex-shrink:0; white-space:nowrap; }
-.ampm-btn:hover { background:color-mix(in srgb, var(--card), #fff 38%); }
+/* 오전은 파랑(아침 하늘), 오후는 주황(해질녘) — 눌러 바꿀 때 한눈에 보이도록 */
+.ampm-btn { font-size:11px; border-radius:3px; padding:2px 5px; cursor:pointer;
+  flex-shrink:0; white-space:nowrap; font-weight:700; border:1px solid transparent; }
+.ampm-btn.am { color:#0e2c52; background:#8ec5ff; border-color:#6aa9ee; }
+.ampm-btn.pm { color:#4a2503; background:#ffc078; border-color:#e8a252; }
+.ampm-btn.am:hover { background:#a8d3ff; }
+.ampm-btn.pm:hover { background:#ffd0a0; }
 .ti-time-in { width:160px; flex-shrink:0; background:var(--card); border:1px solid var(--border); color:var(--white); padding:4px 6px; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
 .ti-time-in:focus { border-color:var(--yellow); }
 /* 시간 입력의 내부 필드는 그림자 DOM이라 별도로 크기를 맞춰야 라벨과 같아진다 */
@@ -3560,9 +3565,9 @@ function renderWorkItems() {
       <div class="work-item-row" data-idx="${i}">
         <span class="drag-handle" onpointerdown="workDragDown(event,${i})">⠿</span>
         <input class="ti-label-in" value="${workLabel(item).replace(/"/g,'&quot;')}" placeholder="${L('work_ph')}"
-          oninput="S.workItems[${i}].label=this.value; delete S.workItems[${i}].key">
+          oninput="S.workItems[${i}].label=this.value; delete S.workItems[${i}].key; workItemsChanged()">
         <input type="time" value="${item.time}" class="ti-time-in"
-          onchange="S.workItems[${i}].time=this.value;renderWorkItems()">
+          onchange="S.workItems[${i}].time=this.value;workItemsChanged(true);renderWorkItems()">
         <button class="ti-x-btn" onclick="removeWorkItem(${i})">×</button>
       </div>`;
   }).join('');
@@ -3631,6 +3636,7 @@ function reorderWorkItem(from, to) {
   if (to === from || to === from + 1) return;   // 제자리
   const [moved] = items.splice(from, 1);
   items.splice(from < to ? to - 1 : to, 0, moved);
+  workItemsChanged(true);
   renderWorkItems();
 }
 
@@ -3640,15 +3646,18 @@ document.addEventListener('pointercancel', _wdragEnd);
 function addWorkItem() {
   if (!S.workItems) S.workItems = [];
   S.workItems.push({ time:'09:00', label:L('work_new') });
+  workItemsChanged(true);
   renderWorkItems();
 }
 function removeWorkItem(i) {
   if (!S.workItems) return;
   S.workItems.splice(i, 1);
+  workItemsChanged(true);
   renderWorkItems();
 }
 
-function saveSchedule(){
+/** 항목의 시각을 사이클 계산용 schedule 로 옮긴다 */
+function applyScheduleFromItems() {
   if (!S.workItems) S.workItems = WORK_DEFAULTS.map(x=>({...x}));
   const it = S.workItems;
   S.schedule.ws = it[0]?.time || '09:00';
@@ -3656,8 +3665,24 @@ function saveSchedule(){
   S.schedule.le = it[2]?.time || '13:00';
   S.schedule.we = it[3]?.time || '18:00';
   S.schedule.es = it[4]?.time || '19:00';
-  saveState();
-  renderHomeSchedule();
+}
+
+/**
+ * 업무 시간 항목이 바뀌면 곧바로 저장한다.
+ * 예전에는 '저장'을 눌러야만 남아서, 고쳐 놓고 창을 닫거나
+ * 다른 기기에서 동기화가 오면 원래대로 돌아가 있었다.
+ * 글자를 칠 때마다 저장하면 과하니 잠깐 기다렸다 한 번만 쓴다.
+ */
+let _workSaveTimer = null;
+function workItemsChanged(now) {
+  applyScheduleFromItems();
+  clearTimeout(_workSaveTimer);
+  const write = () => { saveState(); renderHomeSchedule(); };
+  if (now) write(); else _workSaveTimer = setTimeout(write, 500);
+}
+
+function saveSchedule(){
+  workItemsChanged(true);
   toast('info', L('work_saved_title'), L('work_saved_msg'));
 }
 
@@ -3879,7 +3904,7 @@ function renderCalendar() {
             data-tip="${L('todo_move_btn')}" onpointerdown="moveBtnDown(event,'${_calKey}',${i})">⠿</span>
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
-          <button class="ampm-btn" onclick="toggleItemAmPm('${_calKey}',${i})">${item.ampm === 'pm' ? L('work_pm') : L('work_am')}</button>
+          <button class="ampm-btn ${item.ampm === 'pm' ? 'pm' : 'am'}" onclick="toggleItemAmPm('${_calKey}',${i})">${item.ampm === 'pm' ? L('work_pm') : L('work_am')}</button>
           ${_editIdx === i
             ? `<input id="dayItemEdit" class="todo-edit-in" value="${item.text.replace(/"/g,'&quot;')}"
                  onkeydown="if(event.key==='Enter')this.blur(); else if(event.key==='Escape'){_editIdx=-1;renderCalendar();}"
@@ -3891,7 +3916,7 @@ function renderCalendar() {
 
       // 입력칸은 '어제'와 '내일' 사이에. 추가 버튼은 입력칸 오른쪽에 작게.
       rh += `<div class="todo-add-row">
-        <button class="ampm-btn" onclick="toggleNewAmPm()">${_newAmPm === 'pm' ? L('work_pm') : L('work_am')}</button>
+        <button class="ampm-btn ${_newAmPm === 'pm' ? 'pm' : 'am'}" onclick="toggleNewAmPm()">${_newAmPm === 'pm' ? L('work_pm') : L('work_am')}</button>
         <input id="dayNoteInput" placeholder="${L('todo_input_ph')}"
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')">
         <button class="btn btn-y todo-add-btn" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
