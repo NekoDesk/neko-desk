@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.3.2-mobile';
+  var APP_VERSION = '2.3.3-mobile';
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -23,7 +23,8 @@
     'calendarNotes', 'calendarDeleted', 'ddays', 'memoDoc', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
     // 고양이·진행 상태
     'cat', 'pts', 'fruits', 'harvestedFruits',
-    'vitaminOn', 'vitaminTime', 'vitaminGoal', 'vitaminTaken', 'vitaminDate', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
+    'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
+    'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
     'schedule', 'workItems', 'scheduleItems', 'theme', 'language'
   ];

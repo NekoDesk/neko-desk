@@ -689,6 +689,27 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border:1px solid var(--border); border-radius:4px;
   padding:7px 9px; margin-bottom:8px; cursor:pointer; }
 /* 어제·내일은 목록 아래에 반반씩 나란히 */
+/* 알람 */
+.alarm-row { display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:5px;
+  background:color-mix(in srgb, var(--card), #fff 8%); border:1px solid var(--border); border-radius:5px; }
+.alarm-row.off { opacity:0.45; }
+.alarm-toggle { background:transparent; border:none; color:var(--mint); font-size:13px;
+  cursor:pointer; padding:0; line-height:1; flex-shrink:0; }
+.alarm-row.off .alarm-toggle { color:var(--gray); }
+.alarm-time { font-family:'Galmuri14',monospace; font-size:13px; color:var(--yellow); flex-shrink:0; }
+.alarm-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.alarm-label { font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.alarm-days { font-size:10px; color:var(--gray); }
+.alarm-dows { display:flex; gap:4px; margin:8px 0 6px; }
+.alarm-dow { flex:1; font-size:11px; padding:4px 0; cursor:pointer; border-radius:4px;
+  border:1px solid var(--border); background:var(--card); color:var(--gray); }
+.alarm-dow.on { border-color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 22%); color:var(--yellow); font-weight:700; }
+.alarm-dow.sun { color:#f88; }
+.alarm-dow.sun.on { border-color:#f88; color:#f88; }
+.alarm-add { display:flex; gap:5px; align-items:center; }
+.alarm-add .dday-name { flex:1; min-width:0; }
+.alarm-hint { font-size:10px; color:var(--gray); opacity:0.75; margin-top:6px; line-height:1.5; }
+
 .todo-adj-row { display:flex; gap:8px; margin-top:10px; align-items:stretch; }
 .todo-adj-row .todo-adj { flex:1 1 0; min-width:0; margin-bottom:0; }
 .todo-adj:hover { border-color:var(--mint);
@@ -925,7 +946,9 @@ select {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
 /* ── Diary ── */
-.diary-nb{position:relative;padding:16px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
+/* 줄무늬는 28px 주기. 글씨 칸도 28px이라 글씨가 28의 배수 지점에서
+   시작해야 한 줄 한 줄이 줄 위에 앉는다. (padding-top 28 + lines-area 0) */
+.diary-nb{position:relative;padding:28px 20px 20px;background:repeating-linear-gradient(var(--bg) 0px,var(--bg) 27px,var(--border) 27px,var(--border) 28px)}
 .diary-top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;background:var(--panel);border-radius:10px;padding:12px}
 .diary-mini-cal{width:100%}
 .diary-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:44px;margin-bottom:6px}
@@ -948,8 +971,8 @@ select {
 .diary-fold-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;font-size:12px;font-weight:bold;color:var(--gray);padding:6px 10px;margin-bottom:6px;background:var(--panel);border-radius:8px}
 .diary-fold-hd:hover{color:var(--white)}
 .diary-date-label{font-size:14px;font-weight:bold;color:var(--yellow);letter-spacing:1px}
-.diary-lines-area{padding:2px 18px}
-.diary-textarea{width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
+.diary-lines-area{padding:0 18px}
+.diary-textarea{width:100%;min-height:224px;background:transparent;border:none;outline:none;resize:none;color:var(--white);font-size:13px;line-height:28px;padding:0;overflow:hidden;box-sizing:border-box;font-family:inherit}
 .diary-btns{display:flex;gap:8px;margin-top:16px;padding-left:44px}
 </style>
 </head>
@@ -1071,6 +1094,20 @@ select {
             <div class="card">
               <div id="calLeftGrid"></div>
             </div>
+            <!-- 알람: 캘린더와 D-day 사이 -->
+            <div class="card" style="margin-top:12px">
+              <div class="card-title" data-i18n="alarm_title">⏰ 알람</div>
+              <div id="alarmList"></div>
+              <div class="alarm-dows" id="alarmDows"></div>
+              <div class="alarm-add">
+                <input type="time" id="alarmTime" class="dday-date" value="09:00">
+                <input id="alarmName" class="dday-name" placeholder="알람 이름" data-i18n-placeholder="alarm_ph"
+                  onkeydown="if(event.key==='Enter')addAlarm()">
+                <button class="btn btn-y dday-add-btn" onclick="addAlarm()" data-i18n="alarm_add">+ 추가</button>
+              </div>
+              <div class="alarm-hint" data-i18n="alarm_hint">요일을 고르면 그 요일마다 반복돼요. 안 고르면 매일 울립니다.</div>
+            </div>
+
             <!-- D-day: 캘린더 아래, 같은 폭 -->
             <div class="card" style="margin-top:12px">
               <div class="card-title" data-i18n="dday_title">📌 D-day</div>
@@ -1346,16 +1383,26 @@ select {
       <span data-i18n="remind_vita_on">비타민 먹을 시간 알려주기</span>
     </label>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
-      <span style="font-size:12px;color:var(--gray)" data-i18n="remind_vita_time">알림 시각</span>
-      <input type="time" id="rsVitaTime" class="todo-edit-in" style="width:130px;text-align:center">
+    <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="remind_vita_time">알림 시각</div>
+    <div id="rsTimeList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <input type="time" id="rsNewTime" class="todo-edit-in" style="flex:1;text-align:center" value="09:00">
+      <button class="btn btn-gr" style="font-size:11px;padding:4px 10px" onclick="addVitaminTime()" data-i18n="remind_time_add">+ 추가</button>
     </div>
 
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
       <span style="font-size:12px;color:var(--gray)" data-i18n="remind_vita_goal">하루에 먹는 알 수</span>
       <input type="number" id="rsVitaGoal" min="1" max="12" step="1" class="todo-edit-in" style="width:70px;text-align:center">
     </div>
-    <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-bottom:16px" data-i18n="remind_vita_hint">영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)</div>
+    <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-bottom:14px" data-i18n="remind_vita_hint">영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)</div>
+
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--white);cursor:pointer">
+        <input type="checkbox" id="rsWaterWork" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
+        <span data-i18n="remind_water_work">물 알림은 업무 시간에만</span>
+      </label>
+      <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-top:5px" data-i18n="remind_water_hint">끄면 퇴근 후·새벽에도 30분마다 물을 권합니다</div>
+    </div>
 
     <div style="display:flex;gap:8px">
       <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeRemindSettings()" data-i18n="remind_cancel">취소</button>
@@ -1665,6 +1712,17 @@ const STRINGS = {
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
     login_google_btn:'구글 로그인 하기',
+    alarm_title:'⏰ 알람', alarm_ph:'알람 이름', alarm_add:'+ 추가',
+    alarm_empty:'등록된 알람이 없어요', alarm_everyday:'매일',
+    alarm_weekdays:'주중', alarm_weekend:'주말',
+    alarm_turn_on:'켜기', alarm_turn_off:'끄기', alarm_ring_title:'⏰ 알람',
+    alarm_need_title:'알람을 등록할 수 없어요', alarm_need_msg:'시각과 이름을 모두 적어주세요',
+    alarm_full_msg:'알람은 20개까지 등록할 수 있어요',
+    alarm_hint:'요일을 고르면 그 요일마다 반복돼요. 안 고르면 매일 울립니다.',
+    remind_time_add:'+ 추가', remind_time_none:'알림 시각이 없어요',
+    remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
+    remind_water_work:'물 알림은 업무 시간에만',
+    remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
     remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
     remind_vita_on:'비타민 먹을 시간 알려주기', remind_vita_time:'알림 시각',
     remind_vita_goal:'하루에 먹는 알 수',
@@ -1858,6 +1916,17 @@ const STRINGS = {
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
     login_google_btn:'Sign in with Google',
+    alarm_title:'⏰ Alarms', alarm_ph:'Alarm name', alarm_add:'+ Add',
+    alarm_empty:'No alarms yet', alarm_everyday:'Every day',
+    alarm_weekdays:'Weekdays', alarm_weekend:'Weekend',
+    alarm_turn_on:'Turn on', alarm_turn_off:'Turn off', alarm_ring_title:'⏰ Alarm',
+    alarm_need_title:'Cannot add alarm', alarm_need_msg:'Please enter both a time and a name',
+    alarm_full_msg:'You can keep up to 20 alarms',
+    alarm_hint:'Pick days to repeat weekly. With none picked it rings every day.',
+    remind_time_add:'+ Add', remind_time_none:'No times set',
+    remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
+    remind_water_work:'Water reminders only during work hours',
+    remind_water_hint:'If off, it nudges you every 30 minutes at night too',
     remind_btn:'🔔 Reminders', remind_title:'🔔 Reminders',
     remind_vita_on:'Remind me to take my vitamins', remind_vita_time:'Time',
     remind_vita_goal:'Pills per day',
@@ -2051,6 +2120,17 @@ const STRINGS = {
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
     login_google_btn:'Googleでログイン',
+    alarm_title:'⏰ アラーム', alarm_ph:'アラーム名', alarm_add:'+ 追加',
+    alarm_empty:'アラームがありません', alarm_everyday:'毎日',
+    alarm_weekdays:'平日', alarm_weekend:'週末',
+    alarm_turn_on:'オン', alarm_turn_off:'オフ', alarm_ring_title:'⏰ アラーム',
+    alarm_need_title:'追加できません', alarm_need_msg:'時刻と名前を入れてください',
+    alarm_full_msg:'アラームは20個まで登録できます',
+    alarm_hint:'曜日を選ぶとその曜日ごとに繰り返します。選ばなければ毎日鳴ります。',
+    remind_time_add:'+ 追加', remind_time_none:'時刻がありません',
+    remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
+    remind_water_work:'水のお知らせは勤務時間だけ',
+    remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
     remind_btn:'🔔 お知らせ設定', remind_title:'🔔 お知らせ設定',
     remind_vita_on:'ビタミンの時間を知らせる', remind_vita_time:'時刻',
     remind_vita_goal:'1日に飲む錠数',
@@ -2347,8 +2427,16 @@ function showUpdateReady(version){
 let waterBubbleIdx = 0;
 let _isWaterBubble = false;
 
+/** 지금이 업무 시간 안인가 (출근~퇴근, 점심 제외) */
+function inWorkHours() {
+  const p = getPeriod();
+  return p === 'work' || p === 'postlunch';
+}
+
 function startHealthReminders() {
   setInterval(() => {
+    // 퇴근 후나 새벽에 물 마시라고 깨우지 않는다
+    if (S.waterWorkOnly !== false && !inWorkHours()) return;
     const msg = MSGS('water')[waterBubbleIdx % MSGS('water').length];
     _isWaterBubble = true;
     showBubble(msg); // 위젯 모드: 말풍선
@@ -2356,19 +2444,22 @@ function startHealthReminders() {
     waterBubbleIdx++;
   }, 30 * 60 * 1000); // 30분마다
 
-  // 비타민 알림 (하루 한 번, 설정한 시각에)
+  // 비타민 알림 — 정해둔 시각마다 (영양제마다 먹는 때가 다르므로 여러 개)
   setInterval(() => {
     if (S.vitaminOn === false) return;
-    const [vh, vm] = String(S.vitaminTime || '14:00').split(':').map(Number);
     const now = new Date();
-    if (now.getHours() !== vh || now.getMinutes() !== vm) return;
-    const today = now.toDateString();
-    if (S.lastVitaminDate === today) return;
-    S.lastVitaminDate = today;
+    const hhmm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    if (vitaminTimes().indexOf(hhmm) < 0) return;
+    const mark = now.toDateString() + ' ' + hhmm;   // 시각별로 하루 한 번
+    if (S.lastVitaminDate === mark) return;
+    S.lastVitaminDate = mark;
     saveState();
     showBubble(L('vitamin_bubble'));
     toast('info', L('vitamin_title'), L('vitamin_msg'));
   }, 60 * 1000);
+
+  // 직접 등록한 알람 (요일 반복)
+  setInterval(checkAlarms, 60 * 1000);
 }
 
 function speechBubbleClick() {
@@ -2509,7 +2600,11 @@ const S = {
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
   vitaminOn: true,       // 비타민 알림 켜기
-  vitaminTime: '14:00',  // 알림 시각 (HH:MM)
+  vitaminTime: '14:00',  // (구버전) 알림 시각 하나 — vitaminTimes로 옮겨진다
+  vitaminTimes: null,    // 알림 시각 여러 개 ['09:00','14:00'] — 영양제마다 시간이 다르므로
+  waterWorkOnly: true,   // 물 알림을 업무 시간에만
+  alarms: [],            // 알람 [{id, time:'HH:MM', label, days:[0~6], on}]
+  alarmFired: {},        // 오늘 이미 울린 알람 {id: 'YYYY-MM-DD'}
   vitaminGoal: 1,        // 하루에 먹는 알 수 (사람마다 다름)
   vitaminTaken: 0,       // 오늘 먹은 알 수
   vitaminDate: null,
@@ -2550,7 +2645,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','vitaminOn','vitaminTime','vitaminGoal','vitaminTaken','vitaminDate','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3264,6 +3359,142 @@ function drinkWater(i) {
 }
 
 
+
+// ── 비타민 알림 시각 (여러 개) ──────────────────────
+/** 저장된 시각 목록. 예전 단일 값(vitaminTime)도 받아준다 */
+function vitaminTimes() {
+  let arr = S.vitaminTimes;
+  if (!Array.isArray(arr) || !arr.length) arr = [S.vitaminTime || '14:00'];
+  return arr.filter(x => /^\d{2}:\d{2}$/.test(x))
+            .filter((x, i, a) => a.indexOf(x) === i)
+            .sort();
+}
+
+// ── 알람 (요일 반복) ─────────────────────────────────
+const ALARM_MAX = 20;
+
+function newAlarmId() {
+  return (typeof newItemId === 'function') ? newItemId() : 'a' + Date.now() + Math.random().toString(36).slice(2, 6);
+}
+function alarmList() {
+  if (!Array.isArray(S.alarms)) S.alarms = [];
+  return S.alarms;
+}
+/** 요일 이름 7개 (일~토) */
+function dowNames() { return L('dows').split(','); }
+
+/** 반복 요일을 사람이 읽는 말로 */
+function alarmDaysLabel(days) {
+  if (!days || !days.length || days.length === 7) return L('alarm_everyday');
+  const wd = [1,2,3,4,5], we = [0,6];
+  const same = (a, b) => a.length === b.length && a.every(x => b.indexOf(x) >= 0);
+  if (same(days, wd)) return L('alarm_weekdays');
+  if (same(days, we)) return L('alarm_weekend');
+  const n = dowNames();
+  return days.slice().sort().map(d => n[d]).join(' ');
+}
+
+/** 새 알람에 붙일 요일 단추 (언어가 바뀌면 다시 그려진다) */
+function renderAlarmDows() {
+  const el = document.getElementById('alarmDows');
+  if (!el) return;
+  const on = Array.from(el.querySelectorAll('.alarm-dow.on')).map(b => b.dataset.dow);
+  el.innerHTML = dowNames().map((nm, i) =>
+    `<button type="button" class="alarm-dow${i === 0 ? ' sun' : ''}${on.indexOf(String(i)) >= 0 ? ' on' : ''}"
+       data-dow="${i}" onclick="toggleAlarmDow(this)">${nm}</button>`).join('');
+}
+
+function renderAlarms() {
+  renderAlarmDows();
+  const el = document.getElementById('alarmList');
+  if (!el) return;
+  const list = alarmList().slice().sort((a, b) => String(a.time).localeCompare(String(b.time)));
+  if (!list.length) {
+    el.innerHTML = `<div class="dday-empty">${L('alarm_empty')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(a => `
+    <div class="alarm-row${a.on === false ? ' off' : ''}">
+      <button class="alarm-toggle" onclick="toggleAlarm('${a.id}')"
+        data-tip="${a.on === false ? L('alarm_turn_on') : L('alarm_turn_off')}">${a.on === false ? '○' : '●'}</button>
+      <span class="alarm-time">${a.time}</span>
+      <span class="alarm-body">
+        <span class="alarm-label">${String(a.label || '').replace(/</g, '&lt;')}</span>
+        <span class="alarm-days">${alarmDaysLabel(a.days)}</span>
+      </span>
+      <button class="sch-del-btn" onclick="deleteAlarm('${a.id}')">×</button>
+    </div>`).join('');
+}
+
+function addAlarm() {
+  const tEl = document.getElementById('alarmTime');
+  const nEl = document.getElementById('alarmName');
+  const time = (tEl && tEl.value) || '';
+  const label = ((nEl && nEl.value) || '').trim();
+  if (!/^\d{2}:\d{2}$/.test(time) || !label) {
+    toast('alert', L('alarm_need_title'), L('alarm_need_msg'));
+    return;
+  }
+  if (alarmList().length >= ALARM_MAX) {
+    toast('alert', L('alarm_need_title'), L('alarm_full_msg'));
+    return;
+  }
+  const days = Array.from(document.querySelectorAll('.alarm-dow.on'))
+                    .map(b => Number(b.dataset.dow));
+  S.alarms.push({ id: newAlarmId(), time, label, days, on: true });
+  if (nEl) nEl.value = '';
+  saveState();
+  renderAlarms();
+}
+
+function toggleAlarm(id) {
+  const a = alarmList().find(x => x.id === id);
+  if (!a) return;
+  a.on = a.on === false;
+  saveState();
+  renderAlarms();
+}
+function deleteAlarm(id) {
+  S.alarms = alarmList().filter(x => x.id !== id);
+  if (S.alarmFired) delete S.alarmFired[id];
+  saveState();
+  renderAlarms();
+}
+/** 새 알람의 요일 단추 */
+function toggleAlarmDow(btn) {
+  btn.classList.toggle('on');
+}
+
+/** 1분마다 불려 지금 울릴 알람이 있는지 본다 */
+function checkAlarms() {
+  const list = alarmList();
+  if (!list.length) return;
+  const now = new Date();
+  const hhmm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+  const dow = now.getDay();
+  const today = now.toDateString();
+  if (!S.alarmFired) S.alarmFired = {};
+  let changed = false;
+
+  list.forEach(a => {
+    if (a.on === false || a.time !== hhmm) return;
+    // 요일을 안 고르면 매일
+    if (a.days && a.days.length && a.days.indexOf(dow) < 0) return;
+    if (S.alarmFired[a.id] === today + ' ' + hhmm) return;   // 같은 시각 중복 방지
+    S.alarmFired[a.id] = today + ' ' + hhmm;
+    changed = true;
+    showBubble('⏰ ' + a.label);
+    toast('info', L('alarm_ring_title'), a.label);
+  });
+  if (changed) {
+    // 지난 기록은 쌓아두지 않는다
+    Object.keys(S.alarmFired).forEach(id => {
+      if (!list.some(a => a.id === id)) delete S.alarmFired[id];
+    });
+    saveState();
+  }
+}
+
 // ── 비타민 챙겨 먹기 ──────────────────────────────────
 const VITA_MAX = 12;   // 알 수 상한 (화면에 들어가는 만큼)
 
@@ -3313,13 +3544,45 @@ function takeVitamin(i) {
 }
 
 // ── 알림 설정 팝업 ───────────────────────────────────
+let _rsTimes = [];   // 팝업에서 편집 중인 시각 목록
+
+function renderRsTimes() {
+  const el = document.getElementById('rsTimeList');
+  if (!el) return;
+  if (!_rsTimes.length) {
+    el.innerHTML = `<div style="font-size:11px;color:var(--gray);opacity:0.7">${L('remind_time_none')}</div>`;
+    return;
+  }
+  el.innerHTML = _rsTimes.map((tm, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:5px 8px">
+      <span style="flex:1;font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)">${tm}</span>
+      <button class="sch-del-btn" onclick="removeVitaminTime(${i})">×</button>
+    </div>`).join('');
+}
+function addVitaminTime() {
+  const el = document.getElementById('rsNewTime');
+  const v = el ? el.value : '';
+  if (!/^\d{2}:\d{2}$/.test(v)) return;
+  if (_rsTimes.indexOf(v) >= 0) { toast('alert', L('remind_title'), L('remind_time_dup')); return; }
+  if (_rsTimes.length >= 8) { toast('alert', L('remind_title'), L('remind_time_full')); return; }
+  _rsTimes.push(v);
+  _rsTimes.sort();
+  renderRsTimes();
+}
+function removeVitaminTime(i) {
+  _rsTimes.splice(i, 1);
+  renderRsTimes();
+}
+
 function openRemindSettings() {
   const on = document.getElementById('rsVitaOn');
-  const tm = document.getElementById('rsVitaTime');
   const gl = document.getElementById('rsVitaGoal');
+  const ww = document.getElementById('rsWaterWork');
   if (on) on.checked = S.vitaminOn !== false;
-  if (tm) tm.value = S.vitaminTime || '14:00';
   if (gl) gl.value = vitaGoal();
+  if (ww) ww.checked = S.waterWorkOnly !== false;
+  _rsTimes = vitaminTimes();
+  renderRsTimes();
   const el = document.getElementById('remindModal');
   if (el) el.style.display = 'flex';
 }
@@ -3330,11 +3593,13 @@ function closeRemindSettings(e) {
 }
 function saveRemindSettings() {
   const on = document.getElementById('rsVitaOn');
-  const tm = document.getElementById('rsVitaTime');
   const gl = document.getElementById('rsVitaGoal');
+  const ww = document.getElementById('rsWaterWork');
 
   S.vitaminOn = on ? !!on.checked : true;
-  if (tm && /^\d{2}:\d{2}$/.test(tm.value)) S.vitaminTime = tm.value;
+  S.waterWorkOnly = ww ? !!ww.checked : true;
+  S.vitaminTimes = _rsTimes.slice();
+  if (S.vitaminTimes.length) S.vitaminTime = S.vitaminTimes[0];   // 구버전 호환
 
   const n = gl ? parseInt(gl.value, 10) : NaN;
   if (n >= 1 && n <= VITA_MAX) {
@@ -4254,7 +4519,12 @@ function loadDiaryEntry(ds) {
   }
 }
 
-function diaryGrow(el) { el.style.height='auto'; el.style.height=Math.max(220,el.scrollHeight)+'px'; }
+/** 높이를 줄 간격(28px)의 배수로 맞춘다 — 마지막 줄이 줄무늬와 어긋나지 않도록 */
+function diaryGrow(el) {
+  el.style.height = 'auto';
+  const need = Math.max(224, el.scrollHeight);
+  el.style.height = (Math.ceil(need / 28) * 28) + 'px';
+}
 
 function diaryAttachImg() { document.getElementById('diaryFileInput').click(); }
 
@@ -4884,6 +5154,7 @@ function addDday() {
   if (tEl) tEl.value = '';
   saveState();
   renderDdays();
+  if (typeof renderAlarms === 'function') renderAlarms();
   initMemo();
   renderCalendar();   // 빨간 점 갱신
 }
@@ -4892,6 +5163,7 @@ function deleteDday(id) {
   S.ddays = (S.ddays || []).filter(d => d.id !== id);
   saveState();
   renderDdays();
+  if (typeof renderAlarms === 'function') renderAlarms();
   renderCalendar();
 }
 
@@ -5700,7 +5972,7 @@ const CLOUD_KEYS = [
   // 기록
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   // 고양이·진행 상태
-  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminGoal','vitaminTaken','vitaminDate','growthLogs','ownedAccs','redeemedCoupons',
+  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
   'schedule','workItems','scheduleItems','theme','language'
 ];
@@ -5723,6 +5995,7 @@ function _cloudApply(data) {
     if (typeof renderWorkItems === 'function') renderWorkItems();
     ['ptsDisplay','shopPts'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = S.pts; });
     if (typeof renderDdays === 'function') renderDdays();
+    if (typeof renderAlarms === 'function') renderAlarms();
     // 메모장은 편집 중이면 건드리지 않는다 (커서가 튀고 입력이 끊긴다).
     // 지금 쓰고 있지 않을 때만 받아온 내용으로 바꾼다.
     const doc = (typeof memoEl === 'function') ? memoEl() : null;
@@ -5821,6 +6094,7 @@ function init(){
     try { if (window.electronAPI && window.electronAPI.cloudMarkDirty) window.electronAPI.cloudMarkDirty(); } catch(e) {}
   }
   renderDdays();
+  if (typeof renderAlarms === 'function') renderAlarms();
   renderWorkItems();  // 업무 시간 설정 초기 렌더
   const _mt = document.getElementById('scheduleMemoTxt');
   if (_mt) { _mt.value = S.scheduleMemo || ''; memoGrow(_mt); }
