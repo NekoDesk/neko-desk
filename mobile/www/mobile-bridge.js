@@ -26,7 +26,7 @@
     // 기록
     'calendarNotes', 'calendarDeleted', 'ddays', 'memoDoc', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
     // 고양이·진행 상태
-    'cat', 'pts', 'fruits', 'harvestedFruits',
+    'cat', 'pts', 'fruits', 'harvestedFruits', 'waterCups', 'waterDate',
     'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
     'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
