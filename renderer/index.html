@@ -712,6 +712,38 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .rs-dirty-note { font-size:10px; color:var(--yellow); text-align:center; margin-bottom:8px; display:none; }
 .rs-dirty-note.on { display:block; }
 
+/* ── 시간표 격자 ── */
+.tt-wrap { position:relative; border:1px solid var(--border); border-radius:6px;
+  background:var(--card); overflow:hidden; user-select:none; }
+.tt-head { display:grid; grid-template-columns:38px repeat(7,1fr);
+  border-bottom:1px solid var(--border); background:var(--panel); }
+.tt-head div { font-size:10px; text-align:center; padding:5px 0; color:var(--gray);
+  font-family:'Galmuri14',monospace; }
+.tt-head div.sun { color:#f88; }
+.tt-head div.today { color:var(--yellow); font-weight:700; }
+.tt-body { position:relative; display:grid; grid-template-columns:38px repeat(7,1fr);
+  max-height:340px; overflow-y:auto; }
+.tt-times { position:relative; }
+.tt-times span { display:block; font-size:9px; color:var(--gray); text-align:right;
+  padding-right:4px; font-family:'Galmuri14',monospace; box-sizing:border-box;
+  border-top:1px solid var(--border); }
+.tt-col { position:relative; border-left:1px solid var(--border); }
+.tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
+.tt-col.today { background:rgba(255,211,105,0.05); }
+.tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
+  padding:2px 3px; cursor:pointer; box-sizing:border-box;
+  border:1px solid var(--mint); background:color-mix(in srgb, var(--mint), transparent 78%); }
+.tt-blk.rest { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 80%); }
+.tt-blk.now { box-shadow:0 0 0 2px var(--acc) inset; }
+.tt-blk b { display:block; font-size:10px; color:var(--white); font-weight:400;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
+.tt-blk i { display:block; font-size:9px; color:var(--gray); font-style:normal; line-height:1.2; }
+.tt-draft { position:absolute; left:2px; right:2px; border-radius:3px; pointer-events:none;
+  border:1px dashed var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 82%); }
+.tt-tip { font-size:10px; color:var(--gray); opacity:0.8; margin-top:7px; line-height:1.5; }
+.tt-bar { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+.tt-bar .sp { flex:1; }
+
 /* 집중 · 휴식 길이 */
 .fb-box { margin-top:12px; padding:12px; background:var(--card);
   border:1px solid var(--border); border-radius:6px; }
@@ -1145,7 +1177,13 @@ select {
             <!-- 업무 시간 설정 (오른쪽) -->
             <div class="card" id="homeWorkCard">
               <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
-              <div id="workItemsList"></div>
+              <div class="tt-bar">
+                <span class="sp"></span>
+                <button class="fb-preset" onclick="ttFillWeekday()" data-i18n="tt_fill">간단 채우기</button>
+                <button class="fb-preset" onclick="ttClear()" data-i18n="tt_clear">비우기</button>
+              </div>
+              <div id="ttGrid"></div>
+              <div class="tt-tip" data-i18n="tt_tip">빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.</div>
 
               <!-- 집중 / 휴식 길이 — 45분 수업처럼 각자 리듬이 다르므로 -->
               <div class="fb-box">
@@ -1162,8 +1200,7 @@ select {
                 <div class="fb-hint" id="fbHint"></div>
               </div>
 
-              <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
-              <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:8px;line-height:1.6" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
+              <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:10px;line-height:1.6" data-i18n-html="cycle_desc">시간표 칸 안에서만 사이클이 돌아요.<br>칸 사이 빈 시간에는 타이머만 조용히 흐릅니다.</div>
             </div>
           </div>
         </div>
@@ -1449,6 +1486,47 @@ select {
       <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
     </div>
     <div style="font-size:11px;color:var(--gray);opacity:0.7;line-height:1.6" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+  </div>
+</div>
+
+<!-- 시간표 칸 고치기 -->
+<div id="ttModal" style="display:none;position:fixed;inset:0;z-index:9465;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="ttCloseEdit(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:380px;width:88%" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="tt_edit_title">⏰ 시간 고치기</span>
+      <button onclick="ttCloseEdit()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+
+    <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_name">이름</div>
+    <input id="ttName" class="todo-edit-in" style="width:100%;margin-bottom:14px" maxlength="20"
+      onkeydown="if(event.key==='Enter')ttSaveEdit()">
+
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_day">요일</div>
+        <select id="ttDay" class="todo-edit-in" style="width:100%"></select>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_type">종류</div>
+        <select id="ttType" class="todo-edit-in" style="width:100%">
+          <option value="work" data-i18n="tt_type_work">집중</option>
+          <option value="rest" data-i18n="tt_type_rest">쉼</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:18px">
+      <span id="ttStartCtl"></span>
+      <span style="color:var(--gray)">~</span>
+      <span id="ttEndCtl"></span>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:0 0 auto;font-size:12px;color:#f88;border-color:#f88" onclick="ttDeleteEdit()" data-i18n="tt_delete">삭제</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-gr" style="font-size:12px" onclick="ttCloseEdit()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="font-size:12px" onclick="ttSaveEdit()" data-i18n="remind_save">✓ 저장</button>
+    </div>
   </div>
 </div>
 
@@ -1741,7 +1819,7 @@ const STRINGS = {
     cycle_timer_title:'⏱ 실시간 사이클 타이머',
     cycle_settings_title:'⏰ 업무 시간 설정',
     cycle_save_btn:'✓ 저장',
-    cycle_desc:'출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!',
+    cycle_desc:'시간표 칸 안에서만 사이클이 돌아요.<br>칸 사이 빈 시간에는 타이머만 조용히 흐릅니다.',
     mode_focus:'💪 집중 중', mode_break:'☕ 휴식 시간', mode_lunch:'🍱 점심시간', mode_pre:'⏸ 출근 전',
     next_lunch:'점심시간 끝까지', next_focus:'다음 휴식까지', next_pre:'출근 전입니다', next_break:'다음 집중까지',
     cycle_auto:'출근 시간부터 자동 시작', cycles_unit:'사이클', today_done:'오늘 완료:',
@@ -1808,6 +1886,14 @@ const STRINGS = {
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
     remind_water_work:'물 알림은 업무 시간에만',
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
+    tt_title:'시간표', tt_fill:'간단 채우기', tt_clear:'비우기',
+    tt_tip:'빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.',
+    tt_overlap:'그 시간에 이미 다른 일정이 있어요', tt_bad_time:'끝나는 시각이 시작보다 빨라요',
+    tt_clear_ask:'시간표를 모두 비울까요?', tt_edit_title:'⏰ 시간 고치기',
+    tt_name:'이름', tt_day:'요일', tt_type:'종류', tt_type_work:'집중', tt_type_rest:'쉼',
+    tt_delete:'삭제',
+    blk_work_am:'오전 업무', blk_work_pm:'오후 업무', blk_lunch:'점심', blk_new:'새 일정',
+    mode_free:'☕ 쉬는 중', next_free:'시간표에 없는 시간',
     fb_title:'⏱ 집중 · 휴식 길이', fb_focus:'집중', fb_break:'휴식', fb_min:'분',
     fb_hint:'한 사이클은 {c}분이 됩니다. 45·10처럼 학교 시간표에 맞춰도 좋아요.',
     remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
@@ -1953,7 +2039,7 @@ const STRINGS = {
     cycle_timer_title:'⏱ Live Cycle Timer',
     cycle_settings_title:'⏰ Work Schedule',
     cycle_save_btn:'✓ Save',
-    cycle_desc:'60-min cycle from work start<br>(55 min focus + 5 min break)<br>auto-calculated in real time!',
+    cycle_desc:'Cycles run only inside timetable slots.<br>In the gaps the timer just ticks quietly.',
     mode_focus:'💪 Focusing', mode_break:'☕ Break', mode_lunch:'🍱 Lunch', mode_pre:'⏸ Before work',
     next_lunch:'Until lunch ends', next_focus:'Until next break', next_pre:'Before work hours', next_break:'Until next focus',
     cycle_auto:'Auto-starts at work time', cycles_unit:'cycles', today_done:'Today:',
@@ -2016,6 +2102,14 @@ const STRINGS = {
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
     remind_water_work:'Water reminders only during work hours',
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
+    tt_title:'Timetable', tt_fill:'Fill weekdays', tt_clear:'Clear',
+    tt_tip:'Drag on an empty cell to make a slot. Tap a slot to edit it.',
+    tt_overlap:'Something else is already there', tt_bad_time:'End time is before the start',
+    tt_clear_ask:'Clear the whole timetable?', tt_edit_title:'⏰ Edit slot',
+    tt_name:'Name', tt_day:'Day', tt_type:'Type', tt_type_work:'Focus', tt_type_rest:'Rest',
+    tt_delete:'Delete',
+    blk_work_am:'Morning', blk_work_pm:'Afternoon', blk_lunch:'Lunch', blk_new:'New slot',
+    mode_free:'☕ Off the clock', next_free:'Not on the timetable',
     fb_title:'⏱ Focus · Break', fb_focus:'Focus', fb_break:'Break', fb_min:'min',
     fb_hint:'One cycle becomes {c} minutes. 45·10 matches many class schedules.',
     remind_btn:'🔔 Reminders', remind_title:'🔔 Reminders',
@@ -2161,7 +2255,7 @@ const STRINGS = {
     cycle_timer_title:'⏱ ライブタイマー',
     cycle_settings_title:'⏰ 勤務時間設定',
     cycle_save_btn:'✓ 保存',
-    cycle_desc:'出勤時間かだ60分サイクル<br>(55分集中 + 5分休憩)<br>リアルタイムで自動計算！',
+    cycle_desc:'サイクルは時間割の枠の中だけで回ります。<br>空いた時間はタイマーだけが静かに進みます。',
     mode_focus:'💪 集中中', mode_break:'☕ 休憩', mode_lunch:'🍱 ランチ', mode_pre:'⏸ 出勤前',
     next_lunch:'ランチ終了まで', next_focus:'次の休憩まで', next_pre:'出勤前', next_break:'次の集中まで',
     cycle_auto:'出勤時間に自動開始', cycles_unit:'サイクル', today_done:'今日:',
@@ -2224,6 +2318,14 @@ const STRINGS = {
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
     remind_water_work:'水のお知らせは勤務時間だけ',
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
+    tt_title:'時間割', tt_fill:'平日を埋める', tt_clear:'全部消す',
+    tt_tip:'空いたところを上下にドラッグすると枠ができます。枠を押すと直せます。',
+    tt_overlap:'その時間にはすでに予定があります', tt_bad_time:'終わりが始まりより早いです',
+    tt_clear_ask:'時間割をすべて消しますか？', tt_edit_title:'⏰ 枠を直す',
+    tt_name:'名前', tt_day:'曜日', tt_type:'種類', tt_type_work:'集中', tt_type_rest:'休み',
+    tt_delete:'削除',
+    blk_work_am:'午前の仕事', blk_work_pm:'午後の仕事', blk_lunch:'昼休み', blk_new:'新しい枠',
+    mode_free:'☕ 時間外', next_free:'時間割にない時間',
     fb_title:'⏱ 集中 · 休憩', fb_focus:'集中', fb_break:'休憩', fb_min:'分',
     fb_hint:'1サイクルは{c}分になります。45·10 のように時間割に合わせても。',
     remind_btn:'🔔 お知らせ設定', remind_title:'🔔 お知らせ設定',
@@ -2634,7 +2736,7 @@ function dTab(name) {
     const mt = document.getElementById('scheduleMemoTxt');
     if (mt) mt.value = S.scheduleMemo || '';
   }
-  if (name==='home') { renderCyclePreview(); renderWorkItems(); renderWaterCups();
+  if (name==='home') { renderCyclePreview(); renderWorkItems(); renderTimetable(); renderWaterCups();
   renderVitamins(); }   // 스케줄이 홈으로 통합됨
   if (name==='settings') renderThemeGrid();
   renderAll();
@@ -2694,6 +2796,8 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
+  blocks: null,          // 시간표 [{id, day:0~6, start:'HH:MM', end:'HH:MM', label, type:'work'|'rest'}]
+                         // null이면 예전 출근·점심·퇴근 설정에서 옮겨온다
   focusMins: 55,         // 한 번에 집중하는 시간 (분)
   breakMins: 5,          // 그 뒤 쉬는 시간 (분)
   vitaminOn: true,       // 비타민 알림 켜기
@@ -2742,7 +2846,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','focusMins','breakMins','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','blocks','focusMins','breakMins','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3256,30 +3360,63 @@ function fmt(secs) {
   return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 }
 
+/**
+ * 지금 어느 단계인지 계산한다.
+ *  work  — 블록 안, 집중 중          break — 블록 안, 쉬는 중
+ *  rest  — 점심처럼 쉬라고 넣은 블록   free  — 시간표에 없는 시간
+ *  pre   — 오늘 첫 블록 전
+ * free 에서는 타이머만 돌고 알림은 울리지 않는다.
+ */
 function calcCycle() {
-  const wsMin = timeToMinutes(S.schedule.ws);
   const nowSec = nowSeconds();
-  const wsSecTotal = wsMin * 60;
-  if (nowSec < wsSecTotal) {
-    return { phase:'pre', remaining: wsSecTotal - nowSec, cycleIdx:-1, focusElapsed:0 };
+  const nowMin = nowSec / 60;
+  const day = new Date().getDay();
+  const b = blockAt(day, nowMin);
+
+  if (b && b.type === 'rest') {
+    const endSec = toMin(b.end) * 60;
+    return { phase: 'rest', cycleIdx: -2, remaining: endSec - nowSec,
+             total: (toMin(b.end) - toMin(b.start)) * 60, focusElapsed: 0, block: b };
   }
-  // 점심시간: 사이클 일시정지
-  const lsSec = timeToMinutes(S.schedule.ls) * 60;
-  const leSec = timeToMinutes(S.schedule.le) * 60;
-  if (nowSec >= lsSec && nowSec < leSec) {
-    return { phase:'lunch', cycleIdx:-2, remaining: leSec - nowSec, total: leSec - lsSec, focusElapsed: 0 };
-  }
-  const elapsedSec = nowSec - wsSecTotal;
+
   const cycleSec = cycleMins() * 60;
-  const cycleIdx = Math.floor(elapsedSec / cycleSec);
-  const withinCycleSec = elapsedSec % cycleSec;
   const focusSec = focusMins() * 60;
   const breakSec = breakMins() * 60;
-  if (withinCycleSec < focusSec) {
-    return { phase:'focus', cycleIdx, withinCycleSec, remaining: focusSec - withinCycleSec, total: focusSec, focusElapsed: withinCycleSec };
-  } else {
-    return { phase:'break', cycleIdx, withinCycleSec, remaining: focusSec + breakSec - withinCycleSec, total: breakSec, breakElapsed: withinCycleSec - focusSec };
+
+  if (b) {
+    // 블록 시작을 기준으로 집중 → 휴식을 반복한다
+    const startSec = toMin(b.start) * 60;
+    const endSec = toMin(b.end) * 60;
+    const elapsed = nowSec - startSec;
+    const cycleIdx = Math.floor(elapsed / cycleSec);
+    const within = elapsed % cycleSec;
+    const inFocus = within < focusSec;
+    let remaining = inFocus ? (focusSec - within) : (focusSec + breakSec - within);
+    remaining = Math.min(remaining, endSec - nowSec);   // 블록이 끝나면 거기서 끝
+    return { phase: inFocus ? 'focus' : 'break', cycleIdx, withinCycleSec: within,
+             remaining, total: inFocus ? focusSec : breakSec,
+             focusElapsed: inFocus ? within : 0,
+             breakElapsed: inFocus ? 0 : within - focusSec, block: b };
   }
+
+  // 시간표에 없는 시간
+  const nb = nextBlock(day, nowMin);
+  if (nb) {
+    const startSec = toMin(nb.start) * 60;
+    // 오늘 첫 블록 전이면 '시작 전'으로 기다린다
+    const first = blocksOf(day)[0];
+    if (first && nowMin < toMin(first.start)) {
+      return { phase: 'pre', cycleIdx: -1, remaining: startSec - nowSec, focusElapsed: 0, next: nb };
+    }
+  }
+  // 블록 사이거나 오늘 일정이 끝난 뒤 — 타이머만 조용히 돈다
+  const elapsed = nowSec;               // 자정 기준
+  const cycleIdx = Math.floor(elapsed / cycleSec);
+  const within = elapsed % cycleSec;
+  const inFocus = within < focusSec;
+  return { phase: 'free', free: true, focusing: inFocus, cycleIdx: -3,
+           remaining: inFocus ? (focusSec - within) : (focusSec + breakSec - within),
+           total: inFocus ? focusSec : breakSec, focusElapsed: 0, next: nb || null };
 }
 
 // 말풍선 문구 — 언어별 세트. S.language를 따라 골라 쓴다.
@@ -3482,6 +3619,258 @@ function drinkWater(i) {
 
 
 
+
+
+// ══════════════════════════════════════════════
+// 시간표 — 요일별 블록
+// 예전에는 출근·점심·퇴근 시각 하나뿐이라 수업 시간표를 담을 수 없었다.
+// 이제 요일마다 블록을 여러 개 두고, 그 안에서만 사이클이 돈다.
+// 블록 사이 빈 자리는 쉬는 시간이며, 타이머만 조용히 돌아간다.
+// ══════════════════════════════════════════════
+const BLOCK_TYPES = { work: 'work', rest: 'rest' };
+
+function toMin(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ''));
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
+}
+function toHHMM(min) {
+  min = Math.max(0, Math.min(24 * 60, Math.round(min)));
+  return ('0' + Math.floor(min / 60)).slice(-2) + ':' + ('0' + (min % 60)).slice(-2);
+}
+
+/** 예전 설정(출근·점심·퇴근)을 월~금 블록으로 옮긴다 */
+function migrateBlocks() {
+  if (Array.isArray(S.blocks)) return S.blocks;
+  const s = S.schedule || {};
+  const ws = s.ws || '09:00', ls = s.ls || '12:00', le = s.le || '13:00', we = s.we || '18:00';
+  const out = [];
+  for (let d = 1; d <= 5; d++) {                    // 월~금
+    if (toMin(ls) > toMin(ws)) out.push({ id: newAlarmId(), day: d, start: ws, end: ls, label: L('blk_work_am'), type: 'work' });
+    if (toMin(le) > toMin(ls)) out.push({ id: newAlarmId(), day: d, start: ls, end: le, label: L('blk_lunch'),   type: 'rest' });
+    if (toMin(we) > toMin(le)) out.push({ id: newAlarmId(), day: d, start: le, end: we, label: L('blk_work_pm'), type: 'work' });
+  }
+  S.blocks = out;
+  saveState();
+  return out;
+}
+function blockList() {
+  if (!Array.isArray(S.blocks)) migrateBlocks();
+  return S.blocks;
+}
+/** 그 요일의 블록을 시작 시각 순으로 */
+function blocksOf(day) {
+  return blockList().filter(b => b && b.day === day)
+                    .sort((a, b) => toMin(a.start) - toMin(b.start));
+}
+/** 지금(또는 준 시각) 들어 있는 블록 */
+function blockAt(day, min) {
+  return blocksOf(day).find(b => min >= toMin(b.start) && min < toMin(b.end)) || null;
+}
+/** 그 시각 이후 가장 가까운 블록 */
+function nextBlock(day, min) {
+  return blocksOf(day).find(b => toMin(b.start) > min) || null;
+}
+
+
+// ── 시간표 격자 그리기 ────────────────────────────────
+const TT_ROW_H = 26;      // 한 시간 높이(px)
+const TT_SNAP = 10;       // 10분 단위로 맞춘다
+let _ttDrag = null;
+
+/** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
+function ttRange() {
+  let lo = 8 * 60, hi = 20 * 60;
+  blockList().forEach(b => {
+    lo = Math.min(lo, toMin(b.start));
+    hi = Math.max(hi, toMin(b.end));
+  });
+  lo = Math.floor(lo / 60) * 60;
+  hi = Math.ceil(hi / 60) * 60;
+  if (hi - lo < 6 * 60) hi = lo + 6 * 60;
+  return [lo, hi];
+}
+
+function renderTimetable() {
+  const el = document.getElementById('ttGrid');
+  if (!el) return;
+  const [lo, hi] = ttRange();
+  const hours = (hi - lo) / 60;
+  const dows = dowNames();
+  const today = new Date().getDay();
+  const nowMin = nowMinutes();
+
+  let head = '<div></div>';
+  dows.forEach((nm, i) => {
+    head += `<div class="${i === 0 ? 'sun ' : ''}${i === today ? 'today' : ''}">${nm}</div>`;
+  });
+
+  let times = '';
+  for (let h = 0; h < hours; h++) {
+    times += `<span style="height:${TT_ROW_H}px;line-height:${TT_ROW_H}px">${('0' + ((lo / 60) + h)).slice(-2)}</span>`;
+  }
+
+  let cols = '';
+  for (let d = 0; d < 7; d++) {
+    let rows = '';
+    for (let h = 0; h < hours; h++) rows += `<div class="tt-hour" style="height:${TT_ROW_H}px"></div>`;
+    const blks = blocksOf(d).map(b => {
+      const top = (toMin(b.start) - lo) / 60 * TT_ROW_H;
+      const hgt = Math.max(14, (toMin(b.end) - toMin(b.start)) / 60 * TT_ROW_H);
+      const now = d === today && nowMin >= toMin(b.start) && nowMin < toMin(b.end);
+      return `<div class="tt-blk ${b.type === 'rest' ? 'rest' : ''}${now ? ' now' : ''}"
+        style="top:${top}px;height:${hgt}px" onclick="event.stopPropagation();ttEdit('${b.id}')">
+        <b>${String(b.label || '').replace(/</g, '&lt;')}</b>
+        ${hgt >= 30 ? `<i>${b.start}~${b.end}</i>` : ''}
+      </div>`;
+    }).join('');
+    cols += `<div class="tt-col ${d === today ? 'today' : ''}" data-day="${d}"
+      onpointerdown="ttDown(event,${d})">${rows}${blks}</div>`;
+  }
+
+  el.innerHTML = `<div class="tt-wrap">
+    <div class="tt-head">${head}</div>
+    <div class="tt-body"><div class="tt-times">${times}</div>${cols}</div>
+  </div>`;
+  el.dataset.lo = lo;
+  renderCycleLen();
+}
+
+/** 세로 위치 → 분 (10분 단위로 맞춤) */
+function ttYToMin(col, clientY) {
+  const lo = Number(document.getElementById('ttGrid').dataset.lo || 480);
+  const r = col.getBoundingClientRect();
+  const min = lo + (clientY - r.top) / TT_ROW_H * 60;
+  return Math.max(0, Math.min(24 * 60, Math.round(min / TT_SNAP) * TT_SNAP));
+}
+
+function ttDown(e, day) {
+  if (e.button !== undefined && e.button !== 0) return;
+  const col = e.currentTarget;
+  e.preventDefault();
+  _ttDrag = { day, col, from: ttYToMin(col, e.clientY), to: null, el: null };
+  try { col.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function ttMove(e) {
+  if (!_ttDrag) return;
+  const to = ttYToMin(_ttDrag.col, e.clientY);
+  if (to === _ttDrag.from) return;
+  _ttDrag.to = to;
+  const lo = Number(document.getElementById('ttGrid').dataset.lo || 480);
+  const a = Math.min(_ttDrag.from, to), b = Math.max(_ttDrag.from, to);
+  if (!_ttDrag.el) {
+    _ttDrag.el = document.createElement('div');
+    _ttDrag.el.className = 'tt-draft';
+    _ttDrag.col.appendChild(_ttDrag.el);
+  }
+  _ttDrag.el.style.top = ((a - lo) / 60 * TT_ROW_H) + 'px';
+  _ttDrag.el.style.height = Math.max(4, (b - a) / 60 * TT_ROW_H) + 'px';
+}
+
+function ttUp() {
+  if (!_ttDrag) return;
+  const d = _ttDrag; _ttDrag = null;
+  if (d.el) d.el.remove();
+  if (d.to === null) return;                       // 그냥 눌렀다 뗀 것
+  const a = Math.min(d.from, d.to), b = Math.max(d.from, d.to);
+  if (b - a < TT_SNAP) return;                     // 너무 짧으면 무시
+  ttAdd(d.day, toHHMM(a), toHHMM(b));
+}
+document.addEventListener('pointermove', ttMove);
+document.addEventListener('pointerup', ttUp);
+document.addEventListener('pointercancel', ttUp);
+
+/** 겹치는 시간이 있으면 막는다 */
+function ttOverlaps(day, startMin, endMin, skipId) {
+  return blocksOf(day).some(b => b.id !== skipId &&
+    startMin < toMin(b.end) && endMin > toMin(b.start));
+}
+
+function ttAdd(day, start, end) {
+  if (ttOverlaps(day, toMin(start), toMin(end))) {
+    toast('alert', L('tt_title'), L('tt_overlap'));
+    return;
+  }
+  blockList().push({ id: newAlarmId(), day, start, end, label: L('blk_new'), type: 'work' });
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+  ttEdit(S.blocks[S.blocks.length - 1].id);        // 바로 이름을 적을 수 있게
+}
+
+function ttClear() {
+  if (!confirm(L('tt_clear_ask'))) return;
+  S.blocks = [];
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+}
+
+/** 월~금 09:00~12:00 / 12:00~13:00 점심 / 13:00~18:00 로 채운다 */
+function ttFillWeekday() {
+  const out = [];
+  for (let d = 1; d <= 5; d++) {
+    out.push({ id: newAlarmId(), day: d, start: '09:00', end: '12:00', label: L('blk_work_am'), type: 'work' });
+    out.push({ id: newAlarmId(), day: d, start: '12:00', end: '13:00', label: L('blk_lunch'), type: 'rest' });
+    out.push({ id: newAlarmId(), day: d, start: '13:00', end: '18:00', label: L('blk_work_pm'), type: 'work' });
+  }
+  S.blocks = out;
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+}
+
+// ── 블록 고치기 팝업 ──
+let _ttEditId = null;
+
+function ttEdit(id) {
+  const b = blockList().find(x => x.id === id);
+  if (!b) return;
+  _ttEditId = id;
+  const g = (i) => document.getElementById(i);
+  if (g('ttName')) g('ttName').value = b.label || '';
+  if (g('ttDay')) {
+    g('ttDay').innerHTML = dowNames().map((nm, i) => `<option value="${i}">${nm}</option>`).join('');
+    g('ttDay').value = String(b.day);
+  }
+  if (g('ttType')) g('ttType').value = b.type === 'rest' ? 'rest' : 'work';
+  if (g('ttStartCtl')) g('ttStartCtl').innerHTML = timeCtlHtml(b.start, 'id="ttStart"');
+  if (g('ttEndCtl')) g('ttEndCtl').innerHTML = timeCtlHtml(b.end, 'id="ttEnd"');
+  const m = g('ttModal');
+  if (m) m.style.display = 'flex';
+}
+function ttCloseEdit(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('ttModal');
+  if (m) m.style.display = 'none';
+  _ttEditId = null;
+}
+function ttSaveEdit() {
+  const b = blockList().find(x => x.id === _ttEditId);
+  if (!b) return ttCloseEdit();
+  const g = (i) => document.getElementById(i);
+  const s = g('ttStart') ? g('ttStart').value : b.start;
+  const e = g('ttEnd') ? g('ttEnd').value : b.end;
+  if (toMin(e) <= toMin(s)) { toast('alert', L('tt_title'), L('tt_bad_time')); return; }
+  const day = g('ttDay') ? Number(g('ttDay').value) : b.day;
+  if (ttOverlaps(day, toMin(s), toMin(e), b.id)) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
+  b.day = day;
+  b.start = s;
+  b.end = e;
+  b.label = (g('ttName') ? g('ttName').value : '').trim() || L('blk_new');
+  b.type = g('ttType') && g('ttType').value === 'rest' ? 'rest' : 'work';
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+  ttCloseEdit();
+}
+function ttDeleteEdit() {
+  S.blocks = blockList().filter(x => x.id !== _ttEditId);
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+  ttCloseEdit();
+}
 
 // ── 집중 · 휴식 길이 ─────────────────────────────────
 // 45분 수업에 10분 쉬는 학교처럼 리듬은 사람마다 다르다.
@@ -4034,9 +4423,10 @@ function setPomoRing(ratio, brk) {
 function updateCycleUI() {
   if (typeof S === 'undefined') return;
   const c = calcCycle();
-  const isFocus = c.phase === 'focus';
+  const isFocus = c.phase === 'focus' || (c.phase === 'free' && c.focusing);
   const isPre   = c.phase === 'pre';
-  const isLunch = c.phase === 'lunch';
+  const isLunch = c.phase === 'rest';      // 점심처럼 쉬라고 넣은 블록
+  const isFree  = c.phase === 'free';      // 시간표에 없는 시간 — 타이머만 돈다
 
   // 위젯 배지
   const badge = document.getElementById('timerBadge');
@@ -4054,7 +4444,11 @@ function updateCycleUI() {
   if (tbT) tbT.textContent = isPre ? '' : (isLunch ? L('tb_lunch') : isFocus ? L('tb_focus') : L('tb_break')) + ' ' + fmt(c.remaining);
 
   // 대시보드 타이머
-  const modeLabel = isLunch ? L('mode_lunch') : isFocus ? L('mode_focus') : (isPre ? L('mode_pre') : L('mode_break'));
+  const blkName = c.block && c.block.label ? c.block.label : '';
+  const modeLabel = isLunch ? (blkName || L('mode_lunch'))
+                  : isFree  ? L('mode_free')
+                  : isFocus ? (blkName || L('mode_focus'))
+                  : (isPre ? L('mode_pre') : L('mode_break'));
   const clockClass = isFocus ? 'timer-big' : 'timer-big brk';
   const modeClass  = isFocus ? 'timer-mode-lbl' : 'timer-mode-lbl brk';
   const display = isPre ? '--:--' : fmt(c.remaining);
@@ -4071,11 +4465,15 @@ function updateCycleUI() {
   setPomoRing(isPre ? 0 : c.remaining / c.total, !isFocus);
 
   const nl = document.getElementById('hNextLabel');
-  if (nl) nl.textContent = isLunch ? L('next_lunch') : isFocus ? L('next_focus') : isPre ? L('next_pre') : L('next_break');
+  if (nl) nl.textContent = isLunch ? L('next_lunch')
+                         : isFree  ? L('next_free')
+                         : isFocus ? L('next_focus')
+                         : isPre ? L('next_pre') : L('next_break');
 
 
   // 사이클 완료 감지 — 위젯 창에서만 실행 (대시보드 창 중복 방지)
-  if (!window._isDashboard && !isPre && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
+  // 시간표에 없는 시간에는 조용히 — 타이머만 돌고 말풍선·알림은 안 뜬다
+  if (!window._isDashboard && !isPre && !isFree && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
     if (S.lastCycleIdx >= 0) {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
@@ -4095,6 +4493,8 @@ function updateCycleUI() {
       lastBubblePhase = 'focus-' + c.cycleIdx;
       showBubble(MSGS('focus')[c.cycleIdx % MSGS('focus').length]);
     }
+  } else if (isFree) {
+    // 아무 말 없이 지나간다
   } else if (isLunch && lastBubblePhase !== 'lunch-' + new Date().toDateString()) {
     lastBubblePhase = 'lunch-' + new Date().toDateString();
     showBubble(MSGS('lunch')[Math.floor(Math.random()*MSGS('lunch').length)]);
@@ -6531,6 +6931,7 @@ function init(){
   if(typeof renderFruits==='function') renderFruits();
   if(typeof renderWaterCups==='function') renderWaterCups();
   if(typeof renderVitamins==='function') renderVitamins();
+  if(typeof renderTimetable==='function') renderTimetable();
   if(typeof renderHarvestCount==='function') renderHarvestCount();
   updateClock();
   updateCycleUI();
