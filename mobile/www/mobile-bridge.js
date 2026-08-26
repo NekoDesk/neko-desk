@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.5.1-mobile';
+  var APP_VERSION = '2.5.2-mobile';
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -30,7 +30,7 @@
     'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
     'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
-    'schedule', 'workItems', 'scheduleItems', 'blocks', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language'
+    'schedule', 'workItems', 'scheduleItems', 'blocks', 'ttFrom', 'ttTo', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language'
   ];
 
   // 공개 설정만 포함 (비밀키 없음 — Supabase anon key는 공개용으로 설계됨)

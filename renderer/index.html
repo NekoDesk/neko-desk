@@ -712,6 +712,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .rs-dirty-note { font-size:10px; color:var(--yellow); text-align:center; margin-bottom:8px; display:none; }
 .rs-dirty-note.on { display:block; }
 
+/* 되돌리기 / 다시 실행 */
+.tt-ur { background:var(--card); border:1px solid var(--border); color:var(--gray);
+  font-size:13px; line-height:1; width:24px; height:22px; border-radius:4px; padding:0;
+  cursor:pointer; flex-shrink:0; position:relative; }
+.tt-ur:hover:not(:disabled) { border-color:var(--mint); color:var(--mint); }
+.tt-ur:disabled { opacity:0.3; cursor:default; }
+
 /* 시간표 칸 우클릭 메뉴 */
 .tt-menu-item { display:block; width:100%; text-align:left; background:transparent; border:none;
   color:var(--white); font-size:12px; padding:7px 14px; cursor:pointer; border-radius:4px;
@@ -733,7 +740,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-times span { display:block; font-size:9px; color:var(--gray); text-align:right;
   padding-right:4px; font-family:'Galmuri14',monospace; box-sizing:border-box;
   border-top:1px solid var(--border); }
-.tt-col { position:relative; border-left:1px solid var(--border); }
+.tt-col { position:relative; border-left:1px solid var(--border); overflow:hidden; }
 .tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
@@ -1188,17 +1195,19 @@ select {
                 <span data-i18n="tt_card_title">🗓 시간표</span>
                 <span style="flex:1"></span>
                 <button class="todo-diary-btn" onclick="openPomoSettings()" data-i18n="pomo_btn">⏱ 포모도로 타이머</button>
+                <button id="ttUndoBtn" class="tt-ur" onclick="ttUndo()" data-tip="되돌리기 (Ctrl+Z)">↶</button>
+                <button id="ttRedoBtn" class="tt-ur" onclick="ttRedo()" data-tip="다시 실행 (Ctrl+Alt+Z)">↷</button>
                 <button class="todo-help-btn" onclick="openTtTips()" data-tip="사용 팁">?</button>
               </div>
+              <div id="ttGrid"></div>
               <div class="tt-bar">
+                <button class="fb-preset" onclick="openTtFill()" data-i18n="tt_fill">간단 채우기</button>
+                <button class="fb-preset" onclick="openTtRange()" data-i18n="tt_range_btn">보이는 시간</button>
                 <span class="sp"></span>
-                <button class="fb-preset" onclick="ttFillWeekday()" data-i18n="tt_fill">간단 채우기</button>
                 <button class="fb-preset" onclick="ttClear()" data-i18n="tt_clear">비우기</button>
               </div>
-              <div id="ttGrid"></div>
-              <div class="tt-tip" data-i18n="tt_tip">빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.</div>
 
-              <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:10px;line-height:1.6" data-i18n-html="cycle_desc">시간표 칸 안에서만 사이클이 돌아요.<br>칸 사이 빈 시간에는 타이머만 조용히 흐릅니다.</div>
+
             </div>
           </div>
         </div>
@@ -1484,6 +1493,67 @@ select {
       <button id="sellFruitBtn" class="btn btn-y" onclick="sellFruits()" style="font-size:13px;padding:5px 12px">🍋 팔기</button>
     </div>
     <div style="font-size:11px;color:var(--gray);opacity:0.7;line-height:1.6" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
+  </div>
+</div>
+
+<!-- 간단 채우기 -->
+<div id="ttFillModal" style="display:none;position:fixed;inset:0;z-index:9469;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtFill(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:400px;width:90%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="fill_title">🗓 간단 채우기</span>
+      <button onclick="closeTtFill()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="fill_hint">매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다.</div>
+
+    <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="fill_days">채울 요일</div>
+    <div class="alarm-dows" id="fillDows" style="margin-top:0"></div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;margin-top:12px">
+      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_in">출근</span>
+      <span id="fillInCtl"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_lunch_s">점심 시작</span>
+      <span id="fillLsCtl"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_lunch_e">점심 끝</span>
+      <span id="fillLeCtl"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_out">퇴근</span>
+      <span id="fillOutCtl"></span>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:16px">
+      <input type="checkbox" id="fillReplace" checked style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
+      <span data-i18n="fill_replace">고른 요일에 있던 일정은 지우고 채우기</span>
+    </label>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeTtFill()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="flex:1;font-size:12px" onclick="applyTtFill()" data-i18n="fill_apply">✓ 채우기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 보이는 시간대 -->
+<div id="ttRangeModal" style="display:none;position:fixed;inset:0;z-index:9469;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtRange(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:360px;width:88%" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="range_title">🕘 보이는 시간대</span>
+      <button onclick="closeTtRange()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="range_hint">시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;justify-content:center">
+      <span id="rangeFromCtl"></span>
+      <span style="color:var(--gray)">~</span>
+      <span id="rangeToCtl"></span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeTtRange()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="flex:1;font-size:12px" onclick="applyTtRange()" data-i18n="remind_save">✓ 저장</button>
+    </div>
   </div>
 </div>
 
@@ -1938,6 +2008,13 @@ const STRINGS = {
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
     remind_water_work:'물 알림은 업무 시간에만',
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
+    tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
+    range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
+    fill_title:'🗓 간단 채우기',
+    fill_hint:'매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다.',
+    fill_days:'채울 요일', fill_in:'출근', fill_lunch_s:'점심 시작', fill_lunch_e:'점심 끝', fill_out:'퇴근',
+    fill_replace:'고른 요일에 있던 일정은 지우고 채우기', fill_apply:'✓ 채우기',
+    fill_need_day:'채울 요일을 하나 이상 골라주세요',
     tt_card_title:'🗓 시간표', pomo_btn:'⏱ 포모도로 타이머', pomo_title:'⏱ 포모도로 타이머',
     pomo_use:'포모도로 타이머 쓰기',
     pomo_explain:'<b style="color:var(--white)">포모도로가 뭔가요?</b><br>정해진 시간 동안만 집중하고 짧게 쉬는 것을 반복하는 방법이에요. 끝이 정해져 있으면 시작이 쉬워지고, 중간에 쉬어서 오래 앉아 있어도 덜 지칩니다.<br><br><b style="color:var(--white)">얼마로 할까요?</b><br>· <b>25분 집중 + 5분 휴식</b> — 가장 널리 쓰이는 기본값이에요. 처음이라면 여기서 시작해 보세요.<br>· <b>45분 + 10분</b> — 수업 시간표를 쓰는 분께 잘 맞아요.<br>· <b>50~90분 + 10~20분</b> — 한번 몰입하면 길게 가는 편이라면.<br><br>정답은 없어요. 집중이 흐트러지기 <b>직전</b>에 쉬는 시간이 오도록 맞추는 게 좋습니다.',
@@ -1946,7 +2023,7 @@ const STRINGS = {
     mode_off:'⏸ 타이머 꺼짐', next_off:'포모도로 타이머를 꺼 두었어요',
     tt_menu_edit:'✏️ 수정하기', tt_menu_del:'🗑 지우기',
     tt_tips_title:'💡 시간표 사용 팁',
-    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌어서</b> 다른 자리에 놓으면 그 사이로 들어가요. 뒤에 있던 일정은 그만큼 뒤로 밀립니다. 다른 요일로도 옮길 수 있어요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요.',
+    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌어서</b> 다른 자리에 놓으면 그 사이로 들어가요. 뒤에 있던 일정은 그만큼 뒤로 밀립니다. 다른 요일로도 옮길 수 있어요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
     tt_title:'시간표', tt_fill:'간단 채우기', tt_clear:'비우기',
     tt_tip:'빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.',
     tt_overlap:'그 시간에 이미 다른 일정이 있어요', tt_bad_time:'끝나는 시각이 시작보다 빨라요',
@@ -2163,6 +2240,13 @@ const STRINGS = {
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
     remind_water_work:'Water reminders only during work hours',
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
+    tt_range_btn:'Hours shown', range_title:'🕘 Hours shown',
+    range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
+    fill_title:'🗓 Fill in',
+    fill_hint:'For the same hours every day. Fills the days you pick with the times below.',
+    fill_days:'Days to fill', fill_in:'Start', fill_lunch_s:'Lunch from', fill_lunch_e:'Lunch to', fill_out:'End',
+    fill_replace:'Replace what is already on those days', fill_apply:'✓ Fill',
+    fill_need_day:'Pick at least one day',
     tt_card_title:'🗓 Timetable', pomo_btn:'⏱ Pomodoro', pomo_title:'⏱ Pomodoro timer',
     pomo_use:'Use the Pomodoro timer',
     pomo_explain:'<b style="color:var(--white)">What is Pomodoro?</b><br>Work in fixed bursts, then take a short break, and repeat. A known finish makes it easier to start, and the breaks keep you fresh.<br><br><b style="color:var(--white)">How long?</b><br>· <b>25 + 5</b> — the classic. Start here if unsure.<br>· <b>45 + 10</b> — matches most class schedules.<br>· <b>50~90 + 10~20</b> — if you like long stretches.<br><br>There is no right answer. Aim for a break just <b>before</b> your attention slips.',
@@ -2171,7 +2255,7 @@ const STRINGS = {
     mode_off:'⏸ Timer off', next_off:'Pomodoro timer is turned off',
     tt_menu_edit:'✏️ Edit', tt_menu_del:'🗑 Delete',
     tt_tips_title:'💡 Timetable tips',
-    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot between others to slide it in — later slots shift back. You can drop it on another day too.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts.',
+    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot between others to slide it in — later slots shift back. You can drop it on another day too.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
     tt_title:'Timetable', tt_fill:'Fill weekdays', tt_clear:'Clear',
     tt_tip:'Drag on an empty cell to make a slot. Tap a slot to edit it.',
     tt_overlap:'Something else is already there', tt_bad_time:'End time is before the start',
@@ -2388,6 +2472,13 @@ const STRINGS = {
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
     remind_water_work:'水のお知らせは勤務時間だけ',
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
+    tt_range_btn:'表示する時間', range_title:'🕘 表示する時間',
+    range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
+    fill_title:'🗓 かんたん入力',
+    fill_hint:'毎日同じ時間の方へ。下の時刻で選んだ曜日をまとめて埋めます。',
+    fill_days:'埋める曜日', fill_in:'出勤', fill_lunch_s:'昼休み開始', fill_lunch_e:'昼休み終了', fill_out:'退勤',
+    fill_replace:'選んだ曜日にある予定は消して入れる', fill_apply:'✓ 入れる',
+    fill_need_day:'曜日をひとつ以上選んでください',
     tt_card_title:'🗓 時間割', pomo_btn:'⏱ ポモドーロ', pomo_title:'⏱ ポモドーロタイマー',
     pomo_use:'ポモドーロタイマーを使う',
     pomo_explain:'<b style="color:var(--white)">ポモドーロとは？</b><br>決まった時間だけ集中して短く休む、を繰り返す方法です。終わりが決まっていると始めやすく、途中で休むので長く続きます。<br><br><b style="color:var(--white)">何分がいい？</b><br>· <b>25分 + 5分</b> — いちばん使われている基本。迷ったらここから。<br>· <b>45分 + 10分</b> — 時間割のある方に。<br>· <b>50~90分 + 10~20分</b> — 一度乗ると長く続く方に。<br><br>正解はありません。集中が切れる<b>直前</b>に休みが来るように。',
@@ -2396,7 +2487,7 @@ const STRINGS = {
     mode_off:'⏸ タイマーオフ', next_off:'ポモドーロタイマーはオフです',
     tt_menu_edit:'✏️ 直す', tt_menu_del:'🗑 消す',
     tt_tips_title:'💡 時間割の使い方',
-    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>して他の枠の間に置くと、そこに入り後ろの予定がずれます。別の曜日にも移せます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。',
+    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>して他の枠の間に置くと、そこに入り後ろの予定がずれます。別の曜日にも移せます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
     tt_title:'時間割', tt_fill:'平日を埋める', tt_clear:'全部消す',
     tt_tip:'空いたところを上下にドラッグすると枠ができます。枠を押すと直せます。',
     tt_overlap:'その時間にはすでに予定があります', tt_bad_time:'終わりが始まりより早いです',
@@ -2875,6 +2966,8 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
+  ttFrom: '05:00',       // 시간표에 보여줄 시작 시각
+  ttTo: '22:00',         // 시간표에 보여줄 끝 시각
   blocks: null,          // 시간표 [{id, day:0~6, start:'HH:MM', end:'HH:MM', label, type:'work'|'rest'}]
                          // null이면 예전 출근·점심·퇴근 설정에서 옮겨온다
   focusMins: 55,         // 한 번에 집중하는 시간 (분)
@@ -2925,7 +3018,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3764,8 +3857,10 @@ let _ttDrag = null;
 
 /** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
 function ttRange() {
-  // 기본은 새벽 5시부터 밤 10시까지. 그 밖에 칸이 있으면 그만큼 넓힌다.
-  let lo = 5 * 60, hi = 22 * 60;
+  // 사용자가 정한 범위(기본 05:00~22:00). 그 밖에 칸이 있으면 그만큼 넓힌다.
+  let lo = toMin(S.ttFrom || '05:00');
+  let hi = toMin(S.ttTo || '22:00');
+  if (hi <= lo) { lo = 5 * 60; hi = 22 * 60; }
   blockList().forEach(b => {
     lo = Math.min(lo, toMin(b.start));
     hi = Math.max(hi, toMin(b.end));
@@ -3797,8 +3892,11 @@ function renderTimetable() {
     let rows = '';
     for (let h = 0; h < hours; h++) rows += `<div class="tt-hour" style="height:${TT_ROW_H}px"></div>`;
     const blks = blocksOf(d).map(b => {
-      const top = (toMin(b.start) - lo) / 60 * TT_ROW_H;
-      const hgt = Math.max(14, (toMin(b.end) - toMin(b.start)) / 60 * TT_ROW_H);
+      // 보이는 범위 밖으로 삐져나가지 않게 잘라서 그린다
+      const s = Math.max(toMin(b.start), lo), e = Math.min(toMin(b.end), hi);
+      if (e <= s) return '';
+      const top = (s - lo) / 60 * TT_ROW_H;
+      const hgt = Math.max(14, (e - s) / 60 * TT_ROW_H);
       const now = d === today && nowMin >= toMin(b.start) && nowMin < toMin(b.end);
       return `<div class="tt-blk ${b.type === 'rest' ? 'rest' : ''}${now ? ' now' : ''}"
         data-id="${b.id}" style="top:${top}px;height:${hgt}px"
@@ -3876,35 +3974,165 @@ function ttAdd(day, start, end) {
     toast('alert', L('tt_title'), L('tt_overlap'));
     return;
   }
-  blockList().push({ id: newAlarmId(), day, start, end, label: L('blk_new'), type: 'work' });
-  saveState();
+  ttSnapshot();
+  const item = { id: newAlarmId(), day, start, end, label: L('blk_new'), type: 'work' };
+  blockList().push(item);
   renderTimetable();
-  updateCycleUI();
-  ttEdit(S.blocks[S.blocks.length - 1].id);        // 바로 이름을 적을 수 있게
+  // 아직 저장하지 않은 새 칸 — 취소하면 없던 일이 된다
+  ttEdit(item.id, true);
 }
 
 function ttClear() {
   if (!confirm(L('tt_clear_ask'))) return;
+  ttSnapshot();
   S.blocks = [];
   saveState();
   renderTimetable();
   updateCycleUI();
 }
 
-/** 월~금 09:00~12:00 / 12:00~13:00 점심 / 13:00~18:00 로 채운다 */
-function ttFillWeekday() {
-  const out = [];
-  for (let d = 1; d <= 5; d++) {
-    out.push({ id: newAlarmId(), day: d, start: '09:00', end: '12:00', label: L('blk_work_am'), type: 'work' });
-    out.push({ id: newAlarmId(), day: d, start: '12:00', end: '13:00', label: L('blk_lunch'), type: 'rest' });
-    out.push({ id: newAlarmId(), day: d, start: '13:00', end: '18:00', label: L('blk_work_pm'), type: 'work' });
+// ── 간단 채우기 (매일 같은 시간인 분들용) ──────────────
+function openTtFill() {
+  const g = (i) => document.getElementById(i);
+  const s = S.schedule || {};
+  if (g('fillInCtl'))    g('fillInCtl').innerHTML    = timeCtlHtml(s.ws || '09:00', 'id="fillIn"');
+  if (g('fillLsCtl'))    g('fillLsCtl').innerHTML    = timeCtlHtml(s.ls || '12:00', 'id="fillLs"');
+  if (g('fillLeCtl'))    g('fillLeCtl').innerHTML    = timeCtlHtml(s.le || '13:00', 'id="fillLe"');
+  if (g('fillOutCtl'))   g('fillOutCtl').innerHTML   = timeCtlHtml(s.we || '18:00', 'id="fillOut"');
+  // 기본은 월~금
+  const dw = g('fillDows');
+  if (dw) {
+    dw.innerHTML = dowNames().map((nm, i) =>
+      `<button type="button" class="alarm-dow${i === 0 ? ' sun' : ''}${i >= 1 && i <= 5 ? ' on' : ''}"
+         data-dow="${i}" onclick="toggleAlarmDow(this)">${nm}</button>`).join('');
   }
-  S.blocks = out;
+  const m = g('ttFillModal');
+  if (m) m.style.display = 'flex';
+}
+function closeTtFill(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('ttFillModal');
+  if (m) m.style.display = 'none';
+}
+function applyTtFill() {
+  const g = (i) => document.getElementById(i);
+  const ws = g('fillIn') ? g('fillIn').value : '09:00';
+  const ls = g('fillLs') ? g('fillLs').value : '12:00';
+  const le = g('fillLe') ? g('fillLe').value : '13:00';
+  const we = g('fillOut') ? g('fillOut').value : '18:00';
+  const days = Array.from(document.querySelectorAll('#fillDows .alarm-dow.on')).map(b => Number(b.dataset.dow));
+  if (!days.length) { toast('alert', L('fill_title'), L('fill_need_day')); return; }
+  if (toMin(we) <= toMin(ws)) { toast('alert', L('fill_title'), L('tt_bad_time')); return; }
+
+  ttSnapshot();
+  const replace = g('fillReplace') ? g('fillReplace').checked : true;
+  let list = blockList();
+  if (replace) list = list.filter(b => days.indexOf(b.day) < 0);
+
+  days.forEach(d => {
+    const add = (a, b, label, type) => {
+      if (toMin(b) > toMin(a)) list.push({ id: newAlarmId(), day: d, start: a, end: b, label, type });
+    };
+    if (toMin(ls) > toMin(ws) && toMin(le) > toMin(ls)) {
+      add(ws, ls, L('blk_work_am'), 'work');
+      add(ls, le, L('blk_lunch'), 'rest');
+      add(le, we, L('blk_work_pm'), 'work');
+    } else {
+      add(ws, we, L('blk_work_am'), 'work');   // 점심을 안 쓰면 한 덩어리로
+    }
+  });
+  S.blocks = list;
+  // 다음에 열 때 방금 값이 그대로 뜨도록 남겨 둔다
+  S.schedule = Object.assign({}, S.schedule, { ws, ls, le, we });
   saveState();
   renderTimetable();
   updateCycleUI();
+  closeTtFill();
 }
 
+// ── 보이는 시간대 ────────────────────────────────────
+function openTtRange() {
+  const g = (i) => document.getElementById(i);
+  if (g('rangeFromCtl')) g('rangeFromCtl').innerHTML = timeCtlHtml(S.ttFrom || '05:00', 'id="rangeFrom"');
+  if (g('rangeToCtl'))   g('rangeToCtl').innerHTML   = timeCtlHtml(S.ttTo   || '22:00', 'id="rangeTo"');
+  const m = g('ttRangeModal');
+  if (m) m.style.display = 'flex';
+}
+function closeTtRange(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('ttRangeModal');
+  if (m) m.style.display = 'none';
+}
+function applyTtRange() {
+  const g = (i) => document.getElementById(i);
+  const a = g('rangeFrom') ? g('rangeFrom').value : '05:00';
+  const b = g('rangeTo') ? g('rangeTo').value : '22:00';
+  if (toMin(b) <= toMin(a)) { toast('alert', L('range_title'), L('tt_bad_time')); return; }
+  S.ttFrom = a;
+  S.ttTo = b;
+  saveState();
+  renderTimetable();
+  closeTtRange();
+}
+
+
+
+// ── 되돌리기 · 다시 실행 ─────────────────────────────
+// 시간표는 실수로 끌거나 지우기 쉬워서, 바꾸기 직전 상태를 쌓아 둔다.
+const TT_HISTORY_MAX = 40;
+let _ttUndo = [];
+let _ttRedo = [];
+
+function ttSnapshot() {
+  try {
+    _ttUndo.push(JSON.stringify(blockList()));
+    if (_ttUndo.length > TT_HISTORY_MAX) _ttUndo.shift();
+    _ttRedo.length = 0;          // 새로 바꾸면 '앞으로 가기'는 사라진다
+  } catch (e) {}
+  ttSyncUndoBtns();
+}
+
+function ttSyncUndoBtns() {
+  const u = document.getElementById('ttUndoBtn');
+  const r = document.getElementById('ttRedoBtn');
+  if (u) u.disabled = !_ttUndo.length;
+  if (r) r.disabled = !_ttRedo.length;
+}
+
+function ttUndo() {
+  if (!_ttUndo.length) return;
+  try {
+    _ttRedo.push(JSON.stringify(blockList()));
+    S.blocks = JSON.parse(_ttUndo.pop());
+    saveState();
+    renderTimetable();
+    updateCycleUI();
+  } catch (e) {}
+  ttSyncUndoBtns();
+}
+
+function ttRedo() {
+  if (!_ttRedo.length) return;
+  try {
+    _ttUndo.push(JSON.stringify(blockList()));
+    S.blocks = JSON.parse(_ttRedo.pop());
+    saveState();
+    renderTimetable();
+    updateCycleUI();
+  } catch (e) {}
+  ttSyncUndoBtns();
+}
+
+// Ctrl+Z 되돌리기 / Ctrl+Alt+Z 다시 실행 — 시간표를 보고 있을 때만
+document.addEventListener('keydown', (e) => {
+  if (!e.ctrlKey || String(e.key).toLowerCase() !== 'z') return;
+  const grid = document.getElementById('ttGrid');
+  if (!grid || !grid.offsetParent) return;          // 화면에 없으면 그냥 둔다
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+  e.preventDefault();
+  if (e.altKey) ttRedo(); else ttUndo();
+});
 
 // ── 칸 옮기기: 다른 칸 사이에 끼워 넣으면 뒤 일정이 밀린다 ──
 let _ttMove = null;
@@ -3980,6 +4208,7 @@ document.addEventListener('pointercancel', ttMoveUp);
 function ttInsertAt(id, day, at) {
   const blk = blockList().find(b => b.id === id);
   if (!blk) return;
+  ttSnapshot();
   const dur = toMin(blk.end) - toMin(blk.start);
   const list = blocksOf(day).filter(b => b.id !== id);
 
@@ -4035,6 +4264,7 @@ function ttMenuAct(what) {
   if (!id) return;
   if (what === 'edit') { ttEdit(id); return; }
   if (what === 'delete') {
+    ttSnapshot();
     S.blocks = blockList().filter(x => x.id !== id);
     saveState();
     renderTimetable();
@@ -4048,11 +4278,13 @@ document.addEventListener('pointerdown', (e) => {
 
 // ── 블록 고치기 팝업 ──
 let _ttEditId = null;
+let _ttEditNew = false;   // 방금 만든 칸인가 (취소하면 지운다)
 
-function ttEdit(id) {
+function ttEdit(id, isNew) {
   const b = blockList().find(x => x.id === id);
   if (!b) return;
   _ttEditId = id;
+  _ttEditNew = !!isNew;
   const g = (i) => document.getElementById(i);
   if (g('ttName')) g('ttName').value = b.label || '';
   if (g('ttDay')) {
@@ -4067,6 +4299,15 @@ function ttEdit(id) {
 }
 function ttCloseEdit(e) {
   if (e && e.target !== e.currentTarget) return;
+  // 새로 만든 칸을 저장하지 않고 닫으면 없던 일로 되돌린다
+  if (_ttEditNew && _ttEditId) {
+    S.blocks = blockList().filter(x => x.id !== _ttEditId);
+    if (_ttUndo.length) _ttUndo.pop();      // 만들기 직전 기록도 되돌린다
+    ttSyncUndoBtns();
+    renderTimetable();
+    updateCycleUI();
+  }
+  _ttEditNew = false;
   const m = document.getElementById('ttModal');
   if (m) m.style.display = 'none';
   _ttEditId = null;
@@ -4085,12 +4326,15 @@ function ttSaveEdit() {
   b.end = e;
   b.label = (g('ttName') ? g('ttName').value : '').trim() || L('blk_new');
   b.type = g('ttType') && g('ttType').value === 'rest' ? 'rest' : 'work';
+  if (!_ttEditNew) ttSnapshot();     // 새 칸은 만들 때 이미 남겨 두었다
+  _ttEditNew = false;                // 저장했으니 이제 정식 칸
   saveState();
   renderTimetable();
   updateCycleUI();
   ttCloseEdit();
 }
 function ttDeleteEdit() {
+  ttSnapshot();
   S.blocks = blockList().filter(x => x.id !== _ttEditId);
   saveState();
   renderTimetable();
@@ -7020,7 +7264,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','blocks','pomoOn','focusMins','breakMins','theme','language'
+  'schedule','workItems','scheduleItems','blocks','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 
 function _cloudApply(data) {
