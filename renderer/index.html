@@ -3140,12 +3140,14 @@ function addFruit() {
   if (S.fruits.length >= 5) return; // 최대 5개
   const f=['🍋','🍊','🍎','🍇','🍓','🫐','🍑','🍒'];
   S.fruits.push(f[Math.floor(Math.random()*f.length)]);
+  playFruitSound();
   renderFruits();
   renderHarvestCount();
 }
 
 function harvestOneFruit() {
   if (S.fruits.length === 0) return false;
+  playFruitSound();
   S.fruits.splice(0, 1);
   S.harvestedFruits = (S.harvestedFruits || 0) + 1;
   saveState();
@@ -3207,6 +3209,7 @@ function updateCatUI() {
 
 function feedCat(food) {
   if(S.pts<20){toast('alert', L('pts_short_title'), L('pts_short_msg'));return;}
+  playCatTouchSound();
   earnPts(-20); S.cat.mood=Math.min(100,S.cat.mood+10); addXP(10);
   S.catFedThisCycle = true;
   S.growthLogs.push(`${food} 먹었어요! 😸`);
@@ -3223,6 +3226,7 @@ function _catInteract(kind) {
     toast('info', L('cat_full_title'), L('cat_full_msg'));
     return;
   }
+  playCatTouchSound();
   S.cat.mood = Math.min(100, S.cat.mood + 10);
   addXP(5);
   const title = kind === 'pet' ? L('cat_pet_title') : L('cat_play_title');
@@ -4667,29 +4671,50 @@ function toggleAlarmDow(btn) {
   btn.classList.toggle('on');
 }
 
-// ── 알람 소리 ────────────────────────────────────────
-// 직접 등록한 알람에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
+// ── 소리 ─────────────────────────────────────────────
 // 데스크톱은 renderer/ 기준 ../assets, 모바일은 www/ 기준 assets 라
 // 폴더 위치가 달라서 브리지가 알려주면 그 값을 쓴다.
-let _alarmAudio = null;
+const _audioCache = {};
 
-function alarmSoundSrc() {
+function soundSrc(name) {
   const base = (typeof window !== 'undefined' && window.NEKO_ASSET_BASE) || '../assets/';
-  return base + 'sound/cat01.MP3';
+  return base + 'sound/' + name;
 }
 
-function playAlarmSound() {
+/** 소리 하나를 낸다. 자동 재생이 막히면 조용히 넘어간다 */
+function playSound(name) {
   try {
-    if (!_alarmAudio) {
-      _alarmAudio = new Audio(alarmSoundSrc());
-      _alarmAudio.preload = 'auto';
+    let a = _audioCache[name];
+    if (!a) {
+      a = new Audio(soundSrc(name));
+      a.preload = 'auto';
+      _audioCache[name] = a;
     }
-    _alarmAudio.currentTime = 0;
-    const p = _alarmAudio.play();
-    // 브라우저가 자동 재생을 막으면 조용히 넘어간다 (알람 자체는 그대로 뜬다)
+    a.currentTime = 0;
+    const p = a.play();
     if (p && typeof p.catch === 'function') p.catch(() => {});
   } catch (e) {}
 }
+
+// 고양이를 만질 때 나는 소리 — 같은 소리만 반복되지 않게 번갈아 낸다
+const CAT_TOUCH_SOUNDS = ['cat_touch_01.MP3', 'cat_touch_02.MP3'];
+let _catTouchIdx = Math.floor(Math.random() * CAT_TOUCH_SOUNDS.length);
+
+function playCatTouchSound() {
+  // 무작위로 고르되 방금 낸 것과는 다른 것으로
+  if (CAT_TOUCH_SOUNDS.length > 1) {
+    _catTouchIdx = (_catTouchIdx + 1 + Math.floor(Math.random() * (CAT_TOUCH_SOUNDS.length - 1)))
+                   % CAT_TOUCH_SOUNDS.length;
+  }
+  playSound(CAT_TOUCH_SOUNDS[_catTouchIdx]);
+}
+
+/** 열매를 얻거나 수확할 때 */
+function playFruitSound() { playSound('fruit_01.MP3'); }
+
+// 알람은 직접 등록한 것에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
+function alarmSoundSrc() { return soundSrc('cat01.MP3'); }
+function playAlarmSound() { playSound('cat01.MP3'); }
 
 
 /**
