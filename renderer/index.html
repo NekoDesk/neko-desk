@@ -443,7 +443,7 @@ body.theme-mono {
 #dp-home .card-title { margin-bottom: 9px; }
 #dp-home .cat-display { flex-shrink: 0; padding: 8px; gap: 4px; margin-bottom: 0 !important;
   position: relative; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-#dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 8%); }
+#dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 58%); }
 #dp-home .big-cat { width: 108px; height: 130px; }
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
@@ -529,9 +529,11 @@ body.theme-mono {
 #dp-home #workItemsList { flex: 1; min-height: 0; overflow-y: auto; }
 #dp-home #homeWorkCard #hCycleCount { padding-top: 8px; }
 
+/* 고양이 자리는 카드보다 한 톤 밝게 — 어두우면 고양이가 묻힌다 */
 .cat-display {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 16px; background: var(--card); border: 2px solid var(--acc);
+  padding: 16px; background: color-mix(in srgb, var(--card), #fff 45%);
+  border: 2px solid var(--acc);
 }
 .big-cat { image-rendering: pixelated; width: 120px; height: 144px; }
 
@@ -712,6 +714,17 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .rs-dirty-note { font-size:10px; color:var(--yellow); text-align:center; margin-bottom:8px; display:none; }
 .rs-dirty-note.on { display:block; }
 
+/* 간단 채우기 목록 */
+#fillList .work-item-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
+#fillList .ti-label-in { flex:1; min-width:0; }
+.fill-type { flex-shrink:0; font-size:11px; padding:3px 7px; border-radius:4px; cursor:pointer;
+  border:1px solid var(--mint); background:color-mix(in srgb, var(--mint), transparent 80%);
+  color:var(--white); font-family:'Galmuri14',monospace; white-space:nowrap; }
+.fill-type.rest { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 80%); }
+.fill-type.end { border-color:var(--border); background:transparent; color:var(--gray); }
+.fill-type:disabled { cursor:default; }
+#fillList .ti-x-btn:disabled { opacity:0.25; cursor:default; }
+
 /* 되돌리기 / 다시 실행 */
 .tt-ur { background:var(--card); border:1px solid var(--border); color:var(--gray);
   font-size:13px; line-height:1; width:24px; height:22px; border-radius:4px; padding:0;
@@ -732,7 +745,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 #ttGrid { display:flex; }
 .tt-wrap { position:relative; flex:1; min-width:0; display:flex; flex-direction:column;
   border:1px solid var(--border); border-radius:6px;
-  background:var(--card); overflow:hidden; user-select:none; }
+  background:var(--bg); overflow:hidden; user-select:none; }
 .tt-head { display:grid; grid-template-columns:38px repeat(7,1fr);
   border-bottom:1px solid var(--border); background:var(--panel); }
 .tt-head div { font-size:10px; text-align:center; padding:5px 0; color:var(--gray);
@@ -747,9 +760,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border-top:1px solid var(--border); }
 .tt-col { position:relative; border-left:1px solid var(--border); overflow:hidden; }
 .tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
-/* 오후는 한 톤 밝게 — 오전/오후가 한눈에 갈린다 */
-.tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff 55%); }
-.tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff 55%); }
+/* 오후는 아주 살짝만 밝게 — 오전/오후가 갈리되 튀지 않게 */
+.tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff 45%); }
+.tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff 45%); }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
   padding:2px 3px; cursor:pointer; box-sizing:border-box;
@@ -866,8 +879,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 #ttRangeModal .tctl-h:hover { border-color:var(--yellow); }
 .tctl select:hover { border-color:var(--yellow); }
 .tctl select:focus { border-color:var(--yellow); }
-/* 오전/오후는 고른 시각에 따라 저절로 바뀌는 표시 (누르는 것이 아님) */
-.tctl .ampm-chip { cursor:default; }
+
 .tctl select option { background:var(--panel); color:var(--white); }
 .tctl .tctl-sep { color:var(--white); font-size:13px; font-family:'Galmuri14',monospace; }
 /* 오전/오후 단추 — 할 일 목록 버튼과 같은 색 */
@@ -1525,21 +1537,11 @@ select {
     <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="fill_days">채울 요일</div>
     <div class="alarm-dows" id="fillDows" style="margin-top:0"></div>
 
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;margin-top:12px">
-      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_in">출근</span>
-      <span id="fillInCtl"></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_lunch_s">점심 시작</span>
-      <span id="fillLsCtl"></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_lunch_e">점심 끝</span>
-      <span id="fillLeCtl"></span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-      <span style="flex:1;font-size:12px;color:var(--white)" data-i18n="fill_out">퇴근</span>
-      <span id="fillOutCtl"></span>
+    <div style="font-size:12px;color:var(--gray);margin:14px 0 6px" data-i18n="fill_items">하루 흐름</div>
+    <div id="fillList"></div>
+    <button class="sch-add-btn" style="width:100%;margin-top:6px" onclick="fillAddRow()" data-i18n="work_add">+ 항목 추가</button>
+    <div style="font-size:10px;color:var(--gray);opacity:0.75;line-height:1.6;margin:8px 0 14px" data-i18n="fill_items_hint">
+      앞 항목부터 다음 항목까지가 한 칸이 돼요. 마지막 항목(퇴근)에서 하루가 끝납니다. 시간 순서는 저절로 맞춰집니다.
     </div>
 
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:16px">
@@ -1794,16 +1796,16 @@ select {
 const THEMES = [
   { id:'white',  name:'⬜ 화이트', bg:'radial-gradient(ellipse at 40% 40%, #ffffff 0%, #f7f8fa 60%, #eef0f4 100%)',
     vars:{ '--frame-bg':'#c8d0dc','--frame':'#a2aec2','--frame-light':'#e8ecf2','--frame-text':'#6a7890','--bg':'#f8f9fb','--panel':'#ffffff','--card':'#eef1f5','--acc':'#5a6b8c','--mint':'#4aa890','--yellow':'#d9a93e','--white':'#33405a','--gray':'#8c98ad','--border':'#d8dee8' }, preview:'linear-gradient(135deg,#ffffff,#eef0f4)' },
-  { id:'ivory',  name:'🤍 맑은 아이보리', bg:'radial-gradient(ellipse at 40% 40%, #fffdf5 0%, #faf6e8 60%, #f5efdc 100%)',
-    vars:{ '--frame-bg':'#d9c89a','--frame':'#bca76e','--frame-light':'#efe4c0','--frame-text':'#8a7440','--bg':'#faf7ee','--panel':'#fffdf5','--card':'#f3eeda','--acc':'#c98f5a','--mint':'#7fb89a','--yellow':'#d9a93e','--white':'#4a4234','--gray':'#9a8f7a','--border':'#e0d8c0' }, preview:'linear-gradient(135deg,#fffdf5,#f5efdc)' },
-  { id:'bpink',  name:'🌸 베이비 핑크', bg:'radial-gradient(ellipse at 50% 40%, #fff0f3 0%, #ffe4ea 60%, #fdd8e2 100%)',
-    vars:{ '--frame-bg':'#f7afc9','--frame':'#e87aa4','--frame-light':'#fce4ee','--frame-text':'#d4659a','--bg':'#ffeef2','--panel':'#fff5f7','--card':'#fde0e8','--acc':'#e0608a','--mint':'#7fc8b0','--yellow':'#e8a64e','--white':'#5a3a44','--gray':'#bb8a98','--border':'#f2c4d2' }, preview:'linear-gradient(135deg,#fff0f3,#fdd8e2)' },
-  { id:'pblue',  name:'🩵 페일 블루', bg:'radial-gradient(ellipse at 40% 40%, #f0f7ff 0%, #e2efff 60%, #d5e7fb 100%)',
-    vars:{ '--frame-bg':'#a8c8ec','--frame':'#7aa6d8','--frame-light':'#d2e4f6','--frame-text':'#4a7ab0','--bg':'#edf5fe','--panel':'#f6faff','--card':'#dcebfa','--acc':'#4a86c8','--mint':'#5cb8a8','--yellow':'#d9a93e','--white':'#2e4258','--gray':'#7e9ab8','--border':'#bed6ee' }, preview:'linear-gradient(135deg,#f0f7ff,#d5e7fb)' },
-  { id:'pmint',  name:'🍃 페일 민트', bg:'radial-gradient(ellipse at 40% 40%, #f0fcf6 0%, #e0f7ec 60%, #d2f0e2 100%)',
-    vars:{ '--frame-bg':'#9ed8bc','--frame':'#6cba96','--frame-light':'#cdeede','--frame-text':'#3c8a66','--bg':'#ecfaf3','--panel':'#f5fdf9','--card':'#dcf2e7','--acc':'#3aa882','--mint':'#2e9e7a','--yellow':'#d9a93e','--white':'#2c4a3e','--gray':'#7aa896','--border':'#bce2d0' }, preview:'linear-gradient(135deg,#f0fcf6,#d2f0e2)' },
-  { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #f8f2ff 0%, #efe4fb 60%, #e4d5f5 100%)',
-    vars:{ '--frame-bg':'#cbaee8','--frame':'#a784d0','--frame-light':'#e6d6f6','--frame-text':'#7a55a8','--bg':'#f5edfd','--panel':'#faf5ff','--card':'#ecdff8','--acc':'#8a5ec0','--mint':'#5cb8a8','--yellow':'#d9a93e','--white':'#473560','--gray':'#a58cc4','--border':'#d8c2ee' }, preview:'linear-gradient(135deg,#f8f2ff,#e4d5f5)' },
+  { id:'ivory',  name:'🤍 맑은 아이보리', bg:'radial-gradient(ellipse at 40% 40%, #fffefa 0%, #fcfaf2 60%, #f8f4ea 100%)',
+    vars:{ '--frame-bg':'#e6dcc2','--frame':'#cfc0a0','--frame-light':'#f5efdf','--frame-text':'#9c8c6c','--bg':'#fdfbf5','--panel':'#fffefa','--card':'#f7f3e8','--acc':'#c9a184','--mint':'#93bfaa','--yellow':'#d4b573','--white':'#5a5346','--gray':'#a89e8c','--border':'#ebe4d4' }, preview:'linear-gradient(135deg,#fffefa,#f8f4ea)' },
+  { id:'bpink',  name:'🌸 베이비 핑크', bg:'radial-gradient(ellipse at 50% 40%, #fff8fa 0%, #fdf0f4 60%, #fbe8ee 100%)',
+    vars:{ '--frame-bg':'#f3ccdb','--frame':'#e2a8c0','--frame-light':'#fbeef3','--frame-text':'#c88aa6','--bg':'#fff6f8','--panel':'#fffbfc','--card':'#fbedf1','--acc':'#d68fa8','--mint':'#9ed3c2','--yellow':'#dfb87e','--white':'#6b525a','--gray':'#c5aab3','--border':'#f5dde5' }, preview:'linear-gradient(135deg,#fff8fa,#fbe8ee)' },
+  { id:'pblue',  name:'🩵 페일 블루', bg:'radial-gradient(ellipse at 40% 40%, #f8fbff 0%, #f0f6fd 60%, #e8f1fb 100%)',
+    vars:{ '--frame-bg':'#c8dcf0','--frame':'#a6c4e2','--frame-light':'#e6f0fa','--frame-text':'#7799bd','--bg':'#f7fafe','--panel':'#fbfdff','--card':'#eef5fc','--acc':'#84aad2','--mint':'#8ccabb','--yellow':'#d4b573','--white':'#4a5a6e','--gray':'#9fb4c8','--border':'#dde9f5' }, preview:'linear-gradient(135deg,#f8fbff,#e8f1fb)' },
+  { id:'pmint',  name:'🍃 페일 민트', bg:'radial-gradient(ellipse at 40% 40%, #f8fdfa 0%, #f0faf5 60%, #e8f6ef 100%)',
+    vars:{ '--frame-bg':'#c4e4d4','--frame':'#a2d0ba','--frame-light':'#e4f5ec','--frame-text':'#6fa892','--bg':'#f7fcf9','--panel':'#fbfefc','--card':'#eef8f2','--acc':'#7cbba2','--mint':'#7cbba2','--yellow':'#d4b573','--white':'#486054','--gray':'#9cbaad','--border':'#dcefe5' }, preview:'linear-gradient(135deg,#f8fdfa,#e8f6ef)' },
+  { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #fbf8ff 0%, #f6f0fd 60%, #f0e8fa 100%)',
+    vars:{ '--frame-bg':'#ddcaf0','--frame':'#c2aade','--frame-light':'#f0e8fa','--frame-text':'#9b83ba','--bg':'#faf7fe','--panel':'#fdfbff','--card':'#f4eefb','--acc':'#a98ec8','--mint':'#8ccabb','--yellow':'#d4b573','--white':'#584a6a','--gray':'#b3a3c6','--border':'#e8ddf4' }, preview:'linear-gradient(135deg,#fbf8ff,#f0e8fa)' },
 ];
 let currentTheme = 'white';
 
@@ -2027,6 +2029,9 @@ const STRINGS = {
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
     tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
     range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
+    fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
+    fill_items_hint:'앞 항목부터 다음 항목까지가 한 칸이 돼요. 마지막 항목(퇴근)에서 하루가 끝납니다. 시간 순서는 저절로 맞춰집니다.',
+    fill_need_two:'항목이 두 개 이상 있어야 해요',
     fill_title:'🗓 간단 채우기',
     fill_hint:'매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다.',
     fill_days:'채울 요일', fill_in:'출근', fill_lunch_s:'점심 시작', fill_lunch_e:'점심 끝', fill_out:'퇴근',
@@ -2259,6 +2264,9 @@ const STRINGS = {
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
     tt_range_btn:'Hours shown', range_title:'🕘 Hours shown',
     range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
+    fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
+    fill_items_hint:'Each row runs until the next one. The last row ends the day. Rows sort themselves by time.',
+    fill_need_two:'You need at least two rows',
     fill_title:'🗓 Fill in',
     fill_hint:'For the same hours every day. Fills the days you pick with the times below.',
     fill_days:'Days to fill', fill_in:'Start', fill_lunch_s:'Lunch from', fill_lunch_e:'Lunch to', fill_out:'End',
@@ -2491,6 +2499,9 @@ const STRINGS = {
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
     tt_range_btn:'表示する時間', range_title:'🕘 表示する時間',
     range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
+    fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
+    fill_items_hint:'前の項目から次の項目までが1枠になります。最後の項目で一日が終わります。時間順は自動で並びます。',
+    fill_need_two:'項目が2つ以上必要です',
     fill_title:'🗓 かんたん入力',
     fill_hint:'毎日同じ時間の方へ。下の時刻で選んだ曜日をまとめて埋めます。',
     fill_days:'埋める曜日', fill_in:'出勤', fill_lunch_s:'昼休み開始', fill_lunch_e:'昼休み終了', fill_out:'退勤',
@@ -3953,12 +3964,21 @@ function ttFitHeight() {
   const el = document.getElementById('ttGrid');
   const body = el && el.querySelector('.tt-body');
   if (!body) return;
+  const card = el.closest('.card');
   const bar = document.querySelector('.tt-bar');
-  const barH = bar ? bar.getBoundingClientRect().height + 10 : 0;
+  const barH = bar ? bar.getBoundingClientRect().height + 10 : 34;
   const top = body.getBoundingClientRect().top;
-  // 창 아래끝까지 남은 자리에서 버튼줄과 여백을 뺀다
-  const avail = window.innerHeight - top - barH - 26;
-  body.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
+
+  // 카드 안쪽 끝과 창 아래끝 중 가까운 쪽까지만 쓴다. 그래야 버튼줄이 안 잘린다.
+  let bottom = window.innerHeight;
+  if (card) {
+    const cs = getComputedStyle(card);
+    const pad = parseFloat(cs.paddingBottom) || 0;
+    const bd = parseFloat(cs.borderBottomWidth) || 0;
+    bottom = Math.min(bottom, card.getBoundingClientRect().bottom - pad - bd);
+  }
+  const avail = bottom - top - barH - 6;
+  body.style.maxHeight = Math.max(140, Math.round(avail)) + 'px';
 }
 window.addEventListener('resize', () => {
   if (typeof ttFitHeight === 'function') setTimeout(ttFitHeight, 60);
@@ -4038,13 +4058,61 @@ function ttClear() {
 }
 
 // ── 간단 채우기 (매일 같은 시간인 분들용) ──────────────
+// 하루 흐름을 '출근 09:00 / 점심 12:00 / 퇴근 18:00' 처럼 적으면
+// 앞 항목부터 다음 항목까지가 시간표의 한 칸이 된다.
+let _fillRows = [];
+
+function fillDefaults() {
+  const s = S.schedule || {};
+  return [
+    { label: L('fill_in'),      time: s.ws || '09:00', type: 'work' },
+    { label: L('blk_lunch'),    time: s.ls || '12:00', type: 'rest' },
+    { label: L('blk_work_pm'),  time: s.le || '13:00', type: 'work' },
+    { label: L('fill_out'),     time: s.we || '18:00', type: 'end'  },
+  ];
+}
+
+function renderFillRows() {
+  const el = document.getElementById('fillList');
+  if (!el) return;
+  _fillRows.sort((a, b) => toMin(a.time) - toMin(b.time));   // 시간 순서로
+  const last = _fillRows.length - 1;
+  el.innerHTML = _fillRows.map((r, i) => `
+    <div class="work-item-row" data-idx="${i}">
+      <input class="ti-label-in" value="${String(r.label || '').replace(/"/g, '&quot;')}"
+        placeholder="${L('work_ph')}" oninput="_fillRows[${i}].label=this.value">
+      <button type="button" class="fill-type${i === last ? ' end' : (r.type === 'rest' ? ' rest' : '')}"
+        onclick="fillCycleType(${i})" ${i === last ? 'disabled' : ''}>
+        ${i === last ? L('fill_t_end') : (r.type === 'rest' ? L('fill_t_rest') : L('fill_t_work'))}
+      </button>
+      ${timeCtlHtml(r.time, `onchange="_fillRows[${i}].time=this.value;renderFillRows()"`)}
+      <button class="ti-x-btn" onclick="fillDelRow(${i})" ${_fillRows.length <= 2 ? 'disabled' : ''}>×</button>
+    </div>`).join('');
+  syncAllTimeAmPm(el);
+}
+
+/** 집중 ↔ 쉼 */
+function fillCycleType(i) {
+  const r = _fillRows[i];
+  if (!r) return;
+  r.type = (r.type === 'rest') ? 'work' : 'rest';
+  renderFillRows();
+}
+function fillDelRow(i) {
+  if (_fillRows.length <= 2) return;
+  _fillRows.splice(i, 1);
+  renderFillRows();
+}
+function fillAddRow() {
+  const lastMin = _fillRows.length ? toMin(_fillRows[_fillRows.length - 1].time) : 9 * 60;
+  _fillRows.push({ label: L('work_new'), time: toHHMM(Math.min(23 * 60 + 50, lastMin + 60)), type: 'work' });
+  renderFillRows();
+}
+
 function openTtFill() {
   const g = (i) => document.getElementById(i);
-  const s = S.schedule || {};
-  if (g('fillInCtl'))    g('fillInCtl').innerHTML    = timeCtlHtml(s.ws || '09:00', 'id="fillIn"');
-  if (g('fillLsCtl'))    g('fillLsCtl').innerHTML    = timeCtlHtml(s.ls || '12:00', 'id="fillLs"');
-  if (g('fillLeCtl'))    g('fillLeCtl').innerHTML    = timeCtlHtml(s.le || '13:00', 'id="fillLe"');
-  if (g('fillOutCtl'))   g('fillOutCtl').innerHTML   = timeCtlHtml(s.we || '18:00', 'id="fillOut"');
+  _fillRows = fillDefaults();
+  renderFillRows();
   // 기본은 월~금
   const dw = g('fillDows');
   if (dw) {
@@ -4062,13 +4130,14 @@ function closeTtFill(e) {
 }
 function applyTtFill() {
   const g = (i) => document.getElementById(i);
-  const ws = g('fillIn') ? g('fillIn').value : '09:00';
-  const ls = g('fillLs') ? g('fillLs').value : '12:00';
-  const le = g('fillLe') ? g('fillLe').value : '13:00';
-  const we = g('fillOut') ? g('fillOut').value : '18:00';
   const days = Array.from(document.querySelectorAll('#fillDows .alarm-dow.on')).map(b => Number(b.dataset.dow));
   if (!days.length) { toast('alert', L('fill_title'), L('fill_need_day')); return; }
-  if (toMin(we) <= toMin(ws)) { toast('alert', L('fill_title'), L('tt_bad_time')); return; }
+
+  const rows = _fillRows.slice().sort((a, b) => toMin(a.time) - toMin(b.time));
+  if (rows.length < 2) { toast('alert', L('fill_title'), L('fill_need_two')); return; }
+  if (toMin(rows[rows.length - 1].time) <= toMin(rows[0].time)) {
+    toast('alert', L('fill_title'), L('tt_bad_time')); return;
+  }
 
   ttSnapshot();
   const replace = g('fillReplace') ? g('fillReplace').checked : true;
@@ -4076,20 +4145,19 @@ function applyTtFill() {
   if (replace) list = list.filter(b => days.indexOf(b.day) < 0);
 
   days.forEach(d => {
-    const add = (a, b, label, type) => {
-      if (toMin(b) > toMin(a)) list.push({ id: newAlarmId(), day: d, start: a, end: b, label, type });
-    };
-    if (toMin(ls) > toMin(ws) && toMin(le) > toMin(ls)) {
-      add(ws, ls, L('blk_work_am'), 'work');
-      add(ls, le, L('blk_lunch'), 'rest');
-      add(le, we, L('blk_work_pm'), 'work');
-    } else {
-      add(ws, we, L('blk_work_am'), 'work');   // 점심을 안 쓰면 한 덩어리로
+    // 앞 항목부터 다음 항목까지가 한 칸. 마지막 항목은 하루의 끝.
+    for (let i = 0; i < rows.length - 1; i++) {
+      const a = rows[i], b = rows[i + 1];
+      if (toMin(b.time) <= toMin(a.time)) continue;
+      list.push({ id: newAlarmId(), day: d, start: a.time, end: b.time,
+                  label: a.label || L('blk_new'), type: a.type === 'rest' ? 'rest' : 'work' });
     }
   });
   S.blocks = list;
   // 다음에 열 때 방금 값이 그대로 뜨도록 남겨 둔다
-  S.schedule = Object.assign({}, S.schedule, { ws, ls, le, we });
+  S.schedule = Object.assign({}, S.schedule, {
+    ws: rows[0].time, we: rows[rows.length - 1].time,
+  });
   saveState();
   renderTimetable();
   updateCycleUI();
@@ -4470,19 +4538,29 @@ function timeCtlHtml(value, attrs) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(value || '09:00'));
   const H = m ? Number(m[1]) : 9;
   const M = m ? Number(m[2]) : 0;
+  const pm = H >= 12;
+  const h12 = ((H + 11) % 12) + 1;
 
-  // 시는 0~23 그대로 고른다. 오전/오후는 고른 값에 따라 저절로 붙는다.
   let hs = '';
-  for (let i = 0; i < 24; i++) hs += `<option value="${i}"${i === H ? ' selected' : ''}>${_tPad(i)}</option>`;
+  for (let i = 1; i <= 12; i++) hs += `<option value="${i}"${i === h12 ? ' selected' : ''}>${_tPad(i)}</option>`;
   let ms = '';
   for (let i = 0; i < 60; i++) ms += `<option value="${i}"${i === M ? ' selected' : ''}>${_tPad(i)}</option>`;
 
   return `<span class="tctl">`
-       + `<span class="ampm-chip${H >= 12 ? ' pm' : ''}">${H >= 12 ? L('work_pm') : L('work_am')}</span>`
+       + `<button type="button" class="ampm-chip${pm ? ' pm' : ''}" onclick="tctlToggleAmPm(this)">`
+       + `${pm ? L('work_pm') : L('work_am')}</button>`
        + `<select class="tctl-h" onchange="tctlChanged(this)">${hs}</select>`
        + `<span class="tctl-sep">:</span>`
        + `<select class="tctl-m" onchange="tctlChanged(this)">${ms}</select>`
        + `<input type="hidden" class="tctl-val" value="${_tPad(H)}:${_tPad(M)}" ${attrs || ''}></span>`;
+}
+
+/** 오전 ↔ 오후 (12시간 이동) */
+function tctlToggleAmPm(btn) {
+  const pm = !btn.classList.contains('pm');
+  btn.classList.toggle('pm', pm);
+  btn.textContent = pm ? L('work_pm') : L('work_am');
+  tctlApply(btn.closest('.tctl'));
 }
 
 /** 고르개 상태를 "HH:MM" 으로 모아 숨은 칸에 넣고 알린다 */
@@ -4493,9 +4571,9 @@ function tctlApply(wrap) {
   const ms = wrap.querySelector('.tctl-m');
   const val = wrap.querySelector('.tctl-val');
   if (!chip || !hs || !ms || !val) return;
-  const H = Number(hs.value);
-  chip.classList.toggle('pm', H >= 12);
-  chip.textContent = H >= 12 ? L('work_pm') : L('work_am');
+  const pm = chip.classList.contains('pm');
+  let H = Number(hs.value) % 12;
+  if (pm) H += 12;
   const next = _tPad(H) + ':' + _tPad(Number(ms.value));
   if (val.value === next) return;
   val.value = next;
@@ -4516,7 +4594,7 @@ function syncTimeAmPm(val) {
   const hs = wrap.querySelector('.tctl-h');
   const ms = wrap.querySelector('.tctl-m');
   if (chip) { chip.classList.toggle('pm', pm); chip.textContent = pm ? L('work_pm') : L('work_am'); }
-  if (hs) hs.value = String(H);
+  if (hs) hs.value = String(((H + 11) % 12) + 1);
   if (ms) ms.value = String(M);
 }
 function syncAllTimeAmPm(root) {
