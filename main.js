@@ -367,6 +367,64 @@ ipcMain.on('install-update-now', () => {
   if (autoUpdater) autoUpdater.quitAndInstall();
 });
 
+// ══════════════════════════════════════════════
+// 알람: 다른 창에 가려도 보이게
+// ══════════════════════════════════════════════
+let alarmPopup = null;
+
+/** 위젯을 모든 창 앞으로 끌어올린다 (누르던 창의 입력은 뺏지 않는다) */
+ipcMain.on('alarm-attention', () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.showInactive();
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow.moveTop();
+    mainWindow.flashFrame(true);   // 작업 표시줄에서도 깜빡
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.flashFrame(false);
+    }, 4000);
+  } catch (e) {}
+});
+
+/** 화면 오른쪽 위에 알림 창을 띄운다. 확인을 누르거나 정해진 시간이 지나면 닫힌다 */
+ipcMain.on('alarm-popup', (e, opts) => {
+  const o = opts || {};
+  const W = 340, H = 156, MARGIN = 18;
+  try {
+    if (alarmPopup && !alarmPopup.isDestroyed()) alarmPopup.destroy();
+    const { x: dx, y: dy, width: dw } = screen.getPrimaryDisplay().workArea;
+    alarmPopup = new BrowserWindow({
+      x: Math.round(dx + dw - W - MARGIN),
+      y: Math.round(dy + MARGIN),
+      width: W, height: H,
+      frame: false, transparent: true, resizable: false, movable: false,
+      skipTaskbar: true, focusable: false, show: false,
+      alwaysOnTop: true,
+      webPreferences: { nodeIntegration: false, contextIsolation: true },
+    });
+    alarmPopup.setAlwaysOnTop(true, 'screen-saver');
+    const q = new URLSearchParams({
+      msg: String(o.msg || ''),
+      ok: String(o.ok || '확인'),
+      after: String(o.after || '{n}초 후 닫힘'),
+      sec: String(o.sec || 8),
+      panel: o.panel || '#16213e',
+      frame: o.frame || '#e87aa4',
+      'frame-text': o.frameText || '#d4659a',
+      white: o.white || '#eaeaea',
+      gray: o.gray || '#8892b0',
+      yellow: o.yellow || '#ffd369',
+    });
+    alarmPopup.loadFile(path.join(__dirname, 'renderer', 'alarm-popup.html'),
+      { search: q.toString() });
+    alarmPopup.once('ready-to-show', () => {
+      if (alarmPopup && !alarmPopup.isDestroyed()) alarmPopup.showInactive();
+    });
+    alarmPopup.on('closed', () => { alarmPopup = null; });
+  } catch (err) {}
+});
+
 ipcMain.on('minimize-app', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   if (win && win !== mainWindow) {

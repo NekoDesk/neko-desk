@@ -251,6 +251,18 @@ body.theme-mono {
   0%{transform:scale(0.7);opacity:0} 70%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1}
 }
 .bubble-appear { animation: bubblePop 0.35s ease; }
+/* 알람 말풍선 — 그냥 두면 눈에 안 띄어서 노랗게 뛰게 한다 */
+#speechBubble.bubble-alarm {
+  background: var(--yellow) !important;
+  color: #000 !important;
+  border-color: var(--acc) !important;
+  animation: bubblePop 0.35s ease, bubbleAlarm 0.75s ease-in-out infinite;
+}
+#speechBubble.bubble-alarm::after { border-top-color: var(--yellow) !important; }
+@keyframes bubbleAlarm {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(233,69,96,0.55); }
+  50%      { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(233,69,96,0); }
+}
 
 /* 타이머 배지 */
 #timerBadge {
@@ -700,6 +712,24 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .rs-dirty-note { font-size:10px; color:var(--yellow); text-align:center; margin-bottom:8px; display:none; }
 .rs-dirty-note.on { display:block; }
 
+/* 집중 · 휴식 길이 */
+.fb-box { margin-top:12px; padding:12px; background:var(--card);
+  border:1px solid var(--border); border-radius:6px; }
+.fb-title { font-family:'Galmuri14',monospace; font-size:12px; color:var(--yellow); margin-bottom:9px; }
+.fb-presets { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:9px; }
+.fb-preset { font-size:11px; padding:4px 9px; cursor:pointer; border-radius:4px;
+  border:1px solid var(--border); background:var(--panel); color:var(--gray); white-space:nowrap; }
+.fb-preset.on { border-color:var(--mint); color:var(--mint); font-weight:700; }
+.fb-preset:hover { border-color:var(--mint); }
+.fb-row { display:flex; align-items:center; gap:6px; }
+.fb-k { font-size:12px; color:var(--gray); flex-shrink:0; }
+.fb-u { font-size:11px; color:var(--gray); flex-shrink:0; margin-right:4px; }
+.fb-row input { width:52px; text-align:center; background:var(--panel);
+  border:1px solid var(--border); color:var(--white); border-radius:4px;
+  padding:4px 2px; font-size:13px; font-family:'Galmuri14',monospace; outline:none; }
+.fb-row input:focus { border-color:var(--yellow); }
+.fb-hint { font-size:10px; color:var(--gray); opacity:0.8; margin-top:8px; line-height:1.5; }
+
 /* 알람 */
 .alarm-row { display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:5px;
   background:color-mix(in srgb, var(--card), #fff 8%); border:1px solid var(--border); border-radius:5px; }
@@ -1116,6 +1146,22 @@ select {
             <div class="card" id="homeWorkCard">
               <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
               <div id="workItemsList"></div>
+
+              <!-- 집중 / 휴식 길이 — 45분 수업처럼 각자 리듬이 다르므로 -->
+              <div class="fb-box">
+                <div class="fb-title" data-i18n="fb_title">⏱ 집중 · 휴식 길이</div>
+                <div class="fb-presets" id="fbPresets"></div>
+                <div class="fb-row">
+                  <span class="fb-k" data-i18n="fb_focus">집중</span>
+                  <input type="number" id="fbFocus" min="5" max="180" step="5" onchange="setCycleLen()">
+                  <span class="fb-u" data-i18n="fb_min">분</span>
+                  <span class="fb-k" data-i18n="fb_break">휴식</span>
+                  <input type="number" id="fbBreak" min="1" max="60" step="1" onchange="setCycleLen()">
+                  <span class="fb-u" data-i18n="fb_min">분</span>
+                </div>
+                <div class="fb-hint" id="fbHint"></div>
+              </div>
+
               <button class="btn btn-g" style="width:100%;margin-top:8px" onclick="saveSchedule()" data-i18n="cycle_save_btn">✓ 저장</button>
               <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:8px;line-height:1.6" data-i18n-html="cycle_desc">출근 시간부터 60분 사이클<br>(55분 집중 + 5분 휴식)이<br>실시간으로 자동 계산돼요!</div>
             </div>
@@ -1750,6 +1796,7 @@ const STRINGS = {
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
     login_google_btn:'구글 로그인 하기',
     alarm_dup_msg:'같은 알람이 이미 있어요', remind_dirty:'아직 저장하지 않았어요',
+    alarm_popup_ok:'확인', alarm_popup_after:'{n}초 후 닫힘',
     alarm_title:'⏰ 알람', alarm_ph:'알람 이름', alarm_add:'+ 추가',
     alarm_empty:'등록된 알람이 없어요', alarm_everyday:'매일',
     alarm_weekdays:'주중', alarm_weekend:'주말',
@@ -1761,6 +1808,8 @@ const STRINGS = {
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
     remind_water_work:'물 알림은 업무 시간에만',
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
+    fb_title:'⏱ 집중 · 휴식 길이', fb_focus:'집중', fb_break:'휴식', fb_min:'분',
+    fb_hint:'한 사이클은 {c}분이 됩니다. 45·10처럼 학교 시간표에 맞춰도 좋아요.',
     remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
     remind_vita_on:'비타민 먹을 시간 알려주기', remind_vita_time:'알림 시각',
     remind_vita_goal:'하루에 먹는 영양제 알 수',
@@ -1955,6 +2004,7 @@ const STRINGS = {
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
     login_google_btn:'Sign in with Google',
     alarm_dup_msg:'That alarm already exists', remind_dirty:'Not saved yet',
+    alarm_popup_ok:'OK', alarm_popup_after:'closes in {n}s',
     alarm_title:'⏰ Alarms', alarm_ph:'Alarm name', alarm_add:'+ Add',
     alarm_empty:'No alarms yet', alarm_everyday:'Every day',
     alarm_weekdays:'Weekdays', alarm_weekend:'Weekend',
@@ -1966,6 +2016,8 @@ const STRINGS = {
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
     remind_water_work:'Water reminders only during work hours',
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
+    fb_title:'⏱ Focus · Break', fb_focus:'Focus', fb_break:'Break', fb_min:'min',
+    fb_hint:'One cycle becomes {c} minutes. 45·10 matches many class schedules.',
     remind_btn:'🔔 Reminders', remind_title:'🔔 Reminders',
     remind_vita_on:'Remind me to take my vitamins', remind_vita_time:'Time',
     remind_vita_goal:'Supplement pills per day',
@@ -2160,6 +2212,7 @@ const STRINGS = {
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
     login_google_btn:'Googleでログイン',
     alarm_dup_msg:'同じアラームがすでにあります', remind_dirty:'まだ保存していません',
+    alarm_popup_ok:'確認', alarm_popup_after:'{n}秒後に閉じます',
     alarm_title:'⏰ アラーム', alarm_ph:'アラーム名', alarm_add:'+ 追加',
     alarm_empty:'アラームがありません', alarm_everyday:'毎日',
     alarm_weekdays:'平日', alarm_weekend:'週末',
@@ -2171,6 +2224,8 @@ const STRINGS = {
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
     remind_water_work:'水のお知らせは勤務時間だけ',
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
+    fb_title:'⏱ 集中 · 休憩', fb_focus:'集中', fb_break:'休憩', fb_min:'分',
+    fb_hint:'1サイクルは{c}分になります。45·10 のように時間割に合わせても。',
     remind_btn:'🔔 お知らせ設定', remind_title:'🔔 お知らせ設定',
     remind_vita_on:'ビタミンの時間を知らせる', remind_vita_time:'時刻',
     remind_vita_goal:'1日に飲むサプリの錠数',
@@ -2639,6 +2694,8 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
+  focusMins: 55,         // 한 번에 집중하는 시간 (분)
+  breakMins: 5,          // 그 뒤 쉬는 시간 (분)
   vitaminOn: true,       // 비타민 알림 켜기
   vitaminTime: '14:00',  // (구버전) 알림 시각 하나 — vitaminTimes로 옮겨진다
   vitaminTimes: null,    // 알림 시각 여러 개 ['09:00','14:00'] — 영양제마다 시간이 다르므로
@@ -2685,7 +2742,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','focusMins','breakMins','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3167,9 +3224,20 @@ const ENC_MSGS = {
 // ══════════════════════════════════════════
 // 실시간 사이클 타이머 (시계 기반)
 // ══════════════════════════════════════════
-const FOCUS_MINS = 55;
-const BREAK_MINS = 5;
-const CYCLE_MINS = FOCUS_MINS + BREAK_MINS; // 60
+// 기본값 — 사용자가 홈 · 업무 시간 설정에서 바꿀 수 있다
+const FOCUS_DEFAULT = 55;
+const BREAK_DEFAULT = 5;
+/** 지금 쓰는 집중 시간 (분) */
+function focusMins() {
+  const n = parseInt(S && S.focusMins, 10);
+  return (n >= 5 && n <= 180) ? n : FOCUS_DEFAULT;
+}
+/** 지금 쓰는 휴식 시간 (분) */
+function breakMins() {
+  const n = parseInt(S && S.breakMins, 10);
+  return (n >= 1 && n <= 60) ? n : BREAK_DEFAULT;
+}
+function cycleMins() { return focusMins() + breakMins(); }
 
 function timeToMinutes(str) {
   const [h, m] = str.split(':').map(Number);
@@ -3202,10 +3270,11 @@ function calcCycle() {
     return { phase:'lunch', cycleIdx:-2, remaining: leSec - nowSec, total: leSec - lsSec, focusElapsed: 0 };
   }
   const elapsedSec = nowSec - wsSecTotal;
-  const cycleIdx = Math.floor(elapsedSec / (CYCLE_MINS * 60));
-  const withinCycleSec = elapsedSec % (CYCLE_MINS * 60);
-  const focusSec = FOCUS_MINS * 60;
-  const breakSec = BREAK_MINS * 60;
+  const cycleSec = cycleMins() * 60;
+  const cycleIdx = Math.floor(elapsedSec / cycleSec);
+  const withinCycleSec = elapsedSec % cycleSec;
+  const focusSec = focusMins() * 60;
+  const breakSec = breakMins() * 60;
   if (withinCycleSec < focusSec) {
     return { phase:'focus', cycleIdx, withinCycleSec, remaining: focusSec - withinCycleSec, total: focusSec, focusElapsed: withinCycleSec };
   } else {
@@ -3327,7 +3396,11 @@ function _showNextBubble() {
   if (!el) { bubbleBusy = false; return; }
   if (!bubbleQueue.length) { bubbleBusy = false; return; }
   bubbleBusy = true;
-  el.textContent = bubbleQueue.shift();
+  const item = bubbleQueue.shift();
+  const msg = (item && item.msg !== undefined) ? item.msg : item;
+  const alarm = !!(item && item.alarm);
+  el.textContent = msg;
+  el.classList.toggle('bubble-alarm', alarm);
   el.classList.remove('hidden','bubble-appear');
   void el.offsetWidth;
   el.classList.add('bubble-appear');
@@ -3347,6 +3420,15 @@ function showBubble(msg, now) {
   if (now) { bubbleQueue.length = 0; clearTimeout(bubbleTimer); bubbleBusy = false; }
   bubbleQueue.push(msg);
   if (!bubbleBusy) _showNextBubble();
+}
+
+/** 알람용 말풍선 — 노랗게 뛰며, 줄을 서지 않고 바로 보여준다 */
+function showAlarmBubble(msg) {
+  bubbleQueue.length = 0;
+  clearTimeout(bubbleTimer);
+  bubbleBusy = false;
+  bubbleQueue.push({ msg, alarm: true });
+  _showNextBubble();
 }
 
 // ── 물 마시기 체크 ──
@@ -3399,6 +3481,51 @@ function drinkWater(i) {
 }
 
 
+
+
+// ── 집중 · 휴식 길이 ─────────────────────────────────
+// 45분 수업에 10분 쉬는 학교처럼 리듬은 사람마다 다르다.
+const CYCLE_PRESETS = [
+  { f: 25, b: 5  },   // 뽀모도로 기본
+  { f: 45, b: 10 },   // 수업 시간표
+  { f: 50, b: 10 },
+  { f: 55, b: 5  },   // 네코데스크 기본
+  { f: 90, b: 20 },   // 길게 몰입
+];
+
+function renderCycleLen() {
+  const fi = document.getElementById('fbFocus');
+  const bi = document.getElementById('fbBreak');
+  if (fi) fi.value = focusMins();
+  if (bi) bi.value = breakMins();
+
+  const ps = document.getElementById('fbPresets');
+  if (ps) {
+    ps.innerHTML = CYCLE_PRESETS.map(p =>
+      `<button type="button" class="fb-preset${p.f === focusMins() && p.b === breakMins() ? ' on' : ''}"
+        onclick="setCycleLen(${p.f},${p.b})">${p.f}·${p.b}</button>`).join('');
+  }
+  const hint = document.getElementById('fbHint');
+  if (hint) hint.textContent = L('fb_hint').replace('{c}', cycleMins());
+}
+
+/** 값 없이 부르면 입력칸에서 읽는다 */
+function setCycleLen(f, b) {
+  if (f === undefined) {
+    const fi = document.getElementById('fbFocus');
+    const bi = document.getElementById('fbBreak');
+    f = fi ? parseInt(fi.value, 10) : NaN;
+    b = bi ? parseInt(bi.value, 10) : NaN;
+  }
+  if (!(f >= 5 && f <= 180)) f = focusMins();
+  if (!(b >= 1 && b <= 60)) b = breakMins();
+  S.focusMins = f;
+  S.breakMins = b;
+  saveState();
+  renderCycleLen();
+  updateCycleUI();
+  if (typeof renderCyclePreview === 'function') renderCyclePreview();
+}
 
 // ── 시각 고르기 (오전/오후 + 시 + 분) ────────────────
 // 값은 예전처럼 "HH:MM"(24시간)로 숨은 칸에 담아 둔다. 기존 onchange 는
@@ -3648,6 +3775,37 @@ function playAlarmSound() {
   } catch (e) {}
 }
 
+
+/**
+ * 알람을 놓치지 않게 한다.
+ * 위젯이 다른 창 뒤에 있으면 말풍선이 안 보이므로 앞으로 끌어올리고,
+ * 화면 오른쪽 위에도 알림 창을 띄운다 (확인을 누르거나 8초 뒤 닫힘).
+ */
+const ALARM_POPUP_SEC = 8;
+
+function raiseAlarm(label) {
+  const api = window.electronAPI;
+  if (!api) return;                        // 모바일에서는 할 일이 없다
+  try { if (api.alarmAttention) api.alarmAttention(); } catch (e) {}
+  try {
+    if (!api.alarmPopup) return;
+    const cs = getComputedStyle(document.documentElement);
+    const v = (k, d) => (cs.getPropertyValue(k) || '').trim() || d;
+    api.alarmPopup({
+      msg: label,
+      ok: L('alarm_popup_ok'),
+      after: L('alarm_popup_after'),
+      sec: ALARM_POPUP_SEC,
+      panel: v('--panel', '#16213e'),
+      frame: v('--frame', '#e87aa4'),
+      frameText: v('--frame-text', '#d4659a'),
+      white: v('--white', '#eaeaea'),
+      gray: v('--gray', '#8892b0'),
+      yellow: v('--yellow', '#ffd369'),
+    });
+  } catch (e) {}
+}
+
 /** 1분마다 불려 지금 울릴 알람이 있는지 본다 */
 function checkAlarms() {
   const list = alarmList();
@@ -3667,8 +3825,9 @@ function checkAlarms() {
     S.alarmFired[a.id] = today + ' ' + hhmm;
     changed = true;
     playAlarmSound();
-    showBubble('⏰ ' + a.label);
+    showAlarmBubble('⏰ ' + a.label);
     toast('info', L('alarm_ring_title'), a.label);
+    raiseAlarm(a.label);
   });
   if (changed) {
     // 지난 기록은 쌓아두지 않는다
@@ -3964,7 +4123,7 @@ function renderCyclePreview() {
   let cycleStart = wsMin;
   let idx = 0;
   let lunchShown = false;
-  while (cycleStart + FOCUS_MINS <= weMin && idx < 20) {
+  while (cycleStart + focusMins() <= weMin && idx < 20) {
     // 점심시간 행을 시간 순서에 맞게 삽입
     if (!lunchShown && cycleStart >= lsMin) {
       const isLunchNow = nowMin >= lsMin && nowMin < leMin;
@@ -3980,8 +4139,8 @@ function renderCyclePreview() {
         <div>${lunchDone?'✅':isLunchNow?'🍱':'⬜'}</div></div>`;
       lunchShown = true;
     }
-    const focusEnd = cycleStart + FOCUS_MINS;
-    const breakEnd = cycleStart + CYCLE_MINS;
+    const focusEnd = cycleStart + focusMins();
+    const breakEnd = cycleStart + cycleMins();
     const isNow = nowMin >= cycleStart && nowMin < breakEnd;
     const isDone = nowMin >= breakEnd;
     const isFocusNow = nowMin >= cycleStart && nowMin < focusEnd;
@@ -4068,6 +4227,7 @@ function renderWorkItems() {
   }).join('');
   el.innerHTML += '<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">' + L('work_add') + '</button>';
   syncAllTimeAmPm(el.parentElement || el);
+  renderCycleLen();
 }
 
 // ⠿ 핸들 드래그 — 할 일 목록과 동일하게 '어느 사이에 끼울지'를 가로선으로 보여준다

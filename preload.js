@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setFollow:      (on, imgDataURL) => ipcRenderer.send('set-follow', on, imgDataURL),
 
   // 숨기기 (트레이로)
+  // 알람: 위젯을 앞으로 + 오른쪽 위 알림 창
+  alarmAttention: () => ipcRenderer.send('alarm-attention'),
+  alarmPopup:     (opts) => ipcRenderer.send('alarm-popup', opts),
+
   minimizeApp:    () => ipcRenderer.send('minimize-app'),
 
   // 구글 로그인
