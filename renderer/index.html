@@ -712,6 +712,12 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .rs-dirty-note { font-size:10px; color:var(--yellow); text-align:center; margin-bottom:8px; display:none; }
 .rs-dirty-note.on { display:block; }
 
+/* 시간표 칸 우클릭 메뉴 */
+.tt-menu-item { display:block; width:100%; text-align:left; background:transparent; border:none;
+  color:var(--white); font-size:12px; padding:7px 14px; cursor:pointer; border-radius:4px;
+  font-family:'Galmuri14',monospace; white-space:nowrap; }
+.tt-menu-item:hover { background:var(--card); color:var(--yellow); }
+
 /* ── 시간표 격자 ── */
 .tt-wrap { position:relative; border:1px solid var(--border); border-radius:6px;
   background:var(--card); overflow:hidden; user-select:none; }
@@ -740,6 +746,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-blk i { display:block; font-size:9px; color:var(--gray); font-style:normal; line-height:1.2; }
 .tt-draft { position:absolute; left:2px; right:2px; border-radius:3px; pointer-events:none;
   border:1px dashed var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 82%); }
+.tt-line { position:absolute; left:0; right:0; height:3px; background:var(--acc);
+  border-radius:2px; pointer-events:none; z-index:5; box-shadow:0 0 6px var(--acc); }
 .tt-tip { font-size:10px; color:var(--gray); opacity:0.8; margin-top:7px; line-height:1.5; }
 .tt-bar { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
 .tt-bar .sp { flex:1; }
@@ -1176,7 +1184,12 @@ select {
           <div id="homeCycleCol">
             <!-- 업무 시간 설정 (오른쪽) -->
             <div class="card" id="homeWorkCard">
-              <div class="card-title" data-i18n="cycle_settings_title">⏰ 업무 시간 설정</div>
+              <div class="card-title" style="display:flex;align-items:center;gap:6px">
+                <span data-i18n="tt_card_title">🗓 시간표</span>
+                <span style="flex:1"></span>
+                <button class="todo-diary-btn" onclick="openPomoSettings()" data-i18n="pomo_btn">⏱ 포모도로 타이머</button>
+                <button class="todo-help-btn" onclick="openTtTips()" data-tip="사용 팁">?</button>
+              </div>
               <div class="tt-bar">
                 <span class="sp"></span>
                 <button class="fb-preset" onclick="ttFillWeekday()" data-i18n="tt_fill">간단 채우기</button>
@@ -1184,21 +1197,6 @@ select {
               </div>
               <div id="ttGrid"></div>
               <div class="tt-tip" data-i18n="tt_tip">빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.</div>
-
-              <!-- 집중 / 휴식 길이 — 45분 수업처럼 각자 리듬이 다르므로 -->
-              <div class="fb-box">
-                <div class="fb-title" data-i18n="fb_title">⏱ 집중 · 휴식 길이</div>
-                <div class="fb-presets" id="fbPresets"></div>
-                <div class="fb-row">
-                  <span class="fb-k" data-i18n="fb_focus">집중</span>
-                  <input type="number" id="fbFocus" min="5" max="180" step="5" onchange="setCycleLen()">
-                  <span class="fb-u" data-i18n="fb_min">분</span>
-                  <span class="fb-k" data-i18n="fb_break">휴식</span>
-                  <input type="number" id="fbBreak" min="1" max="60" step="1" onchange="setCycleLen()">
-                  <span class="fb-u" data-i18n="fb_min">분</span>
-                </div>
-                <div class="fb-hint" id="fbHint"></div>
-              </div>
 
               <div id="hCycleCount" style="font-size:11px;color:var(--gray);margin-top:10px;line-height:1.6" data-i18n-html="cycle_desc">시간표 칸 안에서만 사이클이 돌아요.<br>칸 사이 빈 시간에는 타이머만 조용히 흐릅니다.</div>
             </div>
@@ -1487,6 +1485,60 @@ select {
     </div>
     <div style="font-size:11px;color:var(--gray);opacity:0.7;line-height:1.6" data-i18n="cat_sell_desc">사이클 완료 후 바구니에서 수확하면 열매가 쌓여요!</div>
   </div>
+</div>
+
+<!-- 포모도로 타이머 설정 -->
+<div id="pomoModal" style="display:none;position:fixed;inset:0;z-index:9466;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closePomoSettings(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:90%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="pomo_title">⏱ 포모도로 타이머</span>
+      <button onclick="closePomoSettings()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--white);cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="pmOn" style="width:15px;height:15px;accent-color:var(--yellow);cursor:pointer" onchange="pmToggle()">
+      <span data-i18n="pomo_use">포모도로 타이머 쓰기</span>
+    </label>
+
+    <div id="pmBody">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12px;color:var(--gray);line-height:1.75"
+           data-i18n-html="pomo_explain"></div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="flex:1;font-size:13px;color:var(--white)" data-i18n="fb_focus">집중</span>
+        <input type="number" id="pmFocus" min="5" max="180" step="1" class="todo-edit-in" style="width:84px;text-align:center" oninput="pmPreview()">
+        <span style="font-size:12px;color:var(--gray);width:20px" data-i18n="fb_min">분</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="flex:1;font-size:13px;color:var(--white)" data-i18n="fb_break">휴식</span>
+        <input type="number" id="pmBreak" min="1" max="60" step="1" class="todo-edit-in" style="width:84px;text-align:center" oninput="pmPreview()">
+        <span style="font-size:12px;color:var(--gray);width:20px" data-i18n="fb_min">분</span>
+      </div>
+      <div id="pmHint" style="font-size:11px;color:var(--yellow);margin-bottom:16px;line-height:1.6"></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closePomoSettings()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="flex:1;font-size:12px" onclick="savePomoSettings()" data-i18n="remind_save">✓ 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 시간표 사용 팁 -->
+<div id="ttTipModal" style="display:none;position:fixed;inset:0;z-index:9467;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtTips(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:90%;max-height:82vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="tt_tips_title">💡 시간표 사용 팁</span>
+      <button onclick="closeTtTips()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.9" data-i18n-html="tt_tips_body"></div>
+  </div>
+</div>
+
+<!-- 시간표 칸 우클릭 메뉴 -->
+<div id="ttMenu" style="display:none;position:fixed;z-index:9468;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,0.35)">
+  <button class="tt-menu-item" onclick="ttMenuAct('edit')" data-i18n="tt_menu_edit">✏️ 수정하기</button>
+  <button class="tt-menu-item" onclick="ttMenuAct('delete')" data-i18n="tt_menu_del">🗑 지우기</button>
 </div>
 
 <!-- 시간표 칸 고치기 -->
@@ -1886,6 +1938,15 @@ const STRINGS = {
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
     remind_water_work:'물 알림은 업무 시간에만',
     remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
+    tt_card_title:'🗓 시간표', pomo_btn:'⏱ 포모도로 타이머', pomo_title:'⏱ 포모도로 타이머',
+    pomo_use:'포모도로 타이머 쓰기',
+    pomo_explain:'<b style="color:var(--white)">포모도로가 뭔가요?</b><br>정해진 시간 동안만 집중하고 짧게 쉬는 것을 반복하는 방법이에요. 끝이 정해져 있으면 시작이 쉬워지고, 중간에 쉬어서 오래 앉아 있어도 덜 지칩니다.<br><br><b style="color:var(--white)">얼마로 할까요?</b><br>· <b>25분 집중 + 5분 휴식</b> — 가장 널리 쓰이는 기본값이에요. 처음이라면 여기서 시작해 보세요.<br>· <b>45분 + 10분</b> — 수업 시간표를 쓰는 분께 잘 맞아요.<br>· <b>50~90분 + 10~20분</b> — 한번 몰입하면 길게 가는 편이라면.<br><br>정답은 없어요. 집중이 흐트러지기 <b>직전</b>에 쉬는 시간이 오도록 맞추는 게 좋습니다.',
+    pomo_preview:'집중 {f}분 + 휴식 {b}분 = 한 사이클 {c}분',
+    pomo_range:'집중 5~180분, 휴식 1~60분 사이로 적어주세요',
+    mode_off:'⏸ 타이머 꺼짐', next_off:'포모도로 타이머를 꺼 두었어요',
+    tt_menu_edit:'✏️ 수정하기', tt_menu_del:'🗑 지우기',
+    tt_tips_title:'💡 시간표 사용 팁',
+    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌어서</b> 다른 자리에 놓으면 그 사이로 들어가요. 뒤에 있던 일정은 그만큼 뒤로 밀립니다. 다른 요일로도 옮길 수 있어요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요.',
     tt_title:'시간표', tt_fill:'간단 채우기', tt_clear:'비우기',
     tt_tip:'빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.',
     tt_overlap:'그 시간에 이미 다른 일정이 있어요', tt_bad_time:'끝나는 시각이 시작보다 빨라요',
@@ -2102,6 +2163,15 @@ const STRINGS = {
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
     remind_water_work:'Water reminders only during work hours',
     remind_water_hint:'If off, it nudges you every 30 minutes at night too',
+    tt_card_title:'🗓 Timetable', pomo_btn:'⏱ Pomodoro', pomo_title:'⏱ Pomodoro timer',
+    pomo_use:'Use the Pomodoro timer',
+    pomo_explain:'<b style="color:var(--white)">What is Pomodoro?</b><br>Work in fixed bursts, then take a short break, and repeat. A known finish makes it easier to start, and the breaks keep you fresh.<br><br><b style="color:var(--white)">How long?</b><br>· <b>25 + 5</b> — the classic. Start here if unsure.<br>· <b>45 + 10</b> — matches most class schedules.<br>· <b>50~90 + 10~20</b> — if you like long stretches.<br><br>There is no right answer. Aim for a break just <b>before</b> your attention slips.',
+    pomo_preview:'{f} min focus + {b} min break = {c} min per cycle',
+    pomo_range:'Focus 5~180 min, break 1~60 min',
+    mode_off:'⏸ Timer off', next_off:'Pomodoro timer is turned off',
+    tt_menu_edit:'✏️ Edit', tt_menu_del:'🗑 Delete',
+    tt_tips_title:'💡 Timetable tips',
+    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot between others to slide it in — later slots shift back. You can drop it on another day too.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts.',
     tt_title:'Timetable', tt_fill:'Fill weekdays', tt_clear:'Clear',
     tt_tip:'Drag on an empty cell to make a slot. Tap a slot to edit it.',
     tt_overlap:'Something else is already there', tt_bad_time:'End time is before the start',
@@ -2318,6 +2388,15 @@ const STRINGS = {
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
     remind_water_work:'水のお知らせは勤務時間だけ',
     remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
+    tt_card_title:'🗓 時間割', pomo_btn:'⏱ ポモドーロ', pomo_title:'⏱ ポモドーロタイマー',
+    pomo_use:'ポモドーロタイマーを使う',
+    pomo_explain:'<b style="color:var(--white)">ポモドーロとは？</b><br>決まった時間だけ集中して短く休む、を繰り返す方法です。終わりが決まっていると始めやすく、途中で休むので長く続きます。<br><br><b style="color:var(--white)">何分がいい？</b><br>· <b>25分 + 5分</b> — いちばん使われている基本。迷ったらここから。<br>· <b>45分 + 10分</b> — 時間割のある方に。<br>· <b>50~90分 + 10~20分</b> — 一度乗ると長く続く方に。<br><br>正解はありません。集中が切れる<b>直前</b>に休みが来るように。',
+    pomo_preview:'集中{f}分 + 休憩{b}分 = 1サイクル{c}分',
+    pomo_range:'集中は5~180分、休憩は1~60分で',
+    mode_off:'⏸ タイマーオフ', next_off:'ポモドーロタイマーはオフです',
+    tt_menu_edit:'✏️ 直す', tt_menu_del:'🗑 消す',
+    tt_tips_title:'💡 時間割の使い方',
+    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>して他の枠の間に置くと、そこに入り後ろの予定がずれます。別の曜日にも移せます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。',
     tt_title:'時間割', tt_fill:'平日を埋める', tt_clear:'全部消す',
     tt_tip:'空いたところを上下にドラッグすると枠ができます。枠を押すと直せます。',
     tt_overlap:'その時間にはすでに予定があります', tt_bad_time:'終わりが始まりより早いです',
@@ -2846,7 +2925,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','blocks','focusMins','breakMins','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3369,6 +3448,12 @@ function fmt(secs) {
  */
 function calcCycle() {
   const nowSec = nowSeconds();
+  if (!pomoOn()) {
+    // 타이머를 껐다 — 시간표는 그대로 보여주되 집중/휴식은 세지 않는다
+    const d0 = new Date().getDay();
+    const b0 = blockAt(d0, nowSec / 60);
+    return { phase: 'off', cycleIdx: -4, remaining: 0, total: 1, focusElapsed: 0, block: b0 || null };
+  }
   const nowMin = nowSec / 60;
   const day = new Date().getDay();
   const b = blockAt(day, nowMin);
@@ -3679,15 +3764,13 @@ let _ttDrag = null;
 
 /** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
 function ttRange() {
-  let lo = 8 * 60, hi = 20 * 60;
+  // 기본은 새벽 5시부터 밤 10시까지. 그 밖에 칸이 있으면 그만큼 넓힌다.
+  let lo = 5 * 60, hi = 22 * 60;
   blockList().forEach(b => {
     lo = Math.min(lo, toMin(b.start));
     hi = Math.max(hi, toMin(b.end));
   });
-  lo = Math.floor(lo / 60) * 60;
-  hi = Math.ceil(hi / 60) * 60;
-  if (hi - lo < 6 * 60) hi = lo + 6 * 60;
-  return [lo, hi];
+  return [Math.floor(lo / 60) * 60, Math.ceil(hi / 60) * 60];
 }
 
 function renderTimetable() {
@@ -3718,7 +3801,10 @@ function renderTimetable() {
       const hgt = Math.max(14, (toMin(b.end) - toMin(b.start)) / 60 * TT_ROW_H);
       const now = d === today && nowMin >= toMin(b.start) && nowMin < toMin(b.end);
       return `<div class="tt-blk ${b.type === 'rest' ? 'rest' : ''}${now ? ' now' : ''}"
-        style="top:${top}px;height:${hgt}px" onclick="event.stopPropagation();ttEdit('${b.id}')">
+        data-id="${b.id}" style="top:${top}px;height:${hgt}px"
+        onpointerdown="ttBlkDown(event,'${b.id}')"
+        ondblclick="event.stopPropagation();ttEdit('${b.id}')"
+        oncontextmenu="ttBlkMenu(event,'${b.id}')">
         <b>${String(b.label || '').replace(/</g, '&lt;')}</b>
         ${hgt >= 30 ? `<i>${b.start}~${b.end}</i>` : ''}
       </div>`;
@@ -3732,7 +3818,6 @@ function renderTimetable() {
     <div class="tt-body"><div class="tt-times">${times}</div>${cols}</div>
   </div>`;
   el.dataset.lo = lo;
-  renderCycleLen();
 }
 
 /** 세로 위치 → 분 (10분 단위로 맞춤) */
@@ -3820,6 +3905,147 @@ function ttFillWeekday() {
   updateCycleUI();
 }
 
+
+// ── 칸 옮기기: 다른 칸 사이에 끼워 넣으면 뒤 일정이 밀린다 ──
+let _ttMove = null;
+const TT_MOVE_THRESHOLD = 4;
+
+function ttBlkDown(e, id) {
+  if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
+  e.stopPropagation();                                     // 새 칸 만들기와 겹치지 않게
+  e.preventDefault();
+  _ttMove = { id, x0: e.clientX, y0: e.clientY, moved: false, day: null, at: null, line: null };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function ttMoveMove(e) {
+  if (!_ttMove) return;
+  if (!_ttMove.moved) {
+    if (Math.abs(e.clientX - _ttMove.x0) + Math.abs(e.clientY - _ttMove.y0) < TT_MOVE_THRESHOLD) return;
+    _ttMove.moved = true;
+    document.body.classList.add('dragging-item');
+  }
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const col = under && under.closest ? under.closest('.tt-col') : null;
+  ttClearLine();
+  if (!col) { _ttMove.day = null; _ttMove.at = null; return; }
+
+  const day = Number(col.dataset.day);
+  const list = blocksOf(day).filter(b => b.id !== _ttMove.id);
+  const lo = Number(document.getElementById('ttGrid').dataset.lo || 300);
+  const r = col.getBoundingClientRect();
+  const y = e.clientY - r.top;
+
+  // 어느 칸 사이인지 — 각 칸의 한가운데를 기준으로 앞/뒤를 가린다
+  let at = list.length;
+  for (let i = 0; i < list.length; i++) {
+    const mid = ((toMin(list[i].start) + toMin(list[i].end)) / 2 - lo) / 60 * TT_ROW_H;
+    if (y < mid) { at = i; break; }
+  }
+  _ttMove.day = day;
+  _ttMove.at = at;
+
+  // 들어갈 자리를 가로선으로 보여준다
+  const lineY = at === 0
+    ? (list.length ? (toMin(list[0].start) - lo) / 60 * TT_ROW_H : y)
+    : (toMin(list[at - 1].end) - lo) / 60 * TT_ROW_H;
+  const line = document.createElement('div');
+  line.className = 'tt-line';
+  line.style.top = Math.max(0, lineY - 1) + 'px';
+  col.appendChild(line);
+  _ttMove.line = line;
+}
+
+function ttClearLine() {
+  document.querySelectorAll('#ttGrid .tt-line').forEach(el => el.remove());
+}
+
+function ttMoveUp() {
+  if (!_ttMove) return;
+  const d = _ttMove; _ttMove = null;
+  document.body.classList.remove('dragging-item');
+  ttClearLine();
+  if (!d.moved) { ttEdit(d.id); return; }       // 움직이지 않았으면 그냥 누른 것
+  if (d.day === null || d.at === null) return;
+  ttInsertAt(d.id, d.day, d.at);
+}
+document.addEventListener('pointermove', ttMoveMove);
+document.addEventListener('pointerup', ttMoveUp);
+document.addEventListener('pointercancel', ttMoveUp);
+
+/**
+ * 칸을 그 요일의 at 번째 자리에 끼워 넣는다.
+ * 길이는 그대로 두고, 뒤에 있던 칸들은 겹치지 않게 뒤로 민다.
+ */
+function ttInsertAt(id, day, at) {
+  const blk = blockList().find(b => b.id === id);
+  if (!blk) return;
+  const dur = toMin(blk.end) - toMin(blk.start);
+  const list = blocksOf(day).filter(b => b.id !== id);
+
+  // 시작 시각: 앞 칸이 끝나는 때 (맨 앞이면 원래 시각 그대로)
+  let start = (at === 0) ? toMin(blk.start) : toMin(list[at - 1].end);
+  if (at === 0 && list.length && start + dur > toMin(list[0].start)) start = toMin(blk.start);
+  if (start + dur > 24 * 60) start = 24 * 60 - dur;
+
+  blk.day = day;
+  blk.start = toHHMM(start);
+  blk.end = toHHMM(start + dur);
+
+  // 끼워 넣은 자리부터 뒤로 밀기
+  const after = list.slice(at);
+  let cursor = start + dur;
+  after.forEach(b => {
+    if (toMin(b.start) < cursor) {
+      const d2 = toMin(b.end) - toMin(b.start);
+      b.start = toHHMM(cursor);
+      b.end = toHHMM(Math.min(24 * 60, cursor + d2));
+      cursor = toMin(b.end);
+    } else {
+      cursor = toMin(b.end);
+    }
+  });
+
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+}
+
+// ── 칸 우클릭 메뉴 ──
+let _ttMenuId = null;
+
+function ttBlkMenu(e, id) {
+  e.preventDefault();
+  e.stopPropagation();
+  _ttMenuId = id;
+  const m = document.getElementById('ttMenu');
+  if (!m) return;
+  m.style.display = 'block';
+  const w = m.offsetWidth || 130, h = m.offsetHeight || 70;
+  m.style.left = Math.min(e.clientX, window.innerWidth - w - 8) + 'px';
+  m.style.top = Math.min(e.clientY, window.innerHeight - h - 8) + 'px';
+}
+function ttCloseMenu() {
+  const m = document.getElementById('ttMenu');
+  if (m) m.style.display = 'none';
+}
+function ttMenuAct(what) {
+  const id = _ttMenuId;
+  ttCloseMenu();
+  if (!id) return;
+  if (what === 'edit') { ttEdit(id); return; }
+  if (what === 'delete') {
+    S.blocks = blockList().filter(x => x.id !== id);
+    saveState();
+    renderTimetable();
+    updateCycleUI();
+  }
+}
+document.addEventListener('pointerdown', (e) => {
+  const m = document.getElementById('ttMenu');
+  if (m && m.style.display === 'block' && !m.contains(e.target)) ttCloseMenu();
+});
+
 // ── 블록 고치기 팝업 ──
 let _ttEditId = null;
 
@@ -3872,48 +4098,66 @@ function ttDeleteEdit() {
   ttCloseEdit();
 }
 
-// ── 집중 · 휴식 길이 ─────────────────────────────────
-// 45분 수업에 10분 쉬는 학교처럼 리듬은 사람마다 다르다.
-const CYCLE_PRESETS = [
-  { f: 25, b: 5  },   // 뽀모도로 기본
-  { f: 45, b: 10 },   // 수업 시간표
-  { f: 50, b: 10 },
-  { f: 55, b: 5  },   // 네코데스크 기본
-  { f: 90, b: 20 },   // 길게 몰입
-];
+// ── 포모도로 타이머 설정 (팝업) ───────────────────────
+/** 타이머를 쓰는가 */
+function pomoOn() { return S.pomoOn !== false; }
 
-function renderCycleLen() {
-  const fi = document.getElementById('fbFocus');
-  const bi = document.getElementById('fbBreak');
-  if (fi) fi.value = focusMins();
-  if (bi) bi.value = breakMins();
-
-  const ps = document.getElementById('fbPresets');
-  if (ps) {
-    ps.innerHTML = CYCLE_PRESETS.map(p =>
-      `<button type="button" class="fb-preset${p.f === focusMins() && p.b === breakMins() ? ' on' : ''}"
-        onclick="setCycleLen(${p.f},${p.b})">${p.f}·${p.b}</button>`).join('');
-  }
-  const hint = document.getElementById('fbHint');
-  if (hint) hint.textContent = L('fb_hint').replace('{c}', cycleMins());
+function openPomoSettings() {
+  const g = (i) => document.getElementById(i);
+  if (g('pmOn')) g('pmOn').checked = pomoOn();
+  if (g('pmFocus')) g('pmFocus').value = focusMins();
+  if (g('pmBreak')) g('pmBreak').value = breakMins();
+  pmToggle();
+  pmPreview();
+  const m = g('pomoModal');
+  if (m) m.style.display = 'flex';
+}
+function closePomoSettings(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('pomoModal');
+  if (m) m.style.display = 'none';
+}
+/** 끄면 시간 입력칸을 흐리게 */
+function pmToggle() {
+  const on = document.getElementById('pmOn');
+  const body = document.getElementById('pmBody');
+  if (!body) return;
+  const use = on ? on.checked : true;
+  body.style.opacity = use ? '1' : '0.4';
+  body.style.pointerEvents = use ? '' : 'none';
+}
+/** 한 사이클이 몇 분이 되는지 미리 알려준다 */
+function pmPreview() {
+  const f = parseInt((document.getElementById('pmFocus') || {}).value, 10);
+  const b = parseInt((document.getElementById('pmBreak') || {}).value, 10);
+  const el = document.getElementById('pmHint');
+  if (!el) return;
+  if (!(f >= 5 && f <= 180) || !(b >= 1 && b <= 60)) { el.textContent = L('pomo_range'); return; }
+  el.textContent = L('pomo_preview').replace('{f}', f).replace('{b}', b).replace('{c}', f + b);
+}
+function savePomoSettings() {
+  const on = document.getElementById('pmOn');
+  const f = parseInt((document.getElementById('pmFocus') || {}).value, 10);
+  const b = parseInt((document.getElementById('pmBreak') || {}).value, 10);
+  S.pomoOn = on ? !!on.checked : true;
+  if (f >= 5 && f <= 180) S.focusMins = f;
+  if (b >= 1 && b <= 60) S.breakMins = b;
+  saveState();
+  updateCycleUI();
+  if (typeof renderTimetable === 'function') renderTimetable();
+  closePomoSettings();
+  toast('info', L('pomo_title'), L('remind_saved'));
 }
 
-/** 값 없이 부르면 입력칸에서 읽는다 */
-function setCycleLen(f, b) {
-  if (f === undefined) {
-    const fi = document.getElementById('fbFocus');
-    const bi = document.getElementById('fbBreak');
-    f = fi ? parseInt(fi.value, 10) : NaN;
-    b = bi ? parseInt(bi.value, 10) : NaN;
-  }
-  if (!(f >= 5 && f <= 180)) f = focusMins();
-  if (!(b >= 1 && b <= 60)) b = breakMins();
-  S.focusMins = f;
-  S.breakMins = b;
-  saveState();
-  renderCycleLen();
-  updateCycleUI();
-  if (typeof renderCyclePreview === 'function') renderCyclePreview();
+// ── 시간표 사용 팁 ───────────────────────────────────
+function openTtTips() {
+  const m = document.getElementById('ttTipModal');
+  if (m) m.style.display = 'flex';
+}
+function closeTtTips(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('ttTipModal');
+  if (m) m.style.display = 'none';
 }
 
 // ── 시각 고르기 (오전/오후 + 시 + 분) ────────────────
@@ -4423,8 +4667,9 @@ function setPomoRing(ratio, brk) {
 function updateCycleUI() {
   if (typeof S === 'undefined') return;
   const c = calcCycle();
+  const isOff   = c.phase === 'off';       // 타이머를 꺼 둠
   const isFocus = c.phase === 'focus' || (c.phase === 'free' && c.focusing);
-  const isPre   = c.phase === 'pre';
+  const isPre   = c.phase === 'pre' || isOff;
   const isLunch = c.phase === 'rest';      // 점심처럼 쉬라고 넣은 블록
   const isFree  = c.phase === 'free';      // 시간표에 없는 시간 — 타이머만 돈다
 
@@ -4445,10 +4690,11 @@ function updateCycleUI() {
 
   // 대시보드 타이머
   const blkName = c.block && c.block.label ? c.block.label : '';
-  const modeLabel = isLunch ? (blkName || L('mode_lunch'))
+  const modeLabel = isOff   ? L('mode_off')
+                  : isLunch ? (blkName || L('mode_lunch'))
                   : isFree  ? L('mode_free')
                   : isFocus ? (blkName || L('mode_focus'))
-                  : (isPre ? L('mode_pre') : L('mode_break'));
+                  : (c.phase === 'pre' ? L('mode_pre') : L('mode_break'));
   const clockClass = isFocus ? 'timer-big' : 'timer-big brk';
   const modeClass  = isFocus ? 'timer-mode-lbl' : 'timer-mode-lbl brk';
   const display = isPre ? '--:--' : fmt(c.remaining);
@@ -4465,7 +4711,8 @@ function updateCycleUI() {
   setPomoRing(isPre ? 0 : c.remaining / c.total, !isFocus);
 
   const nl = document.getElementById('hNextLabel');
-  if (nl) nl.textContent = isLunch ? L('next_lunch')
+  if (nl) nl.textContent = isOff   ? L('next_off')
+                         : isLunch ? L('next_lunch')
                          : isFree  ? L('next_free')
                          : isFocus ? L('next_focus')
                          : isPre ? L('next_pre') : L('next_break');
@@ -4473,7 +4720,7 @@ function updateCycleUI() {
 
   // 사이클 완료 감지 — 위젯 창에서만 실행 (대시보드 창 중복 방지)
   // 시간표에 없는 시간에는 조용히 — 타이머만 돌고 말풍선·알림은 안 뜬다
-  if (!window._isDashboard && !isPre && !isFree && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
+  if (!window._isDashboard && !isPre && !isFree && !isOff && c.cycleIdx !== S.lastCycleIdx && c.cycleIdx >= 0) {
     if (S.lastCycleIdx >= 0) {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
@@ -4627,7 +4874,6 @@ function renderWorkItems() {
   }).join('');
   el.innerHTML += '<button class="sch-add-btn" style="width:100%;margin-top:8px" onclick="addWorkItem()">' + L('work_add') + '</button>';
   syncAllTimeAmPm(el.parentElement || el);
-  renderCycleLen();
 }
 
 // ⠿ 핸들 드래그 — 할 일 목록과 동일하게 '어느 사이에 끼울지'를 가로선으로 보여준다
@@ -6774,7 +7020,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','theme','language'
+  'schedule','workItems','scheduleItems','blocks','pomoOn','focusMins','breakMins','theme','language'
 ];
 
 function _cloudApply(data) {
