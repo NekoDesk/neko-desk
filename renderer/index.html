@@ -3867,6 +3867,14 @@ function migrateBlocks() {
 }
 function blockList() {
   if (!Array.isArray(S.blocks)) migrateBlocks();
+  // 기기 간 병합은 목록을 통째로 합치는 방식이라, 같은 칸이라도 글자
+  // 하나만 달라지면 두 번 들어올 수 있다. 여기서 걸러 낸다.
+  const clean = dedupeById(S.blocks,
+    b => b.day + '|' + b.start + '|' + b.end + '|' + (b.label || '') + '|' + (b.type || ''));
+  if (clean.length !== S.blocks.length) {
+    S.blocks = clean;
+    if (typeof saveState === 'function') saveState();
+  }
   return S.blocks;
 }
 /** 그 요일의 블록을 시작 시각 순으로 */
@@ -4115,8 +4123,18 @@ function openTtFill() {
   const g = (i) => document.getElementById(i);
 
   // 지난번에 적어 둔 내용이 있으면 그대로 보여준다
-  const saved = Array.isArray(S.fillRows) ? S.fillRows.filter(
-    r => r && /^\d{2}:\d{2}$/.test(r.time)) : null;
+  let saved = Array.isArray(S.fillRows)
+    ? S.fillRows.filter(r => r && /^\d{2}:\d{2}$/.test(r.time)) : null;
+  // 같은 줄이 여러 번 들어온 경우를 걸러 낸다 (기기 간 병합 때문)
+  if (saved) {
+    const seen = {};
+    saved = saved.filter(r => {
+      const k = (r.label || '') + '|' + r.time + '|' + (r.type || '');
+      if (seen[k]) return false;
+      seen[k] = 1;
+      return true;
+    });
+  }
   _fillRows = (saved && saved.length >= 2)
     ? saved.map(r => ({ label: String(r.label || ''), time: r.time, type: r.type === 'rest' ? 'rest' : 'work' }))
     : fillDefaults();
@@ -4169,6 +4187,12 @@ function applyTtFill() {
     }
   });
   S.blocks = list;
+
+  // 채운 일정이 한눈에 들어오도록 보이는 시간대를 맞춘다 (앞뒤 1시간 여유)
+  const first = toMin(rows[0].time), last = toMin(rows[rows.length - 1].time);
+  S.ttFrom = toHHMM(Math.max(0, (Math.floor(first / 60) - 1) * 60));
+  S.ttTo = toHHMM(Math.min(24 * 60, (Math.ceil(last / 60) + 1) * 60));
+
   // 다음에 열 때 적어 둔 내용이 그대로 뜨도록 남겨 둔다
   S.fillRows = rows.map(r => ({ label: r.label, time: r.time, type: r.type }));
   S.fillDays = days.slice();
