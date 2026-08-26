@@ -728,7 +728,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* ── 시간표 격자 ── */
 /* 카드 아래에 빈 공간이 남지 않도록 격자가 자리를 채운다.
    24시간처럼 길게 잡으면 화면을 넘지 않는 선에서 스크롤된다. */
-#homeWorkCard { display:flex; flex-direction:column; }
+#homeWorkCard { display:flex; flex-direction:column; overflow:hidden; }
 #ttGrid { display:flex; }
 .tt-wrap { position:relative; flex:1; min-width:0; display:flex; flex-direction:column;
   border:1px solid var(--border); border-radius:6px;
@@ -740,7 +740,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-head div.sun { color:#f88; }
 .tt-head div.today { color:var(--yellow); font-weight:700; }
 .tt-body { position:relative; display:grid; grid-template-columns:38px repeat(7,1fr);
-  max-height:calc(100vh - 330px); min-height:200px; overflow-y:auto; align-content:start; }
+  min-height:160px; overflow-y:auto; align-content:start; }
 .tt-times { position:relative; }
 .tt-times span { display:block; font-size:9px; color:var(--gray); text-align:right;
   padding-right:4px; font-family:'Galmuri14',monospace; box-sizing:border-box;
@@ -3937,7 +3937,28 @@ function renderTimetable() {
     <div class="tt-body"><div class="tt-times">${times}</div>${cols}</div>
   </div>`;
   el.dataset.lo = lo;
+  ttFitHeight();
 }
+
+/**
+ * 격자 높이를 화면에 맞춘다.
+ * 시간대를 넓게 잡으면 격자가 길어져서 아래 버튼줄이 카드 밖으로
+ * 밀려나는데, 남은 자리를 재서 그만큼만 쓰고 나머지는 스크롤한다.
+ */
+function ttFitHeight() {
+  const el = document.getElementById('ttGrid');
+  const body = el && el.querySelector('.tt-body');
+  if (!body) return;
+  const bar = document.querySelector('.tt-bar');
+  const barH = bar ? bar.getBoundingClientRect().height + 10 : 0;
+  const top = body.getBoundingClientRect().top;
+  // 창 아래끝까지 남은 자리에서 버튼줄과 여백을 뺀다
+  const avail = window.innerHeight - top - barH - 26;
+  body.style.maxHeight = Math.max(160, Math.round(avail)) + 'px';
+}
+window.addEventListener('resize', () => {
+  if (typeof ttFitHeight === 'function') setTimeout(ttFitHeight, 60);
+});
 
 /** 세로 위치 → 분 (10분 단위로 맞춤) */
 function ttYToMin(col, clientY) {

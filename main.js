@@ -54,7 +54,8 @@ function createWindow() {
   });
 
   // 콘텐츠 렌더링 완료 후 창 표시 (로딩 중 검은 박스 방지)
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  // 처음 뜰 때도 화면 밖이면 안 보인다 — 보이는 자리로 데려온다
+  mainWindow.once('ready-to-show', () => { ensureOnScreen(mainWindow); mainWindow.show(); });
 
   mainWindow.loadFile('renderer/index.html');
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -101,15 +102,49 @@ function createTray() {
   tray.on('click', toggleVisibility);
 }
 
+/**
+ * 창이 화면 밖에 있으면 보이는 자리로 데려온다.
+ * 모니터를 뺐거나 해상도가 달라지면 예전 위치가 화면 밖이 되어,
+ * '보이기'를 눌러도 아무것도 안 뜨는 것처럼 보인다.
+ */
+function ensureOnScreen(win) {
+  if (!win || win.isDestroyed()) return;
+  try {
+    const b = win.getBounds();
+    const onSome = screen.getAllDisplays().some(d => {
+      const w = d.workArea;
+      return b.x < w.x + w.width && b.x + b.width > w.x &&
+             b.y < w.y + w.height && b.y + b.height > w.y;
+    });
+    if (onSome) return;
+    const { x, y, width, height } = screen.getPrimaryDisplay().workArea;
+    win.setBounds({
+      x: Math.round(x + width - b.width - 20),
+      y: Math.round(y + height - b.height - 20),
+      width: b.width, height: b.height,
+    });
+  } catch (e) {}
+}
+
 function toggleVisibility() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  if (mainWindow.isVisible()) mainWindow.hide();
-  else mainWindow.show();
+  const hidden = !mainWindow.isVisible() || mainWindow.isMinimized();
+  if (!hidden) { mainWindow.hide(); return; }
+  // 보일 때는 화면 안으로 데려오고, 다른 창에 가리지 않게 앞으로 올린다
+  ensureOnScreen(mainWindow);
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  try {
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow.moveTop();
+  } catch (e) {}
 }
 
 function openDashboardWindow() {
   if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+    ensureOnScreen(dashboardWindow);
     if (dashboardWindow.isMinimized()) dashboardWindow.restore();
+    if (!dashboardWindow.isVisible()) dashboardWindow.show();
     dashboardWindow.focus();
     return;
   }
