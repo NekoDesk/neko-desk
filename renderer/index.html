@@ -726,7 +726,12 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-menu-item:hover { background:var(--card); color:var(--yellow); }
 
 /* ── 시간표 격자 ── */
-.tt-wrap { position:relative; border:1px solid var(--border); border-radius:6px;
+/* 카드 아래에 빈 공간이 남지 않도록 격자가 자리를 채운다.
+   24시간처럼 길게 잡으면 화면을 넘지 않는 선에서 스크롤된다. */
+#homeWorkCard { display:flex; flex-direction:column; }
+#ttGrid { display:flex; }
+.tt-wrap { position:relative; flex:1; min-width:0; display:flex; flex-direction:column;
+  border:1px solid var(--border); border-radius:6px;
   background:var(--card); overflow:hidden; user-select:none; }
 .tt-head { display:grid; grid-template-columns:38px repeat(7,1fr);
   border-bottom:1px solid var(--border); background:var(--panel); }
@@ -735,13 +740,16 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-head div.sun { color:#f88; }
 .tt-head div.today { color:var(--yellow); font-weight:700; }
 .tt-body { position:relative; display:grid; grid-template-columns:38px repeat(7,1fr);
-  max-height:340px; overflow-y:auto; }
+  max-height:calc(100vh - 330px); min-height:200px; overflow-y:auto; align-content:start; }
 .tt-times { position:relative; }
 .tt-times span { display:block; font-size:9px; color:var(--gray); text-align:right;
   padding-right:4px; font-family:'Galmuri14',monospace; box-sizing:border-box;
   border-top:1px solid var(--border); }
 .tt-col { position:relative; border-left:1px solid var(--border); overflow:hidden; }
 .tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
+/* 오후는 한 톤 밝게 — 오전/오후가 한눈에 갈린다 */
+.tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff 55%); }
+.tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff 55%); }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
   padding:2px 3px; cursor:pointer; box-sizing:border-box;
@@ -756,7 +764,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-line { position:absolute; left:0; right:0; height:3px; background:var(--acc);
   border-radius:2px; pointer-events:none; z-index:5; box-shadow:0 0 6px var(--acc); }
 .tt-tip { font-size:10px; color:var(--gray); opacity:0.8; margin-top:7px; line-height:1.5; }
-.tt-bar { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+.tt-bar { display:flex; gap:6px; align-items:center; margin-top:8px; flex-shrink:0; }
 .tt-bar .sp { flex:1; }
 
 /* 집중 · 휴식 길이 */
@@ -847,10 +855,19 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   background:var(--card); border:1px solid var(--border); border-radius:3px; padding:3px 5px; }
 .tctl:focus-within { border-color:var(--yellow); }
 .tctl select {
-  background:transparent; border:none; outline:none; padding:0 1px; cursor:pointer;
+  background:var(--panel); border:1px solid var(--border); border-radius:3px;
+  outline:none; padding:2px 3px; cursor:pointer;
   color:var(--white); font-size:13px; font-family:'Galmuri14',monospace;
   -webkit-appearance:none; appearance:none; text-align:center;
 }
+#ttRangeModal .tctl-h { background:var(--panel); border:1px solid var(--border);
+  border-radius:4px; color:var(--white); font-family:'Galmuri14',monospace;
+  cursor:pointer; outline:none; -webkit-appearance:none; appearance:none; text-align:center; }
+#ttRangeModal .tctl-h:hover { border-color:var(--yellow); }
+.tctl select:hover { border-color:var(--yellow); }
+.tctl select:focus { border-color:var(--yellow); }
+/* 오전/오후는 고른 시각에 따라 저절로 바뀌는 표시 (누르는 것이 아님) */
+.tctl .ampm-chip { cursor:default; }
 .tctl select option { background:var(--panel); color:var(--white); }
 .tctl .tctl-sep { color:var(--white); font-size:13px; font-family:'Galmuri14',monospace; }
 /* 오전/오후 단추 — 할 일 목록 버튼과 같은 색 */
@@ -3857,15 +3874,15 @@ let _ttDrag = null;
 
 /** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
 function ttRange() {
-  // 사용자가 정한 범위(기본 05:00~22:00). 그 밖에 칸이 있으면 그만큼 넓힌다.
+  // 정한 범위를 그대로 지킨다. 24시간으로 두면 스크롤로 다 볼 수 있고,
+  // 11~13시처럼 좁게 두면 딱 그만큼만 보인다.
   let lo = toMin(S.ttFrom || '05:00');
   let hi = toMin(S.ttTo || '22:00');
-  if (hi <= lo) { lo = 5 * 60; hi = 22 * 60; }
-  blockList().forEach(b => {
-    lo = Math.min(lo, toMin(b.start));
-    hi = Math.max(hi, toMin(b.end));
-  });
-  return [Math.floor(lo / 60) * 60, Math.ceil(hi / 60) * 60];
+  if (!(hi > lo)) { lo = 5 * 60; hi = 22 * 60; }
+  lo = Math.floor(lo / 60) * 60;
+  hi = Math.ceil(hi / 60) * 60;
+  if (hi <= lo) hi = lo + 60;
+  return [lo, hi];
 }
 
 function renderTimetable() {
@@ -3884,13 +3901,17 @@ function renderTimetable() {
 
   let times = '';
   for (let h = 0; h < hours; h++) {
-    times += `<span style="height:${TT_ROW_H}px;line-height:${TT_ROW_H}px">${('0' + ((lo / 60) + h)).slice(-2)}</span>`;
+    const hh = (lo / 60) + h;
+    times += `<span class="${hh >= 12 ? 'pm' : ''}" style="height:${TT_ROW_H}px;line-height:${TT_ROW_H}px">${('0' + hh).slice(-2)}</span>`;
   }
 
   let cols = '';
   for (let d = 0; d < 7; d++) {
     let rows = '';
-    for (let h = 0; h < hours; h++) rows += `<div class="tt-hour" style="height:${TT_ROW_H}px"></div>`;
+    for (let h = 0; h < hours; h++) {
+      const hh = (lo / 60) + h;
+      rows += `<div class="tt-hour${hh >= 12 ? ' pm' : ''}" style="height:${TT_ROW_H}px"></div>`;
+    }
     const blks = blocksOf(d).map(b => {
       // 보이는 범위 밖으로 삐져나가지 않게 잘라서 그린다
       const s = Math.max(toMin(b.start), lo), e = Math.min(toMin(b.end), hi);
@@ -4053,8 +4074,15 @@ function applyTtFill() {
 // ── 보이는 시간대 ────────────────────────────────────
 function openTtRange() {
   const g = (i) => document.getElementById(i);
-  if (g('rangeFromCtl')) g('rangeFromCtl').innerHTML = timeCtlHtml(S.ttFrom || '05:00', 'id="rangeFrom"');
-  if (g('rangeToCtl'))   g('rangeToCtl').innerHTML   = timeCtlHtml(S.ttTo   || '22:00', 'id="rangeTo"');
+  const hourSel = (id, from, to, cur) => {
+    let o = '';
+    for (let h = from; h <= to; h++) o += `<option value="${h}"${h === cur ? ' selected' : ''}>${_tPad(h)}</option>`;
+    return `<select id="${id}" class="tctl-h" style="padding:6px 10px;font-size:14px">${o}</select>`;
+  };
+  const f = Math.floor(toMin(S.ttFrom || '05:00') / 60);
+  const tt = Math.ceil(toMin(S.ttTo || '22:00') / 60);
+  if (g('rangeFromCtl')) g('rangeFromCtl').innerHTML = hourSel('rangeFrom', 0, 23, f) + '<span class="tctl-sep" style="margin-left:4px">시</span>';
+  if (g('rangeToCtl'))   g('rangeToCtl').innerHTML   = hourSel('rangeTo', 1, 24, tt) + '<span class="tctl-sep" style="margin-left:4px">시</span>';
   const m = g('ttRangeModal');
   if (m) m.style.display = 'flex';
 }
@@ -4065,11 +4093,11 @@ function closeTtRange(e) {
 }
 function applyTtRange() {
   const g = (i) => document.getElementById(i);
-  const a = g('rangeFrom') ? g('rangeFrom').value : '05:00';
-  const b = g('rangeTo') ? g('rangeTo').value : '22:00';
-  if (toMin(b) <= toMin(a)) { toast('alert', L('range_title'), L('tt_bad_time')); return; }
-  S.ttFrom = a;
-  S.ttTo = b;
+  const a = g('rangeFrom') ? Number(g('rangeFrom').value) : 5;
+  const b = g('rangeTo') ? Number(g('rangeTo').value) : 22;
+  if (!(b > a)) { toast('alert', L('range_title'), L('tt_bad_time')); return; }
+  S.ttFrom = _tPad(a) + ':00';
+  S.ttTo = (b >= 24) ? '24:00' : (_tPad(b) + ':00');
   saveState();
   renderTimetable();
   closeTtRange();
@@ -4417,17 +4445,15 @@ function timeCtlHtml(value, attrs) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(value || '09:00'));
   const H = m ? Number(m[1]) : 9;
   const M = m ? Number(m[2]) : 0;
-  const pm = H >= 12;
-  const h12 = ((H + 11) % 12) + 1;
 
+  // 시는 0~23 그대로 고른다. 오전/오후는 고른 값에 따라 저절로 붙는다.
   let hs = '';
-  for (let i = 1; i <= 12; i++) hs += `<option value="${i}"${i === h12 ? ' selected' : ''}>${_tPad(i)}</option>`;
+  for (let i = 0; i < 24; i++) hs += `<option value="${i}"${i === H ? ' selected' : ''}>${_tPad(i)}</option>`;
   let ms = '';
   for (let i = 0; i < 60; i++) ms += `<option value="${i}"${i === M ? ' selected' : ''}>${_tPad(i)}</option>`;
 
   return `<span class="tctl">`
-       + `<button type="button" class="ampm-chip${pm ? ' pm' : ''}" onclick="tctlToggleAmPm(this)">`
-       + `${pm ? L('work_pm') : L('work_am')}</button>`
+       + `<span class="ampm-chip${H >= 12 ? ' pm' : ''}">${H >= 12 ? L('work_pm') : L('work_am')}</span>`
        + `<select class="tctl-h" onchange="tctlChanged(this)">${hs}</select>`
        + `<span class="tctl-sep">:</span>`
        + `<select class="tctl-m" onchange="tctlChanged(this)">${ms}</select>`
@@ -4442,9 +4468,9 @@ function tctlApply(wrap) {
   const ms = wrap.querySelector('.tctl-m');
   const val = wrap.querySelector('.tctl-val');
   if (!chip || !hs || !ms || !val) return;
-  const pm = chip.classList.contains('pm');
-  let H = Number(hs.value) % 12;
-  if (pm) H += 12;
+  const H = Number(hs.value);
+  chip.classList.toggle('pm', H >= 12);
+  chip.textContent = H >= 12 ? L('work_pm') : L('work_am');
   const next = _tPad(H) + ':' + _tPad(Number(ms.value));
   if (val.value === next) return;
   val.value = next;
@@ -4452,14 +4478,6 @@ function tctlApply(wrap) {
   val.dispatchEvent(new Event('change', { bubbles: true }));
 }
 function tctlChanged(el) { tctlApply(el.closest('.tctl')); }
-
-/** 오전 ↔ 오후 */
-function tctlToggleAmPm(btn) {
-  const pm = !btn.classList.contains('pm');
-  btn.classList.toggle('pm', pm);
-  btn.textContent = pm ? L('work_pm') : L('work_am');
-  tctlApply(btn.closest('.tctl'));
-}
 
 /** 숨은 칸의 값에 맞춰 고르개를 되돌려 놓는다 (밖에서 값을 바꿨을 때) */
 function syncTimeAmPm(val) {
@@ -4473,7 +4491,7 @@ function syncTimeAmPm(val) {
   const hs = wrap.querySelector('.tctl-h');
   const ms = wrap.querySelector('.tctl-m');
   if (chip) { chip.classList.toggle('pm', pm); chip.textContent = pm ? L('work_pm') : L('work_am'); }
-  if (hs) hs.value = String(((H + 11) % 12) + 1);
+  if (hs) hs.value = String(H);
   if (ms) ms.value = String(M);
 }
 function syncAllTimeAmPm(root) {
