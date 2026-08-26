@@ -868,7 +868,7 @@ const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
 const CLOUD_KEYS = [
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
-  'schedule','workItems','scheduleItems','blocks','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
+  'schedule','workItems','scheduleItems','blocks','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 // '실질적으로 아무 기록도 없는가' 판정용 (cat처럼 항상 기본값이 있는 키는 제외)
 const CLOUD_CONTENT_KEYS = ['calendarNotes','diaryEntries','wishlist','wishlistDone',

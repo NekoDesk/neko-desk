@@ -2994,6 +2994,8 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
+  fillRows: null,        // 간단 채우기에 적어 둔 하루 흐름
+  fillDays: null,        // 간단 채우기에서 고른 요일
   ttFrom: '05:00',       // 시간표에 보여줄 시작 시각
   ttTo: '22:00',         // 시간표에 보여줄 끝 시각
   blocks: null,          // 시간표 [{id, day:0~6, start:'HH:MM', end:'HH:MM', label, type:'work'|'rest'}]
@@ -3046,7 +3048,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -4111,15 +4113,28 @@ function fillAddRow() {
 
 function openTtFill() {
   const g = (i) => document.getElementById(i);
-  _fillRows = fillDefaults();
+
+  // 지난번에 적어 둔 내용이 있으면 그대로 보여준다
+  const saved = Array.isArray(S.fillRows) ? S.fillRows.filter(
+    r => r && /^\d{2}:\d{2}$/.test(r.time)) : null;
+  _fillRows = (saved && saved.length >= 2)
+    ? saved.map(r => ({ label: String(r.label || ''), time: r.time, type: r.type === 'rest' ? 'rest' : 'work' }))
+    : fillDefaults();
   renderFillRows();
-  // 기본은 월~금
+
+  // 요일도 지난번에 고른 대로 (없으면 월~금)
+  const days = Array.isArray(S.fillDays) && S.fillDays.length ? S.fillDays : [1, 2, 3, 4, 5];
   const dw = g('fillDows');
   if (dw) {
     dw.innerHTML = dowNames().map((nm, i) =>
-      `<button type="button" class="alarm-dow${i === 0 ? ' sun' : ''}${i >= 1 && i <= 5 ? ' on' : ''}"
+      `<button type="button" class="alarm-dow${i === 0 ? ' sun' : ''}${days.indexOf(i) >= 0 ? ' on' : ''}"
          data-dow="${i}" onclick="toggleAlarmDow(this)">${nm}</button>`).join('');
   }
+
+  // 지우고 채울지도 지난번 그대로
+  const rp = g('fillReplace');
+  if (rp) rp.checked = S.fillReplace !== false;
+
   const m = g('ttFillModal');
   if (m) m.style.display = 'flex';
 }
@@ -4154,7 +4169,10 @@ function applyTtFill() {
     }
   });
   S.blocks = list;
-  // 다음에 열 때 방금 값이 그대로 뜨도록 남겨 둔다
+  // 다음에 열 때 적어 둔 내용이 그대로 뜨도록 남겨 둔다
+  S.fillRows = rows.map(r => ({ label: r.label, time: r.time, type: r.type }));
+  S.fillDays = days.slice();
+  S.fillReplace = replace;
   S.schedule = Object.assign({}, S.schedule, {
     ws: rows[0].time, we: rows[rows.length - 1].time,
   });
@@ -7406,7 +7424,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','blocks','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
+  'schedule','workItems','scheduleItems','blocks','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 
 function _cloudApply(data) {
