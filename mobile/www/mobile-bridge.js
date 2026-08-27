@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.7.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.7.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -119,6 +119,11 @@
     var parts = [];
     if (_stPull) parts.push('받기 ' + _stPull);
     if (_stPush) parts.push('올리기 ' + _stPush);
+    // 마지막 확인이 언제였는지 — 멎어 있으면 숫자가 안 올라가서 바로 보인다
+    if (_lastPullAt) {
+      var age = Math.round((Date.now() - _lastPullAt) / 1000);
+      parts.push(age < 60 ? age + '초 전 확인' : Math.round(age / 60) + '분 전 확인');
+    }
     el.textContent = '☁️ 동기화: '
       + (parts.length ? parts.join(' · ') : '대기 중');
   }
@@ -203,8 +208,8 @@
   var _lastPullAt = 0;
 
   /** 지금 물어볼 때가 됐는가 */
-  function pullDue() {
-    if (document.hidden) return false;         // 화면을 안 보고 있으면 쉰다
+  /** 지금은 얼마 간격으로 물어봐야 하는가 */
+  function pullWait() {
     var quiet = Date.now() - _lastActivity;
     var wait = PULL_IDLE_MS;
     for (var i = 0; i < PULL_STEPS.length; i++) {
@@ -212,14 +217,56 @@
     }
     // 앱을 켜 두고 보고 있는 중이라면 PC에서 고친 것이 곧 보여야 한다
     if (wait > PULL_VISIBLE_MAX) wait = PULL_VISIBLE_MAX;
-    return Date.now() - _lastPullAt >= wait;
+    return wait;
+  }
+
+  function pullDue() {
+    if (document.hidden) return false;         // 화면을 안 보고 있으면 쉰다
+    return Date.now() - _lastPullAt >= pullWait();
   }
 
   /** 무슨 일이 생겼다 — 다시 자주 물어본다 */
   function bump() { _lastActivity = Date.now(); }
 
-  // 화면을 만지고 있으면 계속 빠르게 — PC에서 고친 게 곧바로 보여야 한다
-  document.addEventListener('pointerdown', bump, true);
+  /**
+   * 타이머를 못 믿는다.
+   *
+   * 안드로이드는 앱이 뒤로 가거나 절전에 들어가면 웹뷰의 setInterval을
+   * 얼려 버리고, 돌아와도 곧바로 안 풀리는 기기가 있다. 그러면 받아오기가
+   * 통째로 멎어 PC에서 고친 게 안 보인다.
+   * 그래서 시계를 직접 재서, 마지막으로 확인한 지 오래됐으면 타이머와
+   * 상관없이 그 자리에서 받아온다.
+   */
+  function kickIfStale(maxAgeMs) {
+    if (Date.now() - _lastPullAt < maxAgeMs) return;   // 싼 검사를 먼저
+    if (!loggedIn()) return;
+    _lastPullAt = Date.now();
+    try { syncPull(false); } catch (e) {}
+    try { pushIfChanged(); } catch (e) {}
+  }
+
+  // 화면을 만지면 그 자리에서 확인한다 — 타이머가 얼어 있어도 이건 돈다
+  document.addEventListener('pointerdown', function () {
+    bump();
+    kickIfStale(3000);
+  }, true);
+
+  /**
+   * 그림이 그려질 때마다 도는 감시자.
+   * requestAnimationFrame은 화면에 보일 때만 돌고 타이머 조이기의 영향을
+   * 받지 않아서, setInterval이 얼어도 이쪽은 살아 있다.
+   */
+  var _wdLast = 0;
+  function watchdog() {
+    var now = Date.now();
+    if (now - _wdLast >= 1000) {          // 그림은 초당 수십 번 그려지므로 1초에 한 번만
+      _wdLast = now;
+      try { renderSyncStatus(); } catch (e) {}
+      try { kickIfStale(pullWait()); } catch (e) {}
+    }
+    requestAnimationFrame(watchdog);
+  }
+  requestAnimationFrame(watchdog);
   var _pushTimer = null;
 
   function loggedIn() {
