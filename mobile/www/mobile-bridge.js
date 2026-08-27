@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.8.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.8.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -911,7 +911,7 @@
   };
 
   var NOTI_CHANNEL = 'neko_remind';
-  var _notiPlugin;
+  var _notiPlugin = null;
   var _notiTimer = null;
   var _notiLastPlan = '';
   var _notiState = '확인 중...';      // 설정 화면에 그대로 보여 준다
@@ -967,15 +967,22 @@
       .catch(function (e) { notiSay('오류: ' + (e && e.message ? e.message : e)); });
   };
 
+  /**
+   * 알림 플러그인을 잡는다.
+   *
+   * 이 앱은 번들러를 안 쓰므로 window.Capacitor 는 안드로이드가 넣어 준
+   * native-bridge 가 만든 것뿐이다. 기기에 따라 registerPlugin 이 없고
+   * Capacitor.Plugins 만 있는 경우가 있어(위젯 쪽은 그 갈래로 잡혔다)
+   * 양쪽을 다 본다. 못 찾으면 다음에 다시 해 본다 — 처음 한 번에
+   * null 로 굳혀 두면 늦게 올라온 다리를 영영 못 잡는다.
+   */
   function notiPlugin() {
-    if (_notiPlugin !== undefined) return _notiPlugin;
-    _notiPlugin = null;
+    if (_notiPlugin) return _notiPlugin;
     try {
       var C = window.Capacitor;
-      if (C && typeof C.getPlatform === 'function' && C.getPlatform() === 'android'
-          && typeof C.registerPlugin === 'function') {
-        _notiPlugin = C.registerPlugin('LocalNotifications');
-      }
+      if (!C || typeof C.getPlatform !== 'function' || C.getPlatform() !== 'android') return null;
+      if (C.Plugins && C.Plugins.LocalNotifications) _notiPlugin = C.Plugins.LocalNotifications;
+      else if (typeof C.registerPlugin === 'function') _notiPlugin = C.registerPlugin('LocalNotifications');
     } catch (e) {}
     return _notiPlugin;
   }
@@ -1081,7 +1088,17 @@
   /** 예약을 지금 설정에 맞춘다 (바뀐 게 없으면 아무것도 안 한다) */
   function syncNotifications() {
     var N = notiPlugin();
-    if (!N) { notiSay('플러그인을 못 찾음', 0); return; }
+    if (!N) {
+      // 무엇이 없어서 못 잡았는지 그대로 적는다 (다음에 바로 짚을 수 있게)
+      var C = window.Capacitor;
+      var why = !C ? 'Capacitor 없음'
+        : (typeof C.getPlatform !== 'function' ? 'getPlatform 없음'
+        : (C.getPlatform() !== 'android' ? ('platform=' + C.getPlatform())
+        : ('Plugins=' + (C.Plugins ? Object.keys(C.Plugins).join(',') : '없음')
+           + ' / registerPlugin=' + (typeof C.registerPlugin))));
+      notiSay('플러그인을 못 찾음 — ' + why, 0);
+      return;
+    }
     var src = null;
     try { src = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
     if (!src) src = getS();
@@ -1124,8 +1141,14 @@
   /** 설정이 바뀔 때마다 부르되, 연달아 불려도 한 번만 돌게 미룬다 */
   function scheduleNotiSync() {
     if (_notiTimer) clearTimeout(_notiTimer);
-    _notiTimer = setTimeout(function () { _notiTimer = null; syncNotifications(); }, 2000);
+    _notiTimer = setTimeout(function () {
+      _notiTimer = null;
+      syncNotifications();
+      // 다리가 아직 안 올라왔을 수 있다 — 몇 번 더 두드려 본다
+      if (!_notiPlugin && _notiRetry < 6) { _notiRetry++; scheduleNotiSync(); }
+    }, 2000);
   }
+  var _notiRetry = 0;
 
   // ══════════════════════════════════════════════
   // 바탕화면 위젯 — D-day 전부와 어제·오늘·내일 할 일을 내보낸다
