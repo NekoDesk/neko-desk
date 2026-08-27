@@ -23,6 +23,21 @@ html = html.replace('</title>', '</title>\n' + INJECT);
 fs.writeFileSync(OUT, html);
 console.log('OK: www/app.html (' + Math.round(html.length / 1024) + ' KB)');
 
+// 브리지의 버전을 package.json에 맞춘다.
+// 손으로 적어 두었더니 실제 빌드와 어긋나, 설정 화면이 옛 버전을 우겼다.
+const VER = require(path.join(ROOT, '..', 'package.json')).version;
+const BRIDGE = path.join(WWW, 'mobile-bridge.js');
+let bridge = fs.readFileSync(BRIDGE, 'utf8');
+const VER_RE = /var APP_VERSION = '[^']*';/;
+if (!VER_RE.test(bridge)) {
+  throw new Error('mobile-bridge.js에서 APP_VERSION을 찾지 못했습니다');
+}
+const stamped = bridge.replace(VER_RE, "var APP_VERSION = '" + VER + "-mobile';");
+if (stamped !== bridge) {
+  fs.writeFileSync(BRIDGE, stamped);
+}
+console.log('OK: mobile-bridge.js 버전 ' + VER + '-mobile');
+
 // renderer가 파일 이름으로 직접 불러오는 그림들도 함께 옮긴다.
 // (예: 포토부스의 냥냥이 배경 bg-cats.png — 없으면 모바일에서만 안 뜬다)
 const RDIR = path.join(ROOT, '..', 'renderer');

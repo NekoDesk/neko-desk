@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.2-mobile';
+  var APP_VERSION = '2.6.8-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -968,10 +968,14 @@
     syncStatus('연결 중...');
     // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
     wrapSaveState(0);
-    syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
+    try {
+      syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
+    } catch (e) { syncStatus('\uc624\ub958'); }
     setInterval(function () {
       renderSyncStatus();       // 아무 일이 없어도 t가 올라가는 게 보이도록
-      syncPull(false);
+      // 받기가 넘어져도 올리기는 반드시 돌아야 한다 (따로 감싼다)
+      try { syncPull(false); }
+      catch (e) { syncStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
       try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
       catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
     }, 3000);   // 확인이 가벼워서 자주 돌아도 부담이 적다
@@ -1326,7 +1330,7 @@
       '#dp-schedule .todo-add-row input { min-width:0 !important; flex:1 1 140px !important; }',
       '#dp-schedule .todo-add-row .todo-add-btn { flex-shrink:0 !important; }',
       // 패널 안의 어떤 줄도 가로로 삐져나가지 않게
-      '#dp-schedule .card { min-width:0 !important; overflow-x:hidden !important; }',
+      '#dp-schedule .card { min-width:0 !important; overflow:visible !important; }',
       '#calRightPanel > div { min-width:0 !important; }',
       // 메모장 표: 폰 화면에서는 글씨를 줄여야 세로로 덜 길어진다 (약 60%)
       '#dp-memo .memo-doc th, #dp-memo .memo-doc td { font-size:8px !important; height:20px !important;',
@@ -1432,16 +1436,22 @@
         }
       } catch (e) {}
 
-      // 2) 탭 바 2줄 변환 + 언어 전환 후에도 유지
-      formatTabs();
-      if (typeof window.applyLang === 'function' && !window.applyLang._mtabWrapped) {
-        var origLang = window.applyLang;
-        window.applyLang = function () { origLang.apply(this, arguments); formatTabs(); };
-        window.applyLang._mtabWrapped = true;
-      }
+      // 2) 동기화부터 건다. 아래 화면 손질 중에 뭐 하나가 넘어져도
+      //    올리기가 멈추지 않도록 — 예전에 그것 때문에 통째로 안 올라갔다.
+      try { initSync(); } catch (e) {}
+
+      // 3) 탭 바 2줄 변환 + 언어 전환 후에도 유지
+      try {
+        formatTabs();
+        if (typeof window.applyLang === 'function' && !window.applyLang._mtabWrapped) {
+          var origLang = window.applyLang;
+          window.applyLang = function () { origLang.apply(this, arguments); formatTabs(); };
+          window.applyLang._mtabWrapped = true;
+        }
+      } catch (e) {}
 
       // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
-      hookPhotoBooth();
+      try { hookPhotoBooth(); } catch (e) {}
 
       // 3-2) 할 일 목록 차례 바꾸기 + 메모장은 맨 아래로
       try { reorderSchedulePage(); } catch (e) {}
@@ -1457,16 +1467,13 @@
       } catch (e) {}
 
       // 3-3) 모바일엔 더블클릭이 없다 — 일정을 길게 눌러 수정
-      installLongPressEdit();
+      try { installLongPressEdit(); } catch (e) {}
 
-      // 4) 클라우드 동기화 시작 (구글 로그인 상태일 때만)
-      initSync();
+      // 4) 바탕화면 위젯에 내용 전달
+      try { startWidgetFeed(); } catch (e) {}
 
-      // 5) 바탕화면 위젯에 내용 전달
-      startWidgetFeed();
-
-      // 6) 사진을 갤러리에 저장하도록 교체
-      wrapCapturePhoto(0);
+      // 5) 사진을 갤러리에 저장하도록 교체
+      try { wrapCapturePhoto(0); } catch (e) {}
     }, 400);
   });
 })();

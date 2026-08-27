@@ -890,7 +890,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   background:var(--card); border:1px solid var(--border); border-radius:3px; padding:3px 5px; }
 .tctl:focus-within { border-color:var(--yellow); }
 .tctl select {
-  background:var(--panel); border:1px solid var(--border); border-radius:3px;
+  background:transparent; border:1px solid transparent; border-radius:3px;
   outline:none; padding:2px 3px; cursor:pointer;
   color:var(--white); font-size:13px; font-family:'Galmuri14',monospace;
   -webkit-appearance:none; appearance:none; text-align:center;
@@ -899,8 +899,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border-radius:4px; color:var(--white); font-family:'Galmuri14',monospace;
   cursor:pointer; outline:none; -webkit-appearance:none; appearance:none; text-align:center; }
 #ttRangeModal .tctl-h:hover { border-color:var(--yellow); }
-.tctl select:hover { border-color:var(--yellow); }
-.tctl select:focus { border-color:var(--yellow); }
+/* 건드릴 때만 상자를 보여 준다 */
+.tctl select:hover { background:var(--panel); border-color:var(--border); }
+.tctl select:focus { background:var(--panel); border-color:var(--yellow); }
 
 .tctl select option { background:var(--panel); color:var(--white); }
 .tctl .tctl-sep { color:var(--white); font-size:13px; font-family:'Galmuri14',monospace; }
