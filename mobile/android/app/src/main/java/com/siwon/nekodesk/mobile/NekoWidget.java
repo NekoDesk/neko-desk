@@ -407,7 +407,7 @@ public class NekoWidget extends AppWidgetProvider {
                     }
                 }
                 // 맨 아랫줄 오른쪽 끝은 바깥 틀의 둥근 모서리에 맞춰야 각지지 않는다
-                boolean corner = (h == to - 1) && (d == 6);
+                boolean endCell = (h == to - 1) && (d == 6);
                 if (hit != null) {
                     int ci = hit.optInt("color", -1);
                     int style = (ci >= 0 && ci < 6) ? (2 + ci)
@@ -415,8 +415,8 @@ public class NekoWidget extends AppWidgetProvider {
                     setBg(cell, R.id.i_text, TT_BG[style][ttPiece(starts, ends)]);
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
                 } else if (d == todayDow) {
-                    setBg(cell, R.id.i_text, corner ? R.drawable.w_tt_today_br : R.drawable.w_tt_today);
-                } else if (corner) {
+                    setBg(cell, R.id.i_text, endCell ? R.drawable.w_tt_today_br : R.drawable.w_tt_today);
+                } else if (endCell) {
                     setBg(cell, R.id.i_text, R.drawable.w_tt_empty_br);
                 }
                 row.addView(R.id.i_row, cell);
