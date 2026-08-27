@@ -878,6 +878,7 @@ const CLOUD_PULL_STEPS = [
   [5 * 60 * 1000, 10 * 1000],      // 그 뒤 5분까지는 10초
 ];
 const CLOUD_PULL_IDLE_MS = 30 * 1000;    // 계속 조용하면 30초
+const CLOUD_PULL_OPEN_MAX = 10 * 1000;   // 단, 대시보드가 떠 있으면 10초를 넘기지 않는다
 
 let cloudLastActivity = Date.now();      // 마지막으로 무슨 일이 있었던 때
 let cloudLastPullAt = 0;
@@ -889,6 +890,13 @@ function cloudPullDue() {
   for (const [within, ms] of CLOUD_PULL_STEPS) {
     if (quiet < within) { wait = ms; break; }
   }
+  // 대시보드를 열어 두고 보고 있는 중이라면 폰에서 고친 것이 곧 보여야 한다
+  try {
+    if (wait > CLOUD_PULL_OPEN_MAX && dashboardWindow
+        && !dashboardWindow.isDestroyed() && dashboardWindow.isVisible()) {
+      wait = CLOUD_PULL_OPEN_MAX;
+    }
+  } catch (e) {}
   return Date.now() - cloudLastPullAt >= wait;
 }
 

@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.7.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.7.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -198,6 +198,7 @@
     [5 * 60 * 1000, 10 * 1000]     // 그 뒤 5분까지는 10초
   ];
   var PULL_IDLE_MS = 30 * 1000;    // 계속 조용하면 30초
+  var PULL_VISIBLE_MAX = 10 * 1000;  // 단, 화면에 떠 있는 동안에는 10초를 넘기지 않는다
   var _lastActivity = Date.now();
   var _lastPullAt = 0;
 
@@ -209,6 +210,8 @@
     for (var i = 0; i < PULL_STEPS.length; i++) {
       if (quiet < PULL_STEPS[i][0]) { wait = PULL_STEPS[i][1]; break; }
     }
+    // 앱을 켜 두고 보고 있는 중이라면 PC에서 고친 것이 곧 보여야 한다
+    if (wait > PULL_VISIBLE_MAX) wait = PULL_VISIBLE_MAX;
     return Date.now() - _lastPullAt >= wait;
   }
 
