@@ -766,6 +766,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
   padding:2px 3px; cursor:pointer; box-sizing:border-box;
+  /* 꾹 눌러 메뉴를 낼 때 글자가 잡히지 않게 */
+  user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
   border:1px solid var(--mint); background:color-mix(in srgb, var(--mint), transparent 78%); }
 .tt-blk.rest { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 80%); }
 /* 골라 쓰는 칸 색 — 배경 테마와 같은 여섯 계열 */
