@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시간표 왼쪽 시각 (22dp) -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/i_text"
+    android:layout_width="22dp" android:layout_height="22dp"
+    android:gravity="center" android:textSize="9sp" android:textColor="#BDC1C6" android:text="" />

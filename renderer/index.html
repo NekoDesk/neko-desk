@@ -4025,13 +4025,66 @@ function ttYToMin(col, clientY) {
 function ttDown(e, day) {
   if (e.button !== undefined && e.button !== 0) return;
   const col = e.currentTarget;
+  // 손가락은 끌기 대신 톡 누르기. 세로로 끌면 화면이 먼저 스크롤되면서
+  // 끌기가 취소돼(pointercancel) 아무리 그어도 제자리로 돌아온다.
+  if (ttIsTouch(e)) { ttTapDown(e, { kind: 'new', day, col, min: ttYToMin(col, e.clientY) }); return; }
   e.preventDefault();
   _ttDrag = { day, col, from: ttYToMin(col, e.clientY), to: null, el: null };
   try { col.setPointerCapture(e.pointerId); } catch (err) {}
 }
 
+// ── 손가락으로 고치기 ────────────────────────────────────────
+// 빈 칸을 톡 누르면 그 시각부터 한 시간짜리 칸이 생기고 바로 고칠 수 있다.
+// 칸을 톡 누르면 고치기, 꾹 누르면 메뉴가 뜬다.
+let _ttTap = null;
+const TT_TAP_SLOP = 12;        // 이만큼 넘게 움직이면 스크롤한 것으로 본다
+const TT_LONG_MS = 500;
+
+function ttIsTouch(e) { return !!e.pointerType && e.pointerType !== 'mouse'; }
+
+function ttTapDown(e, info) {
+  ttTapCancel();
+  const tap = Object.assign({ x0: e.clientX, y0: e.clientY, fired: false }, info);
+  if (tap.kind === 'blk') {
+    const x = e.clientX, y = e.clientY;
+    tap.timer = setTimeout(() => {
+      if (_ttTap !== tap) return;
+      tap.fired = true;
+      ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: x, clientY: y }, tap.id);
+    }, TT_LONG_MS);
+  }
+  _ttTap = tap;
+}
+
+function ttTapCancel() {
+  if (_ttTap && _ttTap.timer) clearTimeout(_ttTap.timer);
+  _ttTap = null;
+}
+
+function ttTapUp(e) {
+  const tap = _ttTap;
+  ttTapCancel();
+  if (!tap || tap.fired) return;
+  if (Math.abs(e.clientX - tap.x0) + Math.abs(e.clientY - tap.y0) > TT_TAP_SLOP) return;
+  if (tap.kind === 'blk') { ttEdit(tap.id); return; }
+
+  // 누른 시각의 정시부터 한 시간. 옆 칸과 겹치면 빈 자리에 맞춰 줄인다.
+  let a = Math.min(23 * 60, Math.floor(tap.min / 60) * 60);
+  let b = Math.min(24 * 60, a + 60);
+  blocksOf(tap.day).forEach(x => {
+    const xs = toMin(x.start), xe = toMin(x.end);
+    if (xe <= a || xs >= b) return;
+    if (xs <= a) a = xe; else b = xs;
+  });
+  if (b - a < TT_SNAP) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
+  ttAdd(tap.day, toHHMM(a), toHHMM(b));
+}
+document.addEventListener('pointerup', ttTapUp);
+document.addEventListener('pointercancel', ttTapCancel);
+
 function ttMove(e) {
   if (!_ttDrag) return;
+  if (ttIsTouch(e)) { ttUp(); return; }
   const to = ttYToMin(_ttDrag.col, e.clientY);
   if (to === _ttDrag.from) return;
   _ttDrag.to = to;
@@ -4324,6 +4377,7 @@ const TT_MOVE_THRESHOLD = 4;
 function ttBlkDown(e, id) {
   if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
   e.stopPropagation();                                     // 새 칸 만들기와 겹치지 않게
+  if (ttIsTouch(e)) { ttTapDown(e, { kind: 'blk', id }); return; }
   e.preventDefault();
   _ttMove = { id, x0: e.clientX, y0: e.clientY, moved: false, day: null, at: null, line: null };
   try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}

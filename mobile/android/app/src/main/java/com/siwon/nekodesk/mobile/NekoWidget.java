@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.StrikethroughSpan;
@@ -51,16 +52,33 @@ public class NekoWidget extends AppWidgetProvider {
         super.onReceive(ctx, intent);
         if (ACTION_REFRESH.equals(intent.getAction())) {
             AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
-            int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, NekoWidget.class));
+            // getClass() — 이 신호를 받은 위젯 종류의 것만 다시 그린다
+            int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, getClass()));
             for (int id : ids) render(ctx, mgr, id);
         }
     }
+
+    /** 크기를 바꾸면 다시 그린다 — 시간표 칸 높이가 따라 변한다 */
+    @Override
+    public void onAppWidgetOptionsChanged(Context ctx, AppWidgetManager mgr, int id, Bundle opts) {
+        super.onAppWidgetOptionsChanged(ctx, mgr, id, opts);
+        render(ctx, mgr, id);
+    }
+
+    /** 홈 화면에 놓을 수 있는 위젯 종류 — 새로고침 신호를 다 같이 받는다 */
+    private static final Class<?>[] PROVIDERS = {
+        NekoWidget.class, NekoWidgetFull.class, NekoWidgetDday.class,
+        NekoWidgetTodo.class, NekoWidgetTt.class,
+    };
 
     /** 앱에서 호출 — 저장하고 곧바로 다시 그리게 한다 */
     public static void push(Context ctx, String json) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         sp.edit().putString(KEY_DATA, json).apply();
-        ctx.sendBroadcast(new Intent(ctx, NekoWidget.class).setAction(ACTION_REFRESH));
+        // 종류마다 리시버가 따로라 하나씩 불러 줘야 한다
+        for (Class<?> c : PROVIDERS) {
+            ctx.sendBroadcast(new Intent(ctx, c).setAction(ACTION_REFRESH));
+        }
     }
 
     /** "yyyy-MM-dd"를 오늘 기준 남은 날수로. 형식이 틀리면 null */
@@ -224,7 +242,8 @@ public class NekoWidget extends AppWidgetProvider {
         }
 
         // ── 오늘 시간표 ──
-        if (showTable()) fillTable(v, pkg, o, stale);
+        // 위젯을 길게 늘일수록 한 시간 칸도 길어지도록, 남은 자리를 대충 재서 나눈다.
+        if (showTable()) fillTable(v, pkg, o, stale, ttRowH(mgr, id, ddayCount, shown));
 
         // ── 어제 · 내일 (기본 위젯에만 있다) ──
         if (layoutId() == R.layout.neko_widget) {
@@ -283,7 +302,49 @@ public class NekoWidget extends AppWidgetProvider {
      * 한 시간이 한 줄이고, 칸이 걸쳐 있으면 색을 칠한다.
      * 이름은 그 칸이 시작하는 줄에만 적는다.
      */
-    private void fillTable(RemoteViews v, String pkg, JSONObject o, boolean stale) {
+    /**
+     * 위젯 높이에서 다른 칸이 쓰는 만큼을 빼고, 남은 자리를 시간 수로 나눈다.
+     * RemoteViews는 재 볼 수가 없어서 각 줄의 대략적인 높이로 어림한다.
+     */
+    private int ttRowH(AppWidgetManager mgr, int id, int ddayCount, int todoCount) {
+        int hDp = 0;
+        try {
+            Bundle opts = mgr.getAppWidgetOptions(id);
+            if (opts != null) {
+                hDp = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                if (hDp <= 0) hDp = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
+            }
+        } catch (Exception ignored) {}
+        if (hDp <= 0) return 0;                       // 크기를 모르면 기본 높이로
+
+        int used = 20 + 34 + 22 + 22 + 8;             // 안쪽 여백 + 머리글 + 제목 + 요일줄
+        if (showHealth()) used += 62;
+        used += ddayCount * 40;
+        if (showTodo()) used += (todoCount > 0 ? 26 + todoCount * 42 : 30);
+        return hDp - used;                            // 시간표가 쓸 수 있는 높이
+    }
+
+    /** 남은 높이에 맞는 칸 모양 (0번이 제일 낮다) */
+    private static int ttSize(int avail, int rows) {
+        if (avail <= 0 || rows <= 0) return 1;
+        int h = avail / rows;
+        for (int i = TT_ROW_DP.length - 1; i > 0; i--) {
+            if (h >= TT_ROW_DP[i]) return i;
+        }
+        return 0;
+    }
+
+    private static final int[] TT_ROW_DP   = { 14, 18, 22, 26, 31, 36 };
+    private static final int[] TT_CELL_LAY = {
+        R.layout.w_tt_cell_a, R.layout.w_tt_cell_b, R.layout.w_tt_cell_c,
+        R.layout.w_tt_cell_d, R.layout.w_tt_cell_e, R.layout.w_tt_cell_f,
+    };
+    private static final int[] TT_HOUR_LAY = {
+        R.layout.w_tt_hour_a, R.layout.w_tt_hour_b, R.layout.w_tt_hour_c,
+        R.layout.w_tt_hour_d, R.layout.w_tt_hour_e, R.layout.w_tt_hour_f,
+    };
+
+    private void fillTable(RemoteViews v, String pkg, JSONObject o, boolean stale, int avail) {
         JSONObject tt = o.optJSONObject("table");
         v.setTextViewText(R.id.w_tt_title, tt == null ? "" : tt.optString("label", ""));
         v.removeAllViews(R.id.w_tt_head);
@@ -303,6 +364,7 @@ public class NekoWidget extends AppWidgetProvider {
         int to = tt.optInt("to", 20);             // 보여줄 끝 시
         if (to <= from) to = from + 1;
         if (to - from > 14) to = from + 14;       // 위젯이 너무 길어지지 않게
+        int size = ttSize(avail, to - from);      // 위젯 크기에 맞는 칸 높이
 
         // 머리줄: 빈칸 + 일~토
         RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);
@@ -319,12 +381,12 @@ public class NekoWidget extends AppWidgetProvider {
 
         for (int h = from; h < to; h++) {
             RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_row);
-            RemoteViews hour = new RemoteViews(pkg, R.layout.w_tt_hour);
+            RemoteViews hour = new RemoteViews(pkg, TT_HOUR_LAY[size]);
             hour.setTextViewText(R.id.i_text, _tPad2(h));
             row.addView(R.id.i_row, hour);
 
             for (int d = 0; d < 7; d++) {
-                RemoteViews cell = new RemoteViews(pkg, R.layout.w_tt_cell);
+                RemoteViews cell = new RemoteViews(pkg, TT_CELL_LAY[size]);
                 JSONObject hit = null;
                 boolean starts = false;
                 for (int i = 0; blocks != null && i < blocks.length(); i++) {

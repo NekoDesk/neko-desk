@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시간표 한 칸 (18dp) — 위젯 크기에 맞춰 코드에서 고른다 -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/i_text"
+    android:layout_width="0dp" android:layout_height="18dp" android:layout_weight="1"
+    android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+    android:textSize="8sp" android:textColor="#3E3A39"
+    android:maxLines="1" android:ellipsize="end"
+    android:background="@drawable/w_tt_empty" android:text="" />

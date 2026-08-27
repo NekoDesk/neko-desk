@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  위젯을 고르는 화면에서만 쓰는 예시 그림.
+  진짜 위젯은 코드에서 내용을 채우는데, 고르는 화면에서는 코드가 돌지 않아
+  빈 카드로만 보인다. 그래서 예시 내용을 글자로 박아 둔 판을 따로 만든다.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/w_bg"
+    android:padding="10dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+        <ImageView android:layout_width="26dp" android:layout_height="26dp"
+            android:layout_marginEnd="8dp" android:contentDescription="@null"
+            android:src="@mipmap/ic_launcher_foreground" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="13sp" android:textStyle="bold" android:textColor="#3E3A39"
+            android:letterSpacing="0.08" android:text="NEKO DESK" />
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="11sp" android:textColor="#9AA0A6"
+        android:paddingLeft="2dp" android:paddingBottom="4dp" android:text="이번 주 시간표" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:background="@drawable/w_tt_headbg">
+        <TextView android:layout_width="22dp" android:layout_height="wrap_content" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#E08A86" android:text="일" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="월" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="화" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="수" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="목" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="금" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#9AA0A6" android:text="토" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="09" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="A사 작업" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="A사 작업" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="A사 작업" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="A사 작업" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="A사 작업" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="10" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="11" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c0" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="12" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_rest" android:text="점심" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_rest" android:text="점심" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_rest" android:text="점심" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_rest" android:text="점심" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_rest" android:text="점심" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="13" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="B사 회의" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="B사 회의" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="B사 회의" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="B사 회의" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="B사 회의" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="14" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c3" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="15" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="C사 시안" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="C사 시안" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="C사 시안" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="C사 시안" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="C사 시안" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="16" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView android:layout_width="22dp" android:layout_height="22dp" android:gravity="center"
+            android:textSize="8sp" android:textColor="#BDC1C6" android:text="17" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_c1" android:text="" />
+        <TextView android:layout_width="0dp" android:layout_height="22dp" android:layout_weight="1"
+            android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
+            android:textSize="9sp" android:textColor="#3E3A39" android:maxLines="1"
+            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+    </LinearLayout>
+</LinearLayout>

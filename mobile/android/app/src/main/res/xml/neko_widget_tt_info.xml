@@ -6,7 +6,7 @@
     android:targetCellHeight="4"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/neko_widget_tt"
-    android:previewLayout="@layout/neko_widget_tt"
+    android:previewLayout="@layout/w_preview_tt"
     android:previewImage="@drawable/w_preview"
     android:minResizeWidth="180dp"
     android:minResizeHeight="110dp"
