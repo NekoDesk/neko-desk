@@ -862,8 +862,38 @@ ipcMain.on('ga-event', (e, name, params) => gaTrack(name, params || {}));
 // ═══════════════════════════════════════════════════════════════
 const SYNC_STATE_FILE = () => path.join(app.getPath('userData'), 'sync-state.json');
 const CLOUD_STORAGE_KEY = 'nekodesk_v3';
-const CLOUD_PULL_MS = 3 * 1000;          // 확인은 수백 바이트뿐이라 자주 돌아도 부담이 적다
+const CLOUD_TICK_MS = 3 * 1000;          // 확인만 하는 박자 (실제로 물어볼지는 아래에서 정한다)
 const CLOUD_PUSH_DEBOUNCE_MS = 1000;     // 편집이 멎고 1초 뒤 올림
+
+/**
+ * 잠잠하면 뜸하게 물어본다.
+ *
+ * 3초마다 24시간 두드리면 하루 수만 번이 된다. 쓰고 있는 동안에는 3초 그대로,
+ * 아무 일도 없으면 물러난다. 무슨 일이든 생기면(내가 고쳤거나 받아온 게
+ * 있거나 창을 다시 봤거나) 곧바로 3초로 돌아온다.
+ * 올리기는 건드리지 않는다 — 편집한 것은 늘 1초 뒤에 올라간다.
+ */
+const CLOUD_PULL_STEPS = [
+  [60 * 1000, 3 * 1000],           // 최근 1분 안에 무슨 일이 있었으면 3초
+  [5 * 60 * 1000, 10 * 1000],      // 그 뒤 5분까지는 10초
+];
+const CLOUD_PULL_IDLE_MS = 30 * 1000;    // 계속 조용하면 30초
+
+let cloudLastActivity = Date.now();      // 마지막으로 무슨 일이 있었던 때
+let cloudLastPullAt = 0;
+
+/** 지금 물어볼 때가 됐는가 */
+function cloudPullDue() {
+  const quiet = Date.now() - cloudLastActivity;
+  let wait = CLOUD_PULL_IDLE_MS;
+  for (const [within, ms] of CLOUD_PULL_STEPS) {
+    if (quiet < within) { wait = ms; break; }
+  }
+  return Date.now() - cloudLastPullAt >= wait;
+}
+
+/** 무슨 일이 생겼다 — 다시 자주 물어본다 */
+function cloudBump() { cloudLastActivity = Date.now(); }
 
 const CLOUD_KEYS = [
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
@@ -1240,6 +1270,7 @@ async function cloudPull(notify) {
     // 이때 병합하면 상대가 지운 항목을 되살리게 되므로, 클라우드를 그대로 받아
     // 기준선으로 삼는다. 다음 동기화부터 삭제가 정상 전파된다.
     if (!st.base) {
+      cloudBump();                 // 받아온 게 있다 — 이어서 더 올 수 있다
       cloudBroadcast('cloud-apply', { data: remote, notify: '' });
       setSyncState({ seenTs: String(rows[0].updated_at || ''), claim: false });
       setCloudBase(remote);
@@ -1253,6 +1284,7 @@ async function cloudPull(notify) {
                             : merge3(st.base, local, remote);
       merged = applyNotesMerge(merged, local, remote);   // 일정은 항목별로 다시 판정
       merged = pickDated(merged, st.base, local, remote); // 물·비타민은 날짜를 먼저 본다
+      cloudBump();
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
       // 기준선은 여기서 옮기지 않는다 — 아직 안 올라간 값이라, 옮겨 두면
@@ -1328,6 +1360,7 @@ async function cloudPush(force) {
 /** 렌더러의 saveState가 알려온다 — 편집이 멎으면 올린다 */
 function cloudSchedulePush() {
   if (!cloudSession()) return;
+  cloudBump();                     // 내가 고쳤다 — 상대 것도 자주 확인한다
   setSyncState({ dirty: true });
   if (!cloudReady) { cloudStatus('push', 'sync_waiting'); return; }
   clearTimeout(cloudPushTimer);
@@ -1342,6 +1375,8 @@ function attachCloudFocusPull(w) {
     const now = Date.now();
     if (now - cloudLastFocusPull < 2000) return;   // 연타 방지
     cloudLastFocusPull = now;
+    cloudBump();                   // 창을 다시 봤다
+    cloudLastPullAt = now;
     cloudPull(false);
   };
   w.on('focus', onFocus);
@@ -1352,8 +1387,19 @@ function startCloudSync() {
   if (cloudTimer) return;
   if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return;
   attachCloudFocusPull(mainWindow);
+  cloudBump();
+  cloudLastPullAt = Date.now();
   cloudPull(false);
-  cloudTimer = setInterval(() => cloudPull(false), CLOUD_PULL_MS);
+  cloudTimer = setInterval(() => {
+    // 창을 보고 있으면 계속 빠르게 — 폰에서 고친 게 곧바로 보여야 한다
+    try {
+      if (BrowserWindow.getAllWindows().some(w => !w.isDestroyed() && w.isFocused())) cloudBump();
+    } catch (e) {}
+    // 올릴 게 밀려 있으면 주기와 상관없이 확인한다 (병합해서 올려야 하므로)
+    if (!cloudPullDue() && !syncState().dirty && !cloudPushTimer) return;
+    cloudLastPullAt = Date.now();
+    cloudPull(false);
+  }, CLOUD_TICK_MS);
 }
 
 ipcMain.on('cloud-mark-dirty', () => cloudSchedulePush());

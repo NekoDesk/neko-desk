@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.7.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.7.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -184,6 +184,39 @@
   //   테이블: nekodesk_sync (user_id uuid PK, data jsonb, updated_at)
   // ═══════════════════════════════════════════════
   var _syncReady = false;      // pull 성공 전에는 push 금지 (원격 데이터 덮어쓰기 방지)
+
+  /**
+   * 잠잠하면 뜸하게 물어본다.
+   *
+   * 3초마다 하루 종일 두드리면 수만 번이 된다. 쓰고 있는 동안에는 3초 그대로,
+   * 아무 일도 없으면 물러난다. 무슨 일이든 생기면(내가 고쳤거나 받아온 게
+   * 있거나 앱을 다시 열었거나) 곧바로 3초로 돌아온다.
+   * 올리기는 건드리지 않는다 — 편집한 것은 늘 1초 뒤에 올라간다.
+   */
+  var PULL_STEPS = [
+    [60 * 1000, 3 * 1000],         // 최근 1분 안에 무슨 일이 있었으면 3초
+    [5 * 60 * 1000, 10 * 1000]     // 그 뒤 5분까지는 10초
+  ];
+  var PULL_IDLE_MS = 30 * 1000;    // 계속 조용하면 30초
+  var _lastActivity = Date.now();
+  var _lastPullAt = 0;
+
+  /** 지금 물어볼 때가 됐는가 */
+  function pullDue() {
+    if (document.hidden) return false;         // 화면을 안 보고 있으면 쉰다
+    var quiet = Date.now() - _lastActivity;
+    var wait = PULL_IDLE_MS;
+    for (var i = 0; i < PULL_STEPS.length; i++) {
+      if (quiet < PULL_STEPS[i][0]) { wait = PULL_STEPS[i][1]; break; }
+    }
+    return Date.now() - _lastPullAt >= wait;
+  }
+
+  /** 무슨 일이 생겼다 — 다시 자주 물어본다 */
+  function bump() { _lastActivity = Date.now(); }
+
+  // 화면을 만지고 있으면 계속 빠르게 — PC에서 고친 게 곧바로 보여야 한다
+  document.addEventListener('pointerdown', bump, true);
   var _pushTimer = null;
 
   function loggedIn() {
@@ -271,6 +304,7 @@
   function applyRemote(data) {
     var st = getS();
     if (!data || !st) return false;
+    bump();                        // 받아온 게 있다 — 이어서 더 올 수 있다
     var changed = false;
     SYNC_KEYS.forEach(function (k) {
       if (data[k] !== undefined) { st[k] = data[k]; changed = true; }
@@ -740,6 +774,7 @@
 
   function schedulePush() {
     if (!loggedIn()) return;
+    bump();                        // 내가 고쳤다 — 상대 것도 자주 확인한다
     localStorage.setItem(DIRTY_KEY, '1');   // 앱이 죽어도 '안 올라간 변경 있음'이 남도록
     if (!_syncReady) { pushStatus('연결 대기 중'); return; }
     clearTimeout(_pushTimer);
@@ -1061,13 +1096,19 @@
     if (ses && ses.email && enforceDataOwner(ses.email)) return;
     syncStatus('연결 중...');
     try {
+      _lastPullAt = Date.now();
       syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
     } catch (e) { syncStatus('\uc624\ub958'); }
     setInterval(function () {
       renderSyncStatus();       // 아무 일이 없어도 t가 올라가는 게 보이도록
       // 받기가 넘어져도 올리기는 반드시 돌아야 한다 (따로 감싼다)
-      try { syncPull(false); }
-      catch (e) { syncStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
+      try {
+        // 올릴 게 밀려 있으면 주기와 상관없이 확인한다 (병합해서 올려야 하므로)
+        if (pullDue() || localStorage.getItem(DIRTY_KEY) === '1' || _pushTimer) {
+          _lastPullAt = Date.now();
+          syncPull(false);
+        }
+      } catch (e) { syncStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
       try { pushIfChanged(); }   // 훅이 안 걸렸어도 바뀐 게 있으면 올린다
       catch (e) { pushStatus('\uc624\ub958: ' + (e && e.message ? e.message : e)); }
     }, 3000);   // 확인이 가벼워서 자주 돌아도 부담이 적다
@@ -1075,12 +1116,16 @@
     var App = capPlugin('App');
     if (App) {
       App.addListener('appStateChange', function (st) {
-        if (st && st.isActive) syncPull(false);
+        if (st && st.isActive) { bump(); _lastPullAt = Date.now(); syncPull(false); }
         else flushPush();
       });
     }
+    // 앱 상태 신호가 안 오는 기기도 있어서 화면 표시 여부로도 한 번 더 본다
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) flushPush();
+      if (document.hidden) { flushPush(); return; }
+      bump();                        // 다시 보고 있다 — 곧바로 최신을 확인한다
+      _lastPullAt = Date.now();
+      try { syncPull(false); } catch (e) {}
     });
   }
 
