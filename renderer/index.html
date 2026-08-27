@@ -7607,6 +7607,15 @@ function _cloudApply(data) {
     ['ptsDisplay','shopPts'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = S.pts; });
     if (typeof renderDdays === 'function') renderDdays();
     if (typeof renderAlarms === 'function') renderAlarms();
+    // 물·비타민·시간표·타이머 — 받아온 값이 화면에도 바로 보이도록.
+    // 이게 없으면 다른 기기에서 체크한 것이 탭을 옮기기 전까지 안 보인다.
+    if (typeof renderWaterCups === 'function') renderWaterCups();
+    if (typeof renderVitamins === 'function') renderVitamins();
+    if (typeof renderScheduleItems === 'function') renderScheduleItems();
+    if (typeof renderHomeSchedule === 'function') renderHomeSchedule();
+    if (typeof renderTimetable === 'function') renderTimetable();
+    if (typeof updateCycleUI === 'function') updateCycleUI();
+    if (typeof renderCyclePreview === 'function') renderCyclePreview();
     // 메모장은 편집 중이면 건드리지 않는다 (커서가 튀고 입력이 끊긴다).
     // 지금 쓰고 있지 않을 때만 받아온 내용으로 바꾼다.
     const doc = (typeof memoEl === 'function') ? memoEl() : null;

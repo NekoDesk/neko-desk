@@ -292,6 +292,15 @@
         if (el) el.textContent = st.pts;
       });
       if (typeof window.renderDdays === 'function') window.renderDdays();
+      if (typeof window.renderAlarms === 'function') window.renderAlarms();
+      // 물·비타민·시간표·타이머 — PC에서 체크한 것이 바로 보이도록
+      if (typeof window.renderWaterCups === 'function') window.renderWaterCups();
+      if (typeof window.renderVitamins === 'function') window.renderVitamins();
+      if (typeof window.renderScheduleItems === 'function') window.renderScheduleItems();
+      if (typeof window.renderHomeSchedule === 'function') window.renderHomeSchedule();
+      if (typeof window.renderTimetable === 'function') window.renderTimetable();
+      if (typeof window.updateCycleUI === 'function') window.updateCycleUI();
+      if (typeof window.renderCyclePreview === 'function') window.renderCyclePreview();
       // 메모장은 편집 중이면 건드리지 않는다 (커서가 튀고 입력이 끊긴다)
       var doc = document.getElementById('memoDoc');
       if (doc && document.activeElement !== doc) {
@@ -403,6 +412,34 @@
     }
     return local;
   }
+
+  /**
+   * 물·비타민은 개수와 함께 '언제 것인지' 날짜를 같이 담는다.
+   * 하루가 바뀌면 두 기기가 저마다 0으로 되돌리는데, 3방향 병합은 그것도
+   * '내가 고쳤다'로 보기 때문에 상대가 오늘 채운 개수를 0으로 덮어써 버린다.
+   * 그래서 날짜를 먼저 보고, 오늘 것을 가진 쪽을 살린다.
+   */
+  function pickDated(merged, base, local, remote) {
+    if (!merged || !local || !remote) return merged;
+    var today = new Date().toDateString();
+    [['waterDate', 'waterCups'], ['vitaminDate', 'vitaminTaken']].forEach(function (pair) {
+      var dk = pair[0], vk = pair[1];
+      if (remote[dk] === undefined && local[dk] === undefined) return;
+      var lToday = local[dk] === today, rToday = remote[dk] === today;
+      if (lToday && !rToday) { merged[dk] = local[dk]; merged[vk] = local[vk]; return; }
+      if (rToday && !lToday) { merged[dk] = remote[dk]; merged[vk] = remote[vk]; return; }
+      if (!lToday && !rToday) return;                  // 둘 다 지난 날 것 — 건드리지 않는다
+      // 둘 다 오늘 것: 기준선에서 실제로 달라진 쪽을 쓴다 (되돌리기도 살리려고)
+      var bv = (base && base[dk] === today) ? base[vk] : undefined;
+      var lChanged = local[vk] !== bv, rChanged = remote[vk] !== bv;
+      merged[dk] = today;
+      if (rChanged && !lChanged) merged[vk] = remote[vk];
+      else if (lChanged && !rChanged) merged[vk] = local[vk];
+      else merged[vk] = Math.max(Number(local[vk]) || 0, Number(remote[vk]) || 0);
+    });
+    return merged;
+  }
+
   function readBase() {
     try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; }
   }
@@ -544,6 +581,7 @@
           var merged = claim ? claimMerge(remote, loc)
                              : merge3(readBase(), loc, remote);
           merged = applyNotesMerge(merged, loc, remote);   // 일정은 항목별로 다시 판정
+          merged = pickDated(merged, readBase(), loc, remote);  // 물·비타민은 날짜를 먼저 본다
           applyRemote(merged);
           setBase(merged);
           localStorage.removeItem(CLAIM_KEY);
@@ -586,6 +624,7 @@
         var remote = (rows && rows.length) ? rows[0].data : null;
         var payload = remote ? merge3(readBase(), local, remote) : local;
         if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
+        if (remote) payload = pickDated(payload, readBase(), local, remote);
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
         return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {

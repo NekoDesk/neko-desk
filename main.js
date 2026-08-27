@@ -1035,6 +1035,33 @@ function merge3(base, local, remote) {
   }
   return local;                           // 그 외에는 이 기기 값
 }
+/**
+ * 물·비타민은 개수와 함께 '언제 것인지' 날짜를 같이 담는다.
+ * 하루가 바뀌면 두 기기가 저마다 0으로 되돌리는데, 3방향 병합은 그것도
+ * '내가 고쳤다'로 보기 때문에 상대가 오늘 채운 개수를 0으로 덮어써 버린다.
+ * 그래서 날짜를 먼저 보고, 오늘 것을 가진 쪽을 살린다.
+ */
+function pickDated(merged, base, local, remote) {
+  if (!merged || !local || !remote) return merged;
+  const today = new Date().toDateString();
+  [['waterDate', 'waterCups'], ['vitaminDate', 'vitaminTaken']].forEach(pair => {
+    const dk = pair[0], vk = pair[1];
+    if (remote[dk] === undefined && local[dk] === undefined) return;
+    const lToday = local[dk] === today, rToday = remote[dk] === today;
+    if (lToday && !rToday) { merged[dk] = local[dk]; merged[vk] = local[vk]; return; }
+    if (rToday && !lToday) { merged[dk] = remote[dk]; merged[vk] = remote[vk]; return; }
+    if (!lToday && !rToday) return;                    // 둘 다 지난 날 것 — 건드리지 않는다
+    // 둘 다 오늘 것: 기준선에서 실제로 달라진 쪽을 쓴다 (되돌리기도 살리려고)
+    const bv = (base && base[dk] === today) ? base[vk] : undefined;
+    const lChanged = local[vk] !== bv, rChanged = remote[vk] !== bv;
+    merged[dk] = today;
+    if (rChanged && !lChanged) merged[vk] = remote[vk];
+    else if (lChanged && !rChanged) merged[vk] = local[vk];
+    else merged[vk] = Math.max(Number(local[vk]) || 0, Number(remote[vk]) || 0);
+  });
+  return merged;
+}
+
 /** 동기화가 끝난 시점의 상태를 기준선으로 저장 */
 function setCloudBase(payload) {
   const b = {};
@@ -1174,6 +1201,7 @@ async function cloudPull(notify) {
       let merged = st.claim ? cloudClaimMerge(remote, local)
                             : merge3(st.base, local, remote);
       merged = applyNotesMerge(merged, local, remote);   // 일정은 항목별로 다시 판정
+      merged = pickDated(merged, st.base, local, remote); // 물·비타민은 날짜를 먼저 본다
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
       setCloudBase(merged);
@@ -1218,6 +1246,7 @@ async function cloudPush(force) {
         // 내가 지운 것은 지운 채로, 상대가 더한 것은 살린 채로 올린다
         let merged = merge3(syncState().base, data, remoteNow);
         merged = applyNotesMerge(merged, data, remoteNow);   // 일정은 항목별로
+        merged = pickDated(merged, syncState().base, data, remoteNow);
         CLOUD_KEYS.forEach(k => { delete data[k]; });
         Object.keys(merged).forEach(k => { data[k] = merged[k]; });
       }
