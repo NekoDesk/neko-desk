@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.1-mobile';
+  var APP_VERSION = '2.6.2-mobile';
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -662,15 +662,15 @@
   var WIDGET_WORDS = {
     ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
           am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음',
-          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 시간표',
+          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 시간표', ttEmpty: '시간표가 비어 있어요',
           dows: ['일','월','화','수','목','금','토'] },
     en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
           am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None',
-          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Timetable',
+          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Timetable', ttEmpty: 'Timetable is empty',
           dows: ['Su','Mo','Tu','We','Th','Fr','Sa'] },
     ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
           am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし',
-          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 時間割',
+          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 時間割', ttEmpty: '時間割がありません',
           dows: ['日','月','火','水','木','金','土'] }
   };
 
@@ -724,17 +724,40 @@
     };
   }
 
+  /** 예전 설정(출근·점심·퇴근)으로 월~금 칸을 만든다 (위젯이 빈 채로 뜨지 않게) */
+  function blocksFromSchedule(src) {
+    var s = src.schedule || {};
+    if (!s.ws || !s.we) return [];
+    var out = [];
+    for (var d = 1; d <= 5; d++) {
+      if (s.ls && s.le) {
+        out.push({ day: d, start: s.ws, end: s.ls, label: '오전', type: 'work' });
+        out.push({ day: d, start: s.ls, end: s.le, label: '점심', type: 'rest' });
+        out.push({ day: d, start: s.le, end: s.we, label: '오후', type: 'work' });
+      } else {
+        out.push({ day: d, start: s.ws, end: s.we, label: '업무', type: 'work' });
+      }
+    }
+    return out;
+  }
+
   /** 시간표 격자에 필요한 것 — 칸들과 보여줄 시간 범위 */
   function weekTable(src, w) {
     var mins = function (hhmm) {
       var m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ''));
       return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
     };
-    var blocks = (Array.isArray(src.blocks) ? src.blocks : [])
+    // 아직 시간표를 옮기지 않은 기기라면 예전 출근·점심·퇴근에서 만들어 쓴다
+    var raw = Array.isArray(src.blocks) ? src.blocks : null;
+    if (!raw || !raw.length) raw = blocksFromSchedule(src);
+
+    var blocks = raw
       .filter(function (b) { return b && b.day >= 0 && b.day <= 6 && mins(b.start) >= 0 && mins(b.end) > mins(b.start); })
       .map(function (b) {
+        var c = parseInt(b.color, 10);
         return { day: b.day, start: mins(b.start), end: mins(b.end),
-                 label: String(b.label || ''), rest: b.type === 'rest' };
+                 label: String(b.label || ''), rest: b.type === 'rest',
+                 color: (c >= 0 && c <= 5) ? c : -1 };
       });
 
     // 보여줄 범위 — 앱에서 정한 값을 쓰되 칸이 있으면 거기에 맞춘다
@@ -746,7 +769,8 @@
     }
     if (to <= from) to = from + 1;
 
-    return { label: w.table, dows: w.dows, from: from, to: to, blocks: blocks.slice(0, 60) };
+    return { label: w.table, dows: w.dows, from: from, to: to,
+             empty: w.ttEmpty, blocks: blocks.slice(0, 60) };
   }
 
   /** 위젯에 보낼 내용을 만든다 */

@@ -292,6 +292,13 @@ public class NekoWidget extends AppWidgetProvider {
 
         JSONArray dows = tt.optJSONArray("dows");
         JSONArray blocks = tt.optJSONArray("blocks");
+        if (blocks == null || blocks.length() == 0) {
+            // 빈 격자만 덩그러니 두지 않는다
+            RemoteViews note = new RemoteViews(pkg, R.layout.w_tt_dow);
+            note.setTextViewText(R.id.i_text, tt.optString("empty", ""));
+            v.addView(R.id.w_tt_body, note);
+            return;
+        }
         int from = tt.optInt("from", 8);          // 보여줄 시작 시
         int to = tt.optInt("to", 20);             // 보여줄 끝 시
         if (to <= from) to = from + 1;
@@ -332,8 +339,10 @@ public class NekoWidget extends AppWidgetProvider {
                     }
                 }
                 if (hit != null) {
-                    setBg(cell, R.id.i_text, hit.optBoolean("rest", false)
-                            ? R.drawable.w_tt_rest : R.drawable.w_tt_work);
+                    int ci = hit.optInt("color", -1);
+                    setBg(cell, R.id.i_text, (ci >= 0 && ci < TT_COLORS.length)
+                            ? TT_COLORS[ci]
+                            : (hit.optBoolean("rest", false) ? R.drawable.w_tt_rest : R.drawable.w_tt_work));
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
                 } else if (d == todayDow) {
                     cell.setTextColor(R.id.i_text, 0xFF9AA0A6);
@@ -343,6 +352,12 @@ public class NekoWidget extends AppWidgetProvider {
             v.addView(R.id.w_tt_body, row);
         }
     }
+
+    /** 사용자가 고른 칸 색 (앱과 같은 여섯 가지) */
+    private static final int[] TT_COLORS = {
+        R.drawable.w_tt_c0, R.drawable.w_tt_c1, R.drawable.w_tt_c2,
+        R.drawable.w_tt_c3, R.drawable.w_tt_c4, R.drawable.w_tt_c5,
+    };
 
     private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
 

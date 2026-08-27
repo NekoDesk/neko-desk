@@ -768,6 +768,19 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   padding:2px 3px; cursor:pointer; box-sizing:border-box;
   border:1px solid var(--mint); background:color-mix(in srgb, var(--mint), transparent 78%); }
 .tt-blk.rest { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 80%); }
+/* 골라 쓰는 칸 색 — 배경 테마와 같은 여섯 계열 */
+.tt-blk.c0 { border-color:#A2AEC2; background:#EDF0F5; }
+.tt-blk.c1 { border-color:#CFC0A0; background:#F7F1DF; }
+.tt-blk.c2 { border-color:#E2A8C0; background:#FBE7EF; }
+.tt-blk.c3 { border-color:#A6C4E2; background:#E6F0FA; }
+.tt-blk.c4 { border-color:#A2D0BA; background:#E4F5EC; }
+.tt-blk.c5 { border-color:#C2AADE; background:#F0E8FA; }
+/* 팝업에서 고르는 동그라미 */
+.tt-colors { display:flex; gap:7px; align-items:center; }
+.tt-color { width:26px; height:26px; border-radius:50%; cursor:pointer; padding:0;
+  border:2px solid var(--border); }
+.tt-color.on { border-color:var(--white); box-shadow:0 0 0 2px var(--yellow); }
+.tt-color.auto { background:repeating-linear-gradient(45deg,#DCF0E8,#DCF0E8 5px,#FCEEDC 5px,#FCEEDC 10px); }
 .tt-blk.now { box-shadow:0 0 0 2px var(--acc) inset; }
 .tt-blk b { display:block; font-size:10px; color:var(--white); font-weight:400;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
@@ -1656,11 +1669,14 @@ select {
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:18px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
       <span id="ttStartCtl"></span>
       <span style="color:var(--gray)">~</span>
       <span id="ttEndCtl"></span>
     </div>
+
+    <div style="font-size:12px;color:var(--gray);margin-bottom:7px" data-i18n="tt_color">칸 색</div>
+    <div class="tt-colors" id="ttColors" style="margin-bottom:18px"></div>
 
     <div style="display:flex;gap:8px">
       <button class="btn btn-gr" style="flex:0 0 auto;font-size:12px;color:#f88;border-color:#f88" onclick="ttDeleteEdit()" data-i18n="tt_delete">삭제</button>
@@ -2050,6 +2066,7 @@ const STRINGS = {
     tt_tip:'빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.',
     tt_overlap:'그 시간에 이미 다른 일정이 있어요', tt_bad_time:'끝나는 시각이 시작보다 빨라요',
     tt_clear_ask:'시간표를 모두 비울까요?', tt_edit_title:'⏰ 시간 고치기',
+    tt_color:'칸 색', tt_color_auto:'종류에 맡기기',
     tt_name:'이름', tt_day:'요일', tt_type:'종류', tt_type_work:'집중', tt_type_rest:'쉼',
     tt_delete:'삭제',
     blk_work_am:'오전 업무', blk_work_pm:'오후 업무', blk_lunch:'점심', blk_new:'새 일정',
@@ -2285,6 +2302,7 @@ const STRINGS = {
     tt_tip:'Drag on an empty cell to make a slot. Tap a slot to edit it.',
     tt_overlap:'Something else is already there', tt_bad_time:'End time is before the start',
     tt_clear_ask:'Clear the whole timetable?', tt_edit_title:'⏰ Edit slot',
+    tt_color:'Slot colour', tt_color_auto:'Follow the type',
     tt_name:'Name', tt_day:'Day', tt_type:'Type', tt_type_work:'Focus', tt_type_rest:'Rest',
     tt_delete:'Delete',
     blk_work_am:'Morning', blk_work_pm:'Afternoon', blk_lunch:'Lunch', blk_new:'New slot',
@@ -2520,6 +2538,7 @@ const STRINGS = {
     tt_tip:'空いたところを上下にドラッグすると枠ができます。枠を押すと直せます。',
     tt_overlap:'その時間にはすでに予定があります', tt_bad_time:'終わりが始まりより早いです',
     tt_clear_ask:'時間割をすべて消しますか？', tt_edit_title:'⏰ 枠を直す',
+    tt_color:'枠の色', tt_color_auto:'種類にまかせる',
     tt_name:'名前', tt_day:'曜日', tt_type:'種類', tt_type_work:'集中', tt_type_rest:'休み',
     tt_delete:'削除',
     blk_work_am:'午前の仕事', blk_work_pm:'午後の仕事', blk_lunch:'昼休み', blk_new:'新しい枠',
@@ -3944,7 +3963,8 @@ function renderTimetable() {
       const top = (s - lo) / 60 * TT_ROW_H;
       const hgt = Math.max(14, (e - s) / 60 * TT_ROW_H);
       const now = d === today && nowMin >= toMin(b.start) && nowMin < toMin(b.end);
-      return `<div class="tt-blk ${b.type === 'rest' ? 'rest' : ''}${now ? ' now' : ''}"
+      const cc = (b.color >= 0 && b.color <= 5) ? (' c' + b.color) : '';
+      return `<div class="tt-blk ${cc ? '' : (b.type === 'rest' ? 'rest' : '')}${cc}${now ? ' now' : ''}"
         data-id="${b.id}" style="top:${top}px;height:${hgt}px"
         onpointerdown="ttBlkDown(event,'${b.id}')"
         ondblclick="event.stopPropagation();ttEdit('${b.id}')"
@@ -4439,6 +4459,40 @@ document.addEventListener('pointerdown', (e) => {
   if (m && m.style.display === 'block' && !m.contains(e.target)) ttCloseMenu();
 });
 
+// ── 칸 색 고르기 ──────────────────────────────────
+// 종류(집중/쉼)만으로는 일정끼리 구분이 안 될 때가 있어서,
+// 배경 테마와 같은 여섯 계열 중에 골라 칠할 수 있게 한다.
+const TT_COLOR_COUNT = 6;
+let _ttEditColor = -1;      // -1 = 종류에 맡김
+
+function renderTtColors() {
+  const el = document.getElementById('ttColors');
+  if (!el) return;
+  let h = `<button type="button" class="tt-color auto${_ttEditColor < 0 ? ' on' : ''}"
+             onclick="pickTtColor(-1)" data-tip="${L('tt_color_auto')}"></button>`;
+  for (let i = 0; i < TT_COLOR_COUNT; i++) {
+    h += `<button type="button" class="tt-color c${i}${_ttEditColor === i ? ' on' : ''}"
+            style="background:var(--ttc${i})" onclick="pickTtColor(${i})"></button>`;
+  }
+  el.innerHTML = h;
+  // 동그라미 색은 칸 색과 같은 값을 쓴다
+  el.querySelectorAll('.tt-color').forEach((b, i) => {
+    if (i === 0) return;
+    const probe = document.createElement('div');
+    probe.className = 'tt-blk c' + (i - 1);
+    probe.style.cssText = 'position:absolute;left:-9999px';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    b.style.background = cs.backgroundColor;
+    b.style.borderColor = _ttEditColor === (i - 1) ? '' : cs.borderTopColor;
+    probe.remove();
+  });
+}
+function pickTtColor(i) {
+  _ttEditColor = i;
+  renderTtColors();
+}
+
 // ── 블록 고치기 팝업 ──
 let _ttEditId = null;
 let _ttEditNew = false;   // 방금 만든 칸인가 (취소하면 지운다)
@@ -4455,6 +4509,8 @@ function ttEdit(id, isNew) {
     g('ttDay').value = String(b.day);
   }
   if (g('ttType')) g('ttType').value = b.type === 'rest' ? 'rest' : 'work';
+  _ttEditColor = (b.color >= 0 && b.color <= 5) ? b.color : -1;
+  renderTtColors();
   if (g('ttStartCtl')) g('ttStartCtl').innerHTML = timeCtlHtml(b.start, 'id="ttStart"');
   if (g('ttEndCtl')) g('ttEndCtl').innerHTML = timeCtlHtml(b.end, 'id="ttEnd"');
   const m = g('ttModal');
@@ -4489,6 +4545,7 @@ function ttSaveEdit() {
   b.end = e;
   b.label = (g('ttName') ? g('ttName').value : '').trim() || L('blk_new');
   b.type = g('ttType') && g('ttType').value === 'rest' ? 'rest' : 'work';
+  if (_ttEditColor >= 0) b.color = _ttEditColor; else delete b.color;
   if (!_ttEditNew) ttSnapshot();     // 새 칸은 만들 때 이미 남겨 두었다
   _ttEditNew = false;                // 저장했으니 이제 정식 칸
   saveState();
