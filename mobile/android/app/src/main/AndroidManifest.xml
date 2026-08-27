@@ -96,6 +96,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 알람·물·비타민을 제 시각에 울리기 위해.
+         안드로이드 13+ 에서는 기본 거부이고, 사용자가 설정에서 켤 수 있다.
+         못 받으면 대략적인 시각으로라도 울린다 (몇 분 늦을 수 있음). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 포토부스(고양이와 사진찍기): WebView getUserMedia 카메라 접근 -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- 사진을 갤러리에 저장. 안드로이드 10부터는 MediaStore라 권한이 필요 없다 -->
