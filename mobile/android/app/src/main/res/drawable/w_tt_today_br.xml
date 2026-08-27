@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 오늘 요일 칸 (오른쪽 아래 끝) -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#FFFDF3" />
-    <stroke android:width="0.6dp" android:color="#EFE6CF" />
+    <solid android:color="#FBF6EC" />
+    <stroke android:width="0.6dp" android:color="#D8CEB5" />
     <corners android:bottomRightRadius="7dp" />
 </shape>

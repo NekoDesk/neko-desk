@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- D-day 한 줄. 개수만큼 코드에서 붙인다. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/i_row"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"

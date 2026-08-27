@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 시간표 빈 칸 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#FFFFFF" />
-    <stroke android:width="0.6dp" android:color="#E4E9F0" />
+    <stroke android:width="0.6dp" android:color="#D8DEE8" />
+    
 </shape>

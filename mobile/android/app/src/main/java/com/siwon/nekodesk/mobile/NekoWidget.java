@@ -143,6 +143,12 @@ public class NekoWidget extends AppWidgetProvider {
         }
         if (o == null) o = new JSONObject();
 
+        // 앱에서 고른 배경 테마 — 바탕과 글씨 색을 여기에 맞춘다
+        final int th = WidgetTheme.index(o.optString("theme", "white"));
+        final int cText = WidgetTheme.text(th), cDim = WidgetTheme.dim(th);
+        setBg(v, R.id.w_root, WidgetTheme.bg(th, WidgetTheme.BG));
+        v.setTextColor(R.id.w_brand, cText);
+
         String emptyText = o.optString("emptyText", "");
         String headTitle = o.optString("headTitle", "");
         String doneWord  = o.optString("doneWord", "");
@@ -153,7 +159,12 @@ public class NekoWidget extends AppWidgetProvider {
         boolean stale = todosDate.length() > 0 && !todosDate.equals(todayKey());
 
         // ── 물 · 비타민 ──
-        if (showHealth()) fillHealth(v, pkg, o);
+        if (showHealth()) {
+            setBg(v, R.id.w_health_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
+            v.setTextColor(R.id.w_water_lbl, cDim);
+            v.setTextColor(R.id.w_vita_lbl, cDim);
+            fillHealth(v, pkg, o);
+        }
 
         // ── D-day: 등록된 만큼 전부 ──
         JSONArray ddays = showDday() ? o.optJSONArray("ddays") : null;
@@ -168,6 +179,8 @@ public class NekoWidget extends AppWidgetProvider {
             // 앱을 안 열어도 숫자가 맞도록 남은 날수는 여기서 다시 센다
             Integer diff = daysFromToday(date);
             RemoteViews row = new RemoteViews(pkg, R.layout.w_dday_item);
+            setBg(row, R.id.i_row, WidgetTheme.bg(th, WidgetTheme.DDAY_BG));
+            row.setTextColor(R.id.i_title, cText);
             row.setTextViewText(R.id.i_badge, diff == null ? "" : ddayText(diff));
             row.setTextViewText(R.id.i_title, title);
             row.setTextViewText(R.id.i_date, shortDate(date));
@@ -189,7 +202,8 @@ public class NekoWidget extends AppWidgetProvider {
             String badge = it.optString("ampmLabel", "");
 
             RemoteViews row = new RemoteViews(pkg, R.layout.w_todo_item);
-            setBg(row, R.id.i_row, done ? R.drawable.w_row_done_bg : R.drawable.w_row_bg);
+            setBg(row, R.id.i_row, WidgetTheme.bg(th,
+                    done ? WidgetTheme.ROW_DONE_BG : WidgetTheme.ROW_BG));
             setBg(row, R.id.i_chk, done ? R.drawable.w_check_on : R.drawable.w_check_off);
             row.setTextViewText(R.id.i_chk, done ? "✓" : "");
             if (done) {
@@ -197,7 +211,7 @@ public class NekoWidget extends AppWidgetProvider {
                 row.setTextColor(R.id.i_text, 0xFF9AA0A6);
             } else {
                 row.setTextViewText(R.id.i_text, text);
-                row.setTextColor(R.id.i_text, 0xFF3E3A39);
+                row.setTextColor(R.id.i_text, cText);
             }
             if (badge.length() > 0) {
                 row.setViewVisibility(R.id.i_badge, View.VISIBLE);
@@ -227,6 +241,8 @@ public class NekoWidget extends AppWidgetProvider {
         }
         if (showTodo()) v.setViewVisibility(R.id.w_head_box, shown > 0 ? View.VISIBLE : View.GONE);
         if (showTodo() && shown > 0) {
+            v.setTextColor(R.id.w_head_title, cText);
+            v.setTextColor(R.id.w_head_count, cDim);
             v.setTextViewText(R.id.w_head_title, headTitle);
             v.setTextViewText(R.id.w_head_count,
                     doneCount + " / " + total + (doneWord.length() > 0 ? " " + doneWord : ""));
@@ -235,6 +251,7 @@ public class NekoWidget extends AppWidgetProvider {
         if (showTodo()) {
             if (shown == 0) {
                 v.setViewVisibility(R.id.w_empty, View.VISIBLE);
+                v.setTextColor(R.id.w_empty, cDim);
                 if (emptyText.length() > 0) v.setTextViewText(R.id.w_empty, emptyText);
             } else {
                 v.setViewVisibility(R.id.w_empty, View.GONE);
@@ -243,10 +260,14 @@ public class NekoWidget extends AppWidgetProvider {
 
         // ── 오늘 시간표 ──
         // 위젯을 길게 늘일수록 한 시간 칸도 길어지도록, 남은 자리를 대충 재서 나눈다.
-        if (showTable()) fillTable(v, pkg, o, stale, ttRowH(mgr, id, ddayCount, shown));
+        if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, ddayCount, shown));
 
         // ── 어제 · 내일 (기본 위젯에만 있다) ──
         if (layoutId() == R.layout.neko_widget) {
+            setBg(v, R.id.w_yday_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
+            setBg(v, R.id.w_tmr_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
+            v.setTextColor(R.id.w_yday_title, cDim);
+            v.setTextColor(R.id.w_tmr_title, cDim);
             fillSide(v, pkg, o.optJSONObject("yesterday"), stale,
                      R.id.w_yday_title, R.id.w_yday_list, R.id.w_yday_empty, noneWord);
             fillSide(v, pkg, o.optJSONObject("tomorrow"), stale,
@@ -344,8 +365,11 @@ public class NekoWidget extends AppWidgetProvider {
         R.layout.w_tt_hour_d, R.layout.w_tt_hour_e, R.layout.w_tt_hour_f,
     };
 
-    private void fillTable(RemoteViews v, String pkg, JSONObject o, boolean stale, int avail) {
+    private void fillTable(RemoteViews v, String pkg, JSONObject o, int th, int avail) {
         JSONObject tt = o.optJSONObject("table");
+        setBg(v, R.id.w_tt_frame, WidgetTheme.bg(th, WidgetTheme.TT_FRAME));
+        setBg(v, R.id.w_tt_head, WidgetTheme.bg(th, WidgetTheme.TT_HEADBG));
+        v.setTextColor(R.id.w_tt_title, WidgetTheme.text(th));
         v.setTextViewText(R.id.w_tt_title, tt == null ? "" : tt.optString("label", ""));
         v.removeAllViews(R.id.w_tt_head);
         v.removeAllViews(R.id.w_tt_body);
@@ -378,12 +402,14 @@ public class NekoWidget extends AppWidgetProvider {
             // 오늘이 한눈에 보이게 노랑, 일요일은 붉게
             if (d == todayDow) c.setTextColor(R.id.i_text, 0xFFD9A93E);
             else if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
+            else c.setTextColor(R.id.i_text, WidgetTheme.dim(th));
             v.addView(R.id.w_tt_head, c);
         }
 
         for (int h = from; h < to; h++) {
             RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_row);
             RemoteViews hour = new RemoteViews(pkg, TT_HOUR_LAY[size]);
+            hour.setTextColor(R.id.i_text, WidgetTheme.dim(th));
             hour.setTextViewText(R.id.i_text, _tPad2(h));
             row.addView(R.id.i_row, hour);
 
@@ -413,11 +439,14 @@ public class NekoWidget extends AppWidgetProvider {
                     int style = (ci >= 0 && ci < 6) ? (2 + ci)
                               : (hit.optBoolean("rest", false) ? 1 : 0);
                     setBg(cell, R.id.i_text, TT_BG[style][ttPiece(starts, ends)]);
+                    cell.setTextColor(R.id.i_text, WidgetTheme.text(th));
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
                 } else if (d == todayDow) {
-                    setBg(cell, R.id.i_text, endCell ? R.drawable.w_tt_today_br : R.drawable.w_tt_today);
-                } else if (endCell) {
-                    setBg(cell, R.id.i_text, R.drawable.w_tt_empty_br);
+                    setBg(cell, R.id.i_text, WidgetTheme.bg(th,
+                            endCell ? WidgetTheme.TT_TODAY_BR : WidgetTheme.TT_TODAY));
+                } else {
+                    setBg(cell, R.id.i_text, WidgetTheme.bg(th,
+                            endCell ? WidgetTheme.TT_EMPTY_BR : WidgetTheme.TT_EMPTY));
                 }
                 row.addView(R.id.i_row, cell);
             }

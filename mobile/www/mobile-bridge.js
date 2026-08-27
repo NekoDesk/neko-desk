@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.10-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.6.11-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -901,6 +901,7 @@
 
     // 오늘 시간표
     out.table = weekTable(src, w);
+    out.theme = String(src.theme || 'white');   // 위젯도 앱과 같은 배경 테마로
     return out;
   }
 
@@ -920,13 +921,21 @@
   }
 
   function startWidgetFeed() {
+    // 저장 훅은 여기서 건다 — 위젯은 로그인과 상관없이 갱신돼야 한다
+    wrapSaveState(0);
     if (!widgetBridge()) return;
     pushWidget(true);
     // 날짜가 바뀌면 D-day 숫자도 어제·내일 칸도 달라지므로 주기적으로 다시 계산한다
     setInterval(function () { pushWidget(false); }, 30000);
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) pushWidget(true);
-    });
+    // 앱을 떠날 때가 정작 위젯을 볼 때다. 뒤로 갈 때도 꼭 보낸다.
+    document.addEventListener('visibilitychange', function () { pushWidget(true); });
+    window.addEventListener('pagehide', function () { pushWidget(true); });
+    var App = capPlugin('App');
+    if (App) {
+      App.addListener('appStateChange', function (st) {
+        if (!st || !st.isActive) pushWidget(true);
+      });
+    }
   }
 
   // ══════════════════════════════════════════════
@@ -995,8 +1004,6 @@
     var ses = readSession();
     if (ses && ses.email && enforceDataOwner(ses.email)) return;
     syncStatus('연결 중...');
-    // 로컬 저장이 일어날 때마다 클라우드로 밀어 올림
-    wrapSaveState(0);
     try {
       syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
     } catch (e) { syncStatus('\uc624\ub958'); }
