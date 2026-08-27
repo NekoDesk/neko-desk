@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 요일 머리줄. 위 두 모서리는 바깥 틀에 맞춰 둥글고, 아래에만 선을 둔다. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:top="-6dp">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#DCE2EA" />
+            <corners android:topLeftRadius="7dp" android:topRightRadius="7dp" />
+        </shape>
+    </item>
+    <item android:bottom="0.8dp">
         <shape android:shape="rectangle">
             <solid android:color="#F5F7FA" />
-            <stroke android:width="0.8dp" android:color="#DCE2EA" />
+            <corners android:topLeftRadius="7dp" android:topRightRadius="7dp" />
         </shape>
     </item>
 </layer-list>

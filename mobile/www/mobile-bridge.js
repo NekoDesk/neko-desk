@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.9-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.6.10-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -276,9 +276,36 @@
       if (data[k] !== undefined) { st[k] = data[k]; changed = true; }
     });
     if (!changed) return false;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch (e) {}
+    // 글을 쓰는 중이면 그리기는 미룬다 — 쓰던 칸이 사라지면 폰 자판이 내려간다
+    if (isTyping()) { _repaintPending = true; return true; }
+    repaintFromCloud(st);
+    return true;
+  }
+
+  /** 지금 어딘가에 글을 쓰고 있는가 (자판이 올라와 있는 상태) */
+  function isTyping() {
+    var a = document.activeElement;
+    if (!a) return false;
+    var tag = a.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || a.isContentEditable === true;
+  }
+
+  var _repaintPending = false;
+  function repaintIfIdle() {
+    if (!_repaintPending || isTyping()) return;
+    _repaintPending = false;
+    var s = getS();
+    if (s) { try { repaintFromCloud(s); } catch (e) {} }
+  }
+  // 자판이 내려가면 미뤄 둔 그리기를 처리한다.
+  // 포커스 이벤트만 믿으면 놓치는 경우가 있어 확인도 함께 돈다.
+  document.addEventListener('focusout', function () { setTimeout(repaintIfIdle, 120); });
+  setInterval(repaintIfIdle, 1000);
+
+  /** 받아온 내용을 화면에 반영 */
+  function repaintFromCloud(st) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
-      // 화면 다시 그리기
       if (typeof window.applyTheme === 'function' && st.theme) window.applyTheme(st.theme);
       if (typeof window.applyLang === 'function') window.applyLang();
       if (typeof window.renderAll === 'function') window.renderAll();
@@ -311,10 +338,9 @@
         }
       }
       var memo = document.getElementById('scheduleMemoTxt');
-      if (memo) memo.value = st.scheduleMemo || '';
+      if (memo && document.activeElement !== memo) memo.value = st.scheduleMemo || '';
       pushWidget(false);          // PC에서 바뀐 내용도 바탕화면 위젯에 반영
     } catch (e) {}
-    return true;
   }
 
   /**

@@ -133,6 +133,8 @@
         android:textSize="12sp" android:textColor="#3E3A39"
         android:paddingLeft="3dp" android:paddingBottom="5dp" android:text="이번 주 시간표" />
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/w_tt_frame">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:background="@drawable/w_tt_headbg">
         <TextView android:layout_width="22dp" android:layout_height="wrap_content" android:text="" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:paddingTop="3dp" android:paddingBottom="3dp" android:textSize="9sp" android:textColor="#E08A86" android:text="일" />
@@ -345,6 +347,7 @@
         <TextView android:layout_width="0dp" android:layout_height="16dp" android:layout_weight="1"
             android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
             android:textSize="8sp" android:textColor="#3E3A39" android:maxLines="1"
-            android:ellipsize="end" android:background="@drawable/w_tt_empty" android:text="" />
+            android:ellipsize="end" android:background="@drawable/w_tt_empty_br" android:text="" />
+    </LinearLayout>
     </LinearLayout>
 </LinearLayout>

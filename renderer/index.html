@@ -717,6 +717,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 간단 채우기 목록 */
 #fillList .work-item-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
 #fillList .ti-label-in { flex:1; min-width:0; }
+/* 마지막 줄 — 하루가 끝나는 시각. 이름은 고칠 수 없다 */
+.fill-end-lbl { flex:1; min-width:0; font-size:12px; color:var(--gray);
+  font-family:'Galmuri14',monospace; padding:3px 2px; }
 #fillList .ti-x-btn:disabled { opacity:0.25; cursor:default; }
 
 /* 되돌리기 / 다시 실행 */
@@ -1565,7 +1568,7 @@ select {
     <div id="fillList"></div>
     <button class="sch-add-btn" style="width:100%;margin-top:6px" onclick="fillAddRow()" data-i18n="work_add">+ 항목 추가</button>
     <div style="font-size:10px;color:var(--gray);opacity:0.75;line-height:1.6;margin:8px 0 14px" data-i18n="fill_items_hint">
-      앞 항목부터 다음 항목까지가 한 칸이 돼요. 마지막 항목(퇴근)에서 하루가 끝납니다. 시간 순서는 저절로 맞춰집니다.
+      앞 항목부터 다음 항목까지가 한 칸이 돼요. 맨 아래 '휴식 (끝)'은 하루가 끝나는 시각이라 칸이 되지 않습니다. 시간 순서는 저절로 맞춰집니다.
     </div>
 
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:16px">
@@ -2048,9 +2051,9 @@ const STRINGS = {
     tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
     range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
     fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
-    fill_items_hint:'앞 항목부터 다음 항목까지가 한 칸이 돼요. 마지막 항목(퇴근)에서 하루가 끝납니다. 시간 순서는 저절로 맞춰집니다.',
+    fill_items_hint:'앞 항목부터 다음 항목까지가 한 칸이 돼요. 맨 아래 \'휴식 (끝)\'은 하루가 끝나는 시각이라 칸이 되지 않습니다. 시간 순서는 저절로 맞춰집니다.',
     fill_need_two:'항목이 두 개 이상 있어야 해요',
-    fill_title:'🗓 일괄 채우기',
+    fill_title:'🗓 일괄 채우기', fill_end:'휴식 (끝)',
     fill_hint:'매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다. 하나씩 넣으려면 개별 채우기를 쓰세요.',
     fill_days:'채울 요일', fill_in:'출근', fill_lunch_s:'점심 시작', fill_lunch_e:'점심 끝', fill_out:'퇴근',
     fill_replace:'고른 요일에 있던 일정은 지우고 채우기', fill_apply:'✓ 채우기',
@@ -2287,7 +2290,7 @@ const STRINGS = {
     fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
     fill_items_hint:'Each row runs until the next one. The last row ends the day. Rows sort themselves by time.',
     fill_need_two:'You need at least two rows',
-    fill_title:'🗓 Bulk fill',
+    fill_title:'🗓 Bulk fill', fill_end:'Rest (end)',
     fill_hint:'For the same hours every day. Fills the days you pick with the times below.',
     fill_days:'Days to fill', fill_in:'Start', fill_lunch_s:'Lunch from', fill_lunch_e:'Lunch to', fill_out:'End',
     fill_replace:'Replace what is already on those days', fill_apply:'✓ Fill',
@@ -2524,7 +2527,7 @@ const STRINGS = {
     fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
     fill_items_hint:'前の項目から次の項目までが1枠になります。最後の項目で一日が終わります。時間順は自動で並びます。',
     fill_need_two:'項目が2つ以上必要です',
-    fill_title:'🗓 まとめて入力',
+    fill_title:'🗓 まとめて入力', fill_end:'休み (終わり)',
     fill_hint:'毎日同じ時間の方へ。下の時刻で選んだ曜日をまとめて埋めます。',
     fill_days:'埋める曜日', fill_in:'出勤', fill_lunch_s:'昼休み開始', fill_lunch_e:'昼休み終了', fill_out:'退勤',
     fill_replace:'選んだ曜日にある予定は消して入れる', fill_apply:'✓ 入れる',
@@ -4109,8 +4112,9 @@ function ttAdd(day, start, end) {
   ttSnapshot();
   const item = { id: newAlarmId(), day, start, end, label: L('blk_new'), type: 'work' };
   blockList().push(item);
+  saveState();          // 곧바로 저장 — 안 그러면 동기화가 새 칸을 쓸어 간다
   renderTimetable();
-  // 아직 저장하지 않은 새 칸 — 취소하면 없던 일이 된다
+  // 취소하면 없던 일로 되돌린다 (_ttEditNew)
   ttEdit(item.id, true);
 }
 
@@ -4134,7 +4138,7 @@ function fillDefaults() {
     { label: L('fill_in'),     time: s.ws || '09:00' },
     { label: L('blk_lunch'),   time: s.ls || '12:00' },
     { label: L('blk_work_pm'), time: s.le || '13:00' },
-    { label: L('fill_out'),    time: s.we || '18:00' },
+    { label: L('fill_end'),    time: s.we || '18:00' },
   ];
 }
 
@@ -4142,12 +4146,18 @@ function renderFillRows() {
   const el = document.getElementById('fillList');
   if (!el) return;
   _fillRows.sort((a, b) => toMin(a.time) - toMin(b.time));   // 시간 순서로
+  // 마지막 줄은 '하루가 여기서 끝난다'는 표시일 뿐이라 칸이 되지 않는다.
+  // 이름을 고칠 수 있게 두면 적어 넣고 왜 안 뜨냐 하게 되므로 고정한다.
+  const last = _fillRows.length - 1;
   el.innerHTML = _fillRows.map((r, i) => `
     <div class="work-item-row" data-idx="${i}">
-      <input class="ti-label-in" value="${String(r.label || '').replace(/"/g, '&quot;')}"
-        placeholder="${L('work_ph')}" oninput="_fillRows[${i}].label=this.value">
+      ${i === last
+        ? `<span class="fill-end-lbl">${L('fill_end')}</span>`
+        : `<input class="ti-label-in" value="${String(r.label || '').replace(/"/g, '&quot;')}"
+             placeholder="${L('work_ph')}" oninput="_fillRows[${i}].label=this.value">`}
       ${timeCtlHtml(r.time, `onchange="_fillRows[${i}].time=this.value;renderFillRows()"`)}
-      <button class="ti-x-btn" onclick="fillDelRow(${i})" ${_fillRows.length <= 2 ? 'disabled' : ''}>×</button>
+      <button class="ti-x-btn" onclick="fillDelRow(${i})"
+        ${(i === last || _fillRows.length <= 2) ? 'disabled' : ''}>×</button>
     </div>`).join('');
   syncAllTimeAmPm(el);
 }
@@ -4157,8 +4167,15 @@ function fillDelRow(i) {
   renderFillRows();
 }
 function fillAddRow() {
-  const lastMin = _fillRows.length ? toMin(_fillRows[_fillRows.length - 1].time) : 9 * 60;
-  _fillRows.push({ label: L('work_new'), time: toHHMM(Math.min(23 * 60 + 50, lastMin + 60)) });
+  const n = _fillRows.length;
+  const endMin = n ? toMin(_fillRows[n - 1].time) : 18 * 60;      // 끝 줄
+  const prevMin = n >= 2 ? toMin(_fillRows[n - 2].time) : endMin - 60;
+  let at = prevMin + 60;
+  if (at >= endMin - 10) {
+    at = endMin;                                                  // 자리가 없으면
+    _fillRows[n - 1].time = toHHMM(Math.min(23 * 60 + 50, endMin + 60));   // 하루를 늘린다
+  }
+  _fillRows.splice(Math.max(0, n - 1), 0, { label: L('work_new'), time: toHHMM(at) });
   renderFillRows();
 }
 
@@ -4173,6 +4190,7 @@ function fillPlan() {
   const rows = (Array.isArray(p.rows) ? p.rows : [])
     .filter(r => r && /^\d{2}:\d{2}$/.test(r.time))
     .map(r => ({ label: String(r.label || ''), time: r.time }));
+  if (rows.length) rows[rows.length - 1].label = L('fill_end');   // 끝 줄 이름은 고정
   return {
     rows: rows.length >= 2 ? rows : null,
     days: (Array.isArray(p.days) && p.days.length) ? p.days : [1, 2, 3, 4, 5],
@@ -4569,6 +4587,7 @@ function ttCloseEdit(e) {
     S.blocks = blockList().filter(x => x.id !== _ttEditId);
     if (_ttUndo.length) _ttUndo.pop();      // 만들기 직전 기록도 되돌린다
     ttSyncUndoBtns();
+    saveState();
     renderTimetable();
     updateCycleUI();
   }
@@ -7589,6 +7608,26 @@ const CLOUD_KEYS = [
   'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 
+/** 지금 어딘가에 글을 쓰고 있는가 (자판이 올라와 있는 상태) */
+function _isTyping() {
+  const a = document.activeElement;
+  if (!a) return false;
+  const tag = a.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || a.isContentEditable === true;
+}
+
+// 글 쓰는 중이라 미뤄 둔 다시 그리기가 있는가
+let _repaintPending = false;
+function _repaintIfIdle() {
+  if (!_repaintPending || _isTyping()) return;
+  _repaintPending = false;
+  try { _cloudRepaint(); } catch (e) {}
+}
+// 글쓰기가 끝나면 미뤄 둔 그리기를 처리한다.
+// 포커스 이벤트만 믿으면 창이 뒤에 있을 때 놓치므로 확인도 함께 돈다.
+document.addEventListener('focusout', () => setTimeout(_repaintIfIdle, 120));
+setInterval(_repaintIfIdle, 1000);
+
 function _cloudApply(data) {
   if (!data) return false;
   let changed = false;
@@ -7596,6 +7635,14 @@ function _cloudApply(data) {
   if (!changed) return false;
   // saveState()를 거치지 않고 직접 써서 불필요한 업로드 방지
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
+  // 글을 쓰는 중이면 그리기는 미룬다 — 쓰던 칸이 사라지면 자판이 내려간다
+  if (_isTyping()) { _repaintPending = true; return true; }
+  _cloudRepaint();
+  return true;
+}
+
+/** 받아온 내용을 화면에 반영 */
+function _cloudRepaint() {
   try {
     if (typeof applyTheme === 'function' && S.theme) applyTheme(S.theme);
     if (typeof applyLang === 'function') applyLang();
@@ -7628,7 +7675,6 @@ function _cloudApply(data) {
       }
     }
   } catch(e) {}
-  return true;
 }
 
 // 받기/올리기 결과를 각각 보관 — 주기적인 '받기'가 업로드 실패 메시지를
