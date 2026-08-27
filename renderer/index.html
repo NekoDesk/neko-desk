@@ -1721,10 +1721,16 @@ select {
 
     <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:16px">
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--white);cursor:pointer">
-        <input type="checkbox" id="rsWaterWork" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer" onchange="rsMarkDirty(true)">
-        <span data-i18n="remind_water_work">물 알림은 업무 시간에만</span>
+        <input type="checkbox" id="rsWaterOff" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer" onchange="rsWaterToggle()">
+        <span data-i18n="remind_water_off">물 마시기 알림 끄기</span>
       </label>
-      <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-top:5px" data-i18n="remind_water_hint">끄면 퇴근 후·새벽에도 30분마다 물을 권합니다</div>
+      <div id="rsWaterSpan" style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <span style="font-size:12px;color:var(--gray)" data-i18n="remind_water_span">알림 받을 시간</span>
+        <span id="rsWaterFromCtl"></span>
+        <span style="color:var(--gray)">~</span>
+        <span id="rsWaterToCtl"></span>
+      </div>
+      <div style="font-size:10px;color:var(--gray);opacity:0.7;line-height:1.6;margin-top:6px" data-i18n="remind_water_hint">고른 시간 동안 정시마다 한 번씩 알려 드려요</div>
     </div>
 
     <div id="rsDirtyNote" class="rs-dirty-note" data-i18n="remind_dirty">아직 저장하지 않았어요</div>
@@ -2047,8 +2053,8 @@ const STRINGS = {
     alarm_hint:'요일을 고르면 그 요일마다 반복돼요. 안 고르면 매일 울립니다.',
     remind_time_add:'+ 추가', remind_time_none:'알림 시각이 없어요',
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
-    remind_water_work:'물 알림은 업무 시간에만',
-    remind_water_hint:'끄면 퇴근 후·새벽에도 30분마다 물을 권합니다',
+    remind_water_off:'물 마시기 알림 끄기', remind_water_span:'알림 받을 시간',
+    remind_water_hint:'고른 시간 동안 정시마다 한 번씩 알려 드려요',
     tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
     range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
     fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
@@ -2284,8 +2290,8 @@ const STRINGS = {
     alarm_hint:'Pick days to repeat weekly. With none picked it rings every day.',
     remind_time_add:'+ Add', remind_time_none:'No times set',
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
-    remind_water_work:'Water reminders only during work hours',
-    remind_water_hint:'If off, it nudges you every 30 minutes at night too',
+    remind_water_off:'Turn water reminders off', remind_water_span:'Remind between',
+    remind_water_hint:'One nudge on the hour, during the hours you pick',
     tt_range_btn:'Hours shown', range_title:'🕘 Hours shown',
     range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
     fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
@@ -2521,8 +2527,8 @@ const STRINGS = {
     alarm_hint:'曜日を選ぶとその曜日ごとに繰り返します。選ばなければ毎日鳴ります。',
     remind_time_add:'+ 追加', remind_time_none:'時刻がありません',
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
-    remind_water_work:'水のお知らせは勤務時間だけ',
-    remind_water_hint:'オフにすると退勤後や深夜も30分ごとにお知らせします',
+    remind_water_off:'水のお知らせを止める', remind_water_span:'お知らせする時間',
+    remind_water_hint:'選んだ時間のあいだ、毎正時に一度お知らせします',
     tt_range_btn:'表示する時間', range_title:'🕘 表示する時間',
     range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
     fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
@@ -2857,16 +2863,24 @@ function inWorkHours() {
 }
 
 function startHealthReminders() {
+  // 물 알림 — 고른 시간대 동안 정시마다 한 번
+  let _lastWaterMark = '';
   setInterval(() => {
-    // 퇴근 후나 새벽에 물 마시라고 깨우지 않는다
-    if (S.waterWorkOnly !== false && !inWorkHours()) return;
+    if (S.waterOff) return;                       // 아예 꺼 두었으면 조용히
+    const now = new Date();
+    if (now.getMinutes() !== 0) return;           // 정시에만
+    const [a, b] = waterSpan();
+    const h = now.getHours();
+    if (h < a || h >= b) return;
+    const mark = now.toDateString() + ' ' + h;    // 같은 시각에 두 번 울리지 않게
+    if (_lastWaterMark === mark) return;
+    _lastWaterMark = mark;
     const msg = MSGS('water')[waterBubbleIdx % MSGS('water').length];
     _isWaterBubble = true;
     showBubble(msg); // 위젯 모드: 말풍선
     toast('info', L('water_toast_title'), msg); // 대시보드 모드에도 표시
     waterBubbleIdx++;
-    // 폰에서는 한 시간에 한 번 (mobile-bridge가 NEKO_WATER_MS로 알려 준다)
-  }, window.NEKO_WATER_MS || 30 * 60 * 1000);
+  }, 30 * 1000);
 
   // 비타민 알림 — 정해둔 시각마다 (영양제마다 먹는 때가 다르므로 여러 개)
   setInterval(() => {
@@ -3021,6 +3035,9 @@ const S = {
   lastPenaltyBreakIdx: -1,
   lastMoodResetDate: null,
   lastVitaminDate: null,
+  waterOff: false,       // 물 알림을 아예 끄기
+  waterFrom: 9,          // 물 알림을 받을 시작 시 (0~23)
+  waterTo: 18,           // 끝 시 (이 시각 전까지)
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
   fillPlan: null,        // 일괄 채우기에 적어 둔 내용 (JSON 글자 한 덩어리)
@@ -3078,7 +3095,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -5140,10 +5157,11 @@ function removeVitaminTime(i) {
 function openRemindSettings() {
   const on = document.getElementById('rsVitaOn');
   const gl = document.getElementById('rsVitaGoal');
-  const ww = document.getElementById('rsWaterWork');
+  const wo = document.getElementById('rsWaterOff');
   if (on) on.checked = S.vitaminOn !== false;
   if (gl) gl.value = vitaGoal();
-  if (ww) ww.checked = S.waterWorkOnly !== false;
+  if (wo) wo.checked = !!S.waterOff;
+  renderWaterSpan();
   const tc = document.getElementById('rsNewTimeCtl');
   if (tc) tc.innerHTML = timeCtlHtml('09:00', 'id="rsNewTime" onchange="rsSyncAddBtn(true)"');
   _rsTimeTouched = false;
@@ -5165,10 +5183,16 @@ function saveRemindSettings() {
   // 고른 시각을 넣으려면 '+ 추가'를 눌러야 한다 (버튼이 두근거려 알려준다).
   const on = document.getElementById('rsVitaOn');
   const gl = document.getElementById('rsVitaGoal');
-  const ww = document.getElementById('rsWaterWork');
+  const wo = document.getElementById('rsWaterOff');
+  const wf = document.getElementById('rsWaterFrom');
+  const wt = document.getElementById('rsWaterTo');
 
   S.vitaminOn = on ? !!on.checked : true;
-  S.waterWorkOnly = ww ? !!ww.checked : true;
+  S.waterOff = wo ? !!wo.checked : false;
+  if (wf && wt) {
+    let a = parseInt(wf.value, 10), b = parseInt(wt.value, 10);
+    if (a >= 0 && a <= 23 && b >= 1 && b <= 24 && b > a) { S.waterFrom = a; S.waterTo = b; }
+  }
   S.vitaminTimes = _rsTimes.slice();
   if (S.vitaminTimes.length) S.vitaminTime = S.vitaminTimes[0];   // 구버전 호환
 
@@ -5185,6 +5209,41 @@ function saveRemindSettings() {
   if (ab) ab.classList.remove('btn-dirty');
   closeRemindSettings();
   toast('info', L('remind_title'), L('remind_saved'));
+}
+
+/** 물 알림 시간대 — 시간표의 '보이는 시간'과 같은 방식으로 시 단위 */
+function waterSpan() {
+  let a = parseInt(S.waterFrom, 10), b = parseInt(S.waterTo, 10);
+  if (!(a >= 0 && a <= 23)) a = 9;
+  if (!(b >= 1 && b <= 24) || b <= a) b = Math.min(24, a + 9);
+  return [a, b];
+}
+
+function renderWaterSpan() {
+  const [a, b] = waterSpan();
+  const sel = (id, from, to, cur) => {
+    let o = '';
+    for (let h = from; h <= to; h++) o += `<option value="${h}"${h === cur ? ' selected' : ''}>${_tPad(h)}</option>`;
+    return `<select id="${id}" class="tctl-h" style="padding:5px 9px;font-size:13px"
+      onchange="rsMarkDirty(true)">${o}</select>`;
+  };
+  const f = document.getElementById('rsWaterFromCtl');
+  const tt = document.getElementById('rsWaterToCtl');
+  if (f) f.innerHTML = sel('rsWaterFrom', 0, 23, a);
+  if (tt) tt.innerHTML = sel('rsWaterTo', 1, 24, b);
+  rsWaterToggle(true);
+}
+
+/** 끄기를 체크하면 시간대 고르는 칸을 흐리게 */
+function rsWaterToggle(quiet) {
+  const wo = document.getElementById('rsWaterOff');
+  const box = document.getElementById('rsWaterSpan');
+  if (box) {
+    const off = !!(wo && wo.checked);
+    box.style.opacity = off ? '0.35' : '1';
+    box.style.pointerEvents = off ? 'none' : '';
+  }
+  if (!quiet) rsMarkDirty(true);
 }
 
 // ── 원형 픽셀 타이머 ──
@@ -7605,7 +7664,7 @@ const CLOUD_KEYS = [
   // 기록
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
   // 고양이·진행 상태
-  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
+  'cat','pts','fruits','harvestedFruits','waterOff','waterFrom','waterTo','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
   'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];

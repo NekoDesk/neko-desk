@@ -905,7 +905,7 @@ function cloudBump() { cloudLastActivity = Date.now(); }
 
 const CLOUD_KEYS = [
   'calendarNotes','calendarDeleted','ddays','memoDoc','scheduleMemo','diaryEntries','wishlist','wishlistDone',
-  'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
+  'cat','pts','fruits','harvestedFruits','waterOff','waterFrom','waterTo','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 // '실질적으로 아무 기록도 없는가' 판정용 (cat처럼 항상 기본값이 있는 키는 제외)

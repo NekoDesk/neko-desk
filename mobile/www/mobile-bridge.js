@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.8.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.8.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -28,7 +28,8 @@
     // 기록
     'calendarNotes', 'calendarDeleted', 'ddays', 'memoDoc', 'scheduleMemo', 'diaryEntries', 'wishlist', 'wishlistDone',
     // 고양이·진행 상태
-    'cat', 'pts', 'fruits', 'harvestedFruits', 'waterCups', 'waterDate',
+    'cat', 'pts', 'fruits', 'harvestedFruits',
+    'waterOff', 'waterFrom', 'waterTo', 'waterCups', 'waterDate',
     'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
     'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
@@ -912,6 +913,54 @@
   var _notiPlugin;
   var _notiTimer = null;
   var _notiLastPlan = '';
+  var _notiState = '확인 중...';      // 설정 화면에 그대로 보여 준다
+  var _notiCount = 0;
+
+  function notiSay(msg, n) {
+    _notiState = msg;
+    if (n !== undefined) _notiCount = n;
+    renderNotiRow();
+  }
+
+  /**
+   * 알림 설정 팝업에 '폰 알림' 줄을 붙인다.
+   * 권한 요청은 사용자가 버튼을 눌렀을 때 하는 게 가장 확실하다 —
+   * 앱을 켜자마자 물으면 기기에 따라 창이 안 뜨고 그대로 거절로 남는다.
+   */
+  function renderNotiRow() {
+    if (!notiPlugin()) return;
+    var modal = document.getElementById('remindModal');
+    if (!modal) return;
+    var box = modal.querySelector('.rs-noti');
+    if (!box) {
+      var anchor = document.getElementById('rsDirtyNote');
+      if (!anchor || !anchor.parentElement) return;
+      box = document.createElement('div');
+      box.className = 'rs-noti';
+      box.style.cssText = 'border-top:1px solid var(--border);padding-top:12px;margin-bottom:14px;'
+        + 'display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+      anchor.parentElement.insertBefore(box, anchor);
+    }
+    var need = _notiState.indexOf('허용') < 0;
+    box.innerHTML = '<span style="flex:1;min-width:0;font-size:12px;color:var(--gray)">'
+      + '📱 폰 알림: ' + _notiState
+      + (_notiCount ? ' · 예약 ' + _notiCount + '건' : '') + '</span>'
+      + (need ? '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
+              + 'onclick="window.__nekoAskNoti()">알림 켜기</button>' : '');
+  }
+
+  // 버튼에서 부를 수 있게 밖으로 낸다
+  window.__nekoAskNoti = function () {
+    var N = notiPlugin();
+    if (!N) return;
+    notiSay('허용 요청 중...');
+    Promise.resolve(N.requestPermissions ? N.requestPermissions() : null)
+      .then(function (st) {
+        if (st && st.display === 'granted') { _notiLastPlan = ''; syncNotifications(); }
+        else notiSay('거절됨 (기기 설정에서 켜 주세요)');
+      })
+      .catch(function (e) { notiSay('오류: ' + (e && e.message ? e.message : e)); });
+  };
 
   function notiPlugin() {
     if (_notiPlugin !== undefined) return _notiPlugin;
@@ -947,13 +996,11 @@
 
   /** 물 알림을 넣을 시각대 (모바일은 한 시간에 한 번) */
   function waterHours(src) {
-    var s = src.schedule || {};
-    var from = hhmmToParts(s.ws) || { hour: 9 };
-    var to = hhmmToParts(s.we) || { hour: 18 };
-    var a = from.hour, b = to.hour;
-    if (src.waterWorkOnly === false) { a = 9; b = 21; }   // 업무시간 제한을 껐으면 낮 동안
-    if (b <= a) b = a + 1;
-    if (b - a > 14) b = a + 14;                            // 하루 열네 번을 넘기지 않는다
+    if (src.waterOff) return [];                 // 아예 꺼 두었으면 안 넣는다
+    var a = parseInt(src.waterFrom, 10), b = parseInt(src.waterTo, 10);
+    if (!(a >= 0 && a <= 23)) a = 9;
+    if (!(b >= 1 && b <= 24) || b <= a) b = Math.min(24, a + 9);
+    if (b - a > 16) b = a + 16;                  // 하루에 너무 많이 넣지 않는다
     var out = [];
     for (var h = a; h < b; h++) out.push(h);
     return out;
@@ -1043,10 +1090,10 @@
     ensureNotiChannel(N).then(function () {
       return N.checkPermissions ? N.checkPermissions() : { display: 'granted' };
     }).then(function (st) {
-      if (st && st.display === 'granted') return st;
-      return N.requestPermissions ? N.requestPermissions() : st;
-    }).then(function (st) {
-      if (!st || st.display !== 'granted') return;      // 사용자가 거절하면 조용히 넘어간다
+      if (!st || st.display !== 'granted') {
+        notiSay(st && st.display === 'denied' ? '꺼져 있음' : '아직 허용 안 함', 0);
+        return null;                       // 요청은 버튼을 눌렀을 때만
+      }
       // 예전 예약을 걷어내고 새로 넣는다
       return (N.getPending ? N.getPending() : Promise.resolve({ notifications: [] }))
         .then(function (pend) {
@@ -1054,18 +1101,18 @@
           if (!old.length) return;
           return N.cancel({ notifications: old.map(function (o) { return { id: o.id }; }) });
         })
-        .then(function () {
-          if (!list.length) return;
-          return N.schedule({ notifications: list });
-        })
-        .then(function () { _notiLastPlan = plan; });
-    }).catch(function () {
-      // 정확한 시각 예약이 막힌 기기에서는 대략적인 시각으로라도 넣는다
-      try {
-        list.forEach(function (n) { delete n.schedule.allowWhileIdle; });
-        N.schedule({ notifications: list }).then(function () { _notiLastPlan = plan; })
-          .catch(function () {});
-      } catch (e) {}
+        .then(function () { return list.length ? N.schedule({ notifications: list }) : null; })
+        .then(function () { _notiLastPlan = plan; notiSay('허용됨', list.length); })
+        .catch(function (e) {
+          // 정확한 시각 예약이 막힌 기기에서는 대략적인 시각으로라도 넣는다
+          list.forEach(function (n) { delete n.schedule.allowWhileIdle; });
+          return N.schedule({ notifications: list }).then(function () {
+            _notiLastPlan = plan;
+            notiSay('허용됨 (시각은 대략)', list.length);
+          });
+        });
+    }).catch(function (e) {
+      notiSay('오류: ' + (e && e.message ? e.message : e), 0);
     });
   }
 
@@ -1880,6 +1927,19 @@
 
       // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
       try { scheduleNotiSync(); } catch (e) {}
+
+      // 7) 알림 설정 팝업을 열 때마다 '폰 알림' 줄을 붙인다
+      try {
+        if (typeof window.openRemindSettings === 'function' && !window.openRemindSettings._noti) {
+          var origOpen = window.openRemindSettings;
+          window.openRemindSettings = function () {
+            var r = origOpen.apply(this, arguments);
+            setTimeout(function () { try { renderNotiRow(); syncNotifications(); } catch (e) {} }, 0);
+            return r;
+          };
+          window.openRemindSettings._noti = true;
+        }
+      } catch (e) {}
     }, 400);
   });
 })();
