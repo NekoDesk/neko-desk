@@ -7,8 +7,8 @@
 
     <TextView android:id="@+id/w_tt_title"
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:textSize="11sp" android:textColor="#9AA0A6"
-        android:paddingLeft="2dp" android:paddingBottom="4dp" android:text="" />
+        android:textSize="12sp" android:textColor="#3E3A39"
+        android:paddingLeft="3dp" android:paddingBottom="5dp" android:text="" />
 
     <LinearLayout android:id="@+id/w_tt_head"
         android:layout_width="match_parent" android:layout_height="wrap_content"

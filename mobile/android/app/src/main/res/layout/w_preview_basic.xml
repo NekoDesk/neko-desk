@@ -28,21 +28,21 @@
             android:orientation="horizontal" android:gravity="center_vertical">
             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:textSize="10sp" android:textColor="#9AA0A6" android:text="물 3 / 8" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_on" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_on" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_on" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_off" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_off" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_off" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_off" />
-            <View android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:background="@drawable/w_cup_off" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_on" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_on" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_on" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_off" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_off" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_off" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_off" />
+            <ImageView android:layout_width="11dp" android:layout_height="14dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_cup_off" />
             </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="6dp">
             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:textSize="10sp" android:textColor="#9AA0A6" android:text="비타민 1 / 2" />
-            <View android:layout_width="14dp" android:layout_height="10dp" android:layout_marginStart="3dp" android:background="@drawable/w_pill_on" />
-            <View android:layout_width="14dp" android:layout_height="10dp" android:layout_marginStart="3dp" android:background="@drawable/w_pill_off" />
+            <ImageView android:layout_width="14dp" android:layout_height="10dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_pill_on" />
+            <ImageView android:layout_width="14dp" android:layout_height="10dp" android:layout_marginStart="3dp" android:contentDescription="@null" android:background="@drawable/w_pill_off" />
             </LinearLayout>
     </LinearLayout>
 

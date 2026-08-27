@@ -30,7 +30,7 @@
     'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
     'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
-    'schedule', 'workItems', 'scheduleItems', 'blocks', 'fillRows', 'fillDays', 'fillReplace', 'ttFrom', 'ttTo', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language'
+    'schedule', 'workItems', 'scheduleItems', 'blocks', 'fillPlan', 'fillRows', 'fillDays', 'fillReplace', 'ttFrom', 'ttTo', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language'
   ];
 
   // 공개 설정만 포함 (비밀키 없음 — Supabase anon key는 공개용으로 설계됨)
@@ -654,7 +654,7 @@
   // 바탕화면 위젯 — D-day 전부와 어제·오늘·내일 할 일을 내보낸다
   // 네이티브(NekoWidget.java)가 이 내용을 받아 홈 화면에 그린다.
   // ══════════════════════════════════════════════
-  var WIDGET_MAX_TODOS = 4;    // 오늘 칸에 보여줄 줄 수
+  var WIDGET_MAX_TODOS = 30;   // 오늘 칸에 보여줄 줄 수 (사실상 전부)
   var WIDGET_MAX_SIDE = 3;     // 어제·내일 칸에 보여줄 줄 수
   var _widgetLast = '';
 

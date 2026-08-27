@@ -717,12 +717,6 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 간단 채우기 목록 */
 #fillList .work-item-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
 #fillList .ti-label-in { flex:1; min-width:0; }
-.fill-type { flex-shrink:0; font-size:11px; padding:3px 7px; border-radius:4px; cursor:pointer;
-  border:1px solid var(--mint); background:color-mix(in srgb, var(--mint), transparent 80%);
-  color:var(--white); font-family:'Galmuri14',monospace; white-space:nowrap; }
-.fill-type.rest { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 80%); }
-.fill-type.end { border-color:var(--border); background:transparent; color:var(--gray); }
-.fill-type:disabled { cursor:default; }
 #fillList .ti-x-btn:disabled { opacity:0.25; cursor:default; }
 
 /* 되돌리기 / 다시 실행 */
@@ -1245,9 +1239,10 @@ select {
               </div>
               <div id="ttGrid"></div>
               <div class="tt-bar">
-                <button class="fb-preset" onclick="openTtFill()" data-i18n="tt_fill">간단 채우기</button>
-                <button class="fb-preset" onclick="openTtRange()" data-i18n="tt_range_btn">보이는 시간</button>
+                <button class="fb-preset" onclick="openTtFill()" data-i18n="tt_fill">일괄 채우기</button>
+                <button class="fb-preset" onclick="openTtOne()" data-i18n="tt_one">개별 채우기</button>
                 <span class="sp"></span>
+                <button class="fb-preset" onclick="openTtRange()" data-i18n="tt_range_btn">보이는 시간</button>
                 <button class="fb-preset" onclick="ttClear()" data-i18n="tt_clear">비우기</button>
               </div>
 
@@ -1540,11 +1535,11 @@ select {
   </div>
 </div>
 
-<!-- 간단 채우기 -->
+<!-- 일괄 채우기 -->
 <div id="ttFillModal" style="display:none;position:fixed;inset:0;z-index:9469;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtFill(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:400px;width:90%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="fill_title">🗓 간단 채우기</span>
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="fill_title">🗓 일괄 채우기</span>
       <button onclick="closeTtFill()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
     </div>
     <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="fill_hint">매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다.</div>
@@ -1657,18 +1652,9 @@ select {
     <input id="ttName" class="todo-edit-in" style="width:100%;margin-bottom:14px" maxlength="20"
       onkeydown="if(event.key==='Enter')ttSaveEdit()">
 
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_day">요일</div>
-        <select id="ttDay" class="todo-edit-in" style="width:100%"></select>
-      </div>
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_type">종류</div>
-        <select id="ttType" class="todo-edit-in" style="width:100%">
-          <option value="work" data-i18n="tt_type_work">집중</option>
-          <option value="rest" data-i18n="tt_type_rest">쉼</option>
-        </select>
-      </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="tt_day">요일</div>
+      <select id="ttDay" class="todo-edit-in" style="width:100%"></select>
     </div>
 
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
@@ -2050,8 +2036,8 @@ const STRINGS = {
     fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
     fill_items_hint:'앞 항목부터 다음 항목까지가 한 칸이 돼요. 마지막 항목(퇴근)에서 하루가 끝납니다. 시간 순서는 저절로 맞춰집니다.',
     fill_need_two:'항목이 두 개 이상 있어야 해요',
-    fill_title:'🗓 간단 채우기',
-    fill_hint:'매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다.',
+    fill_title:'🗓 일괄 채우기',
+    fill_hint:'매일 같은 시간에 일하시는 분을 위한 기능이에요. 아래 시각으로 고른 요일을 한 번에 채웁니다. 하나씩 넣으려면 개별 채우기를 쓰세요.',
     fill_days:'채울 요일', fill_in:'출근', fill_lunch_s:'점심 시작', fill_lunch_e:'점심 끝', fill_out:'퇴근',
     fill_replace:'고른 요일에 있던 일정은 지우고 채우기', fill_apply:'✓ 채우기',
     fill_need_day:'채울 요일을 하나 이상 골라주세요',
@@ -2064,7 +2050,8 @@ const STRINGS = {
     tt_menu_edit:'✏️ 수정하기', tt_menu_del:'🗑 지우기',
     tt_tips_title:'💡 시간표 사용 팁',
     tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌어서</b> 다른 자리에 놓으면 그 사이로 들어가요. 뒤에 있던 일정은 그만큼 뒤로 밀립니다. 다른 요일로도 옮길 수 있어요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
-    tt_title:'시간표', tt_fill:'간단 채우기', tt_clear:'비우기',
+    tt_title:'시간표', tt_fill:'일괄 채우기', tt_one:'개별 채우기', tt_clear:'비우기',
+    tt_one_full:'오늘은 빈 자리가 없어요. 있는 칸을 눌러 고쳐 주세요.',
     tt_tip:'빈 칸을 위아래로 끌면 시간이 만들어져요. 만든 칸을 누르면 고칠 수 있어요.',
     tt_overlap:'그 시간에 이미 다른 일정이 있어요', tt_bad_time:'끝나는 시각이 시작보다 빨라요',
     tt_clear_ask:'시간표를 모두 비울까요?', tt_edit_title:'⏰ 시간 고치기',
@@ -2286,7 +2273,7 @@ const STRINGS = {
     fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
     fill_items_hint:'Each row runs until the next one. The last row ends the day. Rows sort themselves by time.',
     fill_need_two:'You need at least two rows',
-    fill_title:'🗓 Fill in',
+    fill_title:'🗓 Bulk fill',
     fill_hint:'For the same hours every day. Fills the days you pick with the times below.',
     fill_days:'Days to fill', fill_in:'Start', fill_lunch_s:'Lunch from', fill_lunch_e:'Lunch to', fill_out:'End',
     fill_replace:'Replace what is already on those days', fill_apply:'✓ Fill',
@@ -2300,7 +2287,8 @@ const STRINGS = {
     tt_menu_edit:'✏️ Edit', tt_menu_del:'🗑 Delete',
     tt_tips_title:'💡 Timetable tips',
     tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot between others to slide it in — later slots shift back. You can drop it on another day too.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
-    tt_title:'Timetable', tt_fill:'Fill weekdays', tt_clear:'Clear',
+    tt_title:'Timetable', tt_fill:'Bulk fill', tt_one:'Add one', tt_clear:'Clear',
+    tt_one_full:'No free hour left today. Tap an existing block to edit it.',
     tt_tip:'Drag on an empty cell to make a slot. Tap a slot to edit it.',
     tt_overlap:'Something else is already there', tt_bad_time:'End time is before the start',
     tt_clear_ask:'Clear the whole timetable?', tt_edit_title:'⏰ Edit slot',
@@ -2522,7 +2510,7 @@ const STRINGS = {
     fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
     fill_items_hint:'前の項目から次の項目までが1枠になります。最後の項目で一日が終わります。時間順は自動で並びます。',
     fill_need_two:'項目が2つ以上必要です',
-    fill_title:'🗓 かんたん入力',
+    fill_title:'🗓 まとめて入力',
     fill_hint:'毎日同じ時間の方へ。下の時刻で選んだ曜日をまとめて埋めます。',
     fill_days:'埋める曜日', fill_in:'出勤', fill_lunch_s:'昼休み開始', fill_lunch_e:'昼休み終了', fill_out:'退勤',
     fill_replace:'選んだ曜日にある予定は消して入れる', fill_apply:'✓ 入れる',
@@ -2536,7 +2524,8 @@ const STRINGS = {
     tt_menu_edit:'✏️ 直す', tt_menu_del:'🗑 消す',
     tt_tips_title:'💡 時間割の使い方',
     tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>して他の枠の間に置くと、そこに入り後ろの予定がずれます。別の曜日にも移せます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
-    tt_title:'時間割', tt_fill:'平日を埋める', tt_clear:'全部消す',
+    tt_title:'時間割', tt_fill:'まとめて入力', tt_one:'1件ずつ追加', tt_clear:'全部消す',
+    tt_one_full:'今日は空きがありません。ある枠を押して直してください。',
     tt_tip:'空いたところを上下にドラッグすると枠ができます。枠を押すと直せます。',
     tt_overlap:'その時間にはすでに予定があります', tt_bad_time:'終わりが始まりより早いです',
     tt_clear_ask:'時間割をすべて消しますか？', tt_edit_title:'⏰ 枠を直す',
@@ -3015,8 +3004,9 @@ const S = {
   lastVitaminDate: null,
   waterCups: 0,          // 오늘 마신 물 잔 수
   waterDate: null,
-  fillRows: null,        // 간단 채우기에 적어 둔 하루 흐름
-  fillDays: null,        // 간단 채우기에서 고른 요일
+  fillPlan: null,        // 일괄 채우기에 적어 둔 내용 (JSON 글자 한 덩어리)
+  fillRows: null,        // (구버전) 하루 흐름 — fillPlan으로 옮겨진다
+  fillDays: null,        // (구버전) 고른 요일
   ttFrom: '05:00',       // 시간표에 보여줄 시작 시각
   ttTo: '22:00',         // 시간표에 보여줄 끝 시각
   blocks: null,          // 시간표 [{id, day:0~6, start:'HH:MM', end:'HH:MM', label, type:'work'|'rest'}]
@@ -3069,7 +3059,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -4027,59 +4017,34 @@ function ttYToMin(col, clientY) {
 function ttDown(e, day) {
   if (e.button !== undefined && e.button !== 0) return;
   const col = e.currentTarget;
-  // 손가락은 끌기 대신 톡 누르기. 세로로 끌면 화면이 먼저 스크롤되면서
-  // 끌기가 취소돼(pointercancel) 아무리 그어도 제자리로 돌아온다.
-  if (ttIsTouch(e)) { ttTapDown(e, { kind: 'new', day, col, min: ttYToMin(col, e.clientY) }); return; }
+  // 손가락으로는 빈 칸에서 아무 일도 하지 않는다. 새 일정은 '개별 채우기'로.
+  if (ttIsTouch(e)) return;
   e.preventDefault();
   _ttDrag = { day, col, from: ttYToMin(col, e.clientY), to: null, el: null };
   try { col.setPointerCapture(e.pointerId); } catch (err) {}
 }
 
 // ── 손가락으로 고치기 ────────────────────────────────────────
-// 빈 칸을 톡 누르면 그 시각부터 한 시간짜리 칸이 생기고 바로 고칠 수 있다.
-// 칸을 톡 누르면 고치기, 꾹 누르면 메뉴가 뜬다.
+// 칸을 톡 누르면 고치기/지우기 메뉴가 뜬다. 끌기는 마우스에만 있다.
 let _ttTap = null;
 const TT_TAP_SLOP = 12;        // 이만큼 넘게 움직이면 스크롤한 것으로 본다
-const TT_LONG_MS = 500;
 
 function ttIsTouch(e) { return !!e.pointerType && e.pointerType !== 'mouse'; }
 
 function ttTapDown(e, info) {
   ttTapCancel();
-  const tap = Object.assign({ x0: e.clientX, y0: e.clientY, fired: false }, info);
-  if (tap.kind === 'blk') {
-    const x = e.clientX, y = e.clientY;
-    tap.timer = setTimeout(() => {
-      if (_ttTap !== tap) return;
-      tap.fired = true;
-      ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: x, clientY: y }, tap.id);
-    }, TT_LONG_MS);
-  }
-  _ttTap = tap;
+  _ttTap = Object.assign({ x0: e.clientX, y0: e.clientY }, info);
 }
 
-function ttTapCancel() {
-  if (_ttTap && _ttTap.timer) clearTimeout(_ttTap.timer);
-  _ttTap = null;
-}
+function ttTapCancel() { _ttTap = null; }
 
 function ttTapUp(e) {
   const tap = _ttTap;
   ttTapCancel();
-  if (!tap || tap.fired) return;
+  if (!tap) return;
+  // 손가락이 움직였으면 화면을 넘긴 것이지 누른 게 아니다
   if (Math.abs(e.clientX - tap.x0) + Math.abs(e.clientY - tap.y0) > TT_TAP_SLOP) return;
-  if (tap.kind === 'blk') { ttEdit(tap.id); return; }
-
-  // 누른 시각의 정시부터 한 시간. 옆 칸과 겹치면 빈 자리에 맞춰 줄인다.
-  let a = Math.min(23 * 60, Math.floor(tap.min / 60) * 60);
-  let b = Math.min(24 * 60, a + 60);
-  blocksOf(tap.day).forEach(x => {
-    const xs = toMin(x.start), xe = toMin(x.end);
-    if (xe <= a || xs >= b) return;
-    if (xs <= a) a = xe; else b = xs;
-  });
-  if (b - a < TT_SNAP) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
-  ttAdd(tap.day, toHHMM(a), toHHMM(b));
+  ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: tap.x0, clientY: tap.y0 }, tap.id);
 }
 document.addEventListener('pointerup', ttTapUp);
 document.addEventListener('pointercancel', ttTapCancel);
@@ -4150,10 +4115,10 @@ let _fillRows = [];
 function fillDefaults() {
   const s = S.schedule || {};
   return [
-    { label: L('fill_in'),      time: s.ws || '09:00', type: 'work' },
-    { label: L('blk_lunch'),    time: s.ls || '12:00', type: 'rest' },
-    { label: L('blk_work_pm'),  time: s.le || '13:00', type: 'work' },
-    { label: L('fill_out'),     time: s.we || '18:00', type: 'end'  },
+    { label: L('fill_in'),     time: s.ws || '09:00' },
+    { label: L('blk_lunch'),   time: s.ls || '12:00' },
+    { label: L('blk_work_pm'), time: s.le || '13:00' },
+    { label: L('fill_out'),    time: s.we || '18:00' },
   ];
 }
 
@@ -4161,27 +4126,14 @@ function renderFillRows() {
   const el = document.getElementById('fillList');
   if (!el) return;
   _fillRows.sort((a, b) => toMin(a.time) - toMin(b.time));   // 시간 순서로
-  const last = _fillRows.length - 1;
   el.innerHTML = _fillRows.map((r, i) => `
     <div class="work-item-row" data-idx="${i}">
       <input class="ti-label-in" value="${String(r.label || '').replace(/"/g, '&quot;')}"
         placeholder="${L('work_ph')}" oninput="_fillRows[${i}].label=this.value">
-      <button type="button" class="fill-type${i === last ? ' end' : (r.type === 'rest' ? ' rest' : '')}"
-        onclick="fillCycleType(${i})" ${i === last ? 'disabled' : ''}>
-        ${i === last ? L('fill_t_end') : (r.type === 'rest' ? L('fill_t_rest') : L('fill_t_work'))}
-      </button>
       ${timeCtlHtml(r.time, `onchange="_fillRows[${i}].time=this.value;renderFillRows()"`)}
       <button class="ti-x-btn" onclick="fillDelRow(${i})" ${_fillRows.length <= 2 ? 'disabled' : ''}>×</button>
     </div>`).join('');
   syncAllTimeAmPm(el);
-}
-
-/** 집중 ↔ 쉼 */
-function fillCycleType(i) {
-  const r = _fillRows[i];
-  if (!r) return;
-  r.type = (r.type === 'rest') ? 'work' : 'rest';
-  renderFillRows();
 }
 function fillDelRow(i) {
   if (_fillRows.length <= 2) return;
@@ -4190,33 +4142,35 @@ function fillDelRow(i) {
 }
 function fillAddRow() {
   const lastMin = _fillRows.length ? toMin(_fillRows[_fillRows.length - 1].time) : 9 * 60;
-  _fillRows.push({ label: L('work_new'), time: toHHMM(Math.min(23 * 60 + 50, lastMin + 60)), type: 'work' });
+  _fillRows.push({ label: L('work_new'), time: toHHMM(Math.min(23 * 60 + 50, lastMin + 60)) });
   renderFillRows();
+}
+
+/** 지난번에 적어 둔 내용 — 없으면 예전 방식으로 저장된 것을 읽어 온다 */
+function fillPlan() {
+  let p = null;
+  try { p = S.fillPlan ? JSON.parse(S.fillPlan) : null; } catch (e) { p = null; }
+  if (!p && Array.isArray(S.fillRows)) {
+    p = { rows: S.fillRows, days: S.fillDays, replace: S.fillReplace };
+  }
+  if (!p) p = {};
+  const rows = (Array.isArray(p.rows) ? p.rows : [])
+    .filter(r => r && /^\d{2}:\d{2}$/.test(r.time))
+    .map(r => ({ label: String(r.label || ''), time: r.time }));
+  return {
+    rows: rows.length >= 2 ? rows : null,
+    days: (Array.isArray(p.days) && p.days.length) ? p.days : [1, 2, 3, 4, 5],
+    replace: p.replace !== false,
+  };
 }
 
 function openTtFill() {
   const g = (i) => document.getElementById(i);
-
-  // 지난번에 적어 둔 내용이 있으면 그대로 보여준다
-  let saved = Array.isArray(S.fillRows)
-    ? S.fillRows.filter(r => r && /^\d{2}:\d{2}$/.test(r.time)) : null;
-  // 같은 줄이 여러 번 들어온 경우를 걸러 낸다 (기기 간 병합 때문)
-  if (saved) {
-    const seen = {};
-    saved = saved.filter(r => {
-      const k = (r.label || '') + '|' + r.time + '|' + (r.type || '');
-      if (seen[k]) return false;
-      seen[k] = 1;
-      return true;
-    });
-  }
-  _fillRows = (saved && saved.length >= 2)
-    ? saved.map(r => ({ label: String(r.label || ''), time: r.time, type: r.type === 'rest' ? 'rest' : 'work' }))
-    : fillDefaults();
+  const p = fillPlan();
+  _fillRows = p.rows ? p.rows.map(r => ({ label: r.label, time: r.time })) : fillDefaults();
   renderFillRows();
 
-  // 요일도 지난번에 고른 대로 (없으면 월~금)
-  const days = Array.isArray(S.fillDays) && S.fillDays.length ? S.fillDays : [1, 2, 3, 4, 5];
+  const days = p.days;
   const dw = g('fillDows');
   if (dw) {
     dw.innerHTML = dowNames().map((nm, i) =>
@@ -4226,7 +4180,7 @@ function openTtFill() {
 
   // 지우고 채울지도 지난번 그대로
   const rp = g('fillReplace');
-  if (rp) rp.checked = S.fillReplace !== false;
+  if (rp) rp.checked = p.replace;
 
   const m = g('ttFillModal');
   if (m) m.style.display = 'flex';
@@ -4258,7 +4212,7 @@ function applyTtFill() {
       const a = rows[i], b = rows[i + 1];
       if (toMin(b.time) <= toMin(a.time)) continue;
       list.push({ id: newAlarmId(), day: d, start: a.time, end: b.time,
-                  label: a.label || L('blk_new'), type: a.type === 'rest' ? 'rest' : 'work' });
+                  label: a.label || L('blk_new'), type: 'work' });
     }
   });
   S.blocks = list;
@@ -4268,10 +4222,14 @@ function applyTtFill() {
   S.ttFrom = toHHMM(Math.max(0, (Math.floor(first / 60) - 1) * 60));
   S.ttTo = toHHMM(Math.min(24 * 60, (Math.ceil(last / 60) + 1) * 60));
 
-  // 다음에 열 때 적어 둔 내용이 그대로 뜨도록 남겨 둔다
-  S.fillRows = rows.map(r => ({ label: r.label, time: r.time, type: r.type }));
-  S.fillDays = days.slice();
-  S.fillReplace = replace;
+  // 다음에 열 때 적어 둔 내용이 그대로 뜨도록 남겨 둔다.
+  // 목록이 아니라 글자 한 덩어리로 담아야 기기끼리 합쳐지지 않는다.
+  S.fillPlan = JSON.stringify({
+    rows: rows.map(r => ({ label: r.label, time: r.time })),
+    days: days.slice(),
+    replace: replace,
+  });
+  S.fillRows = null; S.fillDays = null;      // 예전 방식은 비운다
   S.schedule = Object.assign({}, S.schedule, {
     ws: rows[0].time, we: rows[rows.length - 1].time,
   });
@@ -4279,6 +4237,23 @@ function applyTtFill() {
   renderTimetable();
   updateCycleUI();
   closeTtFill();
+}
+
+// ── 개별 채우기 ──────────────────────────────────────
+// 반복이 아니라 하나만 넣고 싶을 때. 오늘 비어 있는 첫 한 시간에
+// 칸을 만들고 곧바로 고치기 창을 연다 (취소하면 없던 일이 된다).
+function openTtOne() {
+  const day = new Date().getDay();
+  const lo = Math.floor(toMin(S.ttFrom || '05:00') / 60) * 60;
+  const hi = toMin(S.ttTo || '22:00');
+  for (let m = lo; m + 60 <= hi; m += 60) {
+    if (!ttOverlaps(day, m, m + 60)) { ttAdd(day, toHHMM(m), toHHMM(m + 60)); return; }
+  }
+  // 하루가 꽉 찼으면 30분짜리라도 들어갈 자리를 찾아본다
+  for (let m = lo; m + 30 <= hi; m += 30) {
+    if (!ttOverlaps(day, m, m + 30)) { ttAdd(day, toHHMM(m), toHHMM(m + 30)); return; }
+  }
+  toast('alert', L('tt_title'), L('tt_one_full'));
 }
 
 // ── 보이는 시간대 ────────────────────────────────────
@@ -4379,7 +4354,7 @@ const TT_MOVE_THRESHOLD = 4;
 function ttBlkDown(e, id) {
   if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
   e.stopPropagation();                                     // 새 칸 만들기와 겹치지 않게
-  if (ttIsTouch(e)) { ttTapDown(e, { kind: 'blk', id }); return; }
+  if (ttIsTouch(e)) { ttTapDown(e, { id }); return; }
   e.preventDefault();
   _ttMove = { id, x0: e.clientX, y0: e.clientY, moved: false, day: null, at: null, line: null };
   try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
@@ -4564,7 +4539,6 @@ function ttEdit(id, isNew) {
     g('ttDay').innerHTML = dowNames().map((nm, i) => `<option value="${i}">${nm}</option>`).join('');
     g('ttDay').value = String(b.day);
   }
-  if (g('ttType')) g('ttType').value = b.type === 'rest' ? 'rest' : 'work';
   _ttEditColor = (b.color >= 0 && b.color <= 5) ? b.color : -1;
   renderTtColors();
   if (g('ttStartCtl')) g('ttStartCtl').innerHTML = timeCtlHtml(b.start, 'id="ttStart"');
@@ -4600,7 +4574,6 @@ function ttSaveEdit() {
   b.start = s;
   b.end = e;
   b.label = (g('ttName') ? g('ttName').value : '').trim() || L('blk_new');
-  b.type = g('ttType') && g('ttType').value === 'rest' ? 'rest' : 'work';
   if (_ttEditColor >= 0) b.color = _ttEditColor; else delete b.color;
   if (!_ttEditNew) ttSnapshot();     // 새 칸은 만들 때 이미 남겨 두었다
   _ttEditNew = false;                // 저장했으니 이제 정식 칸
@@ -7597,7 +7570,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','blocks','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
+  'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
 ];
 
 function _cloudApply(data) {
