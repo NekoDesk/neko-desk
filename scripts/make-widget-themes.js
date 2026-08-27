@@ -114,7 +114,7 @@ idx.forEach((name, i) => {
 java += `
     private static final String[] IDS = { ${themes.map(t => '"' + t.id + '"').join(', ')} };
 
-    private static final int[][] BG = {
+    private static final int[][] SETS = {
 `;
 for (const th of themes) {
   const suffix = th.id === 'white' ? '' : '_' + th.id;
@@ -139,7 +139,7 @@ java += `    };
         return 0;                       // 모르는 이름이면 기본(화이트)
     }
 
-    static int bg(int theme, int part) { return BG[theme][part]; }
+    static int bg(int theme, int part) { return SETS[theme][part]; }
     static int text(int theme) { return TEXT[theme][0]; }
     static int dim(int theme) { return TEXT[theme][1]; }
     static int accent(int theme) { return TEXT[theme][2]; }

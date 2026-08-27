@@ -23,7 +23,7 @@ final class WidgetTheme {
 
     private static final String[] IDS = { "white", "ivory", "bpink", "pblue", "pmint", "ppurple" };
 
-    private static final int[][] BG = {
+    private static final int[][] SETS = {
         { R.drawable.w_bg, R.drawable.w_row_bg, R.drawable.w_row_done_bg, R.drawable.w_side_bg, R.drawable.w_dday_bg, R.drawable.w_tt_frame, R.drawable.w_tt_headbg, R.drawable.w_tt_empty, R.drawable.w_tt_today, R.drawable.w_tt_empty_br, R.drawable.w_tt_today_br },
         { R.drawable.w_bg_ivory, R.drawable.w_row_bg_ivory, R.drawable.w_row_done_bg_ivory, R.drawable.w_side_bg_ivory, R.drawable.w_dday_bg_ivory, R.drawable.w_tt_frame_ivory, R.drawable.w_tt_headbg_ivory, R.drawable.w_tt_empty_ivory, R.drawable.w_tt_today_ivory, R.drawable.w_tt_empty_br_ivory, R.drawable.w_tt_today_br_ivory },
         { R.drawable.w_bg_bpink, R.drawable.w_row_bg_bpink, R.drawable.w_row_done_bg_bpink, R.drawable.w_side_bg_bpink, R.drawable.w_dday_bg_bpink, R.drawable.w_tt_frame_bpink, R.drawable.w_tt_headbg_bpink, R.drawable.w_tt_empty_bpink, R.drawable.w_tt_today_bpink, R.drawable.w_tt_empty_br_bpink, R.drawable.w_tt_today_br_bpink },
@@ -49,7 +49,7 @@ final class WidgetTheme {
         return 0;                       // 모르는 이름이면 기본(화이트)
     }
 
-    static int bg(int theme, int part) { return BG[theme][part]; }
+    static int bg(int theme, int part) { return SETS[theme][part]; }
     static int text(int theme) { return TEXT[theme][0]; }
     static int dim(int theme) { return TEXT[theme][1]; }
     static int accent(int theme) { return TEXT[theme][2]; }
