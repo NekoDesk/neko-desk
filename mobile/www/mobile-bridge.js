@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.8-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.6.9-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -583,7 +583,8 @@
           merged = applyNotesMerge(merged, loc, remote);   // 일정은 항목별로 다시 판정
           merged = pickDated(merged, readBase(), loc, remote);  // 물·비타민은 날짜를 먼저 본다
           applyRemote(merged);
-          setBase(merged);
+          // 기준선은 여기서 옮기지 않는다. 아직 클라우드에 올라가지 않았는데
+          // 옮겨 두면 곧이은 올리기가 '나는 안 고쳤다'로 보고 예전 값을 도로 올린다.
           localStorage.removeItem(CLAIM_KEY);
           if (claim) toast('info', '☁️ 동기화', '게스트로 쓴 기록을 계정에 합쳤어요');
           syncStatus('내 변경 병합 (' + nowHHMM() + ')');
@@ -618,6 +619,7 @@
     if (isEmptyPayload(local)) { pushStatus('올릴 내용 없음'); return Promise.resolve(false); }
     // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
     // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
+    var pushed = null;                       // 실제로 올린 것 (기준선은 이걸로 잡아야 한다)
     return authFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' })
       .then(function (rg) { return rg && rg.ok ? rg.json() : null; })
       .then(function (rows) {
@@ -626,6 +628,7 @@
         if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
         if (remote) payload = pickDated(payload, readBase(), local, remote);
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
+        pushed = payload;
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
         return authFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
           method: 'POST',
@@ -644,7 +647,7 @@
         }).catch(function () {});
         // 방금 올린 로컬 상태를 기억해 둔다 (다음 비교 기준)
         try { localStorage.setItem(LAST_PUSH_KEY, JSON.stringify(local)); } catch (e) {}
-        setBase(local);
+        setBase(pushed || local);            // 클라우드에 있는 것과 같아야 한다
         pushStatus('완료 (' + nowHHMM() + ')');
       } else {
         pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));

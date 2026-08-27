@@ -1204,7 +1204,8 @@ async function cloudPull(notify) {
       merged = pickDated(merged, st.base, local, remote); // 물·비타민은 날짜를 먼저 본다
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
-      setCloudBase(merged);
+      // 기준선은 여기서 옮기지 않는다 — 아직 안 올라간 값이라, 옮겨 두면
+      // 곧이은 올리기가 '나는 안 고쳤다'로 보고 예전 값을 도로 올린다.
       cloudStatus('pull', 'sync_merged');
       cloudBusy = false;
       return cloudPush(true);
