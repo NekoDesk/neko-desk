@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 오늘 마신 물과 챙겨 먹은 비타민 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/w_side_bg"
+    android:paddingLeft="10dp" android:paddingRight="10dp"
+    android:paddingTop="8dp" android:paddingBottom="8dp"
+    android:layout_marginBottom="8dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/w_water_lbl"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="10sp" android:textColor="#9AA0A6" android:text="" />
+        <LinearLayout android:id="@+id/w_water_row"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/w_vita_box"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+        <TextView android:id="@+id/w_vita_lbl"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="10sp" android:textColor="#9AA0A6" android:text="" />
+        <LinearLayout android:id="@+id/w_vita_row"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </LinearLayout>
+</LinearLayout>

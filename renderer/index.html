@@ -6202,6 +6202,41 @@ function removeSlashChar() {
   }
 }
 
+/**
+ * 빈 할 일 줄에서 백스페이스를 누르면 한 번에 지운다.
+ * 넣을 때 체크상자와 빈칸(&nbsp;)이 같이 들어가서, 그냥 두면
+ * 글씨를 다 지운 뒤에도 두세 번을 더 눌러야 줄이 없어졌다.
+ * @return true면 이 자리에서 처리했다는 뜻
+ */
+function memoTodoBackspace(e) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !sel.isCollapsed) return false;
+  let node = sel.anchorNode;
+  if (node && node.nodeType === 3) node = node.parentElement;
+  const todo = node && node.closest ? node.closest('.memo-todo') : null;
+  if (!todo) return false;
+
+  // 글씨가 남아 있으면 평소대로 한 글자씩 지운다
+  const text = (todo.textContent || '').replace(/ /g, '').trim();
+  if (text) return false;
+
+  e.preventDefault();
+  const line = document.createElement('div');
+  line.innerHTML = '<br>';
+  todo.replaceWith(line);
+
+  // 커서를 그 줄로 옮긴다
+  try {
+    const r = document.createRange();
+    r.setStart(line, 0);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  } catch (err) {}
+  memoChanged();
+  return true;
+}
+
 function runSlash(i) {
   const c = SLASH_CMDS[i];
   closeSlashMenu();
@@ -6538,6 +6573,7 @@ function initMemo() {
       if (e.key === 'Escape')    { e.preventDefault(); closeSlashMenu(); return; }
     }
     if (e.key === '/') setTimeout(openSlashMenu, 0);   // 글자가 들어간 뒤 위치를 잡는다
+    if (e.key === 'Backspace' && memoTodoBackspace(e)) return;
   });
   el.addEventListener('blur', () => { S.memoDoc = el.innerHTML; saveState(); closeSlashMenu(); });
   // 체크박스는 눌린 상태도 저장돼야 한다

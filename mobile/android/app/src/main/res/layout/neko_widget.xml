@@ -12,6 +12,9 @@
     android:background="@drawable/w_bg"
     android:padding="10dp">
 
+    <include layout="@layout/w_header" />
+    <include layout="@layout/w_health" />
+
     <!-- D-day — 등록된 만큼 전부 -->
     <LinearLayout
         android:id="@+id/w_dday_list"

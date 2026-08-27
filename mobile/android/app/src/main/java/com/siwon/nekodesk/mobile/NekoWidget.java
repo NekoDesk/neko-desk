@@ -28,6 +28,14 @@ import org.json.JSONObject;
  */
 public class NekoWidget extends AppWidgetProvider {
 
+    /** 이 위젯이 보여줄 것들 — 자식 클래스가 정한다 */
+    protected int layoutId()   { return R.layout.neko_widget; }
+    protected boolean showHealth() { return true; }   // 물·비타민
+    protected boolean showDday()   { return true; }
+    protected boolean showTodo()   { return true; }
+    protected boolean showTable()  { return false; }  // 오늘 시간표
+
+
     public static final String PREFS = "neko_widget";
     public static final String KEY_DATA = "data";
     /** 앱에서 내용을 바꾼 뒤 보내는 신호 */
@@ -107,7 +115,7 @@ public class NekoWidget extends AppWidgetProvider {
 
     private void render(Context ctx, AppWidgetManager mgr, int id) {
         String pkg = ctx.getPackageName();
-        RemoteViews v = new RemoteViews(pkg, R.layout.neko_widget);
+        RemoteViews v = new RemoteViews(pkg, layoutId());
 
         String json = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                          .getString(KEY_DATA, null);
@@ -126,10 +134,13 @@ public class NekoWidget extends AppWidgetProvider {
         String todosDate = o.optString("todosDate", "");
         boolean stale = todosDate.length() > 0 && !todosDate.equals(todayKey());
 
+        // ── 물 · 비타민 ──
+        if (showHealth()) fillHealth(v, pkg, o);
+
         // ── D-day: 등록된 만큼 전부 ──
-        JSONArray ddays = o.optJSONArray("ddays");
-        v.removeAllViews(R.id.w_dday_list);
+        JSONArray ddays = showDday() ? o.optJSONArray("ddays") : null;
         int ddayCount = 0;
+        if (showDday()) v.removeAllViews(R.id.w_dday_list);
         for (int i = 0; ddays != null && i < ddays.length(); i++) {
             JSONObject d = ddays.optJSONObject(i);
             if (d == null) continue;
@@ -145,12 +156,12 @@ public class NekoWidget extends AppWidgetProvider {
             v.addView(R.id.w_dday_list, row);
             ddayCount++;
         }
-        v.setViewVisibility(R.id.w_dday_list, ddayCount > 0 ? View.VISIBLE : View.GONE);
+        if (showDday()) v.setViewVisibility(R.id.w_dday_list, ddayCount > 0 ? View.VISIBLE : View.GONE);
 
         // ── 오늘 할 일 ──
-        JSONArray todos = stale ? null : o.optJSONArray("todos");
-        v.removeAllViews(R.id.w_today_list);
+        JSONArray todos = (stale || !showTodo()) ? null : o.optJSONArray("todos");
         int shown = 0;
+        if (showTodo()) v.removeAllViews(R.id.w_today_list);
         for (int i = 0; todos != null && i < todos.length(); i++) {
             JSONObject it = todos.optJSONObject(i);
             String text = (it == null) ? "" : it.optString("text", "");
@@ -196,25 +207,32 @@ public class NekoWidget extends AppWidgetProvider {
                 if (d >= 0) doneCount = d;
             }
         }
-        v.setViewVisibility(R.id.w_head_box, shown > 0 ? View.VISIBLE : View.GONE);
-        if (shown > 0) {
+        if (showTodo()) v.setViewVisibility(R.id.w_head_box, shown > 0 ? View.VISIBLE : View.GONE);
+        if (showTodo() && shown > 0) {
             v.setTextViewText(R.id.w_head_title, headTitle);
             v.setTextViewText(R.id.w_head_count,
                     doneCount + " / " + total + (doneWord.length() > 0 ? " " + doneWord : ""));
         }
 
-        if (shown == 0) {
-            v.setViewVisibility(R.id.w_empty, View.VISIBLE);
-            if (emptyText.length() > 0) v.setTextViewText(R.id.w_empty, emptyText);
-        } else {
-            v.setViewVisibility(R.id.w_empty, View.GONE);
+        if (showTodo()) {
+            if (shown == 0) {
+                v.setViewVisibility(R.id.w_empty, View.VISIBLE);
+                if (emptyText.length() > 0) v.setTextViewText(R.id.w_empty, emptyText);
+            } else {
+                v.setViewVisibility(R.id.w_empty, View.GONE);
+            }
         }
 
-        // ── 어제 · 내일 ──
-        fillSide(v, pkg, o.optJSONObject("yesterday"), stale,
-                 R.id.w_yday_title, R.id.w_yday_list, R.id.w_yday_empty, noneWord);
-        fillSide(v, pkg, o.optJSONObject("tomorrow"), stale,
-                 R.id.w_tmr_title, R.id.w_tmr_list, R.id.w_tmr_empty, noneWord);
+        // ── 오늘 시간표 ──
+        if (showTable()) fillTable(v, pkg, o, stale);
+
+        // ── 어제 · 내일 (기본 위젯에만 있다) ──
+        if (layoutId() == R.layout.neko_widget) {
+            fillSide(v, pkg, o.optJSONObject("yesterday"), stale,
+                     R.id.w_yday_title, R.id.w_yday_list, R.id.w_yday_empty, noneWord);
+            fillSide(v, pkg, o.optJSONObject("tomorrow"), stale,
+                     R.id.w_tmr_title, R.id.w_tmr_list, R.id.w_tmr_empty, noneWord);
+        }
 
         // 위젯을 누르면 앱이 열린다
         Intent open = new Intent(ctx, MainActivity.class);
@@ -224,6 +242,61 @@ public class NekoWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.w_root, pi);
 
         mgr.updateAppWidget(id, v);
+    }
+
+    /** 오늘 마신 물과 챙겨 먹은 비타민 */
+    private void fillHealth(RemoteViews v, String pkg, JSONObject o) {
+        JSONObject h = o.optJSONObject("health");
+        if (h == null) {
+            v.setViewVisibility(R.id.w_water_row, View.GONE);
+            v.setViewVisibility(R.id.w_vita_box, View.GONE);
+            return;
+        }
+        v.setTextViewText(R.id.w_water_lbl, h.optString("waterLabel", ""));
+        int wDone = h.optInt("waterDone", 0), wGoal = h.optInt("waterGoal", 8);
+        v.removeAllViews(R.id.w_water_row);
+        for (int i = 0; i < wGoal && i < 12; i++) {
+            RemoteViews c = new RemoteViews(pkg, R.layout.w_cup);
+            setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_on : R.drawable.w_cup_off);
+            v.addView(R.id.w_water_row, c);
+        }
+        v.setViewVisibility(R.id.w_water_row, View.VISIBLE);
+
+        int vDone = h.optInt("vitaDone", 0), vGoal = h.optInt("vitaGoal", 0);
+        if (vGoal <= 0) {
+            v.setViewVisibility(R.id.w_vita_box, View.GONE);
+            return;
+        }
+        v.setViewVisibility(R.id.w_vita_box, View.VISIBLE);
+        v.setTextViewText(R.id.w_vita_lbl, h.optString("vitaLabel", ""));
+        v.removeAllViews(R.id.w_vita_row);
+        for (int i = 0; i < vGoal && i < 12; i++) {
+            RemoteViews c = new RemoteViews(pkg, R.layout.w_pill);
+            setBg(c, R.id.i_dot, i < vDone ? R.drawable.w_pill_on : R.drawable.w_pill_off);
+            v.addView(R.id.w_vita_row, c);
+        }
+    }
+
+    /** 오늘 시간표 */
+    private void fillTable(RemoteViews v, String pkg, JSONObject o, boolean stale) {
+        v.removeAllViews(R.id.w_tt_list);
+        JSONObject tt = stale ? null : o.optJSONObject("table");
+        JSONArray items = tt == null ? null : tt.optJSONArray("items");
+        v.setTextViewText(R.id.w_tt_title, tt == null ? "" : tt.optString("label", ""));
+        int n = 0;
+        for (int i = 0; items != null && i < items.length(); i++) {
+            JSONObject it = items.optJSONObject(i);
+            if (it == null) continue;
+            String label = it.optString("label", "");
+            if (label.length() == 0) continue;
+            RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_item);
+            row.setTextViewText(R.id.i_time, it.optString("time", ""));
+            row.setTextViewText(R.id.i_text, label);
+            if (it.optBoolean("rest", false)) row.setTextColor(R.id.i_time, 0xFFE09A4B);
+            v.addView(R.id.w_tt_list, row);
+            n++;
+        }
+        v.setViewVisibility(R.id.w_tt_title, n > 0 ? View.VISIBLE : View.GONE);
     }
 
     /** 어제·내일 칸 하나를 채운다 */

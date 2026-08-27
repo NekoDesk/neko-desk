@@ -46,6 +46,33 @@
                 android:resource="@xml/neko_widget_info" />
         </receiver>
 
+
+        <receiver android:name=".NekoWidgetFull" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.siwon.nekodesk.mobile.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/neko_widget_full_info" />
+        </receiver>
+
+        <receiver android:name=".NekoWidgetDday" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.siwon.nekodesk.mobile.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/neko_widget_dday_info" />
+        </receiver>
+
+        <receiver android:name=".NekoWidgetTodo" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.siwon.nekodesk.mobile.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/neko_widget_todo_info" />
+        </receiver>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

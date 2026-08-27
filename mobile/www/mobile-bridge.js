@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.5.8-mobile';
+  var APP_VERSION = '2.6.0-mobile';
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -661,11 +661,14 @@
   // 위젯에 쓰는 낱말 — 앱 언어를 따라간다
   var WIDGET_WORDS = {
     ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
-          am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음' },
+          am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음',
+          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 오늘 시간표' },
     en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
-          am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None' },
+          am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None',
+          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Today' },
     ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
-          am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし' }
+          am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし',
+          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 今日の時間割' }
   };
 
   var _widgetPlugin;   // undefined = 아직 안 찾아봄
@@ -718,6 +721,19 @@
     };
   }
 
+  /** 오늘 요일의 시간표 칸들 */
+  function todayTable(src, w) {
+    var blocks = Array.isArray(src.blocks) ? src.blocks : [];
+    var dow = new Date().getDay();
+    return blocks
+      .filter(function (b) { return b && b.day === dow && b.start && b.end; })
+      .sort(function (a, b) { return String(a.start).localeCompare(String(b.start)); })
+      .slice(0, 6)
+      .map(function (b) {
+        return { time: String(b.start), label: String(b.label || ''), rest: b.type === 'rest' };
+      });
+  }
+
   /** 위젯에 보낼 내용을 만든다 */
   function buildWidgetData() {
     var src = null;
@@ -764,6 +780,20 @@
     // 어제 · 내일
     out.yesterday = sideData(src, -1, w.yday);
     out.tomorrow = sideData(src, 1, w.tmr);
+
+    // 오늘 마신 물 · 챙겨 먹은 비타민 (날짜가 바뀌었으면 0으로 본다)
+    var today = new Date().toDateString();
+    var vitaGoal = parseInt(src.vitaminGoal, 10);
+    if (!(vitaGoal >= 1 && vitaGoal <= 12)) vitaGoal = 1;
+    out.health = {
+      waterLabel: w.water, waterGoal: 8,
+      waterDone: (src.waterDate === today) ? Math.min(8, Number(src.waterCups) || 0) : 0,
+      vitaLabel: w.vita, vitaGoal: vitaGoal,
+      vitaDone: (src.vitaminDate === today) ? Math.min(vitaGoal, Number(src.vitaminTaken) || 0) : 0,
+    };
+
+    // 오늘 시간표
+    out.table = { label: w.table, items: todayTable(src, w) };
     return out;
   }
 
@@ -952,6 +982,64 @@
     //   getAutoLaunch/setAutoLaunch (부팅 시 자동 실행 — 데스크톱 전용)
   };
 
+  /**
+   * 할 일 목록 차례를 폰에 맞게 바꾼다.
+   * 캘린더(접을 수 있음) → 날짜별 할 일 → 알람 → D-day
+   * 알람과 D-day 는 자주 안 쓰는데 위에 있어서 할 일이 한참 아래로 밀렸다.
+   */
+  function reorderSchedulePage() {
+    var page = document.getElementById('dp-schedule');
+    if (!page) return;
+    var grid = page.querySelector('.grid2');
+    if (!grid) return;
+
+    var calCard = document.getElementById('calLeftGrid');
+    calCard = calCard && calCard.closest ? calCard.closest('.card') : null;
+    var alarmCard = document.getElementById('alarmList');
+    alarmCard = alarmCard && alarmCard.closest ? alarmCard.closest('.card') : null;
+    var ddayCard = document.getElementById('ddayList');
+    ddayCard = ddayCard && ddayCard.closest ? ddayCard.closest('.card') : null;
+    var todoCard = document.getElementById('calRightPanel');
+    todoCard = todoCard && todoCard.closest ? todoCard.closest('.card') : null;
+
+    // 캘린더 · 할 일 · 알람 · D-day 차례로 격자에 다시 담는다
+    [calCard, todoCard, alarmCard, ddayCard].forEach(function (c) {
+      if (c) grid.appendChild(c);
+    });
+
+    if (calCard) addCalendarFold(calCard);
+  }
+
+  /** 캘린더를 접었다 폈다 (접힘 상태는 기억한다) */
+  function addCalendarFold(card) {
+    if (card._mFolded) return;
+    card._mFolded = true;
+    var body = document.getElementById('calLeftGrid');
+    if (!body) return;
+
+    var hd = document.createElement('div');
+    hd.className = 'm-fold';
+    var open = localStorage.getItem('neko_m_cal_open') !== '0';
+    var label = document.createElement('span');
+    var chev = document.createElement('span');
+    chev.className = 'chev';
+    hd.appendChild(label);
+    hd.appendChild(chev);
+    card.insertBefore(hd, card.firstChild);
+
+    var paint = function () {
+      label.textContent = '📅 ' + (open ? '달력 접기' : '달력 펼치기');
+      chev.textContent = open ? '▲' : '▼';
+      body.style.display = open ? '' : 'none';
+    };
+    hd.onclick = function () {
+      open = !open;
+      try { localStorage.setItem('neko_m_cal_open', open ? '1' : '0'); } catch (e) {}
+      paint();
+    };
+    paint();
+  }
+
   // ═══════════════════════════════════════════════
   // 탭 바: 아이콘 위 / 라벨 아래, 균등 너비
   // ═══════════════════════════════════════════════
@@ -1117,9 +1205,26 @@
       '}',
       '#dashPanel .dtab .mtab-ico { font-size:17px; line-height:1; }',
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
-      // 모바일에는 홈 화면이 없다 — 할 일 목록이 첫 화면
-      '#dashPanel .dtab[data-page="home"] { display:none !important; }',
-      '#dp-home { display:none !important; }',
+      // 홈 화면 — 좁은 화면에 맞춰 한 줄로 쌓고, 큰 고양이는 뺀다
+      '#dp-home .cat-display { display:none !important; }',
+      '#dp-home .grid2 { grid-template-columns:1fr !important; gap:12px !important; }',
+      '#dp-home #homeCycleCol { min-width:0 !important; }',
+      '#dp-home .cycle-body { flex-direction:column !important; align-items:stretch !important; gap:14px !important; }',
+      '#dp-home .pomo-wrap { min-height:190px !important; }',
+      '#dp-home .pomo { max-height:190px !important; }',
+      '#dp-home .water-col { margin-right:0 !important; }',
+      '#dp-home .water-cups, #dp-home .vita-pills { grid-template-columns:repeat(8,1fr) !important; }',
+      // 시간표는 홈 맨 아래. 좁으니 칸을 조금 넓게 잡는다
+      '#dp-home #homeWorkCard { overflow:visible !important; }',
+      '#dp-home .tt-body { max-height:44vh !important; }',
+      '#dp-home .tt-head div, #dp-home .tt-times span { font-size:9px !important; }',
+      '#dp-home .tt-bar { flex-wrap:wrap !important; }',
+
+      // 캘린더 접기 머리글
+      '.m-fold { display:flex; align-items:center; justify-content:space-between;',
+      '  cursor:pointer; user-select:none; font-size:13px; color:var(--white);',
+      "  font-family:'Galmuri14',monospace; padding:2px 0 8px; }",
+      '.m-fold .chev { color:var(--gray); font-size:11px; }',
 
       // ── 할 일 목록: 좁은 화면에서 잘리지 않게 ──
       '#dp-schedule .grid2 { gap:12px !important; }',
@@ -1252,22 +1357,15 @@
       // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
       hookPhotoBooth();
 
-      // 3-2) 모바일 첫 화면은 할 일 목록. 메모장은 목록 아래로 내린다.
+      // 3-2) 할 일 목록 차례 바꾸기 + 메모장은 맨 아래로
+      try { reorderSchedulePage(); } catch (e) {}
       try {
         var page = document.getElementById('dp-schedule');
         var memo = document.getElementById('scheduleMemoTxt');
         var memoCard = memo && memo.closest ? memo.closest('.card') : null;
         if (page && memoCard && memoCard.parentElement !== page) {
           memoCard.style.marginTop = '12px';
-          page.appendChild(memoCard);          // .grid2 밖 → 항상 맨 아래
-        }
-        // 홈이 없으므로 홈으로 가는 동작(헤더 로고 등)은 할 일 목록으로 보낸다
-        if (typeof window.dTab === 'function' && !window.dTab._mNoHome) {
-          var origTab = window.dTab;
-          window.dTab = function (name) {
-            return origTab.call(this, name === 'home' ? 'schedule' : name);
-          };
-          window.dTab._mNoHome = true;
+          page.appendChild(memoCard);          // 항상 맨 아래
         }
         if (typeof window.dTab === 'function') window.dTab('schedule');
       } catch (e) {}
