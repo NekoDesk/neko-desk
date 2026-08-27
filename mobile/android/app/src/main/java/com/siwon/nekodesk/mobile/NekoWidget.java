@@ -370,14 +370,16 @@ public class NekoWidget extends AppWidgetProvider {
         RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);
         corner.setTextViewText(R.id.i_text, "");
         v.addView(R.id.w_tt_head, corner);
+        int todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1;
+
         for (int d = 0; d < 7; d++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_tt_dow);
             c.setTextViewText(R.id.i_text, dows == null ? "" : dows.optString(d, ""));
-            if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
+            // 오늘이 한눈에 보이게 노랑, 일요일은 붉게
+            if (d == todayDow) c.setTextColor(R.id.i_text, 0xFFD9A93E);
+            else if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
             v.addView(R.id.w_tt_head, c);
         }
-
-        int todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1;
 
         for (int h = from; h < to; h++) {
             RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_row);
@@ -388,7 +390,7 @@ public class NekoWidget extends AppWidgetProvider {
             for (int d = 0; d < 7; d++) {
                 RemoteViews cell = new RemoteViews(pkg, TT_CELL_LAY[size]);
                 JSONObject hit = null;
-                boolean starts = false;
+                boolean starts = false, ends = false;
                 for (int i = 0; blocks != null && i < blocks.length(); i++) {
                     JSONObject b = blocks.optJSONObject(i);
                     if (b == null || b.optInt("day", -1) != d) continue;
@@ -397,17 +399,21 @@ public class NekoWidget extends AppWidgetProvider {
                     if (h * 60 < e && (h + 1) * 60 > s) {
                         hit = b;
                         starts = (s >= h * 60 && s < (h + 1) * 60);
+                        ends = (e > h * 60 && e <= (h + 1) * 60);
+                        // 보이는 범위 밖으로 이어지면 잘린 쪽은 모서리를 남기지 않는다
+                        if (h == from && s < h * 60) starts = false;
+                        if (h == to - 1 && e > (h + 1) * 60) ends = false;
                         break;
                     }
                 }
                 if (hit != null) {
                     int ci = hit.optInt("color", -1);
-                    setBg(cell, R.id.i_text, (ci >= 0 && ci < TT_COLORS.length)
-                            ? TT_COLORS[ci]
-                            : (hit.optBoolean("rest", false) ? R.drawable.w_tt_rest : R.drawable.w_tt_work));
+                    int style = (ci >= 0 && ci < 6) ? (2 + ci)
+                              : (hit.optBoolean("rest", false) ? 1 : 0);
+                    setBg(cell, R.id.i_text, TT_BG[style][ttPiece(starts, ends)]);
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
                 } else if (d == todayDow) {
-                    cell.setTextColor(R.id.i_text, 0xFF9AA0A6);
+                    setBg(cell, R.id.i_text, R.drawable.w_tt_today);
                 }
                 row.addView(R.id.i_row, cell);
             }
@@ -415,10 +421,27 @@ public class NekoWidget extends AppWidgetProvider {
         }
     }
 
-    /** 사용자가 고른 칸 색 (앱과 같은 여섯 가지) */
-    private static final int[] TT_COLORS = {
-        R.drawable.w_tt_c0, R.drawable.w_tt_c1, R.drawable.w_tt_c2,
-        R.drawable.w_tt_c3, R.drawable.w_tt_c4, R.drawable.w_tt_c5,
+    /**
+     * 한 일정이 여러 시간에 걸치면 한 덩어리로 보여야 한다.
+     * 시작 줄은 위만, 끝 줄은 아래만 둥글고, 가운데 줄은 각지게 이어 붙인다.
+     * 바깥 칸은 앱 화면과 같은 여덟 가지 색 (집중 · 쉼 · 골라 쓰는 여섯).
+     */
+    private static int ttPiece(boolean starts, boolean ends) {
+        if (starts && ends) return 0;      // 한 시간짜리
+        if (starts) return 1;              // 시작 줄
+        if (ends) return 3;                // 끝 줄
+        return 2;                          // 가운데
+    }
+
+    private static final int[][] TT_BG = {
+        { R.drawable.w_b_w_s,  R.drawable.w_b_w_t,  R.drawable.w_b_w_m,  R.drawable.w_b_w_b  },
+        { R.drawable.w_b_r_s,  R.drawable.w_b_r_t,  R.drawable.w_b_r_m,  R.drawable.w_b_r_b  },
+        { R.drawable.w_b_c0_s, R.drawable.w_b_c0_t, R.drawable.w_b_c0_m, R.drawable.w_b_c0_b },
+        { R.drawable.w_b_c1_s, R.drawable.w_b_c1_t, R.drawable.w_b_c1_m, R.drawable.w_b_c1_b },
+        { R.drawable.w_b_c2_s, R.drawable.w_b_c2_t, R.drawable.w_b_c2_m, R.drawable.w_b_c2_b },
+        { R.drawable.w_b_c3_s, R.drawable.w_b_c3_t, R.drawable.w_b_c3_m, R.drawable.w_b_c3_b },
+        { R.drawable.w_b_c4_s, R.drawable.w_b_c4_t, R.drawable.w_b_c4_m, R.drawable.w_b_c4_b },
+        { R.drawable.w_b_c5_s, R.drawable.w_b_c5_t, R.drawable.w_b_c5_m, R.drawable.w_b_c5_b },
     };
 
     private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
