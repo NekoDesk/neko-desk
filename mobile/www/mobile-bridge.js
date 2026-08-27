@@ -7,11 +7,13 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.7.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.8.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
   window.NEKO_ASSET_BASE = 'assets/';
+  // 폰에서는 물 알림을 한 시간에 한 번만 (30분마다는 성가시다)
+  window.NEKO_WATER_MS = 60 * 60 * 1000;
   var SESSION_KEY = 'neko_mobile_session';
   var STORAGE_KEY = 'nekodesk_v3';        // renderer와 동일한 로컬 저장 키
   var SYNC_TS_KEY = 'neko_sync_pushed_at';
@@ -424,6 +426,7 @@
       var memo = document.getElementById('scheduleMemoTxt');
       if (memo && document.activeElement !== memo) memo.value = st.scheduleMemo || '';
       pushWidget(false);          // PC에서 바뀐 내용도 바탕화면 위젯에 반영
+      scheduleNotiSync();         // PC에서 고친 알람 시각도 폰 알림에 반영
     } catch (e) {}
   }
 
@@ -606,6 +609,28 @@
     return merged;
   }
 
+  /**
+   * '통째로' 다뤄야 하는 설정 목록.
+   *
+   * vitaminTimes 처럼 시각만 담긴 목록은 id가 없어 항목 단위로 합칠 수가 없다.
+   * 그렇다고 합집합을 쓰면 14:00을 15:00으로 고쳤을 때 둘 다 남아 버린다.
+   * 이런 키는 목록 전체를 한 값으로 보고, 기준선에서 달라진 쪽 것을 쓴다.
+   */
+  var WHOLE_KEYS = ['vitaminTimes'];
+
+  function pickWhole(merged, base, local, remote) {
+    if (!merged || !local || !remote) return merged;
+    WHOLE_KEYS.forEach(function (k) {
+      if (local[k] === undefined && remote[k] === undefined) return;
+      var b = base ? base[k] : undefined;
+      var lChanged = !jeq(local[k], b), rChanged = !jeq(remote[k], b);
+      if (rChanged && !lChanged) merged[k] = remote[k];
+      else if (lChanged) merged[k] = local[k];        // 내가 고쳤으면 내 것
+      else merged[k] = (local[k] !== undefined) ? local[k] : remote[k];
+    });
+    return merged;
+  }
+
   function readBase() {
     try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; }
   }
@@ -748,6 +773,7 @@
                              : merge3(readBase(), loc, remote);
           merged = applyNotesMerge(merged, loc, remote);   // 일정은 항목별로 다시 판정
           merged = pickDated(merged, readBase(), loc, remote);  // 물·비타민은 날짜를 먼저 본다
+          merged = pickWhole(merged, readBase(), loc, remote);  // 설정 목록은 통째로
           applyRemote(merged);
           // 기준선은 여기서 옮기지 않는다. 아직 클라우드에 올라가지 않았는데
           // 옮겨 두면 곧이은 올리기가 '나는 안 고쳤다'로 보고 예전 값을 도로 올린다.
@@ -793,6 +819,7 @@
         var payload = remote ? merge3(readBase(), local, remote) : local;
         if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
         if (remote) payload = pickDated(payload, readBase(), local, remote);
+        if (remote) payload = pickWhole(payload, readBase(), local, remote);
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
         pushed = payload;
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
@@ -851,12 +878,201 @@
           orig.apply(this, arguments);
           schedulePush();
           try { pushWidget(false); } catch (e) {}
+          try { scheduleNotiSync(); } catch (e) {}
         };
         window.saveState._syncWrapped = true;
       }
       return;
     }
     if (tries < 10) setTimeout(function () { wrapSaveState(tries + 1); }, 500);
+  }
+
+
+  // ═══════════════════════════════════════════════
+  // 폰 알림 — 앱이 꺼져 있어도 울리도록 미리 예약한다
+  // ═══════════════════════════════════════════════
+  //
+  // 앱 안에서 냥 소리를 내는 방식은 화면을 켜 두고 있을 때만 통했다.
+  // 안드로이드는 뒤로 간 웹뷰의 타이머를 얼려 버리므로, 알람이 울릴
+  // 시각을 시스템에 미리 넘겨 두어야 한다.
+  //
+  // 시각이 바뀌면 통째로 지우고 다시 넣는다. 개수가 수십 개뿐이라
+  // 부분 갱신을 따지는 것보다 이쪽이 틀릴 여지가 적다.
+
+  var NOTI_WORDS = {
+    ko: { water: '물 마실 시간', waterBody: '물 한 잔 마시고 와요',
+          vita: '비타민 먹을 시간', vitaBody: '오늘 챙길 비타민이 남아 있어요', alarm: '알람' },
+    en: { water: 'Water time', waterBody: 'Go grab a glass of water',
+          vita: 'Vitamin time', vitaBody: "Don't forget today's vitamins", alarm: 'Alarm' },
+    ja: { water: '水を飲む時間', waterBody: 'コップ一杯どうぞ',
+          vita: 'サプリの時間', vitaBody: '今日の分がまだ残っています', alarm: 'アラーム' }
+  };
+
+  var NOTI_CHANNEL = 'neko_remind';
+  var _notiPlugin;
+  var _notiTimer = null;
+  var _notiLastPlan = '';
+
+  function notiPlugin() {
+    if (_notiPlugin !== undefined) return _notiPlugin;
+    _notiPlugin = null;
+    try {
+      var C = window.Capacitor;
+      if (C && typeof C.getPlatform === 'function' && C.getPlatform() === 'android'
+          && typeof C.registerPlugin === 'function') {
+        _notiPlugin = C.registerPlugin('LocalNotifications');
+      }
+    } catch (e) {}
+    return _notiPlugin;
+  }
+
+  /** 알림 통로를 만든다 — 소리·진동은 사용자가 기기 설정에서 바꿀 수 있다 */
+  function ensureNotiChannel(N) {
+    if (!N.createChannel) return Promise.resolve();
+    return N.createChannel({
+      id: NOTI_CHANNEL,
+      name: 'NEKO DESK 알림',
+      description: '알람 · 물 · 비타민',
+      importance: 4,               // 소리를 내며 뜨는 등급
+      visibility: 1,
+      sound: 'cat01.mp3',          // res/raw/cat01.mp3
+      vibration: true
+    }).catch(function () {});
+  }
+
+  function hhmmToParts(s) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ''));
+    return m ? { hour: Number(m[1]), minute: Number(m[2]) } : null;
+  }
+
+  /** 물 알림을 넣을 시각대 (모바일은 한 시간에 한 번) */
+  function waterHours(src) {
+    var s = src.schedule || {};
+    var from = hhmmToParts(s.ws) || { hour: 9 };
+    var to = hhmmToParts(s.we) || { hour: 18 };
+    var a = from.hour, b = to.hour;
+    if (src.waterWorkOnly === false) { a = 9; b = 21; }   // 업무시간 제한을 껐으면 낮 동안
+    if (b <= a) b = a + 1;
+    if (b - a > 14) b = a + 14;                            // 하루 열네 번을 넘기지 않는다
+    var out = [];
+    for (var h = a; h < b; h++) out.push(h);
+    return out;
+  }
+
+  /**
+   * 지금 설정으로 넣어야 할 알림 목록을 만든다.
+   * id는 종류마다 번호대를 나눠 두어 서로 밟지 않는다.
+   */
+  function buildNotifications(src) {
+    var w = NOTI_WORDS[src.language] || NOTI_WORDS.ko;
+    var list = [];
+
+    // 물 — 정시마다
+    waterHours(src).forEach(function (h, i) {
+      list.push({
+        id: 1000 + i,
+        title: '💧 ' + w.water,
+        body: w.waterBody,
+        schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true }
+      });
+    });
+
+    // 비타민 — 정해 둔 시각마다
+    if (src.vitaminOn !== false) {
+      var times = src.vitaminTimes;
+      if (!Array.isArray(times) || !times.length) times = src.vitaminTime ? [src.vitaminTime] : [];
+      times.forEach(function (tm, i) {
+        var p = hhmmToParts(tm);
+        if (!p || i >= 20) return;
+        list.push({
+          id: 2000 + i,
+          title: '💊 ' + w.vita,
+          body: w.vitaBody,
+          schedule: { on: { hour: p.hour, minute: p.minute }, allowWhileIdle: true }
+        });
+      });
+    }
+
+    // 직접 등록한 알람 — 요일 반복
+    (Array.isArray(src.alarms) ? src.alarms : []).forEach(function (a, i) {
+      if (!a || a.on === false || i >= 30) return;
+      var p = hhmmToParts(a.time);
+      if (!p) return;
+      var label = String(a.label || w.alarm);
+      var days = (Array.isArray(a.days) && a.days.length) ? a.days : null;
+      if (!days) {
+        list.push({
+          id: 3000 + i * 8,
+          title: '⏰ ' + label, body: label,
+          schedule: { on: { hour: p.hour, minute: p.minute }, allowWhileIdle: true }
+        });
+        return;
+      }
+      days.forEach(function (d) {
+        if (!(d >= 0 && d <= 6)) return;
+        list.push({
+          id: 3000 + i * 8 + d,
+          title: '⏰ ' + label, body: label,
+          // Capacitor의 weekday는 일요일이 1
+          schedule: { on: { weekday: d + 1, hour: p.hour, minute: p.minute }, allowWhileIdle: true }
+        });
+      });
+    });
+
+    list.forEach(function (n) {
+      n.channelId = NOTI_CHANNEL;
+      n.schedule.repeats = true;
+    });
+    return list;
+  }
+
+  /** 예약을 지금 설정에 맞춘다 (바뀐 게 없으면 아무것도 안 한다) */
+  function syncNotifications() {
+    var N = notiPlugin();
+    if (!N) return;
+    var src = null;
+    try { src = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
+    if (!src) src = getS();
+    if (!src) return;
+
+    var list = buildNotifications(src);
+    var plan;
+    try { plan = JSON.stringify(list); } catch (e) { return; }
+    if (plan === _notiLastPlan) return;
+
+    ensureNotiChannel(N).then(function () {
+      return N.checkPermissions ? N.checkPermissions() : { display: 'granted' };
+    }).then(function (st) {
+      if (st && st.display === 'granted') return st;
+      return N.requestPermissions ? N.requestPermissions() : st;
+    }).then(function (st) {
+      if (!st || st.display !== 'granted') return;      // 사용자가 거절하면 조용히 넘어간다
+      // 예전 예약을 걷어내고 새로 넣는다
+      return (N.getPending ? N.getPending() : Promise.resolve({ notifications: [] }))
+        .then(function (pend) {
+          var old = (pend && pend.notifications) || [];
+          if (!old.length) return;
+          return N.cancel({ notifications: old.map(function (o) { return { id: o.id }; }) });
+        })
+        .then(function () {
+          if (!list.length) return;
+          return N.schedule({ notifications: list });
+        })
+        .then(function () { _notiLastPlan = plan; });
+    }).catch(function () {
+      // 정확한 시각 예약이 막힌 기기에서는 대략적인 시각으로라도 넣는다
+      try {
+        list.forEach(function (n) { delete n.schedule.allowWhileIdle; });
+        N.schedule({ notifications: list }).then(function () { _notiLastPlan = plan; })
+          .catch(function () {});
+      } catch (e) {}
+    });
+  }
+
+  /** 설정이 바뀔 때마다 부르되, 연달아 불려도 한 번만 돌게 미룬다 */
+  function scheduleNotiSync() {
+    if (_notiTimer) clearTimeout(_notiTimer);
+    _notiTimer = setTimeout(function () { _notiTimer = null; syncNotifications(); }, 2000);
   }
 
   // ══════════════════════════════════════════════
@@ -1661,6 +1877,9 @@
 
       // 5) 사진을 갤러리에 저장하도록 교체
       try { wrapCapturePhoto(0); } catch (e) {}
+
+      // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
+      try { scheduleNotiSync(); } catch (e) {}
     }, 400);
   });
 })();

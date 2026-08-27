@@ -2865,7 +2865,8 @@ function startHealthReminders() {
     showBubble(msg); // 위젯 모드: 말풍선
     toast('info', L('water_toast_title'), msg); // 대시보드 모드에도 표시
     waterBubbleIdx++;
-  }, 30 * 60 * 1000); // 30분마다
+    // 폰에서는 한 시간에 한 번 (mobile-bridge가 NEKO_WATER_MS로 알려 준다)
+  }, window.NEKO_WATER_MS || 30 * 60 * 1000);
 
   // 비타민 알림 — 정해둔 시각마다 (영양제마다 먹는 때가 다르므로 여러 개)
   setInterval(() => {

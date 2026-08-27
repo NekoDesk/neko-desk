@@ -1151,6 +1151,28 @@ function pickDated(merged, base, local, remote) {
   return merged;
 }
 
+/**
+ * '통째로' 다뤄야 하는 설정 목록.
+ *
+ * vitaminTimes 처럼 시각만 담긴 목록은 id가 없어 항목 단위로 합칠 수가 없다.
+ * 그렇다고 합집합을 쓰면 14:00을 15:00으로 고쳤을 때 둘 다 남아 버린다.
+ * 이런 키는 목록 전체를 한 값으로 보고, 기준선에서 달라진 쪽 것을 쓴다.
+ */
+const WHOLE_KEYS = ['vitaminTimes'];
+
+function pickWhole(merged, base, local, remote) {
+  if (!merged || !local || !remote) return merged;
+  WHOLE_KEYS.forEach(k => {
+    if (local[k] === undefined && remote[k] === undefined) return;
+    const b = base ? base[k] : undefined;
+    const lChanged = !jeq(local[k], b), rChanged = !jeq(remote[k], b);
+    if (rChanged && !lChanged) merged[k] = remote[k];
+    else if (lChanged) merged[k] = local[k];        // 내가 고쳤으면 내 것
+    else merged[k] = (local[k] !== undefined) ? local[k] : remote[k];
+  });
+  return merged;
+}
+
 /** 동기화가 끝난 시점의 상태를 기준선으로 저장 */
 function setCloudBase(payload) {
   const b = {};
@@ -1292,6 +1314,7 @@ async function cloudPull(notify) {
                             : merge3(st.base, local, remote);
       merged = applyNotesMerge(merged, local, remote);   // 일정은 항목별로 다시 판정
       merged = pickDated(merged, st.base, local, remote); // 물·비타민은 날짜를 먼저 본다
+      merged = pickWhole(merged, st.base, local, remote); // 설정 목록은 통째로
       cloudBump();
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
       setSyncState({ claim: false });
@@ -1339,6 +1362,7 @@ async function cloudPush(force) {
         let merged = merge3(syncState().base, data, remoteNow);
         merged = applyNotesMerge(merged, data, remoteNow);   // 일정은 항목별로
         merged = pickDated(merged, syncState().base, data, remoteNow);
+        merged = pickWhole(merged, syncState().base, data, remoteNow);
         CLOUD_KEYS.forEach(k => { delete data[k]; });
         Object.keys(merged).forEach(k => { data[k] = merged[k]; });
       }
