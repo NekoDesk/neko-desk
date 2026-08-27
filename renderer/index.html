@@ -495,16 +495,17 @@ body.theme-mono {
   border-radius: 7px; background: var(--card); position: relative;
   cursor: default; overflow: hidden;
 }
+/* 물컵과 같은 방향 — 챙겨 먹어야 할 만큼 채워져 있다가, 먹으면 비워진다 */
 .vpill::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
-  background: var(--border);
+  background: #f0913f;
 }
 .vpill::after {
   content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 50%;
-  background: color-mix(in srgb, var(--border), #fff 25%);
+  background: #fdf6ec;
 }
-.vpill.done::before { background: #f0913f; }
-.vpill.done::after  { background: #fdf6ec; }
+.vpill.done::before { background: var(--border); }
+.vpill.done::after  { background: color-mix(in srgb, var(--border), #fff 25%); }
 .vpill.next { border-color: var(--yellow); cursor: pointer; }
 .vpill.undo { cursor: pointer; }
 
