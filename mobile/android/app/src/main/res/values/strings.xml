@@ -8,4 +8,5 @@
     <string name="widget_desc_full">D-day · 오늘 할 일 · 오늘 시간표를 함께 보여줍니다.</string>
     <string name="widget_desc_dday">등록한 D-day만 보여줍니다.</string>
     <string name="widget_desc_todo">오늘 할 일만 보여줍니다.</string>
+    <string name="widget_desc_tt">이번 주 시간표를 보여줍니다.</string>
 </resources>

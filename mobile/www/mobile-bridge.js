@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.0-mobile';
+  var APP_VERSION = '2.6.1-mobile';
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -662,13 +662,16 @@
   var WIDGET_WORDS = {
     ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
           am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음',
-          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 오늘 시간표' },
+          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 시간표',
+          dows: ['일','월','화','수','목','금','토'] },
     en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
           am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None',
-          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Today' },
+          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Timetable',
+          dows: ['Su','Mo','Tu','We','Th','Fr','Sa'] },
     ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
           am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし',
-          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 今日の時間割' }
+          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 時間割',
+          dows: ['日','月','火','水','木','金','土'] }
   };
 
   var _widgetPlugin;   // undefined = 아직 안 찾아봄
@@ -721,17 +724,29 @@
     };
   }
 
-  /** 오늘 요일의 시간표 칸들 */
-  function todayTable(src, w) {
-    var blocks = Array.isArray(src.blocks) ? src.blocks : [];
-    var dow = new Date().getDay();
-    return blocks
-      .filter(function (b) { return b && b.day === dow && b.start && b.end; })
-      .sort(function (a, b) { return String(a.start).localeCompare(String(b.start)); })
-      .slice(0, 6)
+  /** 시간표 격자에 필요한 것 — 칸들과 보여줄 시간 범위 */
+  function weekTable(src, w) {
+    var mins = function (hhmm) {
+      var m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ''));
+      return m ? Number(m[1]) * 60 + Number(m[2]) : -1;
+    };
+    var blocks = (Array.isArray(src.blocks) ? src.blocks : [])
+      .filter(function (b) { return b && b.day >= 0 && b.day <= 6 && mins(b.start) >= 0 && mins(b.end) > mins(b.start); })
       .map(function (b) {
-        return { time: String(b.start), label: String(b.label || ''), rest: b.type === 'rest' };
+        return { day: b.day, start: mins(b.start), end: mins(b.end),
+                 label: String(b.label || ''), rest: b.type === 'rest' };
       });
+
+    // 보여줄 범위 — 앱에서 정한 값을 쓰되 칸이 있으면 거기에 맞춘다
+    var from = Math.floor((mins(src.ttFrom) >= 0 ? mins(src.ttFrom) : 8 * 60) / 60);
+    var to = Math.ceil((mins(src.ttTo) > 0 ? mins(src.ttTo) : 20 * 60) / 60);
+    if (blocks.length) {
+      from = Math.floor(Math.min.apply(null, blocks.map(function (b) { return b.start; })) / 60);
+      to = Math.ceil(Math.max.apply(null, blocks.map(function (b) { return b.end; })) / 60);
+    }
+    if (to <= from) to = from + 1;
+
+    return { label: w.table, dows: w.dows, from: from, to: to, blocks: blocks.slice(0, 60) };
   }
 
   /** 위젯에 보낼 내용을 만든다 */
@@ -793,7 +808,7 @@
     };
 
     // 오늘 시간표
-    out.table = { label: w.table, items: todayTable(src, w) };
+    out.table = weekTable(src, w);
     return out;
   }
 
@@ -1205,9 +1220,17 @@
       '}',
       '#dashPanel .dtab .mtab-ico { font-size:17px; line-height:1; }',
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
-      // 홈 화면 — 좁은 화면에 맞춰 한 줄로 쌓고, 큰 고양이는 뺀다
+      // 홈 화면 — 좁은 화면에 맞춰 한 줄로 쌓고, 큰 고양이는 뺀다.
+      // PC는 창 높이에 딱 맞추는 구조라 폰에서는 내용이 눌려 겹쳤다.
+      // 폰에서는 높이를 풀고 위에서 아래로 흐르게 한다.
       '#dp-home .cat-display { display:none !important; }',
-      '#dp-home .grid2 { grid-template-columns:1fr !important; gap:12px !important; }',
+      '#dp-home.dpage.active { display:block !important; height:auto !important; }',
+      '#dp-home .grid2 { display:block !important; flex:none !important; height:auto !important; }',
+      '#dp-home .grid2 > div { display:block !important; height:auto !important; min-height:0 !important; }',
+      '#dp-home .card { height:auto !important; margin-bottom:12px !important; overflow:visible !important; }',
+      '#dp-home #homeCycleCard, #dp-home #homeWorkCard { height:auto !important; }',
+      '#dp-home .cycle-body { flex:none !important; height:auto !important; }',
+      '#dp-home .pomo-wrap { flex:none !important; }',
       '#dp-home #homeCycleCol { min-width:0 !important; }',
       '#dp-home .cycle-body { flex-direction:column !important; align-items:stretch !important; gap:14px !important; }',
       '#dp-home .pomo-wrap { min-height:190px !important; }',

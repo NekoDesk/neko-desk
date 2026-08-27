@@ -73,6 +73,15 @@
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/neko_widget_todo_info" />
         </receiver>
+
+        <receiver android:name=".NekoWidgetTt" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.siwon.nekodesk.mobile.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/neko_widget_tt_info" />
+        </receiver>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

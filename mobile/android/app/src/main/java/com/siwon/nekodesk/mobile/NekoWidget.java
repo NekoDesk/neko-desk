@@ -277,27 +277,74 @@ public class NekoWidget extends AppWidgetProvider {
         }
     }
 
-    /** 오늘 시간표 */
+    /**
+     * 시간표를 요일 x 시간 격자로 그린다.
+     * 앱 화면과 같은 모양이라 한눈에 알아볼 수 있다.
+     * 한 시간이 한 줄이고, 칸이 걸쳐 있으면 색을 칠한다.
+     * 이름은 그 칸이 시작하는 줄에만 적는다.
+     */
     private void fillTable(RemoteViews v, String pkg, JSONObject o, boolean stale) {
-        v.removeAllViews(R.id.w_tt_list);
-        JSONObject tt = stale ? null : o.optJSONObject("table");
-        JSONArray items = tt == null ? null : tt.optJSONArray("items");
+        JSONObject tt = o.optJSONObject("table");
         v.setTextViewText(R.id.w_tt_title, tt == null ? "" : tt.optString("label", ""));
-        int n = 0;
-        for (int i = 0; items != null && i < items.length(); i++) {
-            JSONObject it = items.optJSONObject(i);
-            if (it == null) continue;
-            String label = it.optString("label", "");
-            if (label.length() == 0) continue;
-            RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_item);
-            row.setTextViewText(R.id.i_time, it.optString("time", ""));
-            row.setTextViewText(R.id.i_text, label);
-            if (it.optBoolean("rest", false)) row.setTextColor(R.id.i_time, 0xFFE09A4B);
-            v.addView(R.id.w_tt_list, row);
-            n++;
+        v.removeAllViews(R.id.w_tt_head);
+        v.removeAllViews(R.id.w_tt_body);
+        if (tt == null) return;
+
+        JSONArray dows = tt.optJSONArray("dows");
+        JSONArray blocks = tt.optJSONArray("blocks");
+        int from = tt.optInt("from", 8);          // 보여줄 시작 시
+        int to = tt.optInt("to", 20);             // 보여줄 끝 시
+        if (to <= from) to = from + 1;
+        if (to - from > 14) to = from + 14;       // 위젯이 너무 길어지지 않게
+
+        // 머리줄: 빈칸 + 일~토
+        RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);
+        corner.setTextViewText(R.id.i_text, "");
+        v.addView(R.id.w_tt_head, corner);
+        for (int d = 0; d < 7; d++) {
+            RemoteViews c = new RemoteViews(pkg, R.layout.w_tt_dow);
+            c.setTextViewText(R.id.i_text, dows == null ? "" : dows.optString(d, ""));
+            if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
+            v.addView(R.id.w_tt_head, c);
         }
-        v.setViewVisibility(R.id.w_tt_title, n > 0 ? View.VISIBLE : View.GONE);
+
+        int todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1;
+
+        for (int h = from; h < to; h++) {
+            RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_row);
+            RemoteViews hour = new RemoteViews(pkg, R.layout.w_tt_hour);
+            hour.setTextViewText(R.id.i_text, _tPad2(h));
+            row.addView(R.id.i_row, hour);
+
+            for (int d = 0; d < 7; d++) {
+                RemoteViews cell = new RemoteViews(pkg, R.layout.w_tt_cell);
+                JSONObject hit = null;
+                boolean starts = false;
+                for (int i = 0; blocks != null && i < blocks.length(); i++) {
+                    JSONObject b = blocks.optJSONObject(i);
+                    if (b == null || b.optInt("day", -1) != d) continue;
+                    int s = b.optInt("start", -1), e = b.optInt("end", -1);   // 분 단위
+                    if (s < 0 || e <= s) continue;
+                    if (h * 60 < e && (h + 1) * 60 > s) {
+                        hit = b;
+                        starts = (s >= h * 60 && s < (h + 1) * 60);
+                        break;
+                    }
+                }
+                if (hit != null) {
+                    setBg(cell, R.id.i_text, hit.optBoolean("rest", false)
+                            ? R.drawable.w_tt_rest : R.drawable.w_tt_work);
+                    if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
+                } else if (d == todayDow) {
+                    cell.setTextColor(R.id.i_text, 0xFF9AA0A6);
+                }
+                row.addView(R.id.i_row, cell);
+            }
+            v.addView(R.id.w_tt_body, row);
+        }
     }
+
+    private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
 
     /** 어제·내일 칸 하나를 채운다 */
     private void fillSide(RemoteViews v, String pkg, JSONObject side, boolean stale,
