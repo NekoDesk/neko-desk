@@ -1014,6 +1014,55 @@ function jeq(a, b) {
 function isPlainObj(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
+/**
+ * id가 붙은 목록(시간표 칸·알람·D-day…)은 항목 단위로 합친다.
+ *
+ * 통째로 합집합을 만들면 두 가지가 망가진다.
+ *  - 한쪽이 지운 항목이 다른 쪽에 남아 있어 되살아난다
+ *  - 한쪽이 고친 항목이 고치기 전 것과 나란히 둘로 늘어난다
+ * 기준선에 있던 id가 한쪽에서 사라졌으면 '지웠다'로 보고 빼고,
+ * 기준선에 없던 id는 '새로 넣었다'로 보고 살린다.
+ */
+function mergeById(base, local, remote) {
+  const key = (x) => (x && typeof x === 'object' && x.id !== undefined) ? String(x.id) : null;
+  const map = (arr) => {
+    const m = new Map();
+    (Array.isArray(arr) ? arr : []).forEach(x => { const k = key(x); if (k !== null) m.set(k, x); });
+    return m;
+  };
+  const B = map(base), L = map(local), R = map(remote);
+  const out = [];
+  const put = (k) => {
+    const inB = B.has(k), inL = L.has(k), inR = R.has(k);
+    if (inB && (!inL || !inR)) return;            // 어느 한쪽이 지웠다
+    if (inL && inR) {
+      const v = merge3(inB ? B.get(k) : undefined, L.get(k), R.get(k));
+      if (v !== undefined) out.push(v);
+      return;
+    }
+    if (!inB && inL) { out.push(L.get(k)); return; }   // 이 기기가 새로 넣었다
+    if (!inB && inR) { out.push(R.get(k)); return; }   // 상대가 새로 넣었다
+  };
+  const seen = new Set();
+  (Array.isArray(local) ? local : []).forEach(x => {
+    const k = key(x);
+    if (k === null || seen.has(k)) return;
+    seen.add(k); put(k);
+  });
+  (Array.isArray(remote) ? remote : []).forEach(x => {
+    const k = key(x);
+    if (k === null || seen.has(k)) return;
+    seen.add(k); put(k);
+  });
+  return out;
+}
+
+/** 원소마다 id가 붙은 목록인가 */
+function isIdList(a) {
+  return Array.isArray(a) && a.length > 0
+      && a.every(x => x && typeof x === 'object' && !Array.isArray(x) && x.id !== undefined);
+}
+
 function merge3(base, local, remote) {
   if (jeq(local, base)) return remote;    // 내가 안 건드렸으면 상대 것 (상대의 삭제도 수용)
   if (jeq(remote, base)) return local;    // 상대가 안 건드렸으면 내 것 (내 삭제도 반영)
@@ -1029,7 +1078,9 @@ function merge3(base, local, remote) {
     return out;
   }
   if (Array.isArray(local) && Array.isArray(remote)) {
-    const out = local.slice();            // 양쪽이 동시에 고친 목록은 합집합으로 (기록 우선)
+    // id가 붙어 있으면 항목 단위로 — 지운 것은 지운 채로, 고친 것은 하나로
+    if (isIdList(local) || isIdList(remote)) return mergeById(base, local, remote);
+    const out = local.slice();            // 그 밖의 목록은 합집합으로 (기록 우선)
     remote.forEach(x => { if (!out.some(y => jeq(x, y))) out.push(x); });
     return out;
   }

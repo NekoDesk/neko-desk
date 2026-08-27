@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.6.11-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.7.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -414,6 +414,60 @@
   function isPlainObj(v) {
     return v !== null && typeof v === 'object' && !Array.isArray(v);
   }
+  /**
+   * id가 붙은 목록(시간표 칸·알람·D-day…)은 항목 단위로 합친다.
+   *
+   * 통째로 합집합을 만들면 두 가지가 망가진다.
+   *  - 한쪽이 지운 항목이 다른 쪽에 남아 있어 되살아난다
+   *  - 한쪽이 고친 항목이 고치기 전 것과 나란히 둘로 늘어난다
+   * 기준선에 있던 id가 한쪽에서 사라졌으면 '지웠다'로 보고 빼고,
+   * 기준선에 없던 id는 '새로 넣었다'로 보고 살린다.
+   */
+  function mergeById(base, local, remote) {
+    function key(x) {
+      return (x && typeof x === 'object' && x.id !== undefined) ? String(x.id) : null;
+    }
+    function map(arr) {
+      var m = {};
+      (Array.isArray(arr) ? arr : []).forEach(function (x) {
+        var k = key(x);
+        if (k !== null) m[k] = x;
+      });
+      return m;
+    }
+    var B = map(base), L = map(local), R = map(remote);
+    var out = [], seen = {};
+    function put(k) {
+      var inB = B.hasOwnProperty(k), inL = L.hasOwnProperty(k), inR = R.hasOwnProperty(k);
+      if (inB && (!inL || !inR)) return;             // 어느 한쪽이 지웠다
+      if (inL && inR) {
+        var v = merge3(inB ? B[k] : undefined, L[k], R[k]);
+        if (v !== undefined) out.push(v);
+        return;
+      }
+      if (!inB && inL) { out.push(L[k]); return; }   // 이 기기가 새로 넣었다
+      if (!inB && inR) { out.push(R[k]); return; }   // 상대가 새로 넣었다
+    }
+    function walk(arr) {
+      (Array.isArray(arr) ? arr : []).forEach(function (x) {
+        var k = key(x);
+        if (k === null || seen[k]) return;
+        seen[k] = 1;
+        put(k);
+      });
+    }
+    walk(local);
+    walk(remote);
+    return out;
+  }
+
+  /** 원소마다 id가 붙은 목록인가 */
+  function isIdList(a) {
+    return Array.isArray(a) && a.length > 0 && a.every(function (x) {
+      return x && typeof x === 'object' && !Array.isArray(x) && x.id !== undefined;
+    });
+  }
+
   function merge3(base, local, remote) {
     if (jeq(local, base)) return remote;   // 내가 안 건드렸으면 상대 것 (상대의 삭제도 수용)
     if (jeq(remote, base)) return local;   // 상대가 안 건드렸으면 내 것 (내 삭제도 반영)
@@ -429,6 +483,8 @@
       return out;
     }
     if (Array.isArray(local) && Array.isArray(remote)) {
+      // id가 붙어 있으면 항목 단위로 — 지운 것은 지운 채로, 고친 것은 하나로
+      if (isIdList(local) || isIdList(remote)) return mergeById(base, local, remote);
       var arr = local.slice();
       remote.forEach(function (x) {
         for (var i = 0; i < arr.length; i++) { if (jeq(arr[i], x)) return; }

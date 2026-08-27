@@ -295,9 +295,10 @@ public class NekoWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.w_water_lbl, h.optString("waterLabel", ""));
         int wDone = h.optInt("waterDone", 0), wGoal = h.optInt("waterGoal", 8);
         v.removeAllViews(R.id.w_water_row);
+        // 앱 화면과 같은 방향 — 채워져 있다가 마시면 비워진다
         for (int i = 0; i < wGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_cup);
-            setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_on : R.drawable.w_cup_off);
+            setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_off : R.drawable.w_cup_on);
             v.addView(R.id.w_water_row, c);
         }
         v.setViewVisibility(R.id.w_water_row, View.VISIBLE);
@@ -312,7 +313,7 @@ public class NekoWidget extends AppWidgetProvider {
         v.removeAllViews(R.id.w_vita_row);
         for (int i = 0; i < vGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_pill);
-            setBg(c, R.id.i_dot, i < vDone ? R.drawable.w_pill_on : R.drawable.w_pill_off);
+            setBg(c, R.id.i_dot, i < vDone ? R.drawable.w_pill_off : R.drawable.w_pill_on);
             v.addView(R.id.w_vita_row, c);
         }
     }

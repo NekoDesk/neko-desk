@@ -1,13 +1,13 @@
 /**
  * 앱 아이콘을 하얀 배경 + 고등어 고양이로 바꾼다 (MS 스토어와 같게).
- * 원본: cat-images/tabby_s.png
+ * 원본: cat-images/tabby_f.png (정면을 보는 고등어)
  */
 const path = require('path');
 const fs = require('fs');
 const Jimp = require('jimp');
 
 const ROOT = 'D:/NekoDesk/neko-desk-app';
-const SRC = path.join(ROOT, 'cat-images', 'tabby_s.png');
+const SRC = path.join(ROOT, 'cat-images', 'tabby_f.png');   // 정면을 보는 고등어 (MS 스토어와 같은 그림)
 const RES = path.join(ROOT, 'mobile/android/app/src/main/res');
 const WHITE = 0xffffffff;
 
