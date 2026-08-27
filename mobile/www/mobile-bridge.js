@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.8.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.8.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -129,6 +129,7 @@
     }
     el.textContent = '☁️ 동기화: '
       + (parts.length ? parts.join(' · ') : '대기 중');
+    try { renderNotiRow(); } catch (e) {}
   }
   function syncStatus(msg) { _stPull = msg; renderSyncStatus(); }
   function pushStatus(msg) { _stPush = msg; renderSyncStatus(); }
@@ -923,30 +924,34 @@
   }
 
   /**
-   * 알림 설정 팝업에 '폰 알림' 줄을 붙인다.
-   * 권한 요청은 사용자가 버튼을 눌렀을 때 하는 게 가장 확실하다 —
-   * 앱을 켜자마자 물으면 기기에 따라 창이 안 뜨고 그대로 거절로 남는다.
+   * '폰 알림' 줄을 설정 탭의 동기화 줄 바로 아래에 붙인다.
+   *
+   * 처음에는 알림 설정 팝업에 넣었는데 화면에 나타나지 않았다. 팝업이
+   * 열리는 시점을 가로채는 방식이라 어긋날 자리가 많았다. 동기화 줄은
+   * 감시자가 1초마다 다시 그리는 게 확인된 자리라 여기에 붙인다.
+   *
+   * 권한 요청은 사용자가 버튼을 눌렀을 때 한다 — 앱을 켜자마자 물으면
+   * 기기에 따라 창이 안 뜨고 그대로 거절로 남는다.
    */
   function renderNotiRow() {
-    if (!notiPlugin()) return;
-    var modal = document.getElementById('remindModal');
-    if (!modal) return;
-    var box = modal.querySelector('.rs-noti');
+    var anchor = document.getElementById('syncStatus');
+    if (!anchor || !anchor.parentElement) return;
+    var box = document.getElementById('nekoNotiRow');
     if (!box) {
-      var anchor = document.getElementById('rsDirtyNote');
-      if (!anchor || !anchor.parentElement) return;
       box = document.createElement('div');
-      box.className = 'rs-noti';
-      box.style.cssText = 'border-top:1px solid var(--border);padding-top:12px;margin-bottom:14px;'
-        + 'display:flex;align-items:center;gap:8px;flex-wrap:wrap';
-      anchor.parentElement.insertBefore(box, anchor);
+      box.id = 'nekoNotiRow';
+      box.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;'
+        + 'margin:0 0 10px;font-size:12px;color:var(--gray);line-height:1.5';
+      anchor.parentElement.insertBefore(box, anchor.nextSibling);
     }
-    var need = _notiState.indexOf('허용') < 0;
-    box.innerHTML = '<span style="flex:1;min-width:0;font-size:12px;color:var(--gray)">'
-      + '📱 폰 알림: ' + _notiState
-      + (_notiCount ? ' · 예약 ' + _notiCount + '건' : '') + '</span>'
-      + (need ? '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
-              + 'onclick="window.__nekoAskNoti()">알림 켜기</button>' : '');
+    var need = _notiState.indexOf('허용됨') !== 0;
+    var html = '<span style="flex:1;min-width:0">📱 폰 알림: ' + _notiState
+             + (_notiCount ? ' · 예약 ' + _notiCount + '건' : '') + '</span>';
+    if (need) {
+      html += '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
+            + 'onclick="window.__nekoAskNoti()">알림 켜기</button>';
+    }
+    if (box.innerHTML !== html) box.innerHTML = html;
   }
 
   // 버튼에서 부를 수 있게 밖으로 낸다
@@ -1076,7 +1081,7 @@
   /** 예약을 지금 설정에 맞춘다 (바뀐 게 없으면 아무것도 안 한다) */
   function syncNotifications() {
     var N = notiPlugin();
-    if (!N) return;
+    if (!N) { notiSay('플러그인을 못 찾음', 0); return; }
     var src = null;
     try { src = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
     if (!src) src = getS();
@@ -1928,18 +1933,6 @@
       // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
       try { scheduleNotiSync(); } catch (e) {}
 
-      // 7) 알림 설정 팝업을 열 때마다 '폰 알림' 줄을 붙인다
-      try {
-        if (typeof window.openRemindSettings === 'function' && !window.openRemindSettings._noti) {
-          var origOpen = window.openRemindSettings;
-          window.openRemindSettings = function () {
-            var r = origOpen.apply(this, arguments);
-            setTimeout(function () { try { renderNotiRow(); syncNotifications(); } catch (e) {} }, 0);
-            return r;
-          };
-          window.openRemindSettings._noti = true;
-        }
-      } catch (e) {}
     }, 400);
   });
 })();
