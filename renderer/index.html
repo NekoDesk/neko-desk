@@ -1258,7 +1258,7 @@ select {
             <!-- 업무 시간 설정 (오른쪽) -->
             <div class="card" id="homeWorkCard">
               <div class="card-title" style="display:flex;align-items:center;gap:6px">
-                <span data-i18n="tt_card_title">🗓 시간표</span>
+                <span data-i18n="tt_card_title">🕐 시간표</span>
                 <span style="flex:1"></span>
                 <button class="todo-diary-btn" onclick="openPomoSettings()" data-i18n="pomo_btn">⏱ 포모도로 타이머</button>
                 <button id="ttUndoBtn" class="tt-ur" onclick="ttUndo()" data-tip="되돌리기 (Ctrl+Z)">↶</button>
@@ -2079,7 +2079,7 @@ const STRINGS = {
     fill_days:'채울 요일', fill_in:'출근', fill_lunch_s:'점심 시작', fill_lunch_e:'점심 끝', fill_out:'퇴근',
     fill_replace:'고른 요일에 있던 일정은 지우고 채우기', fill_apply:'✓ 채우기',
     fill_need_day:'채울 요일을 하나 이상 골라주세요',
-    tt_card_title:'🗓 시간표', pomo_btn:'⏱ 포모도로 타이머', pomo_title:'⏱ 포모도로 타이머',
+    tt_card_title:'🕐 시간표', pomo_btn:'⏱ 포모도로 타이머', pomo_title:'⏱ 포모도로 타이머',
     pomo_use:'포모도로 타이머 쓰기',
     pomo_explain:'<b style="color:var(--white)">포모도로가 뭔가요?</b><br>정해진 시간 동안만 집중하고 짧게 쉬는 것을 반복하는 방법이에요. 끝이 정해져 있으면 시작이 쉬워지고, 중간에 쉬어서 오래 앉아 있어도 덜 지칩니다.<br><br><b style="color:var(--white)">얼마로 할까요?</b><br>· <b>25분 집중 + 5분 휴식</b> — 가장 널리 쓰이는 기본값이에요. 처음이라면 여기서 시작해 보세요.<br>· <b>45분 + 10분</b> — 수업 시간표를 쓰는 분께 잘 맞아요.<br>· <b>50~90분 + 10~20분</b> — 한번 몰입하면 길게 가는 편이라면.<br><br>정답은 없어요. 집중이 흐트러지기 <b>직전</b>에 쉬는 시간이 오도록 맞추는 게 좋습니다.',
     pomo_preview:'집중 {f}분 + 휴식 {b}분 = 한 사이클 {c}분',
@@ -2321,7 +2321,7 @@ const STRINGS = {
     fill_days:'Days to fill', fill_in:'Start', fill_lunch_s:'Lunch from', fill_lunch_e:'Lunch to', fill_out:'End',
     fill_replace:'Replace what is already on those days', fill_apply:'✓ Fill',
     fill_need_day:'Pick at least one day',
-    tt_card_title:'🗓 Timetable', pomo_btn:'⏱ Pomodoro', pomo_title:'⏱ Pomodoro timer',
+    tt_card_title:'🕐 Timetable', pomo_btn:'⏱ Pomodoro', pomo_title:'⏱ Pomodoro timer',
     pomo_use:'Use the Pomodoro timer',
     pomo_explain:'<b style="color:var(--white)">What is Pomodoro?</b><br>Work in fixed bursts, then take a short break, and repeat. A known finish makes it easier to start, and the breaks keep you fresh.<br><br><b style="color:var(--white)">How long?</b><br>· <b>25 + 5</b> — the classic. Start here if unsure.<br>· <b>45 + 10</b> — matches most class schedules.<br>· <b>50~90 + 10~20</b> — if you like long stretches.<br><br>There is no right answer. Aim for a break just <b>before</b> your attention slips.',
     pomo_preview:'{f} min focus + {b} min break = {c} min per cycle',
@@ -2563,7 +2563,7 @@ const STRINGS = {
     fill_days:'埋める曜日', fill_in:'出勤', fill_lunch_s:'昼休み開始', fill_lunch_e:'昼休み終了', fill_out:'退勤',
     fill_replace:'選んだ曜日にある予定は消して入れる', fill_apply:'✓ 入れる',
     fill_need_day:'曜日をひとつ以上選んでください',
-    tt_card_title:'🗓 時間割', pomo_btn:'⏱ ポモドーロ', pomo_title:'⏱ ポモドーロタイマー',
+    tt_card_title:'🕐 時間割', pomo_btn:'⏱ ポモドーロ', pomo_title:'⏱ ポモドーロタイマー',
     pomo_use:'ポモドーロタイマーを使う',
     pomo_explain:'<b style="color:var(--white)">ポモドーロとは？</b><br>決まった時間だけ集中して短く休む、を繰り返す方法です。終わりが決まっていると始めやすく、途中で休むので長く続きます。<br><br><b style="color:var(--white)">何分がいい？</b><br>· <b>25分 + 5分</b> — いちばん使われている基本。迷ったらここから。<br>· <b>45分 + 10分</b> — 時間割のある方に。<br>· <b>50~90分 + 10~20分</b> — 一度乗ると長く続く方に。<br><br>正解はありません。集中が切れる<b>直前</b>に休みが来るように。',
     pomo_preview:'集中{f}分 + 休憩{b}分 = 1サイクル{c}分',
@@ -3987,14 +3987,21 @@ let _ttDrag = null;
 
 /** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
 function ttRange() {
-  // 정한 범위를 그대로 지킨다. 24시간으로 두면 스크롤로 다 볼 수 있고,
-  // 11~13시처럼 좁게 두면 딱 그만큼만 보인다.
+  // 정한 범위는 '적어도 이만큼은 보여 준다'는 뜻이다.
+  // 그 밖에 넣어 둔 칸이 있으면 그만큼 넓힌다 — 적어 놓고 안 보이면
+  // 없는 줄 알기 때문이다.
   let lo = toMin(S.ttFrom || '05:00');
   let hi = toMin(S.ttTo || '22:00');
   if (!(hi > lo)) { lo = 5 * 60; hi = 22 * 60; }
-  lo = Math.floor(lo / 60) * 60;
-  hi = Math.ceil(hi / 60) * 60;
-  if (hi <= lo) hi = lo + 60;
+  blockList().forEach(b => {
+    const s = toMin(b.start), e = toMin(b.end);
+    if (e <= s) return;
+    if (s < lo) lo = s;
+    if (e > hi) hi = e;
+  });
+  lo = Math.max(0, Math.floor(lo / 60) * 60);
+  hi = Math.min(24 * 60, Math.ceil(hi / 60) * 60);
+  if (hi <= lo) hi = Math.min(24 * 60, lo + 60);
   return [lo, hi];
 }
 

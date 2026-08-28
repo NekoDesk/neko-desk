@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 머리글의 오늘 요일 칸 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#E2D8BE" />
+    <stroke android:width="0.8dp" android:color="#D8CAA7" />
+    <corners android:topLeftRadius="6dp" android:topRightRadius="6dp" />
+</shape>

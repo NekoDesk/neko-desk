@@ -1162,15 +1162,15 @@
   var WIDGET_WORDS = {
     ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
           am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음',
-          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🗓 시간표', ttEmpty: '시간표가 비어 있어요',
+          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🕐 시간표', ttEmpty: '시간표가 비어 있어요',
           dows: ['일','월','화','수','목','금','토'] },
     en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
           am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None',
-          water: '💧 Water today', vita: '💊 Vitamins', table: '🗓 Timetable', ttEmpty: 'Timetable is empty',
+          water: '💧 Water today', vita: '💊 Vitamins', table: '🕐 Timetable', ttEmpty: 'Timetable is empty',
           dows: ['Su','Mo','Tu','We','Th','Fr','Sa'] },
     ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
           am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし',
-          water: '💧 今日の水', vita: '💊 ビタミン', table: '🗓 時間割', ttEmpty: '時間割がありません',
+          water: '💧 今日の水', vita: '💊 ビタミン', table: '🕐 時間割', ttEmpty: '時間割がありません',
           dows: ['日','月','火','水','木','金','土'] }
   };
 

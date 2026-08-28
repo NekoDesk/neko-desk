@@ -18,18 +18,19 @@ final class WidgetTheme {
     static final int TT_HEADBG = 6;
     static final int TT_EMPTY = 7;
     static final int TT_TODAY = 8;
-    static final int TT_EMPTY_BR = 9;
-    static final int TT_TODAY_BR = 10;
+    static final int TT_TODAYHEAD = 9;
+    static final int TT_EMPTY_BR = 10;
+    static final int TT_TODAY_BR = 11;
 
     private static final String[] IDS = { "white", "ivory", "bpink", "pblue", "pmint", "ppurple" };
 
     private static final int[][] SETS = {
-        { R.drawable.w_bg, R.drawable.w_row_bg, R.drawable.w_row_done_bg, R.drawable.w_side_bg, R.drawable.w_dday_bg, R.drawable.w_tt_frame, R.drawable.w_tt_headbg, R.drawable.w_tt_empty, R.drawable.w_tt_today, R.drawable.w_tt_empty_br, R.drawable.w_tt_today_br },
-        { R.drawable.w_bg_ivory, R.drawable.w_row_bg_ivory, R.drawable.w_row_done_bg_ivory, R.drawable.w_side_bg_ivory, R.drawable.w_dday_bg_ivory, R.drawable.w_tt_frame_ivory, R.drawable.w_tt_headbg_ivory, R.drawable.w_tt_empty_ivory, R.drawable.w_tt_today_ivory, R.drawable.w_tt_empty_br_ivory, R.drawable.w_tt_today_br_ivory },
-        { R.drawable.w_bg_bpink, R.drawable.w_row_bg_bpink, R.drawable.w_row_done_bg_bpink, R.drawable.w_side_bg_bpink, R.drawable.w_dday_bg_bpink, R.drawable.w_tt_frame_bpink, R.drawable.w_tt_headbg_bpink, R.drawable.w_tt_empty_bpink, R.drawable.w_tt_today_bpink, R.drawable.w_tt_empty_br_bpink, R.drawable.w_tt_today_br_bpink },
-        { R.drawable.w_bg_pblue, R.drawable.w_row_bg_pblue, R.drawable.w_row_done_bg_pblue, R.drawable.w_side_bg_pblue, R.drawable.w_dday_bg_pblue, R.drawable.w_tt_frame_pblue, R.drawable.w_tt_headbg_pblue, R.drawable.w_tt_empty_pblue, R.drawable.w_tt_today_pblue, R.drawable.w_tt_empty_br_pblue, R.drawable.w_tt_today_br_pblue },
-        { R.drawable.w_bg_pmint, R.drawable.w_row_bg_pmint, R.drawable.w_row_done_bg_pmint, R.drawable.w_side_bg_pmint, R.drawable.w_dday_bg_pmint, R.drawable.w_tt_frame_pmint, R.drawable.w_tt_headbg_pmint, R.drawable.w_tt_empty_pmint, R.drawable.w_tt_today_pmint, R.drawable.w_tt_empty_br_pmint, R.drawable.w_tt_today_br_pmint },
-        { R.drawable.w_bg_ppurple, R.drawable.w_row_bg_ppurple, R.drawable.w_row_done_bg_ppurple, R.drawable.w_side_bg_ppurple, R.drawable.w_dday_bg_ppurple, R.drawable.w_tt_frame_ppurple, R.drawable.w_tt_headbg_ppurple, R.drawable.w_tt_empty_ppurple, R.drawable.w_tt_today_ppurple, R.drawable.w_tt_empty_br_ppurple, R.drawable.w_tt_today_br_ppurple },
+        { R.drawable.w_bg, R.drawable.w_row_bg, R.drawable.w_row_done_bg, R.drawable.w_side_bg, R.drawable.w_dday_bg, R.drawable.w_tt_frame, R.drawable.w_tt_headbg, R.drawable.w_tt_empty, R.drawable.w_tt_today, R.drawable.w_tt_todayhead, R.drawable.w_tt_empty_br, R.drawable.w_tt_today_br },
+        { R.drawable.w_bg_ivory, R.drawable.w_row_bg_ivory, R.drawable.w_row_done_bg_ivory, R.drawable.w_side_bg_ivory, R.drawable.w_dday_bg_ivory, R.drawable.w_tt_frame_ivory, R.drawable.w_tt_headbg_ivory, R.drawable.w_tt_empty_ivory, R.drawable.w_tt_today_ivory, R.drawable.w_tt_todayhead_ivory, R.drawable.w_tt_empty_br_ivory, R.drawable.w_tt_today_br_ivory },
+        { R.drawable.w_bg_bpink, R.drawable.w_row_bg_bpink, R.drawable.w_row_done_bg_bpink, R.drawable.w_side_bg_bpink, R.drawable.w_dday_bg_bpink, R.drawable.w_tt_frame_bpink, R.drawable.w_tt_headbg_bpink, R.drawable.w_tt_empty_bpink, R.drawable.w_tt_today_bpink, R.drawable.w_tt_todayhead_bpink, R.drawable.w_tt_empty_br_bpink, R.drawable.w_tt_today_br_bpink },
+        { R.drawable.w_bg_pblue, R.drawable.w_row_bg_pblue, R.drawable.w_row_done_bg_pblue, R.drawable.w_side_bg_pblue, R.drawable.w_dday_bg_pblue, R.drawable.w_tt_frame_pblue, R.drawable.w_tt_headbg_pblue, R.drawable.w_tt_empty_pblue, R.drawable.w_tt_today_pblue, R.drawable.w_tt_todayhead_pblue, R.drawable.w_tt_empty_br_pblue, R.drawable.w_tt_today_br_pblue },
+        { R.drawable.w_bg_pmint, R.drawable.w_row_bg_pmint, R.drawable.w_row_done_bg_pmint, R.drawable.w_side_bg_pmint, R.drawable.w_dday_bg_pmint, R.drawable.w_tt_frame_pmint, R.drawable.w_tt_headbg_pmint, R.drawable.w_tt_empty_pmint, R.drawable.w_tt_today_pmint, R.drawable.w_tt_todayhead_pmint, R.drawable.w_tt_empty_br_pmint, R.drawable.w_tt_today_br_pmint },
+        { R.drawable.w_bg_ppurple, R.drawable.w_row_bg_ppurple, R.drawable.w_row_done_bg_ppurple, R.drawable.w_side_bg_ppurple, R.drawable.w_dday_bg_ppurple, R.drawable.w_tt_frame_ppurple, R.drawable.w_tt_headbg_ppurple, R.drawable.w_tt_empty_ppurple, R.drawable.w_tt_today_ppurple, R.drawable.w_tt_todayhead_ppurple, R.drawable.w_tt_empty_br_ppurple, R.drawable.w_tt_today_br_ppurple },
     };
 
     /** 글자 색 — { 본문, 흐린 글씨, 강조 } */

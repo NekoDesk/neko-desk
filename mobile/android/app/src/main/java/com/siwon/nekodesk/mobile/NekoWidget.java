@@ -401,8 +401,11 @@ public class NekoWidget extends AppWidgetProvider {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_tt_dow);
             c.setTextViewText(R.id.i_text, dows == null ? "" : dows.optString(d, ""));
             // 오늘이 한눈에 보이게 노랑, 일요일은 붉게
-            if (d == todayDow) c.setTextColor(R.id.i_text, 0xFFD9A93E);
-            else if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
+            if (d == todayDow) {
+                // 오늘은 머리글 칸만 노랗게. 글씨는 바탕에 묻히지 않게 진하게.
+                setBg(c, R.id.i_text, WidgetTheme.bg(th, WidgetTheme.TT_TODAYHEAD));
+                c.setTextColor(R.id.i_text, 0xFF6B5214);
+            } else if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
             else c.setTextColor(R.id.i_text, WidgetTheme.dim(th));
             v.addView(R.id.w_tt_head, c);
         }
@@ -442,9 +445,6 @@ public class NekoWidget extends AppWidgetProvider {
                     setBg(cell, R.id.i_text, TT_BG[style][ttPiece(starts, ends)]);
                     cell.setTextColor(R.id.i_text, WidgetTheme.text(th));
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
-                } else if (d == todayDow) {
-                    setBg(cell, R.id.i_text, WidgetTheme.bg(th,
-                            endCell ? WidgetTheme.TT_TODAY_BR : WidgetTheme.TT_TODAY));
                 } else {
                     setBg(cell, R.id.i_text, WidgetTheme.bg(th,
                             endCell ? WidgetTheme.TT_EMPTY_BR : WidgetTheme.TT_EMPTY));

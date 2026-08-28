@@ -78,6 +78,8 @@ const PARTS = [
   ['w_tt_headbg',    v => shape(v.card, v.border, 0.8, TOP_R(7), '시간표 머리줄')],
   ['w_tt_empty',     v => shape(v.panel, v.border, 0.6, '', '시간표 빈 칸')],
   ['w_tt_today',     v => shape(mix(v.yellow, v.panel, 0.9), mix(v.yellow, v.border, 0.7), 0.6, '', '오늘 요일 칸')],
+  // 머리글의 오늘 칸 — 여기만 노랗게 한다 (몸통까지 칠하면 일정 사이로 비쳐 헷갈린다)
+  ['w_tt_todayhead', v => shape(mix(v.yellow, v.card, 0.55), mix(v.yellow, v.border, 0.4), 0.8, TOP_R(6), '머리글의 오늘 요일 칸')],
   ['w_tt_empty_br',  v => shape(v.panel, v.border, 0.6, BR_R(7), '시간표 빈 칸 (오른쪽 아래 끝)')],
   ['w_tt_today_br',  v => shape(mix(v.yellow, v.panel, 0.9), mix(v.yellow, v.border, 0.7), 0.6, BR_R(7), '오늘 요일 칸 (오른쪽 아래 끝)')],
 ];
