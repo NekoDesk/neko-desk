@@ -1777,14 +1777,14 @@ select {
       <img id="photoCat" style="display:none">
     </div>
     <div style="display:flex;gap:6px;justify-content:center;padding:8px 0 0;flex-wrap:wrap">
-      <button id="photoBgBlur"   onclick="_setPhotoBg('blur')"   style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:var(--frame);color:var(--frame-text);cursor:pointer">🌫 블러</button>
-      <button id="photoBgNone"   onclick="_setPhotoBg('none')"   style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">📷 없음</button>
-      <button id="photoBgCats"   onclick="_setPhotoBg('cats')"   style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">🐱 냥냥이</button>
-      <button id="photoBgCustom" onclick="document.getElementById('photoBgFileIn').click()" style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">🖼 내 사진</button>
+      <button id="photoBgBlur"   onclick="_setPhotoBg('blur')"   data-i18n="pb_blur"  style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:var(--frame);color:var(--frame-text);cursor:pointer">🌫 블러</button>
+      <button id="photoBgNone"   onclick="_setPhotoBg('none')"   data-i18n="pb_none"  style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">📷 없음</button>
+      <button id="photoBgCats"   onclick="_setPhotoBg('cats')"   data-i18n="pb_cats"  style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">🐱 냥냥이</button>
+      <button id="photoBgCustom" onclick="document.getElementById('photoBgFileIn').click()" data-i18n="pb_mine" style="font-size:12px;padding:5px 12px;border:2px solid var(--frame);border-radius:4px;background:transparent;color:var(--frame-text);cursor:pointer">🖼 내 사진</button>
       <input type="file" id="photoBgFileIn" accept="image/*" style="display:none" onchange="_loadCustomBg(this)">
     </div>
     <div style="display:flex;gap:8px;justify-content:center;padding:8px 0 4px">
-      <button class="btn btn-g" onclick="capturePhoto()" style="font-size:15px">📸 촬영 & 저장</button>
+      <button class="btn btn-g" onclick="capturePhoto()" data-i18n="pb_shoot" style="font-size:15px">📸 촬영 & 저장</button>
     </div>
     <div id="photoStatus" style="text-align:center;font-size:12px;color:var(--frame-text);padding-bottom:4px"></div>
   </div>
@@ -1811,8 +1811,9 @@ select {
 <!-- 업데이트 준비 완료 배너 -->
 <div id="updateBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9800;background:var(--frame);color:#fff;padding:10px 16px;align-items:center;gap:12px;font-size:14px">
   <span id="updateBannerText">✨ 새 버전이 준비됐어요!</span>
-  <button onclick="window.electronAPI && window.electronAPI.installUpdateNow()" style="margin-left:auto;background:#fff;color:var(--frame-text);border:none;padding:7px 14px;cursor:pointer;font-size:13px;border-radius:4px">지금 재시작하고 업데이트</button>
-  <button onclick="document.getElementById('updateBanner').style.display='none'" style="background:transparent;border:1px solid rgba(255,255,255,0.6);color:#fff;padding:7px 10px;cursor:pointer;font-size:13px;border-radius:4px">나중에</button>
+  <button id="updateBannerGo" onclick="window.electronAPI && window.electronAPI.installUpdateNow()" style="margin-left:auto;background:#fff;color:var(--frame-text);border:none;padding:7px 14px;cursor:pointer;font-size:13px;border-radius:4px">지금 재시작하고 업데이트</button>
+  <button id="updateBannerStore" onclick="window.electronAPI && window.electronAPI.openStoreUpdates()" data-i18n="upd_store_btn" style="display:none;margin-left:auto;background:#fff;color:var(--frame-text);border:none;padding:7px 14px;cursor:pointer;font-size:13px;border-radius:4px">Microsoft Store에서 업데이트</button>
+  <button onclick="document.getElementById('updateBanner').style.display='none'" data-i18n="upd_store_later" style="background:transparent;border:1px solid rgba(255,255,255,0.6);color:#fff;padding:7px 10px;cursor:pointer;font-size:13px;border-radius:4px">나중에</button>
 </div>
 
 <div id="toastBox"></div>
@@ -1950,6 +1951,9 @@ const STRINGS = {
     desktop_only_msg:'이 기능은 데스크탑 앱에서만 사용 가능해요',
     photodir_title:'📁 변경!',
     photodir_msg:'사진 저장 위치가 변경됐어요',
+    pb_blur:'🌫 블러', pb_none:'📷 없음', pb_cats:'🐱 냥냥이', pb_mine:'🖼 내 사진', pb_shoot:'📸 촬영 & 저장',
+    pb_denied:'⚠️ 카메라를 찾을 수 없거나 권한이 거부되었어요', pb_denied_btn:'카메라 권한 설정 열기',
+    upd_store_title:'✨ 새 버전이 나왔어요', upd_store_btn:'Microsoft Store에서 업데이트', upd_store_later:'나중에',
     cam_none_title:'카메라 없음',
     cam_none_msg:'카메라가 연결되어 있는지 확인해주세요!',
     shot_title:'📸 찰칵!',
@@ -2193,6 +2197,9 @@ const STRINGS = {
     desktop_only_msg:'This feature works in the desktop app only',
     photodir_title:'📁 Changed!',
     photodir_msg:'Photo save location was changed',
+    pb_blur:'🌫 Blur', pb_none:'📷 None', pb_cats:'🐱 Cats', pb_mine:'🖼 My photo', pb_shoot:'📸 Take & save',
+    pb_denied:'⚠️ No camera found, or permission was denied', pb_denied_btn:'Open camera settings',
+    upd_store_title:'✨ A new version is out', upd_store_btn:'Update in Microsoft Store', upd_store_later:'Later',
     cam_none_title:'No camera',
     cam_none_msg:'Please check that a camera is connected!',
     shot_title:'📸 Snap!',
@@ -2430,6 +2437,9 @@ const STRINGS = {
     desktop_only_msg:'この機能はデスクトップアプリでのみ使えます',
     photodir_title:'📁 変更！',
     photodir_msg:'写真の保存先を変更しました',
+    pb_blur:'🌫 ぼかし', pb_none:'📷 なし', pb_cats:'🐱 ねこ', pb_mine:'🖼 自分の写真', pb_shoot:'📸 撮影して保存',
+    pb_denied:'⚠️ カメラが見つからないか、許可されていません', pb_denied_btn:'カメラの設定を開く',
+    upd_store_title:'✨ 新しいバージョンがあります', upd_store_btn:'Microsoft Store で更新', upd_store_later:'あとで',
     cam_none_title:'カメラなし',
     cam_none_msg:'カメラが接続されているか確認してください！',
     shot_title:'📸 パシャ！',
@@ -2849,6 +2859,21 @@ function showUpdateReady(version){
   const b = document.getElementById('updateBanner');
   const t = document.getElementById('updateBannerText');
   if (t) t.textContent = '✨ 새 버전 ' + version + '이 준비됐어요!';
+  if (b) b.style.display = 'flex';
+}
+
+/**
+ * 스토어 버전에 새 버전이 나왔다고 알린다.
+ * 스토어 정책상 앱이 직접 설치할 수는 없어서, 스토어로 데려다주기만 한다.
+ */
+function showStoreUpdate(version){
+  const b = document.getElementById('updateBanner');
+  const t = document.getElementById('updateBannerText');
+  const go = document.getElementById('updateBannerGo');
+  const st = document.getElementById('updateBannerStore');
+  if (t) t.textContent = L('upd_store_title') + ' — ' + version;
+  if (go) go.style.display = 'none';
+  if (st) st.style.display = '';
   if (b) b.style.display = 'flex';
 }
 
@@ -7580,7 +7605,23 @@ function openPhotoBooth(callback) {
       }, { once: true });
     })
     .catch(() => {
-      document.getElementById('photoStatus').textContent = '⚠️ 카메라를 찾을 수 없거나 권한이 거부되었어요';
+      const el = document.getElementById('photoStatus');
+      if (!el) return;
+      // 윈도우는 앱이 권한 창을 띄울 수 없다 — 설정으로 데려다주는 게 최선
+      el.innerHTML = '';
+      const msg = document.createElement('div');
+      msg.setAttribute('data-i18n', 'pb_denied');
+      msg.textContent = L('pb_denied');
+      el.appendChild(msg);
+      if (window.electronAPI && window.electronAPI.openCameraSettings) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-gr';
+        b.style.cssText = 'font-size:12px;padding:4px 12px;margin-top:6px';
+        b.setAttribute('data-i18n', 'pb_denied_btn');
+        b.textContent = L('pb_denied_btn');
+        b.onclick = () => window.electronAPI.openCameraSettings();
+        el.appendChild(b);
+      }
     });
 }
 
@@ -7791,6 +7832,11 @@ function initCloudSync() {
       else if (p.notify === 'pulled') toast('info', L('sync_title'), L('sync_pulled_msg'));
     });
   }
+  if (window.electronAPI.onStoreUpdate) {
+    window.electronAPI.onStoreUpdate(p => {
+      if (p && p.version) showStoreUpdate(p.version);
+    });
+  }
   if (window.electronAPI.onCloudStatus) {
     window.electronAPI.onCloudStatus(_cloudStatusFromMain);
   }
@@ -7800,6 +7846,7 @@ function initCloudSync() {
 function refreshAutoLaunchBtn(on) {
   const b = document.getElementById('autoLaunchBtn');
   if (!b) return;
+  b.setAttribute('data-i18n', on ? 'autostart_on' : 'autostart_off');
   b.textContent = on ? L('autostart_on') : L('autostart_off');
   b.classList.toggle('btn-y', !!on);
   b.classList.toggle('btn-gr', !on);
@@ -7882,12 +7929,14 @@ function init(){
         // 스토어 버전은 Windows 시작 프로그램 설정이 켜고 끈다
         const b = document.getElementById('autoLaunchBtn');
         if (b) {
+          // data-i18n을 그대로 두어야 나중에 언어를 바꿔도 따라온다
+          b.setAttribute('data-i18n', 'autostart_win_btn');
           b.textContent = L('autostart_win_btn');
           b.className = 'btn btn-gr';
           b.onclick = () => window.electronAPI.openStartupSettings && window.electronAPI.openStartupSettings();
         }
         const d = document.querySelector('#autoLaunchCard [data-i18n="autostart_desc"]');
-        if (d) { d.removeAttribute('data-i18n'); d.textContent = L('autostart_win_desc'); }
+        if (d) { d.setAttribute('data-i18n', 'autostart_win_desc'); d.textContent = L('autostart_win_desc'); }
         return;
       }
       refreshAutoLaunchBtn(on);

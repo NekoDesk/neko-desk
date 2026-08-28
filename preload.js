@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 부팅 시 자동 실행
   getAutoLaunch:  () => ipcRenderer.invoke('get-auto-launch'),
   openStartupSettings: () => ipcRenderer.send('open-startup-settings'),
+  openCameraSettings: () => ipcRenderer.send('open-camera-settings'),
+  openStoreUpdates: () => ipcRenderer.send('open-store-updates'),
+  onStoreUpdate: (fn) => ipcRenderer.on('store-update', (e, p) => fn(p)),
   // 클라우드 동기화 — 주기와 네트워크는 메인이 소유한다
   cloudMarkDirty:  () => ipcRenderer.send('cloud-mark-dirty'),
   cloudMarkClaim:  () => ipcRenderer.send('cloud-mark-claim'),

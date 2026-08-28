@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.8.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.8.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -1859,6 +1859,11 @@
       '  padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px) !important;',
       '}',
       '#photoFrame { width:96% !important; margin:auto !important; }',
+      // 사진 찍기는 폰에서 잠시 뺀다 — 권한 안내가 없고 갤러리에도 안 들어간다
+      '#headerPhotoBtn { display:none !important; }',
+      '#photoModal { display:none !important; }',
+      '[onclick*="openPhotoBooth"] { display:none !important; }',
+
       // 카메라 그림은 화면 절반을 넘지 않게 — 아래 버튼이 밀려나지 않도록
       '#photoCanvas { max-height:52vh !important; object-fit:contain !important;',
       '  aspect-ratio:auto !important; }',
@@ -1928,8 +1933,7 @@
         }
       } catch (e) {}
 
-      // 3-1) 포토부스: 고양이 축소 + 하단 4종 선택줄
-      try { hookPhotoBooth(); } catch (e) {}
+      // 3-1) 포토부스는 지금 폰에서 빼 두었으므로 손대지 않는다
 
       // 3-2) 할 일 목록 차례 바꾸기 + 메모장은 맨 아래로
       try { reorderSchedulePage(); } catch (e) {}
@@ -1950,8 +1954,7 @@
       // 4) 바탕화면 위젯에 내용 전달
       try { startWidgetFeed(); } catch (e) {}
 
-      // 5) 사진을 갤러리에 저장하도록 교체
-      try { wrapCapturePhoto(0); } catch (e) {}
+      // 5) (사진 찍기를 빼 두어 갤러리 저장 교체도 쓰지 않는다)
 
       // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
       try { scheduleNotiSync(); } catch (e) {}

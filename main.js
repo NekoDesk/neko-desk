@@ -209,6 +209,57 @@ const IS_STORE_BUILD = (() => {
   } catch (e) { return false; }
 })();
 
+/**
+ * 스토어 버전에 새 버전이 나왔다고 알려 준다.
+ *
+ * 스토어 정책상 앱이 직접 내려받아 설치할 수는 없지만, '새 버전이 있으니
+ * 스토어에서 받으세요' 하고 알리는 것은 막지 않는다. 스토어 클라이언트는
+ * 하루 한 번쯤만 확인해서, 올려둔 지 한참 지나도 사용자는 모르고 있다.
+ *
+ * 최신 버전 번호는 GitHub 릴리즈에서 읽는다 (이미 그쪽에 올리고 있으므로
+ * 따로 서버를 둘 필요가 없다). 같은 버전으로는 하루 한 번만 알린다.
+ */
+const STORE_NOTICE_FILE = () => path.join(app.getPath('userData'), 'store-notice.json');
+const STORE_CHECK_MS = 4 * 60 * 60 * 1000;
+
+/** '2.8.3' 같은 문자열을 견줄 수 있게 숫자 배열로 */
+function verParts(s) {
+  return String(s || '').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+}
+function isNewer(a, b) {
+  const x = verParts(a), y = verParts(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+
+async function checkStoreUpdate() {
+  try {
+    const r = await fetch('https://api.github.com/repos/NekoDesk/neko-desk/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }
+    });
+    if (!r || !r.ok) return;
+    const j = await r.json();
+    const latest = String(j.tag_name || '').replace(/^v/, '');
+    if (!latest || !isNewer(latest, app.getVersion())) return;
+
+    // 같은 버전으로 하루에 한 번만 (성가시지 않게)
+    const seen = readJSON(STORE_NOTICE_FILE(), {});
+    const today = new Date().toDateString();
+    if (seen.version === latest && seen.date === today) return;
+    writeJSON(STORE_NOTICE_FILE(), { version: latest, date: today });
+
+    cloudBroadcast('store-update', { version: latest });
+  } catch (e) {}
+}
+
+function startStoreUpdateNotice() {
+  setTimeout(checkStoreUpdate, 8000);          // 켠 직후 한 번
+  setInterval(checkStoreUpdate, STORE_CHECK_MS);
+}
+
 // ═══ 부팅 시 자동 실행 설정 ═══
 // 사용자의 의도(켬/끔)를 파일에 저장해두고, 실행할 때마다 실제 등록 상태와 맞춘다.
 // 업데이트·재설치 등으로 등록이 사라져도 다음 실행에서 자동 복구된다.
@@ -248,6 +299,16 @@ ipcMain.handle('get-auto-launch', () => IS_STORE_BUILD ? 'store' : isAutoLaunchO
 // 스토어 빌드용: Windows의 시작 프로그램 설정을 연다
 ipcMain.on('open-startup-settings', () => {
   shell.openExternal('ms-settings:startupapps').catch(() => {});
+});
+
+// 윈도우는 앱이 카메라 권한 창을 띄울 수 없다. 설정으로 데려다준다.
+ipcMain.on('open-camera-settings', () => {
+  shell.openExternal('ms-settings:privacy-webcam').catch(() => {});
+});
+
+// 스토어 버전에서 '스토어 업데이트 화면'을 연다
+ipcMain.on('open-store-updates', () => {
+  shell.openExternal('ms-windows-store://downloadsandupdates').catch(() => {});
 });
 
 ipcMain.handle('set-auto-launch', (e, on) => {
@@ -1468,7 +1529,7 @@ app.whenReady().then(() => {
   // ═══ 자동 업데이트 (GitHub Releases) ═══
   // 스토어 빌드는 업데이트를 스토어가 담당한다 (직접 내려받아 설치하면 정책 위반)
   try {
-    if (IS_STORE_BUILD) throw new Error('store build: updater disabled');
+    if (IS_STORE_BUILD) { startStoreUpdateNotice(); throw new Error('store build: updater disabled'); }
     autoUpdater = require('electron-updater').autoUpdater;
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
