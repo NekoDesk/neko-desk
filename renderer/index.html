@@ -955,6 +955,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   text-align:center; color:#d9736e; font-size:10px; line-height:1; }
 .cal-day.has-dday { position:relative; padding-bottom:9px; }
 .cal-day-num { font-size:11px; text-align:center; }
+/* 지난달·다음달 날짜 — 같은 칸이지만 이번 달이 아님을 한눈에 */
+.cal-day.cal-other .cal-day-num { color:var(--gray); opacity:0.45; }
+.cal-day.cal-other.has-note::after { opacity:0.5; }
 .cal-note-preview { font-size:9px; color:var(--gray); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:center; }
 .badge { font-family: 'Galmuri14', monospace; font-size: 11px; padding: 2px 6px; background: var(--yellow); color: #000; }
 .badge.g { background: var(--mint); color: #000; }
@@ -5820,18 +5823,31 @@ function renderCalendar() {
       <div class="cal-grid">
       ${dows.map((d,i)=>`<div style="text-align:center;font-size:10px;color:${i===0?'#f88':'var(--gray)'};padding:2px 0;border-bottom:1px solid var(--border)">${d}</div>`).join('')}`;
 
-    for (let i = 0; i < firstDow; i++) lh += `<div></div>`;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    // 앞뒤로 지난달·다음달 날짜를 채운다. 빈 칸으로 두면 월말·월초에
+    // 일정을 옮기려고 달을 넘겼다 왔다 해야 해서 번거롭다.
+    const cells = [];
+    const prevLast = new Date(y, m, 0).getDate();          // 지난달 마지막 날
+    for (let i = firstDow - 1; i >= 0; i--) {
+      const dt = new Date(y, m - 1, prevLast - i);
+      cells.push({ dt, other: true });
+    }
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ dt: new Date(y, m, d), other: false });
+    const tail = (7 - (cells.length % 7)) % 7;             // 마지막 주를 끝까지
+    for (let i = 1; i <= tail; i++) cells.push({ dt: new Date(y, m + 1, i), other: true });
+
+    for (const cell of cells) {
+      const dt = cell.dt;
+      const d = dt.getDate();
+      const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const items = getCalNotes(key);
-      const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
+      const isToday = d===today.getDate() && dt.getMonth()===today.getMonth() && dt.getFullYear()===today.getFullYear();
       const isSel = key === _calKey;
-      const isSun = (firstDow + d - 1) % 7 === 0;
+      const isSun = dt.getDay() === 0;
       // 셀 안에는 날짜만 — 할 일이 있는 날은 숫자 아래에 점만 표시 (다이어리와 동일).
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
       const isMulti = _multiKeys && _multiKeys.indexOf(key) >= 0;
-      lh += `<div class="cal-day${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')">
-        <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
+      lh += `<div class="cal-day${cell.other?' cal-other':''}${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')">
+        <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun&&!cell.other?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
       </div>`;
     }
     lh += `</div>`;
@@ -6117,7 +6133,11 @@ function openDayNote(key) {
   }
   if (_moveSrc) { moveItemTo(key); return; }   // 옮기기 선택 중이면 그 날짜로 이동
   _editIdx = -1;
-  _calKey = key; renderCalendar();
+  _calKey = key;
+  // 지난달·다음달 칸을 눌렀으면 그 달로 넘어간다
+  const [ky, km] = key.split('-').map(Number);
+  if (ky !== _calYear || km - 1 !== _calMonth) { _calYear = ky; _calMonth = km - 1; }
+  renderCalendar();
 }
 
 // ── 여러 날에 한 번에 넣기 ──────────────────────────────────
