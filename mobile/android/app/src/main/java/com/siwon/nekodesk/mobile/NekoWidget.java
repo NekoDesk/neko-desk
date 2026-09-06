@@ -20,27 +20,25 @@ import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * 홈 화면 위젯 — D-day 전부와 어제·오늘·내일 할 일을 보여준다.
- *
- * 앱(웹뷰)에서 계산한 내용을 SharedPreferences에 넣어두면 여기서 읽어 그린다.
- * 위젯은 RemoteViews라 웹뷰를 띄울 수 없어서, 표시에 필요한 값만 미리 담아 둔다.
- * 줄 수가 정해지지 않은 부분은 빈 칸에 addView로 개수만큼 붙인다.
- */
 public class NekoWidget extends AppWidgetProvider {
 
-    /** 이 위젯이 보여줄 것들 — 자식 클래스가 정한다 */
     protected int layoutId()   { return R.layout.neko_widget; }
-    protected boolean showHealth() { return true; }   // 물·비타민
+    protected boolean showHealth() { return true; }
     protected boolean showDday()   { return true; }
     protected boolean showTodo()   { return true; }
-    protected boolean showTable()  { return false; }  // 오늘 시간표
-
+    protected boolean showTable()  { return false; }
 
     public static final String PREFS = "neko_widget";
     public static final String KEY_DATA = "data";
-    /** 앱에서 내용을 바꾼 뒤 보내는 신호 */
+    public static final String KEY_TOGGLES = "pending_toggles";
+    public static final String KEY_WATER_ADD = "pending_water_add";
+    public static final String KEY_VITA_ADD = "pending_vita_add";
     public static final String ACTION_REFRESH = "com.siwon.nekodesk.mobile.WIDGET_REFRESH";
+    public static final String ACTION_TOGGLE = "com.siwon.nekodesk.mobile.WIDGET_TOGGLE";
+    public static final String ACTION_WATER = "com.siwon.nekodesk.mobile.WIDGET_WATER";
+    public static final String ACTION_VITA = "com.siwon.nekodesk.mobile.WIDGET_VITA";
+    private static final String EXTRA_TODO_ID = "todo_id";
+    private static final String EXTRA_DATE_KEY = "date_key";
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -50,38 +48,145 @@ public class NekoWidget extends AppWidgetProvider {
     @Override
     public void onReceive(Context ctx, Intent intent) {
         super.onReceive(ctx, intent);
-        if (ACTION_REFRESH.equals(intent.getAction())) {
+        String action = intent.getAction();
+        if (ACTION_REFRESH.equals(action)) {
             AppWidgetManager mgr = AppWidgetManager.getInstance(ctx);
-            // getClass() — 이 신호를 받은 위젯 종류의 것만 다시 그린다
             int[] ids = mgr.getAppWidgetIds(new ComponentName(ctx, getClass()));
             for (int id : ids) render(ctx, mgr, id);
+        } else if (ACTION_TOGGLE.equals(action)) {
+            String todoId = intent.getStringExtra(EXTRA_TODO_ID);
+            String dateKey = intent.getStringExtra(EXTRA_DATE_KEY);
+            if (todoId != null && dateKey != null) {
+                toggleTodo(ctx, todoId, dateKey);
+            }
+        } else if (ACTION_WATER.equals(action)) {
+            addWater(ctx);
+        } else if (ACTION_VITA.equals(action)) {
+            addVita(ctx);
         }
     }
 
-    /** 크기를 바꾸면 다시 그린다 — 시간표 칸 높이가 따라 변한다 */
     @Override
     public void onAppWidgetOptionsChanged(Context ctx, AppWidgetManager mgr, int id, Bundle opts) {
         super.onAppWidgetOptionsChanged(ctx, mgr, id, opts);
         render(ctx, mgr, id);
     }
 
-    /** 홈 화면에 놓을 수 있는 위젯 종류 — 새로고침 신호를 다 같이 받는다 */
     private static final Class<?>[] PROVIDERS = {
         NekoWidget.class, NekoWidgetFull.class, NekoWidgetDday.class,
         NekoWidgetTodo.class, NekoWidgetTt.class,
     };
 
-    /** 앱에서 호출 — 저장하고 곧바로 다시 그리게 한다 */
-    public static void push(Context ctx, String json) {
-        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        sp.edit().putString(KEY_DATA, json).apply();
-        // 종류마다 리시버가 따로라 하나씩 불러 줘야 한다
+    private static void refreshAll(Context ctx) {
         for (Class<?> c : PROVIDERS) {
             ctx.sendBroadcast(new Intent(ctx, c).setAction(ACTION_REFRESH));
         }
     }
 
-    /** "yyyy-MM-dd"를 오늘 기준 남은 날수로. 형식이 틀리면 null */
+    public static void push(Context ctx, String json) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        sp.edit().putString(KEY_DATA, json).apply();
+        refreshAll(ctx);
+    }
+
+    private static void toggleTodo(Context ctx, String todoId, String dateKey) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONArray todos = o.optJSONArray("todos");
+            if (todos == null) return;
+
+            boolean newDone = false;
+            for (int i = 0; i < todos.length(); i++) {
+                JSONObject it = todos.optJSONObject(i);
+                if (it != null && todoId.equals(it.optString("id", ""))) {
+                    boolean wasDone = it.optBoolean("done", false);
+                    newDone = !wasDone;
+                    it.put("done", newDone);
+                    int done = o.optInt("todoDone", 0);
+                    o.put("todoDone", wasDone ? Math.max(0, done - 1) : done + 1);
+                    break;
+                }
+            }
+
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+
+            String raw = sp.getString(KEY_TOGGLES, "[]");
+            JSONArray toggles = new JSONArray(raw);
+            JSONObject t = new JSONObject();
+            t.put("id", todoId);
+            t.put("dateKey", dateKey);
+            t.put("done", newDone);
+            toggles.put(t);
+            sp.edit().putString(KEY_TOGGLES, toggles.toString()).apply();
+
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
+    private static void addWater(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONObject h = o.optJSONObject("health");
+            if (h == null) return;
+            int done = h.optInt("waterDone", 0);
+            int goal = h.optInt("waterGoal", 8);
+            if (done >= goal) return;
+            h.put("waterDone", done + 1);
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) + 1).apply();
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
+    private static void addVita(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONObject h = o.optJSONObject("health");
+            if (h == null) return;
+            int done = h.optInt("vitaDone", 0);
+            int goal = h.optInt("vitaGoal", 1);
+            if (done >= goal) return;
+            h.put("vitaDone", done + 1);
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) + 1).apply();
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
+    /** 대기 중인 변경사항을 JSON으로 꺼내고 비운다 */
+    public static String consumePending(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        try {
+            JSONObject out = new JSONObject();
+            out.put("toggles", sp.getString(KEY_TOGGLES, "[]"));
+            out.put("waterAdd", sp.getInt(KEY_WATER_ADD, 0));
+            out.put("vitaAdd", sp.getInt(KEY_VITA_ADD, 0));
+            sp.edit()
+                .remove(KEY_TOGGLES)
+                .remove(KEY_WATER_ADD)
+                .remove(KEY_VITA_ADD)
+                .apply();
+            return out.toString();
+        } catch (Exception e) {
+            return "{\"toggles\":\"[]\",\"waterAdd\":0,\"vitaAdd\":0}";
+        }
+    }
+
     private static Integer daysFromToday(String dateKey) {
         try {
             String[] p = dateKey.split("-");
@@ -106,25 +211,21 @@ public class NekoWidget extends AppWidgetProvider {
         return diff > 0 ? ("D-" + diff) : ("D+" + (-diff));
     }
 
-    /** 오늘 날짜를 "yyyy-MM-dd"로 */
     private static String todayKey() {
         Calendar c = Calendar.getInstance();
         return String.format(Locale.US, "%04d-%02d-%02d",
                 c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
     }
 
-    /** "2026-07-05" -> "07.05" */
     private static String shortDate(String dateKey) {
         String[] p = dateKey.split("-");
         return (p.length == 3) ? (p[1] + "." + p[2]) : dateKey;
     }
 
-    /** RemoteViews에는 배경을 바꾸는 전용 메서드가 없어 setInt로 부른다 */
     private static void setBg(RemoteViews v, int viewId, int resId) {
         v.setInt(viewId, "setBackgroundResource", resId);
     }
 
-    /** 끝낸 일 글씨에 가로줄 */
     private static CharSequence struck(String text) {
         SpannableString s = new SpannableString(text);
         s.setSpan(new StrikethroughSpan(), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -143,30 +244,34 @@ public class NekoWidget extends AppWidgetProvider {
         }
         if (o == null) o = new JSONObject();
 
-        // 앱에서 고른 배경 테마 — 바탕과 글씨 색을 여기에 맞춘다
         final int th = WidgetTheme.index(o.optString("theme", "white"));
         final int cText = WidgetTheme.text(th), cDim = WidgetTheme.dim(th);
         setBg(v, R.id.w_root, WidgetTheme.bg(th, WidgetTheme.BG));
         v.setTextColor(R.id.w_brand, cText);
+        v.setTextColor(R.id.w_refresh, cDim);
+
+        // 새로고침 버튼 → 앱 열기
+        Intent refreshIntent = new Intent(ctx, MainActivity.class);
+        refreshIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent refreshPi = PendingIntent.getActivity(ctx, 9999, refreshIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        v.setOnClickPendingIntent(R.id.w_refresh, refreshPi);
 
         String emptyText = o.optString("emptyText", "");
         String headTitle = o.optString("headTitle", "");
         String doneWord  = o.optString("doneWord", "");
         String noneWord  = o.optString("noneWord", "");
 
-        // 앱을 며칠 안 열었으면 담아둔 할 일은 이미 지난 날 것이다
         String todosDate = o.optString("todosDate", "");
         boolean stale = todosDate.length() > 0 && !todosDate.equals(todayKey());
 
-        // ── 물 · 비타민 ──
         if (showHealth()) {
             setBg(v, R.id.w_health_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
             v.setTextColor(R.id.w_water_lbl, cDim);
             v.setTextColor(R.id.w_vita_lbl, cDim);
-            fillHealth(v, pkg, o);
+            fillHealth(ctx, v, pkg, o);
         }
 
-        // ── D-day: 등록된 만큼 전부 ──
         JSONArray ddays = showDday() ? o.optJSONArray("ddays") : null;
         int ddayCount = 0;
         if (showDday()) v.removeAllViews(R.id.w_dday_list);
@@ -176,7 +281,6 @@ public class NekoWidget extends AppWidgetProvider {
             String title = d.optString("title", "");
             String date = d.optString("date", "");
             if (title.length() == 0 || date.length() == 0) continue;
-            // 앱을 안 열어도 숫자가 맞도록 남은 날수는 여기서 다시 센다
             Integer diff = daysFromToday(date);
             RemoteViews row = new RemoteViews(pkg, R.layout.w_dday_item);
             setBg(row, R.id.i_row, WidgetTheme.bg(th, WidgetTheme.DDAY_BG));
@@ -200,12 +304,22 @@ public class NekoWidget extends AppWidgetProvider {
             boolean done = it.optBoolean("done", false);
             boolean pm = "pm".equals(it.optString("ampm", ""));
             String badge = it.optString("ampmLabel", "");
+            String itemId = it.optString("id", "idx_" + i);
 
             RemoteViews row = new RemoteViews(pkg, R.layout.w_todo_item);
             setBg(row, R.id.i_row, WidgetTheme.bg(th,
                     done ? WidgetTheme.ROW_DONE_BG : WidgetTheme.ROW_BG));
             setBg(row, R.id.i_chk, done ? R.drawable.w_check_on : R.drawable.w_check_off);
             row.setTextViewText(R.id.i_chk, done ? "✓" : "");
+
+            Intent toggleIntent = new Intent(ctx, getClass());
+            toggleIntent.setAction(ACTION_TOGGLE);
+            toggleIntent.putExtra(EXTRA_TODO_ID, itemId);
+            toggleIntent.putExtra(EXTRA_DATE_KEY, todosDate);
+            PendingIntent togglePi = PendingIntent.getBroadcast(ctx, 100 + i, toggleIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+            row.setOnClickPendingIntent(R.id.i_chk_area, togglePi);
+
             if (done) {
                 row.setTextViewText(R.id.i_text, struck(text));
                 row.setTextColor(R.id.i_text, 0xFF9AA0A6);
@@ -225,7 +339,6 @@ public class NekoWidget extends AppWidgetProvider {
             shown++;
         }
 
-        // 머리글 개수는 오늘 전체 기준 — 위젯에는 몇 줄만 보여도
         int total = shown, doneCount = 0;
         for (int i = 0; todos != null && i < todos.length(); i++) {
             JSONObject it = todos.optJSONObject(i);
@@ -258,11 +371,8 @@ public class NekoWidget extends AppWidgetProvider {
             }
         }
 
-        // ── 오늘 시간표 ──
-        // 위젯을 길게 늘일수록 한 시간 칸도 길어지도록, 남은 자리를 대충 재서 나눈다.
         if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, ddayCount, shown));
 
-        // ── 어제 · 내일 (기본 위젯에만 있다) ──
         if (layoutId() == R.layout.neko_widget) {
             setBg(v, R.id.w_yday_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
             setBg(v, R.id.w_tmr_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
@@ -274,7 +384,7 @@ public class NekoWidget extends AppWidgetProvider {
                      R.id.w_tmr_title, R.id.w_tmr_list, R.id.w_tmr_empty, noneWord);
         }
 
-        // 위젯을 누르면 앱이 열린다
+        // 위젯 전체 (체크박스·물·비타민·새로고침 이외) → 앱 열기
         Intent open = new Intent(ctx, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(ctx, 0, open,
@@ -284,8 +394,7 @@ public class NekoWidget extends AppWidgetProvider {
         mgr.updateAppWidget(id, v);
     }
 
-    /** 오늘 마신 물과 챙겨 먹은 비타민 */
-    private void fillHealth(RemoteViews v, String pkg, JSONObject o) {
+    private void fillHealth(Context ctx, RemoteViews v, String pkg, JSONObject o) {
         JSONObject h = o.optJSONObject("health");
         if (h == null) {
             v.setViewVisibility(R.id.w_water_row, View.GONE);
@@ -295,13 +404,19 @@ public class NekoWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.w_water_lbl, h.optString("waterLabel", ""));
         int wDone = h.optInt("waterDone", 0), wGoal = h.optInt("waterGoal", 8);
         v.removeAllViews(R.id.w_water_row);
-        // 앱 화면과 같은 방향 — 채워져 있다가 마시면 비워진다
         for (int i = 0; i < wGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_cup);
             setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_off : R.drawable.w_cup_on);
             v.addView(R.id.w_water_row, c);
         }
         v.setViewVisibility(R.id.w_water_row, View.VISIBLE);
+
+        // 물 줄 터치 → 물 한 잔 추가
+        Intent waterIntent = new Intent(ctx, getClass());
+        waterIntent.setAction(ACTION_WATER);
+        PendingIntent waterPi = PendingIntent.getBroadcast(ctx, 200, waterIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        v.setOnClickPendingIntent(R.id.w_water_row, waterPi);
 
         int vDone = h.optInt("vitaDone", 0), vGoal = h.optInt("vitaGoal", 0);
         if (vGoal <= 0) {
@@ -316,18 +431,15 @@ public class NekoWidget extends AppWidgetProvider {
             setBg(c, R.id.i_dot, i < vDone ? R.drawable.w_pill_off : R.drawable.w_pill_on);
             v.addView(R.id.w_vita_row, c);
         }
+
+        // 비타민 줄 터치 → 비타민 1회 추가
+        Intent vitaIntent = new Intent(ctx, getClass());
+        vitaIntent.setAction(ACTION_VITA);
+        PendingIntent vitaPi = PendingIntent.getBroadcast(ctx, 201, vitaIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        v.setOnClickPendingIntent(R.id.w_vita_row, vitaPi);
     }
 
-    /**
-     * 시간표를 요일 x 시간 격자로 그린다.
-     * 앱 화면과 같은 모양이라 한눈에 알아볼 수 있다.
-     * 한 시간이 한 줄이고, 칸이 걸쳐 있으면 색을 칠한다.
-     * 이름은 그 칸이 시작하는 줄에만 적는다.
-     */
-    /**
-     * 위젯 높이에서 다른 칸이 쓰는 만큼을 빼고, 남은 자리를 시간 수로 나눈다.
-     * RemoteViews는 재 볼 수가 없어서 각 줄의 대략적인 높이로 어림한다.
-     */
     private int ttRowH(AppWidgetManager mgr, int id, int ddayCount, int todoCount) {
         int hDp = 0;
         try {
@@ -337,16 +449,14 @@ public class NekoWidget extends AppWidgetProvider {
                 if (hDp <= 0) hDp = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
             }
         } catch (Exception ignored) {}
-        if (hDp <= 0) return 0;                       // 크기를 모르면 기본 높이로
-
-        int used = 20 + 34 + 22 + 22 + 8;             // 안쪽 여백 + 머리글 + 제목 + 요일줄
+        if (hDp <= 0) return 0;
+        int used = 20 + 34 + 22 + 22 + 8;
         if (showHealth()) used += 62;
         used += ddayCount * 40;
         if (showTodo()) used += (todoCount > 0 ? 26 + todoCount * 42 : 30);
-        return hDp - used;                            // 시간표가 쓸 수 있는 높이
+        return hDp - used;
     }
 
-    /** 남은 높이에 맞는 칸 모양 (0번이 제일 낮다) */
     private static int ttSize(int avail, int rows) {
         if (avail <= 0 || rows <= 0) return 1;
         int h = avail / rows;
@@ -379,19 +489,17 @@ public class NekoWidget extends AppWidgetProvider {
         JSONArray dows = tt.optJSONArray("dows");
         JSONArray blocks = tt.optJSONArray("blocks");
         if (blocks == null || blocks.length() == 0) {
-            // 빈 격자만 덩그러니 두지 않는다
             RemoteViews note = new RemoteViews(pkg, R.layout.w_tt_dow);
             note.setTextViewText(R.id.i_text, tt.optString("empty", ""));
             v.addView(R.id.w_tt_body, note);
             return;
         }
-        int from = tt.optInt("from", 8);          // 보여줄 시작 시
-        int to = tt.optInt("to", 20);             // 보여줄 끝 시
+        int from = tt.optInt("from", 8);
+        int to = tt.optInt("to", 20);
         if (to <= from) to = from + 1;
-        if (to - from > 14) to = from + 14;       // 위젯이 너무 길어지지 않게
-        int size = ttSize(avail, to - from);      // 위젯 크기에 맞는 칸 높이
+        if (to - from > 14) to = from + 14;
+        int size = ttSize(avail, to - from);
 
-        // 머리줄: 빈칸 + 일~토
         RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);
         corner.setTextViewText(R.id.i_text, "");
         v.addView(R.id.w_tt_head, corner);
@@ -400,9 +508,7 @@ public class NekoWidget extends AppWidgetProvider {
         for (int d = 0; d < 7; d++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_tt_dow);
             c.setTextViewText(R.id.i_text, dows == null ? "" : dows.optString(d, ""));
-            // 오늘이 한눈에 보이게 노랑, 일요일은 붉게
             if (d == todayDow) {
-                // 오늘은 머리글 칸만 노랗게. 글씨는 바탕에 묻히지 않게 진하게.
                 setBg(c, R.id.i_text, WidgetTheme.bg(th, WidgetTheme.TT_TODAYHEAD));
                 c.setTextColor(R.id.i_text, 0xFF6B5214);
             } else if (d == 0) c.setTextColor(R.id.i_text, 0xFFE08A86);
@@ -424,19 +530,17 @@ public class NekoWidget extends AppWidgetProvider {
                 for (int i = 0; blocks != null && i < blocks.length(); i++) {
                     JSONObject b = blocks.optJSONObject(i);
                     if (b == null || b.optInt("day", -1) != d) continue;
-                    int s = b.optInt("start", -1), e = b.optInt("end", -1);   // 분 단위
+                    int s = b.optInt("start", -1), e = b.optInt("end", -1);
                     if (s < 0 || e <= s) continue;
                     if (h * 60 < e && (h + 1) * 60 > s) {
                         hit = b;
                         starts = (s >= h * 60 && s < (h + 1) * 60);
                         ends = (e > h * 60 && e <= (h + 1) * 60);
-                        // 보이는 범위 밖으로 이어지면 잘린 쪽은 모서리를 남기지 않는다
                         if (h == from && s < h * 60) starts = false;
                         if (h == to - 1 && e > (h + 1) * 60) ends = false;
                         break;
                     }
                 }
-                // 맨 아랫줄 오른쪽 끝은 바깥 틀의 둥근 모서리에 맞춰야 각지지 않는다
                 boolean endCell = (h == to - 1) && (d == 6);
                 if (hit != null) {
                     int ci = hit.optInt("color", -1);
@@ -455,16 +559,11 @@ public class NekoWidget extends AppWidgetProvider {
         }
     }
 
-    /**
-     * 한 일정이 여러 시간에 걸치면 한 덩어리로 보여야 한다.
-     * 시작 줄은 위만, 끝 줄은 아래만 둥글고, 가운데 줄은 각지게 이어 붙인다.
-     * 바깥 칸은 앱 화면과 같은 여덟 가지 색 (집중 · 쉼 · 골라 쓰는 여섯).
-     */
     private static int ttPiece(boolean starts, boolean ends) {
-        if (starts && ends) return 0;      // 한 시간짜리
-        if (starts) return 1;              // 시작 줄
-        if (ends) return 3;                // 끝 줄
-        return 2;                          // 가운데
+        if (starts && ends) return 0;
+        if (starts) return 1;
+        if (ends) return 3;
+        return 2;
     }
 
     private static final int[][] TT_BG = {
@@ -480,7 +579,6 @@ public class NekoWidget extends AppWidgetProvider {
 
     private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
 
-    /** 어제·내일 칸 하나를 채운다 */
     private void fillSide(RemoteViews v, String pkg, JSONObject side, boolean stale,
                           int titleId, int listId, int emptyId, String noneWord) {
         v.removeAllViews(listId);
@@ -508,7 +606,6 @@ public class NekoWidget extends AppWidgetProvider {
             shown++;
         }
 
-        // 다 못 보여준 개수, 또는 아무것도 없을 때의 안내
         int more = (side == null || stale) ? 0 : Math.max(0, side.optInt("total", shown) - shown);
         if (shown == 0) {
             v.setViewVisibility(emptyId, View.VISIBLE);

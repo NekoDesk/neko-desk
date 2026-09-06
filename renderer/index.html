@@ -878,6 +878,10 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-diary-btn:hover { color:var(--yellow); border-color:var(--yellow); }
 .todo-help-btn { position:relative; background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:11px; cursor:pointer; width:20px; height:20px; line-height:1; border-radius:50%; padding:0; flex-shrink:0; }
 .todo-help-btn:hover { color:var(--yellow); border-color:var(--yellow); }
+.todo-undo-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:12px;
+  cursor:pointer; width:22px; height:22px; line-height:1; border-radius:4px; padding:0; flex-shrink:0; }
+.todo-undo-btn:hover:not(:disabled) { color:var(--yellow); border-color:var(--yellow); }
+.todo-undo-btn:disabled { opacity:0.3; cursor:default; }
 .todo-move-tip { font-size:11px; color:var(--gray); line-height:1.55; margin:10px 0 0; padding:7px 9px; background:var(--card); border:1px dashed var(--border); border-radius:4px; }
 .todo-move-tip.on { color:var(--bg); background:var(--mint); border-style:solid; border-color:var(--mint); font-weight:700; }
 /* Work items */
@@ -926,6 +930,22 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .ampm-btn.am { color:#000; background:var(--mint);   border-color:var(--mint); }
 .ampm-btn.pm { color:#000; background:var(--yellow); border-color:var(--yellow); }
 .ampm-btn:hover { filter:brightness(1.1); }
+.pin-btn { font-size:11px; border-radius:3px; cursor:pointer;
+  flex-shrink:0; border:1px solid var(--border); background:var(--card);
+  color:var(--gray); line-height:1; width:20px; height:20px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center; }
+.pin-btn:hover { color:var(--yellow); border-color:var(--yellow); }
+.pin-popup { position:fixed; z-index:9999; background:var(--card); border:1px solid var(--border);
+  border-radius:8px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,0.3); min-width:200px; }
+.pin-popup-title { font-size:12px; font-weight:700; color:var(--white); margin-bottom:8px; }
+.pin-opt { display:flex; align-items:center; gap:6px; padding:6px 4px; cursor:pointer;
+  border-radius:4px; font-size:12px; color:var(--white); }
+.pin-opt:hover { background:var(--hover); }
+.pin-opt.active { color:var(--yellow); }
+.pin-dow-grid { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0 4px 22px; }
+.pin-dow-chip { font-size:11px; padding:2px 6px; border-radius:3px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card); color:var(--gray); }
+.pin-dow-chip.on { background:var(--yellow); color:#000; border-color:var(--yellow); }
 .work-item-row .tctl { width:150px; }
 .work-item-row .tctl input[type="time"] { flex:1; width:auto; }
 /* 시간 입력의 내부 필드는 그림자 DOM이라 별도로 크기를 맞춰야 라벨과 같아진다 */
@@ -942,6 +962,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 여러 날에 넣기 — 고른 날짜 */
 .cal-day.cal-multi { background:color-mix(in srgb, var(--yellow), transparent 72%) !important;
   box-shadow:0 0 0 2px var(--yellow) inset; border-radius:4px; }
+.cal-dow-btn { cursor:pointer; border:1px solid var(--border); border-radius:4px; margin:0 1px; transition:background 0.15s; }
+.cal-dow-btn:hover { background:color-mix(in srgb, var(--yellow), transparent 85%); }
 .cal-multi-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap;
   background:color-mix(in srgb, var(--yellow), transparent 88%);
   border:1px solid var(--yellow); border-radius:6px; padding:8px 10px; margin-bottom:10px; }
@@ -2114,6 +2136,15 @@ const STRINGS = {
     vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
     todo_multi_btn:'📅 여러 날에 한 번에 넣기', todo_multi_hint:'달력에서 넣을 날짜를 눌러 고르세요. 다시 누르면 빠집니다.',
     todo_multi_apply:'✓ {n}일에 넣기', todo_multi_none:'날짜를 먼저 골라 주세요', todo_multi_done:'{n}일에 넣었어요',
+    todo_copy_day:'📋 일정 복붙', todo_copy_day_hint:'선택한 날짜의 일정을 복사합니다. 붙여넣을 날짜를 달력에서 고르세요.',
+    todo_copy_day_apply:'✓ {n}일에 붙이기', todo_copy_day_done:'{n}일에 붙였어요 ({c}개)',
+    todo_copy_day_empty:'복사할 일정이 없어요', todo_copy_day_none:'붙여넣을 날짜를 고르세요',
+    todo_multi_dow_hint:'달력에서 요일을 누르면 해당 요일이 모두 선택됩니다.',
+    pin_title:'📌 일정 고정', pin_everyday:'매일', pin_weekdays:'평일만', pin_weekends:'주말만',
+    pin_by_dow:'요일별', pin_apply:'✓ 고정하기', pin_done:'{n}일에 고정했어요',
+    pin_cancel:'취소', pin_select_days:'고정할 요일을 선택하세요',
+    pin_unpin:'📌 고정 해제', pin_unpin_hint:'선택한 날 이후 같은 내용의 일정을 삭제합니다',
+    pin_unpin_done:'{n}개 일정을 해제했어요', pin_unpin_none:'해제할 일정이 없어요',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
     todo_tip_html:'<b style="color:var(--white)">⠿ 일정 옮기기</b><br>일정 왼쪽의 <b>⠿ 를 잡고 위아래로 끌면</b> 순서를 바꿀 수 있어요. 어느 사이에 들어갈지 선으로 표시됩니다.<br>⠿ 를 <b>캘린더의 날짜 위로 끌면</b> 그 날로 옮겨져요.<br>⠿ 를 눌러 선택한 뒤 날짜를 클릭해도 이동됩니다.<br><br><b style="color:var(--white)">🍋 열매 받기</b><br>일정을 완료 체크하면 열매를 1개 받아요. (바구니는 최대 5개)<br><br><b style="color:var(--white)">✏️ 일정 수정</b><br>일정 <b>글씨를 더블클릭</b>하면 그 자리에서 내용을 고칠 수 있어요.<br>왼쪽의 <b>오전/오후 버튼</b>을 누르면 언제든 바꿀 수 있습니다.',
@@ -2356,6 +2387,15 @@ const STRINGS = {
     vitamin_bubble:'Time for a vitamin 💊',
     todo_multi_btn:'📅 Add to several days', todo_multi_hint:'Tap the days on the calendar. Tap again to remove one.',
     todo_multi_apply:'✓ Add to {n} days', todo_multi_none:'Pick some days first', todo_multi_done:'Added to {n} days',
+    todo_copy_day:'📋 Copy todos', todo_copy_day_hint:'Copies this day\'s todos. Pick the target dates on the calendar.',
+    todo_copy_day_apply:'✓ Paste to {n} days', todo_copy_day_done:'Pasted to {n} days ({c} items)',
+    todo_copy_day_empty:'No todos to copy', todo_copy_day_none:'Pick target dates first',
+    todo_multi_dow_hint:'Tap a weekday header to select all dates of that weekday.',
+    pin_title:'📌 Pin task', pin_everyday:'Every day', pin_weekdays:'Weekdays only', pin_weekends:'Weekends only',
+    pin_by_dow:'By weekday', pin_apply:'✓ Pin', pin_done:'Pinned to {n} days',
+    pin_cancel:'Cancel', pin_select_days:'Select the weekdays to pin to',
+    pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes matching tasks from dates after the selected day',
+    pin_unpin_done:'Removed {n} tasks', pin_unpin_none:'No matching tasks to remove',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
     todo_tip_html:'<b style="color:var(--white)">⠿ Move a task</b><br><b>Drag the ⠿ handle up or down</b> to reorder — a line shows where it will land.<br><b>Drag it onto a calendar date</b> to move the task to that day.<br>Or tap ⠿ to select, then click a date.<br><br><b style="color:var(--white)">🍋 Earn a fruit</b><br>Check a task as done to earn 1 fruit. (Basket holds up to 5)<br><br><b style="color:var(--white)">✏️ Edit a task</b><br><b>Double-click the text</b> to edit it in place.<br>Use the <b>AM/PM button</b> on the left to switch anytime.',
@@ -2600,6 +2640,15 @@ const STRINGS = {
     todo_moved_title:'📅 移動しました',
     todo_multi_btn:'📅 まとめて何日かに入れる', todo_multi_hint:'カレンダーで入れる日を押して選んでください。もう一度押すと外れます。',
     todo_multi_apply:'✓ {n}日に入れる', todo_multi_none:'先に日を選んでください', todo_multi_done:'{n}日に入れました',
+    todo_copy_day:'📋 予定コピー', todo_copy_day_hint:'この日の予定をコピーします。貼り付ける日をカレンダーで選んでください。',
+    todo_copy_day_apply:'✓ {n}日に貼り付け', todo_copy_day_done:'{n}日に貼り付けました（{c}件）',
+    todo_copy_day_empty:'コピーする予定がありません', todo_copy_day_none:'先に貼り付ける日を選んでください',
+    todo_multi_dow_hint:'曜日を押すとその曜日の全日が選択されます。',
+    pin_title:'📌 予定を固定', pin_everyday:'毎日', pin_weekdays:'平日のみ', pin_weekends:'週末のみ',
+    pin_by_dow:'曜日別', pin_apply:'✓ 固定する', pin_done:'{n}日に固定しました',
+    pin_cancel:'キャンセル', pin_select_days:'固定する曜日を選んでください',
+    pin_unpin:'📌 固定解除', pin_unpin_hint:'選択した日以降の同じ内容の予定を削除します',
+    pin_unpin_done:'{n}件解除しました', pin_unpin_none:'解除する予定がありません',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
     todo_tip_html:'<b style="color:var(--white)">⠿ 予定を移動</b><br>左の <b>⠿ を上下にドラッグ</b>すると並び順を変えられます。挿入位置は線で表示されます。<br><b>カレンダーの日付にドラッグ</b>するとその日に移動します。<br>⠿ を押して選択し、日付をクリックしてもOKです。<br><br><b style="color:var(--white)">🍋 実をもらう</b><br>予定を完了チェックすると実を1つもらえます。（かごは最大5個）<br><br><b style="color:var(--white)">✏️ 予定の編集</b><br>予定の<b>文字をダブルクリック</b>するとその場で修正できます。<br>左の<b>午前/午後ボタン</b>でいつでも切り替えられます。',
@@ -5796,7 +5845,46 @@ function getCalNotes(key) {
   if (typeof val === 'string') return [{text: val, done: false}]; // 구버전 마이그레이션
   return val;
 }
+// ── 실행 취소 / 다시 실행 ────────────────────────────────
+const _calUndoStack = [];
+const _calRedoStack = [];
+const _CAL_UNDO_MAX = 20;
+let _calUndoLock = false;
+
+function _calSnapshot() {
+  return JSON.stringify(S.calendarNotes || {});
+}
+function _calPushUndo() {
+  if (_calUndoLock) return;
+  const snap = _calSnapshot();
+  if (_calUndoStack.length && _calUndoStack[_calUndoStack.length - 1] === snap) return;
+  _calUndoStack.push(snap);
+  if (_calUndoStack.length > _CAL_UNDO_MAX) _calUndoStack.shift();
+  _calRedoStack.length = 0;
+}
+function calUndo() {
+  if (!_calUndoStack.length) return;
+  _calRedoStack.push(_calSnapshot());
+  const prev = JSON.parse(_calUndoStack.pop());
+  _calUndoLock = true;
+  S.calendarNotes = prev;
+  saveState();
+  _calUndoLock = false;
+  renderCalendar();
+}
+function calRedo() {
+  if (!_calRedoStack.length) return;
+  _calUndoStack.push(_calSnapshot());
+  const next = JSON.parse(_calRedoStack.pop());
+  _calUndoLock = true;
+  S.calendarNotes = next;
+  saveState();
+  _calUndoLock = false;
+  renderCalendar();
+}
+
 function setCalNotes(key, items) {
+  _calPushUndo();
   if (!S.calendarNotes) S.calendarNotes = {};
   if (items.length) S.calendarNotes[key] = items;
   else delete S.calendarNotes[key];
@@ -5821,7 +5909,7 @@ function renderCalendar() {
         <button class="cal-nav" onclick="calNext()">▶</button>
       </div>
       <div class="cal-grid">
-      ${dows.map((d,i)=>`<div style="text-align:center;font-size:10px;color:${i===0?'#f88':'var(--gray)'};padding:2px 0;border-bottom:1px solid var(--border)">${d}</div>`).join('')}`;
+      ${dows.map((d,i)=>`<div class="cal-dow${_multiKeys||_copySrcKey?' cal-dow-btn':''}" style="text-align:center;font-size:10px;color:${i===0?'#f88':'var(--gray)'};padding:2px 0;border-bottom:1px solid var(--border)" onclick="toggleDow(${i})">${d}</div>`).join('')}`;
 
     // 앞뒤로 지난달·다음달 날짜를 채운다. 빈 칸으로 두면 월말·월초에
     // 일정을 옮기려고 달을 넘겼다 왔다 해야 해서 번거롭다.
@@ -5861,16 +5949,18 @@ function renderCalendar() {
 
     let rh = `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
       <span style="font-size:12px;color:var(--yellow);font-family:'Galmuri14',monospace">${selLabel || L('todo_date_ph')}</span>
-      <span style="display:flex;align-items:center;gap:6px">
+      <span style="display:flex;align-items:center;gap:4px">
         <button class="todo-diary-btn" onclick="openDiary()">${L('tab_diary')}</button>
+        <button class="todo-undo-btn" onclick="calUndo()" ${_calUndoStack.length?'':'disabled'} title="Undo">↩</button>
+        <button class="todo-undo-btn" onclick="calRedo()" ${_calRedoStack.length?'':'disabled'} title="Redo">↪</button>
         <button class="todo-help-btn" onclick="openTodoTips()" data-tip="${L('todo_tip_title')}">?</button>
       </span>
     </div>`;
 
     // 여러 날에 넣는 중이면 그 화면만 보여 준다
-    if (_multiKeys) {
+    if (_multiKeys && !_copySrcKey) {
       rh += `<div class="cal-multi-bar">
-        <span class="hint">${L('todo_multi_hint')}</span>
+        <span class="hint">${L('todo_multi_hint')}<br>${L('todo_multi_dow_hint')}</span>
       </div>
       <div class="todo-add-row">
         <button class="ampm-btn ${_newAmPm === 'pm' ? 'pm' : 'am'}" onclick="toggleNewAmPm()">${_newAmPm === 'pm' ? L('work_pm') : L('work_am')}</button>
@@ -5887,6 +5977,24 @@ function renderCalendar() {
       return;
     }
 
+    // 일정 복붙 모드 — 소스 날짜의 일정을 고른 날짜에 붙인다
+    if (_copySrcKey && _multiKeys) {
+      const srcItems = getCalNotes(_copySrcKey);
+      const [,sm,sd] = _copySrcKey.split('-');
+      rh += `<div class="cal-multi-bar">
+        <span class="hint">${parseInt(sm)}/${parseInt(sd)} ${L('todo_copy_day_hint')}<br>${L('todo_multi_dow_hint')}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:8px">${srcItems.map(it => '<div>· ' + it.text.replace(/</g,'&lt;') + '</div>').join('')}</div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn btn-gr" style="flex:0 0 auto;font-size:12px" onclick="cancelCopyDay()">${L('remind_cancel')}</button>
+        <button class="btn btn-y" style="flex:1;font-size:12px" onclick="applyCopyDay()"
+          ${_multiKeys.length ? '' : 'disabled'}>${L('todo_copy_day_apply').replace('{n}', _multiKeys.length)}</button>
+      </div>`;
+      rightEl.innerHTML = rh;
+      return;
+    }
+
+
     if (_calKey) {
       if (selItems.length) {
         const allDone = selItems.every(i => i.done);
@@ -5902,6 +6010,7 @@ function renderCalendar() {
           <input type="checkbox" ${item.done?'checked':''} onchange="toggleDayItem('${_calKey}',${i})"
             style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer;flex-shrink:0">
           <button class="ampm-btn ${item.ampm === 'pm' ? 'pm' : 'am'}" onclick="toggleItemAmPm('${_calKey}',${i})">${item.ampm === 'pm' ? L('work_pm') : L('work_am')}</button>
+          <button class="pin-btn" onclick="openPinPopup(event,'${_calKey}',${i})" title="${L('pin_title')}">📌</button>
           ${_editIdx === i
             ? `<input id="dayItemEdit" class="todo-edit-in" value="${item.text.replace(/"/g,'&quot;')}"
                  onkeydown="if(event.key==='Enter')this.blur(); else if(event.key==='Escape'){_editIdx=-1;renderCalendar();}"
@@ -5918,8 +6027,12 @@ function renderCalendar() {
           onkeydown="if(event.key==='Enter')addDayItem('${_calKey}')">
         <button class="btn btn-y todo-add-btn" onclick="addDayItem('${_calKey}')">${L('todo_add_btn')}</button>
       </div>
-      <button class="btn btn-gr" style="width:100%;font-size:11px;padding:5px;margin-top:6px"
-        onclick="startMultiAdd()">${L('todo_multi_btn')}</button>`;
+      <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+        <button class="btn btn-gr" style="flex:1;font-size:11px;padding:5px"
+          onclick="startMultiAdd()">${L('todo_multi_btn')}</button>
+        <button class="btn btn-gr" style="flex:1;font-size:11px;padding:5px"
+          onclick="startCopyDay()">${L('todo_copy_day')}</button>
+      </div>`;
 
       // 어제는 왼쪽, 내일은 오른쪽에 반반씩
       rh += `<div class="todo-adj-row">`
@@ -6150,6 +6263,7 @@ function startMultiAdd() {
   _multiKeys = _calKey ? [_calKey] : [];
   _moveSrc = null;
   _editIdx = -1;
+  _copySrcKey = null;
   // 폰에서 달력을 접어 두었으면 펴 준다 (안 그러면 고를 수가 없다)
   try { if (typeof window.__nekoOpenCal === 'function') window.__nekoOpenCal(); } catch (e) {}
   renderCalendar();
@@ -6157,6 +6271,7 @@ function startMultiAdd() {
 
 function cancelMultiAdd() {
   _multiKeys = null;
+  _copySrcKey = null;
   renderCalendar();
 }
 
@@ -6182,6 +6297,77 @@ function applyMultiAdd() {
   renderCalendar();
   toast('info', L('todo_multi_btn'), L('todo_multi_done').replace('{n}', n));
 }
+
+// ── 일정 복붙: 특정 날짜 → 다른 날짜(들) ─────────────────
+let _copySrcKey = null;
+
+function startCopyDay() {
+  if (!_calKey) return;
+  const srcItems = getCalNotes(_calKey);
+  if (!srcItems.length) {
+    toast('alert', L('todo_copy_day'), L('todo_copy_day_empty'));
+    return;
+  }
+  _copySrcKey = _calKey;
+  _multiKeys = [];
+  _moveSrc = null;
+  _editIdx = -1;
+  try { if (typeof window.__nekoOpenCal === 'function') window.__nekoOpenCal(); } catch (e) {}
+  renderCalendar();
+}
+
+function cancelCopyDay() {
+  _copySrcKey = null;
+  _multiKeys = null;
+  renderCalendar();
+}
+
+function applyCopyDay() {
+  if (!_copySrcKey || !_multiKeys || !_multiKeys.length) {
+    toast('alert', L('todo_copy_day'), L('todo_copy_day_none'));
+    return;
+  }
+  const srcItems = getCalNotes(_copySrcKey);
+  if (!srcItems.length) { cancelCopyDay(); return; }
+  const keys = _multiKeys.slice().sort();
+  keys.forEach(key => {
+    const cur = getCalNotes(key);
+    srcItems.forEach(it => {
+      cur.push(touchItem({ text: it.text, done: false, ampm: it.ampm || 'am', ord: cur.length }));
+    });
+    setCalNotes(key, cur);
+  });
+  const n = keys.length, c = srcItems.length;
+  _copySrcKey = null;
+  _multiKeys = null;
+  saveState();
+  renderCalendar();
+  toast('info', L('todo_copy_day'), L('todo_copy_day_done').replace('{n}', n).replace('{c}', c));
+}
+
+
+// ── 요일 헤더 클릭: 해당 요일의 모든 날짜 토글 ─────────────
+function toggleDow(dow) {
+  if (!_multiKeys && !_copySrcKey) return;
+  if (!_multiKeys) return;
+  const y = _calYear, m = _calMonth;
+  const days = new Date(y, m + 1, 0).getDate();
+  const keys = [];
+  for (let d = 1; d <= days; d++) {
+    if (new Date(y, m, d).getDay() === dow) {
+      keys.push(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    }
+  }
+  // 모두 이미 선택돼 있으면 해제, 아니면 모두 선택
+  const allIn = keys.every(k => _multiKeys.indexOf(k) >= 0);
+  if (allIn) {
+    keys.forEach(k => { const at = _multiKeys.indexOf(k); if (at >= 0) _multiKeys.splice(at, 1); });
+  } else {
+    keys.forEach(k => { if (_multiKeys.indexOf(k) < 0) _multiKeys.push(k); });
+  }
+  renderCalendar();
+}
+
 function selectAllDayItems() {
   if (!_calKey) return;
   const items = getCalNotes(_calKey);
@@ -6208,12 +6394,23 @@ function toggleNewAmPm() {
   setTimeout(() => document.getElementById('dayNoteInput')?.focus(), 30);
 }
 
-/** 등록된 일정의 오전/오후 전환 */
+/** 등록된 일정의 오전/오후 전환 + 자동 위치 이동 */
 function toggleItemAmPm(key, i) {
   const items = getCalNotes(key);
   if (!items[i]) return;
-  items[i].ampm = items[i].ampm === 'pm' ? 'am' : 'pm';
-  touchItem(items[i]);
+  const item = items.splice(i, 1)[0];
+  const wasAm = item.ampm !== 'pm';
+  item.ampm = wasAm ? 'pm' : 'am';
+  touchItem(item);
+  if (wasAm) {
+    const firstPm = items.findIndex(it => it.ampm === 'pm');
+    items.splice(firstPm >= 0 ? firstPm : items.length, 0, item);
+  } else {
+    let lastAm = -1;
+    for (let j = 0; j < items.length; j++) { if (items[j].ampm !== 'pm') lastAm = j; }
+    items.splice(lastAm + 1, 0, item);
+  }
+  items.forEach((it, idx) => { it.ord = idx; });
   setCalNotes(key, items);
   saveState(); renderCalendar();
 }
@@ -6240,6 +6437,149 @@ function commitEditItem(key, i, val) {
     saveState();
   }
   renderCalendar();
+}
+
+// ── 핀(고정) 팝업 ─────────────────────────────────────────
+let _pinPopup = null;
+function closePinPopup() {
+  if (_pinPopup) { _pinPopup.remove(); _pinPopup = null; }
+  document.removeEventListener('pointerdown', _pinOutsideClick, true);
+}
+function _pinOutsideClick(e) {
+  if (_pinPopup && !_pinPopup.contains(e.target)) closePinPopup();
+}
+
+function openPinPopup(ev, key, idx) {
+  ev.stopPropagation();
+  closePinPopup();
+  const items = getCalNotes(key);
+  if (!items[idx]) return;
+  const item = items[idx];
+  const pop = document.createElement('div');
+  pop.className = 'pin-popup';
+  _pinPopup = pop;
+
+  let mode = 'everyday';
+  let dowSel = [1,2,3,4,5];
+
+  function render() {
+    const dows = L('dows').split(',');
+    let h = `<div class="pin-popup-title">${L('pin_title')}</div>`;
+    const opts = [
+      ['everyday', L('pin_everyday')],
+      ['weekdays', L('pin_weekdays')],
+      ['weekends', L('pin_weekends')],
+      ['dow', L('pin_by_dow')]
+    ];
+    opts.forEach(([v, label]) => {
+      h += `<div class="pin-opt${mode===v?' active':''}" data-m="${v}">
+        <span style="width:16px;text-align:center">${mode===v?'●':'○'}</span> ${label}</div>`;
+    });
+    if (mode === 'dow') {
+      h += `<div class="pin-dow-grid">`;
+      for (let d = 0; d < 7; d++) {
+        h += `<span class="pin-dow-chip${dowSel.includes(d)?' on':''}" data-d="${d}">${dows[d]}</span>`;
+      }
+      h += `</div>`;
+    }
+    h += `<div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn btn-gr" style="flex:0 0 auto;font-size:11px;padding:4px 8px" data-act="cancel">${L('pin_cancel')}</button>
+      <button class="btn btn-y" style="flex:1;font-size:11px;padding:4px 8px" data-act="apply">${L('pin_apply')}</button>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
+      <button class="btn btn-gr" style="width:100%;font-size:11px;padding:5px;color:#f88;border-color:#f88" data-act="unpin">${L('pin_unpin')}</button>
+      <div style="font-size:10px;color:var(--gray);margin-top:4px;text-align:center">${L('pin_unpin_hint')}</div>
+    </div>`;
+    pop.innerHTML = h;
+
+    pop.querySelectorAll('.pin-opt').forEach(el => {
+      el.onclick = () => { mode = el.dataset.m; render(); };
+    });
+    pop.querySelectorAll('.pin-dow-chip').forEach(el => {
+      el.onclick = () => {
+        const d = parseInt(el.dataset.d);
+        const at = dowSel.indexOf(d);
+        if (at >= 0) dowSel.splice(at, 1); else dowSel.push(d);
+        render();
+      };
+    });
+    pop.querySelector('[data-act="cancel"]').onclick = closePinPopup;
+    pop.querySelector('[data-act="apply"]').onclick = () => applyPin(key, idx, mode, dowSel);
+    pop.querySelector('[data-act="unpin"]').onclick = () => unpinItem(key, idx);
+  }
+
+  render();
+  document.body.appendChild(pop);
+
+  const btn = ev.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  pop.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+  pop.style.top = (rect.bottom + 4) + 'px';
+  if (rect.bottom + pop.offsetHeight + 4 > window.innerHeight) {
+    pop.style.top = Math.max(4, rect.top - pop.offsetHeight - 4) + 'px';
+  }
+
+  setTimeout(() => document.addEventListener('pointerdown', _pinOutsideClick, true), 0);
+}
+
+function applyPin(key, idx, mode, dowSel) {
+  const items = getCalNotes(key);
+  if (!items[idx]) { closePinPopup(); return; }
+  const item = items[idx];
+
+  let targetDows;
+  if (mode === 'everyday') targetDows = [0,1,2,3,4,5,6];
+  else if (mode === 'weekdays') targetDows = [1,2,3,4,5];
+  else if (mode === 'weekends') targetDows = [0,6];
+  else targetDows = dowSel.slice();
+
+  if (!targetDows.length) { closePinPopup(); return; }
+
+  _calPushUndo();
+  _calUndoLock = true;
+  const y = _calYear, m = _calMonth;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(y, m, d);
+    if (!targetDows.includes(dt.getDay())) continue;
+    const dk = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (dk === key) continue;
+    const cur = getCalNotes(dk);
+    if (cur.some(it => it.text === item.text)) continue;
+    cur.push(touchItem({ text: item.text, done: false, ampm: item.ampm || 'am', ord: cur.length }));
+    setCalNotes(dk, cur);
+    count++;
+  }
+  _calUndoLock = false;
+  closePinPopup();
+  saveState(); renderCalendar();
+  if (count) toast('info', L('pin_title'), L('pin_done').replace('{n}', count));
+}
+
+function unpinItem(key, idx) {
+  const items = getCalNotes(key);
+  if (!items[idx]) { closePinPopup(); return; }
+  const text = items[idx].text;
+  _calPushUndo();
+  _calUndoLock = true;
+  const notes = S.calendarNotes || {};
+  let count = 0;
+  Object.keys(notes).forEach(dk => {
+    if (dk <= key) return;
+    const arr = notes[dk];
+    if (!Array.isArray(arr)) return;
+    const removed = arr.filter(it => it.text === text);
+    if (!removed.length) return;
+    removed.forEach(it => tombItem(it));
+    count += removed.length;
+    setCalNotes(dk, arr.filter(it => it.text !== text));
+  });
+  _calUndoLock = false;
+  closePinPopup();
+  saveState(); renderCalendar();
+  if (count) toast('info', L('pin_unpin'), L('pin_unpin_done').replace('{n}', count));
+  else toast('alert', L('pin_unpin'), L('pin_unpin_none'));
 }
 
 function addDayItem(key) {

@@ -1,0 +1,83 @@
+workflows:
+  ios-release:
+    name: iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Neko Desk ASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier:
+          - com.siwon.nekodesk.mobile
+          - com.siwon.nekodesk.mobile.widget
+      vars:
+        XCODE_WORKSPACE: "mobile/ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20
+      ruby: 3.2
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "v*"
+          include: true
+    scripts:
+      - name: Install Node dependencies
+        script: |
+          cd mobile
+          npm ci
+
+      - name: Prepare web assets
+        script: |
+          cd mobile
+          npm run prepare-www
+
+      - name: Sync Capacitor iOS
+        script: |
+          cd mobile
+          npx cap sync ios
+
+      - name: Add Widget Extension target
+        script: |
+          gem install xcodeproj
+          ruby scripts/add-ios-widget-target.rb
+
+      - name: Install CocoaPods
+        script: |
+          cd mobile/ios/App
+          pod install
+
+      - name: Set version from tag
+        script: |
+          TAG=${CM_TAG#v}
+          cd mobile/ios/App
+          agvtool new-marketing-version "$TAG"
+          agvtool new-version -all "$(($(date +%s) / 86400))"
+
+      - name: Build iOS
+        script: |
+          xcodebuild -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/App.xcarchive \
+            archive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=K9MGP9D5LK
+
+      - name: Export IPA
+        script: |
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist mobile/ios/exportOptions.plist
+
+    artifacts:
+      - build/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        expire_build_submitted_for_review: true

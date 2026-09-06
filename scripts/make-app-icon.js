@@ -73,4 +73,11 @@ function place(canvas, cat, ratio) {
     '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n' +
     '    <color name="ic_launcher_background">#FFFFFF</color>\n</resources>\n');
   console.log('  뒷판 색 #FFFFFF');
+
+  // ── iOS 앱 아이콘 (1024x1024) ──
+  const iosDir = path.join(ROOT, 'mobile/ios/App/App/Assets.xcassets/AppIcon.appiconset');
+  fs.mkdirSync(iosDir, { recursive: true });
+  const ios = place(new Jimp(1024, 1024, WHITE), cat, 0.72);
+  await ios.writeAsync(path.join(iosDir, 'AppIcon-512@2x.png'));
+  console.log('  iOS 아이콘 1024px');
 })();

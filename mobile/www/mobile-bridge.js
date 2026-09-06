@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.9.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '2.9.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -365,6 +365,7 @@
     });
     if (!changed) return false;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch (e) {}
+    if (typeof _applyWidgetPending === 'function') _applyWidgetPending();
     // 글을 쓰는 중이면 그리기는 미룬다 — 쓰던 칸이 사라지면 폰 자판이 내려간다
     if (isTyping()) { _repaintPending = true; return true; }
     repaintFromCloud(st);
@@ -833,7 +834,8 @@
       }).then(function (r) {
       var ok = !!(r && r.ok);
       if (ok) {
-        localStorage.removeItem(DIRTY_KEY);   // 내 변경이 클라우드에 반영됨
+        localStorage.removeItem(DIRTY_KEY);
+        try { _clearNativeToggles(); } catch (e) {}
         // 서버가 기록한 시각을 그대로 저장해 두어야 다음 비교가 정확함
         r.json().then(function (back) {
           if (back && back[0] && back[0].updated_at) {
@@ -980,7 +982,9 @@
     if (_notiPlugin) return _notiPlugin;
     try {
       var C = window.Capacitor;
-      if (!C || typeof C.getPlatform !== 'function' || C.getPlatform() !== 'android') return null;
+      if (!C || typeof C.getPlatform !== 'function') return null;
+      var plat = C.getPlatform();
+      if (plat !== 'android' && plat !== 'ios') return null;
       if (C.Plugins && C.Plugins.LocalNotifications) _notiPlugin = C.Plugins.LocalNotifications;
       else if (typeof C.registerPlugin === 'function') _notiPlugin = C.registerPlugin('LocalNotifications');
     } catch (e) {}
@@ -1093,7 +1097,7 @@
       var C = window.Capacitor;
       var why = !C ? 'Capacitor 없음'
         : (typeof C.getPlatform !== 'function' ? 'getPlatform 없음'
-        : (C.getPlatform() !== 'android' ? ('platform=' + C.getPlatform())
+        : (C.getPlatform() !== 'android' && C.getPlatform() !== 'ios' ? ('platform=' + C.getPlatform())
         : ('Plugins=' + (C.Plugins ? Object.keys(C.Plugins).join(',') : '없음')
            + ' / registerPlugin=' + (typeof C.registerPlugin))));
       notiSay('플러그인을 못 찾음 — ' + why, 0);
@@ -1175,17 +1179,17 @@
   };
 
   var _widgetPlugin;   // undefined = 아직 안 찾아봄
-  /** 안드로이드 네이티브 위젯 플러그인 (없으면 null) */
+  /** 네이티브 위젯 플러그인 — Android·iOS 공용 (없으면 null) */
   function widgetBridge() {
     if (_widgetPlugin !== undefined) return _widgetPlugin;
     _widgetPlugin = null;
     try {
       var C = window.Capacitor;
-      var android = C && (typeof C.getPlatform === 'function') && C.getPlatform() === 'android';
-      if (android) {
-        if (typeof C.registerPlugin === 'function') _widgetPlugin = C.registerPlugin('NekoWidget');
-        else if (C.Plugins && C.Plugins.NekoWidget) _widgetPlugin = C.Plugins.NekoWidget;
-      }
+      if (!C || typeof C.getPlatform !== 'function') return null;
+      var plat = C.getPlatform();
+      if (plat !== 'android' && plat !== 'ios') return null;
+      if (typeof C.registerPlugin === 'function') _widgetPlugin = C.registerPlugin('NekoWidget');
+      else if (C.Plugins && C.Plugins.NekoWidget) _widgetPlugin = C.Plugins.NekoWidget;
     } catch (e) {}
     return _widgetPlugin;
   }
@@ -1306,9 +1310,10 @@
     var today = liveNotes(src, todayKey());
     out.todoTotal = today.length;
     out.todoDone = today.filter(function (it) { return !!it.done; }).length;
-    out.todos = today.slice(0, WIDGET_MAX_TODOS).map(function (it) {
+    out.todos = today.slice(0, WIDGET_MAX_TODOS).map(function (it, idx) {
       var pm = it.ampm === 'pm';
       return {
+        id: it.id || ('idx_' + idx),
         text: String(it.text),
         done: !!it.done,
         ampm: pm ? 'pm' : 'am',
@@ -1352,20 +1357,91 @@
     } catch (e) { _widgetLast = ''; }
   }
 
+  var _widgetPending = null;
+
+  function applyWidgetToggles() {
+    var nb = widgetBridge();
+    if (!nb || !nb.getToggles) return Promise.resolve();
+    return nb.getToggles().then(function (result) {
+      if (!result) return;
+      var toggles = result.toggles;
+      if (!Array.isArray(toggles)) toggles = [];
+      var waterAdd = Number(result.waterAdd) || 0;
+      var vitaAdd = Number(result.vitaAdd) || 0;
+      if (!toggles.length && !waterAdd && !vitaAdd) return;
+      _widgetPending = { toggles: toggles, waterAdd: waterAdd, vitaAdd: vitaAdd };
+      _applyWidgetPending();
+    }).catch(function () {});
+  }
+
+  function _clearNativeToggles() {
+    var nb = widgetBridge();
+    if (nb && nb.clearPendingToggles) {
+      try { nb.clearPendingToggles(); } catch (e) {}
+    }
+    _widgetPending = null;
+  }
+
+  function _applyWidgetPending() {
+    if (!_widgetPending) return;
+    var p = _widgetPending;
+    var src = getS(); if (!src) return;
+    var changed = false;
+    if (p.toggles && p.toggles.length) {
+      var notes = src.calendarNotes || {};
+      p.toggles.forEach(function (t) {
+        var items = notes[t.dateKey];
+        if (typeof items === 'string') items = [{ text: items, done: false }];
+        if (!Array.isArray(items)) return;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i] && items[i].id === t.id) {
+            if (items[i].done !== t.done) { items[i].done = t.done; changed = true; }
+            break;
+          }
+        }
+        notes[t.dateKey] = items;
+      });
+      src.calendarNotes = notes;
+    }
+    var today = new Date().toDateString();
+    if (p.waterAdd > 0) {
+      if (src.waterDate !== today) { src.waterDate = today; src.waterCups = 0; }
+      src.waterCups = Math.min(8, (Number(src.waterCups) || 0) + p.waterAdd);
+      p.waterAdd = 0;
+      changed = true;
+    }
+    if (p.vitaAdd > 0) {
+      var vGoal = parseInt(src.vitaminGoal, 10);
+      if (!(vGoal >= 1)) vGoal = 1;
+      if (src.vitaminDate !== today) { src.vitaminDate = today; src.vitaminTaken = 0; }
+      src.vitaminTaken = Math.min(vGoal, (Number(src.vitaminTaken) || 0) + p.vitaAdd);
+      p.vitaAdd = 0;
+      changed = true;
+    }
+    if (changed) {
+      if (typeof window.saveState === 'function') window.saveState(src);
+      pushWidget(true);
+      try { repaintFromCloud(src); } catch (e) {}
+    }
+  }
+
   function startWidgetFeed() {
-    // 저장 훅은 여기서 건다 — 위젯은 로그인과 상관없이 갱신돼야 한다
     wrapSaveState(0);
     if (!widgetBridge()) return;
-    pushWidget(true);
-    // 날짜가 바뀌면 D-day 숫자도 어제·내일 칸도 달라지므로 주기적으로 다시 계산한다
+    // 위젯은 이미 자기 SharedPreferences에 올바른 상태를 갖고 있으므로
+    // 앱 시작 시 즉시 push하면 토글 반영 전 데이터로 위젯을 덮어쓴다.
+    // 초기 push는 initSync → applyWidgetToggles 이후에 한다.
     setInterval(function () { pushWidget(false); }, 30000);
-    // 앱을 떠날 때가 정작 위젯을 볼 때다. 뒤로 갈 때도 꼭 보낸다.
-    document.addEventListener('visibilitychange', function () { pushWidget(true); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { pushWidget(true); return; }
+      try { applyWidgetToggles(); } catch (e) {}
+    });
     window.addEventListener('pagehide', function () { pushWidget(true); });
     var App = capPlugin('App');
     if (App) {
       App.addListener('appStateChange', function (st) {
-        if (!st || !st.isActive) pushWidget(true);
+        if (!st || !st.isActive) { pushWidget(true); return; }
+        try { applyWidgetToggles(); } catch (e) {}
       });
     }
   }
@@ -1430,6 +1506,9 @@
   function initSync() {
     if (!loggedIn()) {
       syncStatus(readSession() ? '구글 로그인 필요 (지금은 게스트)' : '로그인 필요');
+      try {
+        applyWidgetToggles().then(function () { pushWidget(true); });
+      } catch (e) {}
       return;
     }
     // 앱 시작 시에도 데이터 주인 확인 (다른 계정 데이터면 비우고 재시작)
@@ -1438,7 +1517,12 @@
     syncStatus('연결 중...');
     try {
       _lastPullAt = Date.now();
-      syncPull(false).then(function () { try { pushIfChanged(); } catch (e) {} });
+      syncPull(false).then(function () {
+        return applyWidgetToggles();
+      }).then(function () {
+        pushWidget(true);
+        try { pushIfChanged(); } catch (e) {}
+      });
     } catch (e) { syncStatus('\uc624\ub958'); }
     setInterval(function () {
       renderSyncStatus();       // 아무 일이 없어도 t가 올라가는 게 보이도록
@@ -1457,8 +1541,10 @@
     var App = capPlugin('App');
     if (App) {
       App.addListener('appStateChange', function (st) {
-        if (st && st.isActive) { bump(); _lastPullAt = Date.now(); syncPull(false); }
-        else flushPush();
+        if (st && st.isActive) {
+          bump(); _lastPullAt = Date.now();
+          syncPull(false).then(function () { try { applyWidgetToggles(); } catch (e) {} });
+        } else flushPush();
       });
     }
     // 앱 상태 신호가 안 오는 기기도 있어서 화면 표시 여부로도 한 번 더 본다
@@ -1466,7 +1552,9 @@
       if (document.hidden) { flushPush(); return; }
       bump();                        // 다시 보고 있다 — 곧바로 최신을 확인한다
       _lastPullAt = Date.now();
-      try { syncPull(false); } catch (e) {}
+      try {
+        syncPull(false).then(function () { try { applyWidgetToggles(); } catch (e) {} });
+      } catch (e) {}
     });
   }
 

@@ -18,4 +18,10 @@
         android:textSize="13sp" android:textStyle="bold" android:textColor="#3E3A39"
         android:letterSpacing="0.08"
         android:text="NEKO DESK" />
+
+    <TextView android:id="@+id/w_refresh"
+        android:layout_width="24dp" android:layout_height="24dp"
+        android:gravity="center"
+        android:textSize="14sp" android:textColor="#9AA0A6"
+        android:text="🔄" />
 </LinearLayout>
