@@ -49,14 +49,28 @@ workflows:
       - name: Set up code signing
         script: |
           set -ex
+
+          # Private key 생성 (CERTIFICATE_PRIVATE_KEY 환경변수가 없을 때)
+          # ⚠️ 매 빌드마다 새 키를 만들면 새 인증서가 생성돼 한도(2개)에 걸림
+          #    첫 빌드 성공 후, 이 키를 Codemagic 환경변수에 저장할 것
+          if [ -z "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
+            echo "No CERTIFICATE_PRIVATE_KEY found — generating new RSA key"
+            openssl genrsa -out /tmp/cert_key.pem 2048
+            export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key.pem)
+          fi
+
+          # App Store 배포 프로파일 + Apple Distribution 인증서 fetch/create
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE --create
           app-store-connect fetch-signing-files "$WIDGET_BUNDLE_ID" \
             --type IOS_APP_STORE --create
+
           keychain initialize
           keychain add-certificates
+
           echo "=== Keychain identities ==="
           security find-identity -v -p codesigning
+
           echo "=== Applying profiles to project ==="
           xcode-project use-profiles --project mobile/ios/App/App.xcodeproj
 
