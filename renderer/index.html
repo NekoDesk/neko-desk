@@ -515,7 +515,7 @@ body.theme-mono {
 
 /* 원형 픽셀 포모도로 타이머 — 조각난 블록으로 게임 UI 느낌을 낸다 */
 .pomo-wrap { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
-.pomo { height: 100%; max-height: 230px; max-width: 100%; aspect-ratio: 1; display: block; }
+.pomo { width: 100%; max-width: 230px; aspect-ratio: 1; display: block; }
 .pomo .pseg { fill: var(--border); }
 .pomo .pseg.on { fill: var(--acc); }
 .pomo.brk .pseg.on { fill: var(--mint); }
@@ -1263,7 +1263,7 @@ select {
               </div>
               <div class="cycle-body">
                 <div class="pomo-wrap">
-                  <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"></svg>
+                  <svg id="pomoRing" class="pomo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
                   <div class="pomo-center">
                     <div class="timer-mode-lbl" id="hTimerMode">💪 집중 중</div>
                     <div class="timer-big" id="hTimerClock">55:00</div>
@@ -5377,7 +5377,13 @@ function setPomoRing(ratio, brk) {
   svg.classList.toggle('brk', !!brk);
   const filled = Math.round(Math.max(0, Math.min(1, ratio)) * POMO_SEGS);
   const segs = svg.querySelectorAll('.pseg');
-  for (let i = 0; i < segs.length; i++) segs[i].classList.toggle('on', i < filled);
+  const cs = getComputedStyle(document.documentElement);
+  const off = cs.getPropertyValue('--border').trim() || '#d8dee8';
+  const on = cs.getPropertyValue(brk ? '--mint' : '--acc').trim() || '#5a6b8c';
+  for (let i = 0; i < segs.length; i++) {
+    segs[i].classList.toggle('on', i < filled);
+    segs[i].setAttribute('fill', i < filled ? on : off);
+  }
 }
 
 function updateCycleUI() {
