@@ -6,12 +6,12 @@ workflows:
     integrations:
       app_store_connect: Neko Desk ASC
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.siwon.nekodesk.mobile
       vars:
         XCODE_WORKSPACE: "mobile/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.siwon.nekodesk.mobile"
+        WIDGET_BUNDLE_ID: "com.siwon.nekodesk.mobile.widget"
+        TEAM_ID: "K9MGP9D5LK"
       node: "20"
       ruby: "3.2"
     triggering:
@@ -21,6 +21,16 @@ workflows:
         - pattern: "v*"
           include: true
     scripts:
+      - name: Set up code signing
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$WIDGET_BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+
       - name: Install Node dependencies
         script: |
           cd mobile
@@ -61,8 +71,8 @@ workflows:
             -sdk iphoneos \
             -archivePath build/App.xcarchive \
             archive \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=K9MGP9D5LK
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$TEAM_ID"
 
       - name: Export IPA
         script: |
