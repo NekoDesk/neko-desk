@@ -19,7 +19,7 @@ if File.exist?(plugin_path) && app_target
   unless app_target.source_build_phase.files.any? { |f| f.file_ref&.path&.end_with?('NekoWidgetPlugin.swift') }
     app_group = project.main_group.groups.find { |g| g.name == 'App' }
     app_group ||= project.main_group
-    ref = app_group.new_file(plugin_path)
+    ref = app_group.new_file('NekoWidgetPlugin.swift')
     app_target.source_build_phase.add_file_reference(ref)
     puts 'NekoWidgetPlugin.swift → App 타겟 컴파일 소스에 추가'
   end
