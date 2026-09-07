@@ -8,14 +8,12 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier:
-          - com.siwon.nekodesk.mobile
-          - com.siwon.nekodesk.mobile.widget
+        bundle_identifier: com.siwon.nekodesk.mobile
       vars:
         XCODE_WORKSPACE: "mobile/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-      node: 20
-      ruby: 3.2
+      node: "20"
+      ruby: "3.2"
     triggering:
       events:
         - tag
