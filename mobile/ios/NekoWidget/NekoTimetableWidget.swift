@@ -41,8 +41,11 @@ struct TimetableView: View {
 
     var content: some View {
         let table = data.table
-        let from = table?.from ?? 8
-        let to = table?.to ?? 20
+        // Range(from..<to)는 to < from이면 그 자리에서 터진다 — 위젯이 통째로 빈 화면이 된다.
+        let rawFrom = table?.from ?? 8
+        let rawTo = table?.to ?? 20
+        let from = min(max(rawFrom, 0), 23)
+        let to = min(max(rawTo, from + 1), 24)
         let dows = table?.dows ?? ["일","월","화","수","목","금","토"]
         let blocks = table?.blocks ?? []
         let todayDow = Calendar.current.component(.weekday, from: Date()) - 1
@@ -56,7 +59,10 @@ struct TimetableView: View {
 
                 if blocks.isEmpty {
                     Spacer()
-                    Text(table?.empty ?? "시간표가 비어 있어요")
+                    // 앱이 아직 한 번도 내려보내지 않은 것과,
+                    // 받았는데 칸이 비어 있는 것을 구분해 보여 준다.
+                    Text(data.isLoaded ? (table?.empty ?? "시간표가 비어 있어요")
+                                       : "앱을 한 번 열어 주세요")
                         .font(.system(size: 12))
                         .foregroundColor(t.dim)
                     Spacer()

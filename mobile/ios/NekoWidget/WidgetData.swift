@@ -48,16 +48,33 @@ struct WidgetData: Codable {
         return (try? JSONDecoder().decode(WidgetData.self, from: data)) ?? WidgetData()
     }
 
+    /// 앱에서 내용을 한 번이라도 받아 왔는가.
+    /// (buildWidgetData는 늘 todosDate를 담아 보낸다)
+    /// 이걸로 "아직 동기화 안 됨"과 "동기화됐는데 일정이 없음"을 가른다.
+    var isLoaded: Bool {
+        if let d = todosDate, !d.isEmpty { return true }
+        return table != nil || health != nil
+    }
+
     var isStale: Bool {
         guard let d = todosDate, !d.isEmpty else { return true }
         return d != Self.todayKey()
     }
 
     static func todayKey() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: Date())
+        return Self.dayFormatter.string(from: Date())
     }
+
+    /// 웹에서 만든 "yyyy-MM-dd"와 반드시 같은 모양이어야 한다.
+    /// 로케일을 고정하지 않으면 기기 달력 설정(예: 불기·화력)에 따라
+    /// 연도가 달라져 todosDate가 늘 어긋나고, 위젯이 언제나 비어 보인다.
+    static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     static func toggleTodo(id: String, dateKey: String) {
         guard let defaults = UserDefaults(suiteName: appGroupID),
@@ -140,10 +157,9 @@ struct DDayItem: Codable {
     var date: String
 
     var daysLeft: Int? {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        guard let target = f.date(from: date) else { return nil }
-        let cal = Calendar.current
+        guard let target = WidgetData.dayFormatter.date(from: date) else { return nil }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .current
         let today = cal.startOfDay(for: Date())
         let t = cal.startOfDay(for: target)
         return cal.dateComponents([.day], from: today, to: t).day

@@ -6,7 +6,7 @@
   "scripts": {
     "prepare-www": "node scripts/prepare-www.js",
     "sync": "npm run prepare-www && npx cap sync android",
-    "sync:ios": "npm run prepare-www && npx cap sync ios",
+    "sync:ios": "npm run prepare-www && npx cap sync ios && node scripts/register-ios-plugins.js",
     "open": "npx cap open android",
     "open:ios": "npx cap open ios"
   },

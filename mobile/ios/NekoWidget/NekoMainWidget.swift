@@ -181,7 +181,8 @@ struct NekoMainView: View {
             VStack(spacing: 8) {
                 Text("🐱")
                     .font(.system(size: 28))
-                Text(data.emptyText ?? "앱을 열어서 동기화하세요")
+                Text(data.isLoaded ? (data.emptyText ?? "오늘 할 일이 없어요")
+                                   : "앱을 한 번 열어 주세요")
                     .font(.system(size: 12))
                     .foregroundColor(t.dim)
             }

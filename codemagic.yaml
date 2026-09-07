@@ -37,6 +37,10 @@ workflows:
         script: |
           cd mobile
           npx cap sync ios
+          # cap sync는 pod 플러그인만 packageClassList에 넣는다.
+          # 앱 안에 직접 넣은 NekoWidgetPlugin은 여기서 다시 등록해야
+          # 웹에서 부를 수 있다 (없으면 위젯이 늘 비어 보인다).
+          node scripts/register-ios-plugins.js
 
       - name: Add Widget Extension target
         script: |
