@@ -54,7 +54,7 @@ workflows:
             --type IOS_APP_STORE --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --export-options-plist mobile/ios/exportOptions.plist
 
       - name: Set version from tag
         script: |

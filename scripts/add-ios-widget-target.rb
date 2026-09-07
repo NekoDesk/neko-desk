@@ -38,8 +38,8 @@ end
 target.build_configurations.each do |config|
   s = config.build_settings
   s['PRODUCT_BUNDLE_IDENTIFIER']  = BUNDLE_ID
-  s['INFOPLIST_FILE']             = '$(SRCROOT)/../NekoWidget/Info.plist'
-  s['CODE_SIGN_ENTITLEMENTS']     = '$(SRCROOT)/../NekoWidget/NekoWidget.entitlements'
+  s['INFOPLIST_FILE']             = '../NekoWidget/Info.plist'
+  s['CODE_SIGN_ENTITLEMENTS']     = '../NekoWidget/NekoWidget.entitlements'
   s['CODE_SIGN_STYLE']            = 'Manual'
   s['DEVELOPMENT_TEAM']           = TEAM_ID
   s['SWIFT_VERSION']              = '5.0'
