@@ -6,6 +6,8 @@ workflows:
     integrations:
       app_store_connect: Neko Desk ASC
     environment:
+      groups:
+        - signing
       vars:
         XCODE_WORKSPACE: "mobile/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
