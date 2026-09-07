@@ -17,7 +17,7 @@ app_target = project.targets.find { |t| t.name == 'App' }
 plugin_path = File.join(__dir__, '..', 'mobile', 'ios', 'App', 'App', 'NekoWidgetPlugin.swift')
 if File.exist?(plugin_path) && app_target
   unless app_target.source_build_phase.files.any? { |f| f.file_ref&.path&.end_with?('NekoWidgetPlugin.swift') }
-    app_group = project.main_group.groups.find { |g| g.name == 'App' }
+    app_group = project.main_group.groups.find { |g| g.display_name == 'App' }
     app_group ||= project.main_group
     ref = app_group.new_file('NekoWidgetPlugin.swift')
     app_target.source_build_phase.add_file_reference(ref)
