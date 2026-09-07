@@ -54,7 +54,18 @@ workflows:
             --type IOS_APP_STORE --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles --export-options-plist mobile/ios/exportOptions.plist
+          xcode-project use-profiles
+
+      - name: Verify signing setup
+        script: |
+          echo "=== App target ==="
+          xcodebuild -project mobile/ios/App/App.xcodeproj \
+            -target App -showBuildSettings \
+            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM'
+          echo "=== NekoWidget target ==="
+          xcodebuild -project mobile/ios/App/App.xcodeproj \
+            -target NekoWidget -showBuildSettings \
+            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM'
 
       - name: Set version from tag
         script: |
@@ -63,26 +74,14 @@ workflows:
           agvtool new-marketing-version "$TAG"
           agvtool new-version -all "$(($(date +%s) / 86400))"
 
-      - name: Build iOS
+      - name: Build IPA
         script: |
-          xcodebuild -workspace "$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/App.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="$TEAM_ID"
-
-      - name: Export IPA
-        script: |
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist mobile/ios/exportOptions.plist
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
 
     artifacts:
-      - build/ipa/*.ipa
+      - build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:

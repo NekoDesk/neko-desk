@@ -26,7 +26,6 @@ entitlements_ref = widget_group.new_file(File.join(WIDGET_DIR, 'NekoWidget.entit
 
 # ── 타겟 생성 ──
 target = project.new_target(:app_extension, 'NekoWidget', :ios, '14.0')
-target.product_name = 'NekoWidgetExtension'
 
 # 소스 파일 추가
 swift_files.each do |path|
@@ -37,10 +36,10 @@ end
 # ── 빌드 설정 ──
 target.build_configurations.each do |config|
   s = config.build_settings
+  s['PRODUCT_NAME']               = 'NekoWidget'
   s['PRODUCT_BUNDLE_IDENTIFIER']  = BUNDLE_ID
   s['INFOPLIST_FILE']             = '../NekoWidget/Info.plist'
   s['CODE_SIGN_ENTITLEMENTS']     = '../NekoWidget/NekoWidget.entitlements'
-  s['CODE_SIGN_STYLE']            = 'Manual'
   s['DEVELOPMENT_TEAM']           = TEAM_ID
   s['SWIFT_VERSION']              = '5.0'
   s['TARGETED_DEVICE_FAMILY']     = '1,2'
@@ -54,7 +53,6 @@ end
 # ── 메인 앱에 Embed 추가 ──
 app_target = project.targets.find { |t| t.name == 'App' }
 
-# 메인 앱에도 팀 ID와 entitlements 설정
 app_target.build_configurations.each do |config|
   s = config.build_settings
   s['DEVELOPMENT_TEAM'] = TEAM_ID
