@@ -48,24 +48,32 @@ workflows:
 
       - name: Set up code signing
         script: |
+          set -ex
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE --create
           app-store-connect fetch-signing-files "$WIDGET_BUNDLE_ID" \
             --type IOS_APP_STORE --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles
+          echo "=== Keychain identities ==="
+          security find-identity -v -p codesigning
+          echo "=== Applying profiles to project ==="
+          xcode-project use-profiles --project mobile/ios/App/App.xcodeproj
 
       - name: Verify signing setup
         script: |
           echo "=== App target ==="
           xcodebuild -project mobile/ios/App/App.xcodeproj \
             -target App -showBuildSettings \
-            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM'
+            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM' || true
+          echo ""
           echo "=== NekoWidget target ==="
           xcodebuild -project mobile/ios/App/App.xcodeproj \
             -target NekoWidget -showBuildSettings \
-            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM'
+            | grep -E 'PRODUCT_NAME|PRODUCT_BUNDLE|CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM' || true
+          echo ""
+          echo "=== Provisioning profiles on disk ==="
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "(none)"
 
       - name: Set version from tag
         script: |
