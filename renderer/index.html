@@ -5353,14 +5353,19 @@ const POMO_SEGS = 40;   // 링을 이루는 블록 개수
 function buildPomoRing() {
   const svg = document.getElementById('pomoRing');
   if (!svg || svg.dataset.built) return svg;
+  const NS = 'http://www.w3.org/2000/svg';
   const CX = 100, CY = 100, R = 76, W = 9, H = 16;
-  let h = '';
   for (let i = 0; i < POMO_SEGS; i++) {
     const a = (360 / POMO_SEGS) * i;
-    h += `<rect class="pseg" x="${CX - W / 2}" y="${CY - R - H / 2}" width="${W}" height="${H}" `
-       + `transform="rotate(${a} ${CX} ${CY})"/>`;
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('class', 'pseg');
+    rect.setAttribute('x', CX - W / 2);
+    rect.setAttribute('y', CY - R - H / 2);
+    rect.setAttribute('width', W);
+    rect.setAttribute('height', H);
+    rect.setAttribute('transform', 'rotate(' + a + ' ' + CX + ' ' + CY + ')');
+    svg.appendChild(rect);
   }
-  svg.innerHTML = h;
   svg.dataset.built = '1';
   return svg;
 }

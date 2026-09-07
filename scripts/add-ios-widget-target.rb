@@ -11,9 +11,23 @@ BUNDLE_ID  = 'com.siwon.nekodesk.mobile.widget'
 TEAM_ID    = 'K9MGP9D5LK'
 
 project = Xcodeproj::Project.open(PROJ_PATH)
+app_target = project.targets.find { |t| t.name == 'App' }
 
-# 이미 추가돼 있으면 건너뛴다
+# ── NekoWidgetPlugin.swift를 App 타겟 컴파일 소스에 추가 ──
+plugin_path = File.join(__dir__, '..', 'mobile', 'ios', 'App', 'App', 'NekoWidgetPlugin.swift')
+if File.exist?(plugin_path) && app_target
+  unless app_target.source_build_phase.files.any? { |f| f.file_ref&.path&.end_with?('NekoWidgetPlugin.swift') }
+    app_group = project.main_group.groups.find { |g| g.name == 'App' }
+    app_group ||= project.main_group
+    ref = app_group.new_file(plugin_path)
+    app_target.source_build_phase.add_file_reference(ref)
+    puts 'NekoWidgetPlugin.swift → App 타겟 컴파일 소스에 추가'
+  end
+end
+
+# 이미 추가돼 있으면 위젯 타겟은 건너뛴다
 if project.targets.any? { |t| t.name == 'NekoWidget' }
+  project.save
   puts 'NekoWidget 타겟이 이미 있습니다 — 건너뜁니다.'
   exit 0
 end
@@ -51,8 +65,6 @@ target.build_configurations.each do |config|
 end
 
 # ── 메인 앱에 Embed 추가 ──
-app_target = project.targets.find { |t| t.name == 'App' }
-
 app_target.build_configurations.each do |config|
   s = config.build_settings
   s['DEVELOPMENT_TEAM'] = TEAM_ID
