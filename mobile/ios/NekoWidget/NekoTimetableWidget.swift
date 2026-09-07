@@ -26,6 +26,20 @@ struct TimetableView: View {
     var t: ThemeColors { themeFor(data.theme) }
 
     var body: some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            content
+                .containerBackground(for: .widget) {
+                    t.bg
+                }
+        } else {
+            ZStack {
+                t.bg
+                content
+            }
+        }
+    }
+
+    var content: some View {
         let table = data.table
         let from = table?.from ?? 8
         let to = table?.to ?? 20
@@ -33,9 +47,7 @@ struct TimetableView: View {
         let blocks = table?.blocks ?? []
         let todayDow = Calendar.current.component(.weekday, from: Date()) - 1
 
-        ZStack {
-            t.bg
-            VStack(spacing: 0) {
+        return VStack(spacing: 0) {
                 Text(table?.label ?? "🕐 시간표")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(t.text)
@@ -44,7 +56,7 @@ struct TimetableView: View {
 
                 if blocks.isEmpty {
                     Spacer()
-                    Text(table?.empty ?? "")
+                    Text(table?.empty ?? "시간표가 비어 있어요")
                         .font(.system(size: 12))
                         .foregroundColor(t.dim)
                     Spacer()
@@ -122,6 +134,5 @@ struct TimetableView: View {
                 }
             }
             .padding(10)
-        }
     }
 }

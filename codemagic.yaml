@@ -92,9 +92,11 @@ workflows:
       - name: Set version from tag
         script: |
           TAG=${CM_TAG#v}
+          BUILD=$(($(date +%s) / 60))
           cd mobile/ios/App
           agvtool new-marketing-version "$TAG"
-          agvtool new-version -all "$(($(date +%s) / 86400))"
+          agvtool new-version -all "$BUILD"
+          echo "Version: $TAG  Build: $BUILD"
 
       - name: Build IPA
         script: |

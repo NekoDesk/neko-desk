@@ -44,6 +44,9 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<!-- 구글 로그인 딥링크 (nekodesk://) -->
 	<key>CFBundleURLTypes</key>
 	<array>

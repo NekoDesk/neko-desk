@@ -8,11 +8,12 @@ struct NekoEntry: TimelineEntry {
 
 struct NekoProvider: TimelineProvider {
     func placeholder(in context: Context) -> NekoEntry {
-        NekoEntry(date: Date(), data: WidgetData())
+        NekoEntry(date: Date(), data: WidgetData.sample)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (NekoEntry) -> Void) {
-        completion(NekoEntry(date: Date(), data: WidgetData.load()))
+        let data = context.isPreview ? WidgetData.sample : WidgetData.load()
+        completion(NekoEntry(date: Date(), data: data))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NekoEntry>) -> Void) {
@@ -42,15 +43,26 @@ struct NekoMainView: View {
     var t: ThemeColors { themeFor(data.theme) }
 
     var body: some View {
-        ZStack {
-            t.bg
-            VStack(alignment: .leading, spacing: 6) {
-                healthRow
-                ddaySection
-                todoSection
+        if #available(iOSApplicationExtension 17.0, *) {
+            content
+                .containerBackground(for: .widget) {
+                    t.bg
+                }
+        } else {
+            ZStack {
+                t.bg
+                content
             }
-            .padding(12)
         }
+    }
+
+    var content: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            healthRow
+            ddaySection
+            todoSection
+        }
+        .padding(12)
     }
 
     @ViewBuilder
@@ -166,10 +178,14 @@ struct NekoMainView: View {
                 }
             }
         } else {
-            Text(data.emptyText ?? "")
-                .font(.system(size: 12))
-                .foregroundColor(t.dim)
-                .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                Text("🐱")
+                    .font(.system(size: 28))
+                Text(data.emptyText ?? "앱을 열어서 동기화하세요")
+                    .font(.system(size: 12))
+                    .foregroundColor(t.dim)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

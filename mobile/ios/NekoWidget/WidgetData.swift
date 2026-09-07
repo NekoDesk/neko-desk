@@ -23,6 +23,23 @@ struct WidgetData: Codable {
     var health: HealthData?
     var table: TableData?
 
+    static var sample: WidgetData {
+        var d = WidgetData()
+        d.theme = "white"
+        d.headTitle = "📝 오늘 할 일"
+        d.emptyText = "오늘 할 일이 없어요"
+        d.doneWord = "완료"
+        d.todosDate = todayKey()
+        d.todoTotal = 3
+        d.todoDone = 1
+        d.todos = [
+            TodoItem(text: "회의 준비하기", done: false, ampm: "am", ampmLabel: "오전"),
+            TodoItem(text: "점심 약속", done: true, ampm: "am", ampmLabel: "오전"),
+            TodoItem(text: "운동 가기", done: false, ampm: "pm", ampmLabel: "오후"),
+        ]
+        return d
+    }
+
     static func load() -> WidgetData {
         guard let defaults = UserDefaults(suiteName: appGroupID),
               let data = defaults.data(forKey: widgetDataKey) else {
