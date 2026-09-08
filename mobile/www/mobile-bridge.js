@@ -9,6 +9,10 @@
 
   var APP_VERSION = '3.0.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
+  // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
+  // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
+  window._isMobileApp = true;
+
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
   window.NEKO_ASSET_BASE = 'assets/';

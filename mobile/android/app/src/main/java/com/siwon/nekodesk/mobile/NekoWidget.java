@@ -253,6 +253,7 @@ public class NekoWidget extends AppWidgetProvider {
             c.put("mood", Math.min(100, c.optInt("mood", 60) + 10));
             sp.edit().putString(KEY_DATA, o.toString()).apply();
             sp.edit().putInt(KEY_CAT_PLAY, sp.getInt(KEY_CAT_PLAY, 0) + 1).apply();
+            meow(ctx);
         } catch (Exception ignored) {}
 
         refreshAll(ctx);

@@ -8432,7 +8432,10 @@ function init(){
 
   // 앱을 새로 실행하면 고양이 기분만 기본값(60)으로 시작한다.
   // 위젯 창 = 앱 시작 시점. 대시보드를 여닫을 때마다 리셋되면 안 되므로 제외.
-  if (!window._isDashboard && S.cat && S.cat.mood !== 60) {
+  //
+  // 폰은 뺀다. 폰에는 "위젯 창"이 따로 없어 앱을 열 때마다 걸리는데,
+  // 그러면 바탕화면 위젯에서 먹이를 주거나 놀아 준 것이 앱을 켜는 순간 사라진다.
+  if (!window._isDashboard && !window._isMobileApp && S.cat && S.cat.mood !== 60) {
     S.cat.mood = 60;
     saveState();
     // 다른 기기에도 반영되도록 '올릴 변경 있음'으로 표시 (saveState가 이미 알리지만 명시적으로)
