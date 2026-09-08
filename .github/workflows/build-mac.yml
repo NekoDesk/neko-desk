@@ -16,7 +16,10 @@ permissions:
 
 jobs:
   build-mac:
-    runs-on: macos-latest
+    # macos-latest 가 macOS 26.6 이미지(20260831)로 바뀌면서 서명이 깨졌다.
+    # electron-builder 25 의 set-key-partition-list 가 새 키체인 동작과 맞지 않아
+    # "SecKeychainUnlock: passphrase not correct" 로 멈춘다. 26.5 까지는 잘 됐다.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
