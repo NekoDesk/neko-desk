@@ -439,14 +439,15 @@ struct WCatView: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 4) {
+                // interpolation 은 Image 에만 있는 메서드라 Group 바깥에서는 못 건다.
+                // 점 그림이 뭉개지지 않으려면 두 갈래에 각각 붙여야 한다.
                 Group {
                     if let ui = sentImage {
-                        Image(uiImage: ui).resizable()
+                        Image(uiImage: ui).resizable().interpolation(.none)
                     } else {
-                        Image(imageName).resizable()
+                        Image(imageName).resizable().interpolation(.none)
                     }
                 }
-                .interpolation(.none)
                 .scaledToFit()
                 .frame(maxWidth: 100, maxHeight: 100)
                 .saturation(mood <= 40 ? 0.4 : 1.0)
