@@ -1380,7 +1380,7 @@
       var vitaAdd = Number(result.vitaAdd) || 0;
       var catFeed = Number(result.catFeed) || 0;
       var catPlay = Number(result.catPlay) || 0;
-      if (!toggles.length && !waterAdd && !vitaAdd && !catFeed && !catPlay) return;
+      if (!toggles.length && waterAdd === 0 && vitaAdd === 0 && !catFeed && !catPlay) return;
       _widgetPending = { toggles: toggles, waterAdd: waterAdd, vitaAdd: vitaAdd, catFeed: catFeed, catPlay: catPlay };
       _applyWidgetPending();
     }).catch(function () {});
@@ -1416,17 +1416,17 @@
       src.calendarNotes = notes;
     }
     var today = new Date().toDateString();
-    if (p.waterAdd > 0) {
+    if (p.waterAdd) {
       if (src.waterDate !== today) { src.waterDate = today; src.waterCups = 0; }
-      src.waterCups = Math.min(8, (Number(src.waterCups) || 0) + p.waterAdd);
+      src.waterCups = Math.max(0, Math.min(12, (Number(src.waterCups) || 0) + p.waterAdd));
       p.waterAdd = 0;
       changed = true;
     }
-    if (p.vitaAdd > 0) {
+    if (p.vitaAdd) {
       var vGoal = parseInt(src.vitaminGoal, 10);
       if (!(vGoal >= 1)) vGoal = 1;
       if (src.vitaminDate !== today) { src.vitaminDate = today; src.vitaminTaken = 0; }
-      src.vitaminTaken = Math.min(vGoal, (Number(src.vitaminTaken) || 0) + p.vitaAdd);
+      src.vitaminTaken = Math.max(0, Math.min(vGoal, (Number(src.vitaminTaken) || 0) + p.vitaAdd));
       p.vitaAdd = 0;
       changed = true;
     }

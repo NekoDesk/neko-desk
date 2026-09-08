@@ -148,10 +148,15 @@ public class NekoWidget extends AppWidgetProvider {
             if (h == null) return;
             int done = h.optInt("waterDone", 0);
             int goal = h.optInt("waterGoal", 8);
-            if (done >= goal) return;
-            h.put("waterDone", done + 1);
-            sp.edit().putString(KEY_DATA, o.toString()).apply();
-            sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) + 1).apply();
+            if (done >= goal) {
+                h.put("waterDone", 0);
+                sp.edit().putString(KEY_DATA, o.toString()).apply();
+                sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) - done).apply();
+            } else {
+                h.put("waterDone", done + 1);
+                sp.edit().putString(KEY_DATA, o.toString()).apply();
+                sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) + 1).apply();
+            }
         } catch (Exception ignored) {}
 
         refreshAll(ctx);
@@ -168,10 +173,15 @@ public class NekoWidget extends AppWidgetProvider {
             if (h == null) return;
             int done = h.optInt("vitaDone", 0);
             int goal = h.optInt("vitaGoal", 1);
-            if (done >= goal) return;
-            h.put("vitaDone", done + 1);
-            sp.edit().putString(KEY_DATA, o.toString()).apply();
-            sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) + 1).apply();
+            if (done >= goal) {
+                h.put("vitaDone", 0);
+                sp.edit().putString(KEY_DATA, o.toString()).apply();
+                sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) - done).apply();
+            } else {
+                h.put("vitaDone", done + 1);
+                sp.edit().putString(KEY_DATA, o.toString()).apply();
+                sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) + 1).apply();
+            }
         } catch (Exception ignored) {}
 
         refreshAll(ctx);
@@ -557,14 +567,16 @@ public class NekoWidget extends AppWidgetProvider {
         return 0;
     }
 
-    private static final int[] TT_ROW_DP   = { 14, 18, 22, 26, 31, 36 };
+    private static final int[] TT_ROW_DP   = { 10, 14, 18, 22, 26, 31, 36 };
     private static final int[] TT_CELL_LAY = {
-        R.layout.w_tt_cell_a, R.layout.w_tt_cell_b, R.layout.w_tt_cell_c,
-        R.layout.w_tt_cell_d, R.layout.w_tt_cell_e, R.layout.w_tt_cell_f,
+        R.layout.w_tt_cell_s, R.layout.w_tt_cell_a, R.layout.w_tt_cell_b,
+        R.layout.w_tt_cell_c, R.layout.w_tt_cell_d, R.layout.w_tt_cell_e,
+        R.layout.w_tt_cell_f,
     };
     private static final int[] TT_HOUR_LAY = {
-        R.layout.w_tt_hour_a, R.layout.w_tt_hour_b, R.layout.w_tt_hour_c,
-        R.layout.w_tt_hour_d, R.layout.w_tt_hour_e, R.layout.w_tt_hour_f,
+        R.layout.w_tt_hour_s, R.layout.w_tt_hour_a, R.layout.w_tt_hour_b,
+        R.layout.w_tt_hour_c, R.layout.w_tt_hour_d, R.layout.w_tt_hour_e,
+        R.layout.w_tt_hour_f,
     };
 
     private void fillTable(RemoteViews v, String pkg, JSONObject o, int th, int avail) {
@@ -588,7 +600,7 @@ public class NekoWidget extends AppWidgetProvider {
         int from = tt.optInt("from", 8);
         int to = tt.optInt("to", 20);
         if (to <= from) to = from + 1;
-        if (to - from > 14) to = from + 14;
+        if (to > 24) to = 24;
         int size = ttSize(avail, to - from);
 
         RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);

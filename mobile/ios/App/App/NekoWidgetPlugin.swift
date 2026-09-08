@@ -46,6 +46,7 @@ public class NekoWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         let catFeed = defaults.integer(forKey: "neko_pending_cat_feed")
         let catPlay = defaults.integer(forKey: "neko_pending_cat_play")
 
+        defaults.removeObject(forKey: "neko_pending_toggles")
         defaults.removeObject(forKey: "neko_pending_water_add")
         defaults.removeObject(forKey: "neko_pending_vita_add")
         defaults.removeObject(forKey: "neko_pending_cat_feed")

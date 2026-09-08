@@ -84,7 +84,7 @@ struct WidgetData: Codable {
             defaults.set(encoded, forKey: widgetDataKey)
         }
 
-        let newDone = !(data.todos?.first(where: { $0.id == id })?.isDone ?? false)
+        let newDone = data.todos?.first(where: { $0.id == id })?.isDone ?? false
 
         var toggles: [[String: Any]] = []
         if let existing = defaults.data(forKey: pendingTogglesKey),
@@ -107,14 +107,21 @@ struct WidgetData: Codable {
 
         let done = h.waterDone ?? 0
         let goal = h.waterGoal ?? 8
-        if done >= goal { return }
-        h.waterDone = done + 1
-        data.health = h
-
-        if let encoded = try? JSONEncoder().encode(data) {
-            defaults.set(encoded, forKey: widgetDataKey)
+        if done >= goal {
+            h.waterDone = 0
+            data.health = h
+            if let encoded = try? JSONEncoder().encode(data) {
+                defaults.set(encoded, forKey: widgetDataKey)
+            }
+            defaults.set(defaults.integer(forKey: pendingWaterAddKey) - done, forKey: pendingWaterAddKey)
+        } else {
+            h.waterDone = done + 1
+            data.health = h
+            if let encoded = try? JSONEncoder().encode(data) {
+                defaults.set(encoded, forKey: widgetDataKey)
+            }
+            defaults.set(defaults.integer(forKey: pendingWaterAddKey) + 1, forKey: pendingWaterAddKey)
         }
-        defaults.set(defaults.integer(forKey: pendingWaterAddKey) + 1, forKey: pendingWaterAddKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -126,14 +133,21 @@ struct WidgetData: Codable {
 
         let done = h.vitaDone ?? 0
         let goal = h.vitaGoal ?? 1
-        if done >= goal { return }
-        h.vitaDone = done + 1
-        data.health = h
-
-        if let encoded = try? JSONEncoder().encode(data) {
-            defaults.set(encoded, forKey: widgetDataKey)
+        if done >= goal {
+            h.vitaDone = 0
+            data.health = h
+            if let encoded = try? JSONEncoder().encode(data) {
+                defaults.set(encoded, forKey: widgetDataKey)
+            }
+            defaults.set(defaults.integer(forKey: pendingVitaAddKey) - done, forKey: pendingVitaAddKey)
+        } else {
+            h.vitaDone = done + 1
+            data.health = h
+            if let encoded = try? JSONEncoder().encode(data) {
+                defaults.set(encoded, forKey: widgetDataKey)
+            }
+            defaults.set(defaults.integer(forKey: pendingVitaAddKey) + 1, forKey: pendingVitaAddKey)
         }
-        defaults.set(defaults.integer(forKey: pendingVitaAddKey) + 1, forKey: pendingVitaAddKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 

@@ -493,11 +493,9 @@ struct WTimetable: View {
 
     private var blocks: [BlockItem] { table?.blocks ?? [] }
 
-    /// 안드로이드와 같게 — 뒤집힌 값은 바로잡고 14줄까지만
     private var span: (from: Int, to: Int) {
         let f = min(max(table?.from ?? 8, 0), 23)
-        var to = max(table?.to ?? 20, f + 1)
-        if to - f > 14 { to = f + 14 }
+        let to = max(table?.to ?? 20, f + 1)
         return (f, min(to, 24))
     }
 
@@ -523,10 +521,9 @@ struct WTimetable: View {
         .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(t.ttFrameLine, lineWidth: 1.2))
     }
 
-    /// 남은 높이를 줄 수로 나눈다. 안드로이드가 고른 14~36dp 사이에 맞춘다.
     private func rowHeight(for h: CGFloat) -> CGFloat {
         let rows = max(1, span.to - span.from)
-        return min(36, max(14, floor(h / CGFloat(rows))))
+        return min(36, max(10, floor(h / CGFloat(rows))))
     }
 
     private var head: some View {
@@ -551,8 +548,8 @@ struct WTimetable: View {
 
     private func grid(rowH: CGFloat) -> some View {
         let s = span
-        let cellFont: CGFloat = rowH >= 31 ? 10 : (rowH >= 22 ? 9 : 8)
-        let hourFont: CGFloat = rowH >= 22 ? 9 : 8
+        let cellFont: CGFloat = rowH >= 31 ? 10 : (rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7))
+        let hourFont: CGFloat = rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7)
         return VStack(spacing: 0) {
             ForEach(Array(s.from..<s.to), id: \.self) { h in
                 HStack(spacing: 0) {
