@@ -13,8 +13,9 @@
     android:paddingBottom="8dp"
     android:layout_marginBottom="5dp">
 
+    <!-- 높이를 체크칸에 맞춰 D-day 줄과 같은 크기가 되게 한다 (36dp였을 때 줄이 더 높았다) -->
     <FrameLayout android:id="@+id/i_chk_area"
-        android:layout_width="36dp" android:layout_height="36dp"
+        android:layout_width="32dp" android:layout_height="wrap_content"
         android:gravity="center">
         <TextView android:id="@+id/i_chk"
             android:layout_width="18dp" android:layout_height="18dp"

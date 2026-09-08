@@ -449,7 +449,7 @@ public class NekoWidget extends AppWidgetProvider {
             }
         }
 
-        if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, ddayCount, shown));
+        if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, o, ddayCount, shown));
 
         // ── 고양이 ──
         if (showCat()) {
@@ -571,7 +571,7 @@ public class NekoWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.w_vita_row, vitaPi);
     }
 
-    private int ttRowH(AppWidgetManager mgr, int id, int ddayCount, int todoCount) {
+    private int ttRowH(AppWidgetManager mgr, int id, JSONObject o, int ddayCount, int todoCount) {
         int hDp = 0;
         try {
             Bundle opts = mgr.getAppWidgetOptions(id);
@@ -581,20 +581,67 @@ public class NekoWidget extends AppWidgetProvider {
             }
         } catch (Exception ignored) {}
         if (hDp <= 0) return 0;
-        int used = 20 + 34 + 22 + 22 + 8;
-        if (showHealth()) used += 62;
+
+        // 바깥 여백 + 머리글 + 시간표 제목 + 요일 줄 + 틀 테두리
+        int used = 20 + 34 + 21 + 18 + 3;
+        if (showHealth()) {
+            JSONObject h = o.optJSONObject("health");
+            used += 48;                                        // 칸 여백 + 물 줄
+            if (h != null && h.optInt("vitaGoal", 0) > 0) used += 32;
+        }
         used += ddayCount * 40;
-        if (showTodo()) used += (todoCount > 0 ? 26 + todoCount * 48 : 30);
+        if (showTodo()) used += (todoCount > 0 ? 25 + todoCount * 40 : 39);
         return hDp - used;
     }
 
+    /**
+     * 줄이 모두 들어가는 가장 큰 칸. 하나도 안 들어가면 가장 작은 칸을 준다.
+     * 예전에는 자리를 안 보고 최소 칸을 그대로 써서 마지막 줄이 중간에서 잘렸다.
+     */
     private static int ttSize(int avail, int rows) {
-        if (avail <= 0 || rows <= 0) return 1;
-        int h = avail / rows;
-        for (int i = TT_ROW_DP.length - 1; i > 0; i--) {
-            if (h >= TT_ROW_DP[i]) return i;
+        if (rows <= 0) return 0;
+        for (int i = TT_ROW_DP.length - 1; i >= 0; i--) {
+            if (rows * TT_ROW_DP[i] <= avail) return i;
         }
         return 0;
+    }
+
+    /**
+     * 보여줄 시각을 고른다. 자리가 모자라면 일정이 없는 시각부터 덜어낸다.
+     * 덜어낸 시각은 어느 요일에도 칸이 없으므로 일정이 잘려 보이지 않고,
+     * 왼쪽 시각 숫자가 그대로 남아 07 · 08 · 20 처럼 건너뛴 것이 드러난다.
+     */
+    private static int[] pickHours(JSONArray blocks, int from, int to, int avail, int size) {
+        int n = to - from;
+        // avail 0은 위젯 크기를 못 읽은 것(다 보여준다), 음수는 남은 자리가 없다는 뜻
+        int max = (avail > 0) ? Math.max(1, avail / TT_ROW_DP[size]) : (avail == 0 ? n : 1);
+        if (n <= max) {
+            int[] all = new int[n];
+            for (int i = 0; i < n; i++) all[i] = from + i;
+            return all;
+        }
+
+        boolean[] busy = new boolean[n];
+        for (int i = 0; blocks != null && i < blocks.length(); i++) {
+            JSONObject b = blocks.optJSONObject(i);
+            if (b == null) continue;
+            int s = b.optInt("start", -1), e = b.optInt("end", -1);
+            if (s < 0 || e <= s) continue;
+            for (int k = 0; k < n; k++) {
+                int h = from + k;
+                if (h * 60 < e && (h + 1) * 60 > s) busy[k] = true;
+            }
+        }
+
+        boolean[] show = new boolean[n];
+        int kept = 0;
+        for (int k = 0; k < n && kept < max; k++) if (busy[k]) { show[k] = true; kept++; }
+        for (int k = 0; k < n && kept < max; k++) if (!show[k]) { show[k] = true; kept++; }
+
+        int[] out = new int[kept];
+        int j = 0;
+        for (int k = 0; k < n; k++) if (show[k]) out[j++] = from + k;
+        return out;
     }
 
     private static final int[] TT_ROW_DP   = { 10, 14, 18, 22, 26, 31, 36 };
@@ -632,6 +679,9 @@ public class NekoWidget extends AppWidgetProvider {
         if (to <= from) to = from + 1;
         if (to > 24) to = 24;
         int size = ttSize(avail, to - from);
+        int[] hours = pickHours(blocks, from, to, avail, size);
+        size = ttSize(avail, hours.length);   // 줄을 덜어냈으면 칸을 다시 키운다
+        int last = hours.length - 1;
 
         RemoteViews corner = new RemoteViews(pkg, R.layout.w_tt_hour);
         corner.setTextViewText(R.id.i_text, "");
@@ -649,7 +699,8 @@ public class NekoWidget extends AppWidgetProvider {
             v.addView(R.id.w_tt_head, c);
         }
 
-        for (int h = from; h < to; h++) {
+        for (int hi = 0; hi <= last; hi++) {
+            int h = hours[hi];
             RemoteViews row = new RemoteViews(pkg, R.layout.w_tt_row);
             RemoteViews hour = new RemoteViews(pkg, TT_HOUR_LAY[size]);
             hour.setTextColor(R.id.i_text, WidgetTheme.dim(th));
@@ -669,12 +720,12 @@ public class NekoWidget extends AppWidgetProvider {
                         hit = b;
                         starts = (s >= h * 60 && s < (h + 1) * 60);
                         ends = (e > h * 60 && e <= (h + 1) * 60);
-                        if (h == from && s < h * 60) starts = false;
-                        if (h == to - 1 && e > (h + 1) * 60) ends = false;
+                        if (hi == 0 && s < h * 60) starts = false;
+                        if (hi == last && e > (h + 1) * 60) ends = false;
                         break;
                     }
                 }
-                boolean endCell = (h == to - 1) && (d == 6);
+                boolean endCell = (hi == last) && (d == 6);
                 if (hit != null) {
                     int ci = hit.optInt("color", -1);
                     int style = (ci >= 0 && ci < 6) ? (2 + ci)
