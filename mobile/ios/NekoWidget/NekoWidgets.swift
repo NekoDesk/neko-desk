@@ -120,7 +120,7 @@ struct NekoWidgetView: View {
                             WDdayRow(t: t, item: items[i + 1])
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Color.clear.frame(maxWidth: .infinity)
+                            Spacer().frame(maxWidth: .infinity)
                         }
                     }
                 }
@@ -154,7 +154,7 @@ struct NekoWidgetView: View {
                             WTodoRow(t: t, todo: items[i + 1], dateKey: data.todosDate ?? "")
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Color.clear.frame(maxWidth: .infinity)
+                            Spacer().frame(maxWidth: .infinity)
                         }
                     }
                 }
@@ -191,21 +191,6 @@ struct NekoMainWidget: Widget {
         }
         .configurationDisplayName("NEKO DESK")
         .description("오늘의 D-day와 할 일을 바탕화면에서 바로 보여줍니다.")
-        .supportedFamilies([.systemMedium, .systemLarge])
-    }
-}
-
-/// 가득 (안드로이드 4x5)
-struct NekoFullWidget: Widget {
-    let kind = "NekoFullWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: NekoProvider(sample: .sampleFull)) { entry in
-            NekoWidgetView(data: entry.data,
-                           showHealth: true, showDday: true, showTodo: true, showTable: true)
-        }
-        .configurationDisplayName("NEKO DESK")
-        .description("D-day · 오늘 할 일 · 오늘 시간표를 함께 보여줍니다.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

@@ -5,7 +5,6 @@ import SwiftUI
 struct NekoWidgetBundle: WidgetBundle {
     var body: some Widget {
         NekoMainWidget()
-        NekoFullWidget()
         NekoDdayWidget()
         NekoTodoWidget()
         NekoTimetableWidget()
