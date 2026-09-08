@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '2.9.7-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.0.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -1993,6 +1993,20 @@
     var vp = document.querySelector('meta[name="viewport"]');
     if (vp && vp.content.indexOf('viewport-fit') < 0) {
       vp.setAttribute('content', vp.content + ', viewport-fit=cover');
+    }
+
+    // iOS는 입력칸 글씨가 16px보다 작으면 칸을 누를 때 화면을 저 혼자 확대한다.
+    // 한 번 확대되면 손가락으로 줄여도 안 돌아가 앱을 껐다 켜야 했다.
+    // 배율을 묶어 확대 자체를 막는다. 칸 글씨를 16px로 올려도 막히지만,
+    // 시간 고르는 칸(13px)처럼 좁은 자리가 밀려서 이 쪽을 골랐다.
+    var isIOS = false;
+    try {
+      isIOS = !!(window.Capacitor && typeof window.Capacitor.getPlatform === 'function'
+                 && window.Capacitor.getPlatform() === 'ios');
+    } catch (e) {}
+    if (vp && isIOS) {
+      vp.setAttribute('content', 'width=device-width, initial-scale=1.0, '
+        + 'maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
     }
 
     initDeepLinkListener();
