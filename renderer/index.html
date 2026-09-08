@@ -566,6 +566,10 @@ body.theme-mono {
 .sch-label-in:focus { border-bottom-color:var(--yellow); }
 .sch-del-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px; cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
 .sch-del-btn:hover { color:#f66; border-color:#f66; }
+/* 중요 표시 별 — 켜면 테마 노랑으로 찬다 */
+.star-btn { background:var(--card); border:1px solid var(--border); color:var(--gray); font-size:13px;
+  cursor:pointer; width:24px; height:24px; line-height:1; flex-shrink:0; border-radius:3px; padding:0; }
+.star-btn:hover, .star-btn.on { color:var(--yellow); border-color:var(--yellow); }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
 .todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after,
@@ -2144,7 +2148,8 @@ const STRINGS = {
     pin_title:'📌 일정 고정', pin_everyday:'매일', pin_weekdays:'평일만', pin_weekends:'주말만',
     pin_by_dow:'요일별', pin_apply:'✓ 고정하기', pin_done:'{n}일에 고정했어요',
     pin_cancel:'취소', pin_select_days:'고정할 요일을 선택하세요',
-    pin_unpin:'📌 고정 해제', pin_unpin_hint:'선택한 날 이후 같은 내용의 일정을 삭제합니다',
+    pin_unpin:'📌 고정 해제', pin_unpin_hint:'같은 내용의 일정을 모두 삭제합니다',
+    pin_period:'기간', pin_until:'까지', todo_star:'중요 표시',
     pin_unpin_done:'{n}개 일정을 해제했어요', pin_unpin_none:'해제할 일정이 없어요',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
@@ -2395,7 +2400,8 @@ const STRINGS = {
     pin_title:'📌 Pin task', pin_everyday:'Every day', pin_weekdays:'Weekdays only', pin_weekends:'Weekends only',
     pin_by_dow:'By weekday', pin_apply:'✓ Pin', pin_done:'Pinned to {n} days',
     pin_cancel:'Cancel', pin_select_days:'Select the weekdays to pin to',
-    pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes matching tasks from dates after the selected day',
+    pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes every task with the same text',
+    pin_period:'Period', pin_until:'until', todo_star:'Mark as important',
     pin_unpin_done:'Removed {n} tasks', pin_unpin_none:'No matching tasks to remove',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
@@ -2648,7 +2654,8 @@ const STRINGS = {
     pin_title:'📌 予定を固定', pin_everyday:'毎日', pin_weekdays:'平日のみ', pin_weekends:'週末のみ',
     pin_by_dow:'曜日別', pin_apply:'✓ 固定する', pin_done:'{n}日に固定しました',
     pin_cancel:'キャンセル', pin_select_days:'固定する曜日を選んでください',
-    pin_unpin:'📌 固定解除', pin_unpin_hint:'選択した日以降の同じ内容の予定を削除します',
+    pin_unpin:'📌 固定解除', pin_unpin_hint:'同じ内容の予定をすべて削除します',
+    pin_period:'期間', pin_until:'まで', todo_star:'重要マーク',
     pin_unpin_done:'{n}件解除しました', pin_unpin_none:'解除する予定がありません',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
@@ -4814,6 +4821,20 @@ function closeTtTips(e) {
 function _tPad(n) { return ('0' + n).slice(-2); }
 
 /**
+ * 시 고르개 목록. 오전은 00~11시, 오후는 12~23시를 24시간 숫자 그대로 보여 준다.
+ * 예전에는 양쪽 다 01~12로 적어서 "오전 12시"가 자정이고 "오후 12시"가 정오였는데,
+ * 어느 쪽이 한낮인지 알 수 없어 정오도 자정도 제대로 못 넣었다.
+ */
+function _tctlHourOpts(H) {
+  const base = H >= 12 ? 12 : 0;
+  let s = '';
+  for (let i = base; i < base + 12; i++) {
+    s += `<option value="${i}"${i === H ? ' selected' : ''}>${_tPad(i)}</option>`;
+  }
+  return s;
+}
+
+/**
  * @param value "HH:MM"
  * @param attrs 숨은 칸에 붙일 속성 (id, onchange 등)
  */
@@ -4822,10 +4843,8 @@ function timeCtlHtml(value, attrs) {
   const H = m ? Number(m[1]) : 9;
   const M = m ? Number(m[2]) : 0;
   const pm = H >= 12;
-  const h12 = ((H + 11) % 12) + 1;
 
-  let hs = '';
-  for (let i = 1; i <= 12; i++) hs += `<option value="${i}"${i === h12 ? ' selected' : ''}>${_tPad(i)}</option>`;
+  const hs = _tctlHourOpts(H);
   let ms = '';
   for (let i = 0; i < 60; i++) ms += `<option value="${i}"${i === M ? ' selected' : ''}>${_tPad(i)}</option>`;
 
@@ -4843,7 +4862,14 @@ function tctlToggleAmPm(btn) {
   const pm = !btn.classList.contains('pm');
   btn.classList.toggle('pm', pm);
   btn.textContent = pm ? L('work_pm') : L('work_am');
-  tctlApply(btn.closest('.tctl'));
+  const wrap = btn.closest('.tctl');
+  const hs = wrap && wrap.querySelector('.tctl-h');
+  if (hs) {                                  // 목록이 0~11 ↔ 12~23 으로 갈린다
+    const H = (Number(hs.value) % 12) + (pm ? 12 : 0);
+    hs.innerHTML = _tctlHourOpts(H);
+    hs.value = String(H);
+  }
+  tctlApply(wrap);
 }
 
 /** 고르개 상태를 "HH:MM" 으로 모아 숨은 칸에 넣고 알린다 */
@@ -4855,8 +4881,9 @@ function tctlApply(wrap) {
   const val = wrap.querySelector('.tctl-val');
   if (!chip || !hs || !ms || !val) return;
   const pm = chip.classList.contains('pm');
-  let H = Number(hs.value) % 12;
-  if (pm) H += 12;
+  let H = Number(hs.value) % 24;             // 목록이 이미 24시간 값이다
+  if (pm && H < 12) H += 12;
+  if (!pm && H >= 12) H -= 12;
   const next = _tPad(H) + ':' + _tPad(Number(ms.value));
   if (val.value === next) return;
   val.value = next;
@@ -4877,7 +4904,7 @@ function syncTimeAmPm(val) {
   const hs = wrap.querySelector('.tctl-h');
   const ms = wrap.querySelector('.tctl-m');
   if (chip) { chip.classList.toggle('pm', pm); chip.textContent = pm ? L('work_pm') : L('work_am'); }
-  if (hs) hs.value = String(((H + 11) % 12) + 1);
+  if (hs) { hs.innerHTML = _tctlHourOpts(H); hs.value = String(H); }
   if (ms) ms.value = String(M);
 }
 function syncAllTimeAmPm(root) {
@@ -6029,6 +6056,8 @@ function renderCalendar() {
                  onblur="commitEditItem('${_calKey}',${i},this.value)">`
             : `<span class="todo-text" ondblclick="editDayItem(${i})" data-tip="${L('todo_edit_hint')}"
                  style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>`}
+          <button onclick="toggleDayItemStar('${_calKey}',${i})" class="star-btn${item.star ? ' on' : ''}"
+            title="${L('todo_star')}">${item.star ? '★' : '☆'}</button>
           <button onclick="deleteDayItem('${_calKey}',${i})" class="sch-del-btn">×</button>
         </div>`).join('');
 
@@ -6452,6 +6481,14 @@ function commitEditItem(key, i, val) {
 }
 
 // ── 핀(고정) 팝업 ─────────────────────────────────────────
+/** "YYYY-MM-DD" → Date (없는 날짜면 null) */
+function _dkToDate(dk) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dk || ''));
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+function _dateToDk(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 let _pinPopup = null;
 function closePinPopup() {
   if (_pinPopup) { _pinPopup.remove(); _pinPopup = null; }
@@ -6474,6 +6511,32 @@ function openPinPopup(ev, key, idx) {
   let mode = 'everyday';
   let dowSel = [1,2,3,4,5];
 
+  // 끝날은 고른 날이 든 달의 마지막 날에서 시작한다 (예전 "그 달만" 과 같은 범위)
+  const startD = _dkToDate(key) || new Date();
+  let endY = startD.getFullYear();
+  let endM = startD.getMonth();
+  let endD = new Date(endY, endM + 1, 0).getDate();
+
+  function periodHtml() {
+    const lastDay = new Date(endY, endM + 1, 0).getDate();
+    if (endD > lastDay) endD = lastDay;          // 2월 31일 같은 날이 남지 않도록
+    const opt = (v, cur, txt) => `<option value="${v}"${v === cur ? ' selected' : ''}>${txt}</option>`;
+    let ys = '', ms = '', ds = '';
+    for (let y = startD.getFullYear(); y <= startD.getFullYear() + 5; y++) ys += opt(y, endY, y);
+    for (let m = 0; m < 12; m++) ms += opt(m, endM, m + 1);
+    for (let d = 1; d <= lastDay; d++) ds += opt(d, endD, d);
+    return `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+      <div style="font-size:11px;color:var(--gray);margin-bottom:5px">${L('pin_period')}</div>
+      <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;font-size:11px;color:var(--white)">
+        <span>${key}</span><span style="color:var(--gray)">~</span>
+        <select class="pin-dsel" data-k="y">${ys}</select>
+        <select class="pin-dsel" data-k="m">${ms}</select>
+        <select class="pin-dsel" data-k="d">${ds}</select>
+        <span style="color:var(--gray)">${L('pin_until')}</span>
+      </div>
+    </div>`;
+  }
+
   function render() {
     const dows = L('dows').split(',');
     let h = `<div class="pin-popup-title">${L('pin_title')}</div>`;
@@ -6494,6 +6557,7 @@ function openPinPopup(ev, key, idx) {
       }
       h += `</div>`;
     }
+    h += periodHtml();
     h += `<div style="display:flex;gap:6px;margin-top:10px">
       <button class="btn btn-gr" style="flex:0 0 auto;font-size:11px;padding:4px 8px" data-act="cancel">${L('pin_cancel')}</button>
       <button class="btn btn-y" style="flex:1;font-size:11px;padding:4px 8px" data-act="apply">${L('pin_apply')}</button>
@@ -6515,8 +6579,18 @@ function openPinPopup(ev, key, idx) {
         render();
       };
     });
+    pop.querySelectorAll('.pin-dsel').forEach(el => {
+      el.onchange = () => {
+        const v = Number(el.value);
+        if (el.dataset.k === 'y') endY = v;
+        else if (el.dataset.k === 'm') endM = v;
+        else endD = v;
+        render();
+      };
+    });
     pop.querySelector('[data-act="cancel"]').onclick = closePinPopup;
-    pop.querySelector('[data-act="apply"]').onclick = () => applyPin(key, idx, mode, dowSel);
+    pop.querySelector('[data-act="apply"]').onclick =
+      () => applyPin(key, idx, mode, dowSel, _dateToDk(new Date(endY, endM, endD)));
     pop.querySelector('[data-act="unpin"]').onclick = () => unpinItem(key, idx);
   }
 
@@ -6534,7 +6608,7 @@ function openPinPopup(ev, key, idx) {
   setTimeout(() => document.addEventListener('pointerdown', _pinOutsideClick, true), 0);
 }
 
-function applyPin(key, idx, mode, dowSel) {
+function applyPin(key, idx, mode, dowSel, endKey) {
   const items = getCalNotes(key);
   if (!items[idx]) { closePinPopup(); return; }
   const item = items[idx];
@@ -6547,21 +6621,27 @@ function applyPin(key, idx, mode, dowSel) {
 
   if (!targetDows.length) { closePinPopup(); return; }
 
+  const from = _dkToDate(key);
+  const to = _dkToDate(endKey);
+  if (!from || !to || to < from) { closePinPopup(); return; }
+
   _calPushUndo();
   _calUndoLock = true;
-  const y = _calYear, m = _calMonth;
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
   let count = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dt = new Date(y, m, d);
-    if (!targetDows.includes(dt.getDay())) continue;
-    const dk = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if (dk === key) continue;
-    const cur = getCalNotes(dk);
-    if (cur.some(it => it.text === item.text)) continue;
-    cur.push(touchItem({ text: item.text, done: false, ampm: item.ampm || 'am', ord: cur.length }));
-    setCalNotes(dk, cur);
-    count++;
+  const at = new Date(from.getTime());
+  // 한 번에 너무 먼 날까지 넣지 않도록 5년에서 끊는다
+  for (let guard = 0; guard < 1830 && at <= to; guard++) {
+    const dk = _dateToDk(at);
+    if (dk !== key && targetDows.includes(at.getDay())) {
+      const cur = getCalNotes(dk);
+      if (!cur.some(it => it.text === item.text)) {
+        cur.push(touchItem({ text: item.text, done: false, ampm: item.ampm || 'am',
+                             star: !!item.star, ord: cur.length }));
+        setCalNotes(dk, cur);
+        count++;
+      }
+    }
+    at.setDate(at.getDate() + 1);
   }
   _calUndoLock = false;
   closePinPopup();
@@ -6577,8 +6657,9 @@ function unpinItem(key, idx) {
   _calUndoLock = true;
   const notes = S.calendarNotes || {};
   let count = 0;
+  // 고정을 풀 때는 앞뒤 가리지 않고 같은 내용을 모두 지운다.
+  // 달마다 남아 있으면 지운 줄 알고 넘어갔다가 다음 달에 다시 나온다.
   Object.keys(notes).forEach(dk => {
-    if (dk <= key) return;
     const arr = notes[dk];
     if (!Array.isArray(arr)) return;
     const removed = arr.filter(it => it.text === text);
@@ -6769,6 +6850,15 @@ function toggleDayItem(key, i) {
       toast('reward', '🍋 ' + L('home_fruit_title'), L('todo_fruit_msg'));
     }
   }
+  saveState(); renderCalendar();
+}
+/** 중요 표시 — 별을 켜고 끈다 */
+function toggleDayItemStar(key, i) {
+  const items = getCalNotes(key);
+  if (!items[i]) return;
+  items[i].star = !items[i].star;
+  touchItem(items[i]);
+  setCalNotes(key, items);
   saveState(); renderCalendar();
 }
 function deleteDayItem(key, i) {
