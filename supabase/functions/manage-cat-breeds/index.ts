@@ -27,7 +27,11 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { action, name, desc: description, imgBase64Front, imgBase64Side, id } = body;
+    const {
+      action, name, desc: description, id,
+      imgBase64Front, imgBase64Side, imgBase64Back,
+      breed_group, concept,
+    } = body;
 
     const uploadImage = async (b64: string, suffix: string): Promise<string | null> => {
       const m = b64.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -43,17 +47,67 @@ Deno.serve(async (req) => {
       return data.publicUrl;
     };
 
+    if (action === "list") {
+      const { data, error } = await supabase
+        .from("cat_breeds")
+        .select("id, name, description, breed_group, concept, image_url, image_url_side, image_url_b")
+        .order("breed_group", { ascending: true })
+        .order("concept", { ascending: true });
+      if (error) return json({ ok: false, error: error.message }, 500);
+      return json({ ok: true, breeds: data ?? [] });
+    }
+
     if (action === "add") {
       if (!name) return json({ ok: false, error: "missing_name" }, 400);
 
       const image_url = imgBase64Front ? await uploadImage(imgBase64Front, "F") : null;
       const image_url_side = imgBase64Side ? await uploadImage(imgBase64Side, "S") : null;
+      const image_url_b = imgBase64Back ? await uploadImage(imgBase64Back, "B") : null;
 
       const { data, error } = await supabase
         .from("cat_breeds")
-        .insert({ name, description: description ?? null, image_url, image_url_side })
+        .insert({
+          name, description: description ?? null,
+          breed_group: breed_group ?? null, concept: concept ?? null,
+          image_url, image_url_side, image_url_b,
+        })
         .select()
         .single();
+      if (error) return json({ ok: false, error: error.message }, 500);
+      return json({ ok: true, breed: data });
+    }
+
+    // 종류·컨셉이 같으면 고치고, 없으면 새로 넣는다 (관리 화면의 표 한 칸 = 고양이 한 마리).
+    // 올리지 않은 면은 건드리지 않는다 — 앞모습만 바꾸려고 옆·뒤를 다시 올릴 필요가 없다.
+    if (action === "upsert") {
+      if (!breed_group || !concept) return json({ ok: false, error: "missing_group_or_concept" }, 400);
+
+      const patch: Record<string, string | null> = {
+        breed_group, concept,
+        name: name || `${breed_group} · ${concept}`,
+      };
+      if (description !== undefined) patch.description = description || null;
+      if (imgBase64Front) patch.image_url = await uploadImage(imgBase64Front, "F");
+      if (imgBase64Side) patch.image_url_side = await uploadImage(imgBase64Side, "S");
+      if (imgBase64Back) patch.image_url_b = await uploadImage(imgBase64Back, "B");
+
+      const { data: found } = await supabase
+        .from("cat_breeds")
+        .select("id")
+        .eq("breed_group", breed_group)
+        .eq("concept", concept)
+        .maybeSingle();
+
+      if (found) {
+        const { data, error } = await supabase
+          .from("cat_breeds").update(patch).eq("id", found.id).select().single();
+        if (error) return json({ ok: false, error: error.message }, 500);
+        return json({ ok: true, breed: data });
+      }
+
+      if (!patch.image_url) return json({ ok: false, error: "missing_front_image" }, 400);
+      const { data, error } = await supabase
+        .from("cat_breeds").insert(patch).select().single();
       if (error) return json({ ok: false, error: error.message }, 500);
       return json({ ok: true, breed: data });
     }
