@@ -6635,8 +6635,14 @@ function applyPin(key, idx, mode, dowSel, endKey) {
     if (dk !== key && targetDows.includes(at.getDay())) {
       const cur = getCalNotes(dk);
       if (!cur.some(it => it.text === item.text)) {
-        cur.push(touchItem({ text: item.text, done: false, ampm: item.ampm || 'am',
-                             star: !!item.star, ord: cur.length }));
+        // 고른 날에서 몇 번째였는지를 그대로 지킨다. 맨 뒤로 붙으면 매일 하는 일이
+        // 그 날 새로 적은 일정 아래로 밀려 순서가 뒤죽박죽이 된다.
+        // 그 날 일정이 더 적으면 자리가 없으니 맨 뒤에 놓인다.
+        const at = Math.min(idx, cur.length);
+        cur.splice(at, 0, touchItem({ text: item.text, done: false, ampm: item.ampm || 'am',
+                                      star: !!item.star, ord: at }));
+        // 뒤로 밀린 것만 번호를 다시 매긴다 (안 밀린 것까지 건드리면 기기 간 맞추기가 시끄러워진다)
+        cur.forEach((it, i) => { if (it.ord !== i) { it.ord = i; touchItem(it); } });
         setCalNotes(dk, cur);
         count++;
       }
