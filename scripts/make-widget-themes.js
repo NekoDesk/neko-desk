@@ -149,3 +149,82 @@ java += `    };
 `;
 fs.writeFileSync(path.join(JAVA, 'WidgetTheme.java'), java);
 console.log('WidgetTheme.java');
+
+// ══════════════════════════════════════════════
+// iOS 위젯 색표
+//
+// iOS는 SwiftUI라 색을 그때그때 칠할 수 있어서 배경 그림은 필요 없지만,
+// 색이 안드로이드와 어긋나면 두 위젯 모양이 달라 보인다. 그래서 같은
+// THEMES·같은 셈법으로 Swift 표도 여기서 함께 만든다.
+// ══════════════════════════════════════════════
+const IOS = path.join(ROOT, 'mobile/ios/NekoWidget');
+
+// [이름, 바탕색, 테두리색] — 위 PARTS와 짝이 맞아야 한다
+const SWIFT_PARTS = [
+  ['bg',          v => [v.bg,    v.border]],
+  ['row',         v => [v.panel, mix(v.acc, v.panel, 0.55)]],
+  ['rowDone',     v => [v.card,  v.border]],
+  ['side',        v => [v.panel, v.border]],
+  ['dday',        v => [v.panel, mix('#E4665F', v.panel, 0.6)]],
+  ['ttFrame',     v => [v.panel, mix(v.gray, v.border, 0.45)]],
+  ['ttHead',      v => [v.card,  v.border]],
+  ['ttEmpty',     v => [v.panel, v.border]],
+  ['ttTodayHead', v => [mix(v.yellow, v.card, 0.55), mix(v.yellow, v.border, 0.4)]],
+];
+
+let swift = `// 위젯 색표 — scripts/make-widget-themes.js 가 만든다. 손으로 고치지 말 것.
+//
+// 안드로이드 WidgetTheme.java 와 같은 THEMES·같은 셈법에서 나온다.
+// 두 위젯이 같은 색으로 보이려면 이 파일을 직접 고치지 말고 생성기를 고칠 것.
+import SwiftUI
+
+struct WTheme {
+`;
+for (const [name] of SWIFT_PARTS) {
+  swift += '    let ' + name + ': Color\n';
+  swift += '    let ' + name + 'Line: Color\n';
+}
+swift += `    let text: Color
+    let dim: Color
+    let accent: Color
+}
+
+let wThemes: [String: WTheme] = [
+`;
+for (const th of themes) {
+  const v = th.vars;
+  const c = (x) => 'Color(hex: "' + hex(x) + '")';
+  const args = [];
+  for (const [name, make] of SWIFT_PARTS) {
+    const [fill, line] = make(v);
+    args.push('        ' + name + ': ' + c(fill) + ', ' + name + 'Line: ' + c(line));
+  }
+  args.push('        text: ' + c(v.white) + ', dim: ' + c(v.gray) + ', accent: ' + c(v.acc));
+  swift += '    "' + th.id + '": WTheme(\n' + args.join(',\n') + '\n    ),\n';
+}
+swift += `];
+
+/// 모르는 이름이면 기본(화이트) — 안드로이드 WidgetTheme.index와 같다
+func wtheme(_ id: String?) -> WTheme {
+    wThemes[id ?? "white"] ?? wThemes["white"]!
+}
+
+extension Color {
+    init(hex: String) {
+        let s = hex.trimmingCharacters(in: .init(charactersIn: "#"))
+        var n: UInt64 = 0
+        Scanner(string: s).scanHexInt64(&n)
+        if s.count == 3 {
+            self.init(red: Double((n >> 8) & 0xF) / 15,
+                      green: Double((n >> 4) & 0xF) / 15,
+                      blue: Double(n & 0xF) / 15)
+        } else {
+            self.init(red: Double((n >> 16) & 0xFF) / 255,
+                      green: Double((n >> 8) & 0xFF) / 255,
+                      blue: Double(n & 0xFF) / 255)
+        }
+    }
+}
+`;
+fs.writeFileSync(path.join(IOS, 'WidgetTheme.swift'), swift);
+console.log('WidgetTheme.swift (iOS)');

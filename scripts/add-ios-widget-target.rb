@@ -47,6 +47,14 @@ swift_files.each do |path|
   target.source_build_phase.add_file_reference(ref)
 end
 
+# 자산 카탈로그 (머리글의 고양이). 없으면 그림만 빠지고 빌드는 그대로 된다.
+assets_path = File.join(WIDGET_DIR, 'Assets.xcassets')
+if File.exist?(assets_path)
+  assets_ref = widget_group.new_file(assets_path)
+  target.resources_build_phase.add_file_reference(assets_ref)
+  puts 'Assets.xcassets → NekoWidget 리소스에 추가'
+end
+
 # ── 빌드 설정 ──
 target.build_configurations.each do |config|
   s = config.build_settings
