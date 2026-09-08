@@ -48,6 +48,7 @@ struct NekoWidgetView: View {
     var showDday = false
     var showTodo = false
     var showTable = false
+    var showCat = false
     var showSides = false
 
     private var t: WTheme { wtheme(data.theme) }
@@ -79,12 +80,20 @@ struct NekoWidgetView: View {
                 WHealth(t: t, h: h)
             }
 
-            if showDday {
-                ddayList
+            if showDday && showTodo {
+                HStack(alignment: .top, spacing: 6) {
+                    VStack(spacing: 0) { ddayList }
+                        .frame(maxWidth: .infinity)
+                    VStack(spacing: 0) { todoSection }
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
+                if showDday { ddayList }
+                if showTodo { todoSection }
             }
 
-            if showTodo {
-                todoSection
+            if showCat {
+                WCatView(t: t, cat: data.cat, isLoaded: data.isLoaded)
             }
 
             if showTable {
@@ -213,6 +222,20 @@ struct NekoTodoWidget: Widget {
         .configurationDisplayName("NEKO DESK")
         .description("오늘 할 일만 보여줍니다.")
         .supportedFamilies([.systemMedium, .systemLarge])
+    }
+}
+
+/// 고양이만
+struct NekoCatWidget: Widget {
+    let kind = "NekoCatWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: NekoProvider(sample: .sampleCat)) { entry in
+            NekoWidgetView(data: entry.data, showCat: true)
+        }
+        .configurationDisplayName("NEKO DESK")
+        .description("고양이의 기분을 확인하고 먹이를 주거나 함께 놀 수 있습니다.")
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 

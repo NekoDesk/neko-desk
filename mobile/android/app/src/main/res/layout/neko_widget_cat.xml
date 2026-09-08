@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 고양이만 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_bg"
+    android:padding="10dp">
+
+    <include layout="@layout/w_header" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- 고양이 이미지 -->
+        <ImageView android:id="@+id/w_cat_img"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:src="@drawable/w_cat_white" />
+
+        <!-- 오른쪽: 기분 + 버튼 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingLeft="8dp">
+
+            <!-- 기분 이모지 + 텍스트 -->
+            <TextView android:id="@+id/w_cat_mood_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#3E3A39"
+                android:text=""
+                android:layout_marginBottom="4dp" />
+
+            <!-- 기분 바 -->
+            <ProgressBar android:id="@+id/w_cat_mood_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:layout_marginBottom="10dp"
+                android:max="100"
+                android:progress="60"
+                android:progressDrawable="@drawable/w_mood_bar_progress" />
+
+            <!-- 먹이 버튼 -->
+            <TextView android:id="@+id/w_cat_feed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:background="@drawable/w_pill_am"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:textSize="11sp"
+                android:textColor="#5B8DD9"
+                android:text="🐟 먹이"
+                android:layout_marginBottom="6dp" />
+
+            <!-- 놀기 버튼 -->
+            <TextView android:id="@+id/w_cat_play"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:background="@drawable/w_pill_pm"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:textSize="11sp"
+                android:textColor="#E09A4B"
+                android:text="🎾 놀기" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 고양이 이름 -->
+    <TextView android:id="@+id/w_cat_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="11sp"
+        android:textColor="#3E3A39"
+        android:paddingTop="4dp"
+        android:text="" />
+
+</LinearLayout>

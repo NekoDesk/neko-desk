@@ -293,7 +293,7 @@ struct WTodoRow: View {
         }
         .padding(.leading, 4)
         .padding(.trailing, 8)
-        .padding(.vertical, 5)
+        .padding(.vertical, 8)
         .wbox(todo.isDone ? t.rowDone : t.row,
               todo.isDone ? t.rowDoneLine : t.rowLine, radius: 13, width: 1.5)
         .padding(.bottom, 5)
@@ -381,6 +381,95 @@ struct WSideBox: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 7)
         .wbox(t.side, t.sideLine, radius: 12, width: 1)
+    }
+}
+
+// ── 고양이 위젯 ──
+struct WCatView: View {
+    let t: WTheme
+    let cat: CatData?
+    let isLoaded: Bool
+
+    private var breed: String { cat?.breed ?? "white" }
+    private var mood: Int { cat?.mood ?? 60 }
+    private var name: String { cat?.name ?? "냐옹이" }
+    private var pts: Int { cat?.pts ?? 0 }
+
+    private var imageName: String {
+        let valid = ["white", "tabby", "black", "pink"]
+        return "Cat_\(valid.contains(breed) ? breed : "white")"
+    }
+
+    private var moodEmoji: String {
+        if mood >= 80 { return "😻" }
+        if mood >= 50 { return "😺" }
+        if mood >= 30 { return "😿" }
+        return "🙀"
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 4) {
+                Image(imageName)
+                    .resizable()
+                    .interpolation(.none)
+                    .scaledToFit()
+                    .frame(maxWidth: 100, maxHeight: 100)
+                    .saturation(mood <= 40 ? 0.4 : 1.0)
+                Text(name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(t.text)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Text(moodEmoji).font(.system(size: 14))
+                    moodBar
+                }
+                if #available(iOSApplicationExtension 17.0, *) {
+                    Button(intent: FeedCatIntent()) {
+                        Label("먹이", systemImage: "fork.knife")
+                            .font(.system(size: 11))
+                            .foregroundColor(pts >= 20 ? WC.amText : WC.doneText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .wbox(pts >= 20 ? WC.amBg : t.rowDone,
+                                  pts >= 20 ? WC.amLine : t.rowDoneLine, radius: 10, width: 1)
+                    }
+                    .buttonStyle(.plain)
+                    Button(intent: PlayCatIntent()) {
+                        Label("놀기", systemImage: "sparkles")
+                            .font(.system(size: 11))
+                            .foregroundColor(WC.pmText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .wbox(WC.pmBg, WC.pmLine, radius: 10, width: 1)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("앱에서 돌봐주세요")
+                        .font(.system(size: 10))
+                        .foregroundColor(t.dim)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var moodBar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(t.rowDone)
+                    .frame(height: 8)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(mood >= 50 ? WC.checkOn : WC.ddayBadge)
+                    .frame(width: max(0, geo.size.width * CGFloat(mood) / 100.0), height: 8)
+            }
+        }
+        .frame(height: 8)
     }
 }
 

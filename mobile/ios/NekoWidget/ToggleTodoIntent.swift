@@ -50,3 +50,27 @@ struct AddVitaIntent: AppIntent {
         return .result()
     }
 }
+
+@available(iOS 17.0, *)
+struct FeedCatIntent: AppIntent {
+    static var title: LocalizedStringResource = "Feed Cat"
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        WidgetData.feedCat()
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct PlayCatIntent: AppIntent {
+    static var title: LocalizedStringResource = "Play Cat"
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        WidgetData.playCat()
+        return .result()
+    }
+}

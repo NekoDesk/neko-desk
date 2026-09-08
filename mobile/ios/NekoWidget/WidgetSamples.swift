@@ -117,4 +117,11 @@ extension WidgetData {
         d.table = sampleTable(to: 17, withAfternoon: true)
         return d
     }
+
+    /// 고양이만
+    static var sampleCat: WidgetData {
+        var d = base()
+        d.cat = CatData(breed: "white", mood: 70, name: "냐옹이", pts: 120)
+        return d
+    }
 }

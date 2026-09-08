@@ -27,16 +27,21 @@ public class NekoWidget extends AppWidgetProvider {
     protected boolean showDday()   { return true; }
     protected boolean showTodo()   { return true; }
     protected boolean showTable()  { return false; }
+    protected boolean showCat()    { return false; }
 
     public static final String PREFS = "neko_widget";
     public static final String KEY_DATA = "data";
     public static final String KEY_TOGGLES = "pending_toggles";
     public static final String KEY_WATER_ADD = "pending_water_add";
     public static final String KEY_VITA_ADD = "pending_vita_add";
+    public static final String KEY_CAT_FEED = "pending_cat_feed";
+    public static final String KEY_CAT_PLAY = "pending_cat_play";
     public static final String ACTION_REFRESH = "com.siwon.nekodesk.mobile.WIDGET_REFRESH";
     public static final String ACTION_TOGGLE = "com.siwon.nekodesk.mobile.WIDGET_TOGGLE";
     public static final String ACTION_WATER = "com.siwon.nekodesk.mobile.WIDGET_WATER";
     public static final String ACTION_VITA = "com.siwon.nekodesk.mobile.WIDGET_VITA";
+    public static final String ACTION_CAT_FEED = "com.siwon.nekodesk.mobile.WIDGET_CAT_FEED";
+    public static final String ACTION_CAT_PLAY = "com.siwon.nekodesk.mobile.WIDGET_CAT_PLAY";
     private static final String EXTRA_TODO_ID = "todo_id";
     private static final String EXTRA_DATE_KEY = "date_key";
 
@@ -63,6 +68,10 @@ public class NekoWidget extends AppWidgetProvider {
             addWater(ctx);
         } else if (ACTION_VITA.equals(action)) {
             addVita(ctx);
+        } else if (ACTION_CAT_FEED.equals(action)) {
+            feedCat(ctx);
+        } else if (ACTION_CAT_PLAY.equals(action)) {
+            playCat(ctx);
         }
     }
 
@@ -74,7 +83,7 @@ public class NekoWidget extends AppWidgetProvider {
 
     private static final Class<?>[] PROVIDERS = {
         NekoWidget.class, NekoWidgetFull.class, NekoWidgetDday.class,
-        NekoWidgetTodo.class, NekoWidgetTt.class,
+        NekoWidgetTodo.class, NekoWidgetTt.class, NekoWidgetCat.class,
     };
 
     private static void refreshAll(Context ctx) {
@@ -168,6 +177,43 @@ public class NekoWidget extends AppWidgetProvider {
         refreshAll(ctx);
     }
 
+    private static void feedCat(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONObject c = o.optJSONObject("cat");
+            if (c == null) return;
+            int pts = c.optInt("pts", 0);
+            if (pts < 20) return;
+            c.put("mood", Math.min(100, c.optInt("mood", 60) + 10));
+            c.put("pts", pts - 20);
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_CAT_FEED, sp.getInt(KEY_CAT_FEED, 0) + 1).apply();
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
+    private static void playCat(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONObject c = o.optJSONObject("cat");
+            if (c == null) return;
+            c.put("mood", Math.min(100, c.optInt("mood", 60) + 10));
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_CAT_PLAY, sp.getInt(KEY_CAT_PLAY, 0) + 1).apply();
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
     /** 대기 중인 변경사항을 JSON으로 꺼내고 비운다 */
     public static String consumePending(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -176,14 +222,18 @@ public class NekoWidget extends AppWidgetProvider {
             out.put("toggles", sp.getString(KEY_TOGGLES, "[]"));
             out.put("waterAdd", sp.getInt(KEY_WATER_ADD, 0));
             out.put("vitaAdd", sp.getInt(KEY_VITA_ADD, 0));
+            out.put("catFeed", sp.getInt(KEY_CAT_FEED, 0));
+            out.put("catPlay", sp.getInt(KEY_CAT_PLAY, 0));
             sp.edit()
                 .remove(KEY_TOGGLES)
                 .remove(KEY_WATER_ADD)
                 .remove(KEY_VITA_ADD)
+                .remove(KEY_CAT_FEED)
+                .remove(KEY_CAT_PLAY)
                 .apply();
             return out.toString();
         } catch (Exception e) {
-            return "{\"toggles\":\"[]\",\"waterAdd\":0,\"vitaAdd\":0}";
+            return "{\"toggles\":\"[]\",\"waterAdd\":0,\"vitaAdd\":0,\"catFeed\":0,\"catPlay\":0}";
         }
     }
 
@@ -373,6 +423,47 @@ public class NekoWidget extends AppWidgetProvider {
 
         if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, ddayCount, shown));
 
+        // ── 고양이 ──
+        if (showCat()) {
+            JSONObject cat = stale ? null : o.optJSONObject("cat");
+            String breed = cat != null ? cat.optString("breed", "white") : "white";
+            int mood = cat != null ? cat.optInt("mood", 60) : 60;
+            String catName = cat != null ? cat.optString("name", "냐옹이") : "냐옹이";
+            int pts = cat != null ? cat.optInt("pts", 0) : 0;
+
+            int imgRes;
+            switch (breed) {
+                case "tabby": imgRes = R.drawable.w_cat_tabby; break;
+                case "black": imgRes = R.drawable.w_cat_black; break;
+                case "pink":  imgRes = R.drawable.w_cat_pink;  break;
+                default:      imgRes = R.drawable.w_cat_white; break;
+            }
+            v.setImageViewResource(R.id.w_cat_img, imgRes);
+
+            String moodEmoji = mood >= 80 ? "😆" : mood >= 50 ? "😊" : mood >= 30 ? "😐" : "😢";
+            v.setTextViewText(R.id.w_cat_mood_text, moodEmoji + " " + mood + "%");
+            v.setTextColor(R.id.w_cat_mood_text, cText);
+
+            v.setProgressBar(R.id.w_cat_mood_bar, 100, mood, false);
+
+            v.setTextViewText(R.id.w_cat_name, catName);
+            v.setTextColor(R.id.w_cat_name, cDim);
+
+            v.setTextViewText(R.id.w_cat_feed, "🐟 먹이 (-" + 20 + "pt)");
+
+            Intent feedIntent = new Intent(ctx, getClass());
+            feedIntent.setAction(ACTION_CAT_FEED);
+            PendingIntent feedPi = PendingIntent.getBroadcast(ctx, 300, feedIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            v.setOnClickPendingIntent(R.id.w_cat_feed, feedPi);
+
+            Intent playIntent = new Intent(ctx, getClass());
+            playIntent.setAction(ACTION_CAT_PLAY);
+            PendingIntent playPi = PendingIntent.getBroadcast(ctx, 301, playIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            v.setOnClickPendingIntent(R.id.w_cat_play, playPi);
+        }
+
         if (layoutId() == R.layout.neko_widget) {
             setBg(v, R.id.w_yday_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
             setBg(v, R.id.w_tmr_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
@@ -453,7 +544,7 @@ public class NekoWidget extends AppWidgetProvider {
         int used = 20 + 34 + 22 + 22 + 8;
         if (showHealth()) used += 62;
         used += ddayCount * 40;
-        if (showTodo()) used += (todoCount > 0 ? 26 + todoCount * 42 : 30);
+        if (showTodo()) used += (todoCount > 0 ? 26 + todoCount * 48 : 30);
         return hDp - used;
     }
 

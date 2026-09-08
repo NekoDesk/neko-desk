@@ -9,5 +9,6 @@ struct NekoWidgetBundle: WidgetBundle {
         NekoDdayWidget()
         NekoTodoWidget()
         NekoTimetableWidget()
+        NekoCatWidget()
     }
 }

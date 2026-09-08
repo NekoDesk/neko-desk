@@ -43,14 +43,17 @@ public class NekoWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         let waterAdd = defaults.integer(forKey: "neko_pending_water_add")
         let vitaAdd = defaults.integer(forKey: "neko_pending_vita_add")
+        let catFeed = defaults.integer(forKey: "neko_pending_cat_feed")
+        let catPlay = defaults.integer(forKey: "neko_pending_cat_play")
 
-        // 물/비타민은 누적이라 한 번 읽으면 바로 지운다
-        // 토글은 멱등(target state)이라 푸시 성공까지 보존한다
         defaults.removeObject(forKey: "neko_pending_water_add")
         defaults.removeObject(forKey: "neko_pending_vita_add")
+        defaults.removeObject(forKey: "neko_pending_cat_feed")
+        defaults.removeObject(forKey: "neko_pending_cat_play")
         defaults.synchronize()
 
-        call.resolve(["toggles": toggles, "waterAdd": waterAdd, "vitaAdd": vitaAdd])
+        call.resolve(["toggles": toggles, "waterAdd": waterAdd, "vitaAdd": vitaAdd,
+                       "catFeed": catFeed, "catPlay": catPlay])
     }
 
     @objc func clearPendingToggles(_ call: CAPPluginCall) {

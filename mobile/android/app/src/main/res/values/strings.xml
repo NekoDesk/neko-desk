@@ -9,4 +9,5 @@
     <string name="widget_desc_dday">등록한 D-day만 보여줍니다.</string>
     <string name="widget_desc_todo">오늘 할 일만 보여줍니다.</string>
     <string name="widget_desc_tt">이번 주 시간표를 보여줍니다.</string>
+    <string name="widget_desc_cat">고양이의 기분을 확인하고 먹이·놀기로 기분을 올려보세요.</string>
 </resources>

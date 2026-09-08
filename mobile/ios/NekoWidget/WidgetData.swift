@@ -6,6 +6,8 @@ let widgetDataKey = "neko_widget_data"
 let pendingTogglesKey = "neko_pending_toggles"
 let pendingWaterAddKey = "neko_pending_water_add"
 let pendingVitaAddKey = "neko_pending_vita_add"
+let pendingCatFeedKey = "neko_pending_cat_feed"
+let pendingCatPlayKey = "neko_pending_cat_play"
 
 struct WidgetData: Codable {
     var theme: String?
@@ -22,6 +24,7 @@ struct WidgetData: Codable {
     var tomorrow: SideData?
     var health: HealthData?
     var table: TableData?
+    var cat: CatData?
 
     static func load() -> WidgetData {
         guard let defaults = UserDefaults(suiteName: appGroupID),
@@ -133,6 +136,48 @@ struct WidgetData: Codable {
         defaults.set(defaults.integer(forKey: pendingVitaAddKey) + 1, forKey: pendingVitaAddKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
+
+    static func feedCat() {
+        guard let defaults = UserDefaults(suiteName: appGroupID),
+              let raw = defaults.data(forKey: widgetDataKey),
+              var data = try? JSONDecoder().decode(WidgetData.self, from: raw),
+              var c = data.cat else { return }
+
+        let pts = c.pts ?? 0
+        if pts < 20 { return }
+        c.mood = min(100, (c.mood ?? 60) + 10)
+        c.pts = pts - 20
+        data.cat = c
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
+        }
+        defaults.set(defaults.integer(forKey: pendingCatFeedKey) + 1, forKey: pendingCatFeedKey)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    static func playCat() {
+        guard let defaults = UserDefaults(suiteName: appGroupID),
+              let raw = defaults.data(forKey: widgetDataKey),
+              var data = try? JSONDecoder().decode(WidgetData.self, from: raw),
+              var c = data.cat else { return }
+
+        c.mood = min(100, (c.mood ?? 60) + 10)
+        data.cat = c
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
+        }
+        defaults.set(defaults.integer(forKey: pendingCatPlayKey) + 1, forKey: pendingCatPlayKey)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+}
+
+struct CatData: Codable {
+    var breed: String?
+    var mood: Int?
+    var name: String?
+    var pts: Int?
 }
 
 struct DDayItem: Codable {

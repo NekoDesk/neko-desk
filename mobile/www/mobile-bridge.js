@@ -1339,6 +1339,16 @@
     // 오늘 시간표
     out.table = weekTable(src, w);
     out.theme = String(src.theme || 'white');   // 위젯도 앱과 같은 배경 테마로
+
+    // 고양이
+    var catSrc = src.cat || {};
+    var breedSlug = { custom_12: 'white', custom_13: 'tabby', custom_14: 'black', custom_15: 'pink' };
+    out.cat = {
+      breed: breedSlug[catSrc.breed] || 'white',
+      mood: Math.max(0, Math.min(100, Number(catSrc.mood) || 60)),
+      name: String(catSrc.name || '냐옹이'),
+      pts: Math.max(0, Number(src.pts) || 0)
+    };
     return out;
   }
 
@@ -1368,8 +1378,10 @@
       if (!Array.isArray(toggles)) toggles = [];
       var waterAdd = Number(result.waterAdd) || 0;
       var vitaAdd = Number(result.vitaAdd) || 0;
-      if (!toggles.length && !waterAdd && !vitaAdd) return;
-      _widgetPending = { toggles: toggles, waterAdd: waterAdd, vitaAdd: vitaAdd };
+      var catFeed = Number(result.catFeed) || 0;
+      var catPlay = Number(result.catPlay) || 0;
+      if (!toggles.length && !waterAdd && !vitaAdd && !catFeed && !catPlay) return;
+      _widgetPending = { toggles: toggles, waterAdd: waterAdd, vitaAdd: vitaAdd, catFeed: catFeed, catPlay: catPlay };
       _applyWidgetPending();
     }).catch(function () {});
   }
@@ -1418,6 +1430,15 @@
       p.vitaAdd = 0;
       changed = true;
     }
+    if (p.catFeed > 0 || p.catPlay > 0) {
+      if (!src.cat) src.cat = {};
+      var moodAdd = ((p.catFeed || 0) + (p.catPlay || 0)) * 10;
+      src.cat.mood = Math.min(100, Math.max(0, Number(src.cat.mood) || 60) + moodAdd);
+      if (p.catFeed > 0) src.pts = Math.max(0, (Number(src.pts) || 0) - p.catFeed * 20);
+      p.catFeed = 0;
+      p.catPlay = 0;
+      changed = true;
+    }
     if (changed) {
       if (typeof window.saveState === 'function') window.saveState(src);
       pushWidget(true);
@@ -1434,14 +1455,14 @@
     setInterval(function () { pushWidget(false); }, 30000);
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) { pushWidget(true); return; }
-      try { applyWidgetToggles(); } catch (e) {}
+      try { applyWidgetToggles().then(function () { pushWidget(true); }); } catch (e) {}
     });
     window.addEventListener('pagehide', function () { pushWidget(true); });
     var App = capPlugin('App');
     if (App) {
       App.addListener('appStateChange', function (st) {
         if (!st || !st.isActive) { pushWidget(true); return; }
-        try { applyWidgetToggles(); } catch (e) {}
+        try { applyWidgetToggles().then(function () { pushWidget(true); }); } catch (e) {}
       });
     }
   }
