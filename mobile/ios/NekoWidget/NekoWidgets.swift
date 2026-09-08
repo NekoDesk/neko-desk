@@ -80,17 +80,8 @@ struct NekoWidgetView: View {
                 WHealth(t: t, h: h)
             }
 
-            if showDday && showTodo {
-                HStack(alignment: .top, spacing: 6) {
-                    VStack(spacing: 0) { ddayList }
-                        .frame(maxWidth: .infinity)
-                    VStack(spacing: 0) { todoSection }
-                        .frame(maxWidth: .infinity)
-                }
-            } else {
-                if showDday { ddayList }
-                if showTodo { todoSection }
-            }
+            if showDday { ddayList }
+            if showTodo { todoSection }
 
             if showCat {
                 WCatView(t: t, cat: data.cat, isLoaded: data.isLoaded)
@@ -118,9 +109,20 @@ struct NekoWidgetView: View {
     private var ddayList: some View {
         let items = (data.ddays ?? []).filter { !$0.title.isEmpty && !$0.date.isEmpty }
         if !items.isEmpty {
+            let rows = (items.count + 1) / 2
             VStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, d in
-                    WDdayRow(t: t, item: d)
+                ForEach(0..<rows, id: \.self) { row in
+                    let i = row * 2
+                    HStack(spacing: 5) {
+                        WDdayRow(t: t, item: items[i])
+                            .frame(maxWidth: .infinity)
+                        if i + 1 < items.count {
+                            WDdayRow(t: t, item: items[i + 1])
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity)
+                        }
+                    }
                 }
             }
             .padding(.bottom, 3)
@@ -141,9 +143,20 @@ struct NekoWidgetView: View {
             WTodoHead(t: t, title: data.headTitle ?? "",
                       done: headDone(items), total: headTotal(items),
                       doneWord: data.doneWord ?? "")
+            let todoRows = (items.count + 1) / 2
             VStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, it in
-                    WTodoRow(t: t, todo: it, dateKey: data.todosDate ?? "")
+                ForEach(0..<todoRows, id: \.self) { row in
+                    let i = row * 2
+                    HStack(spacing: 5) {
+                        WTodoRow(t: t, todo: items[i], dateKey: data.todosDate ?? "")
+                            .frame(maxWidth: .infinity)
+                        if i + 1 < items.count {
+                            WTodoRow(t: t, todo: items[i + 1], dateKey: data.todosDate ?? "")
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity)
+                        }
+                    }
                 }
             }
         }

@@ -321,7 +321,7 @@ struct WTodoRow: View {
                 Text("✓").font(.system(size: 11)).foregroundColor(WC.white)
             }
         }
-        .frame(width: 36, height: 36)
+        .frame(width: 30)
     }
 }
 
