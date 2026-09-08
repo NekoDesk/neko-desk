@@ -44,6 +44,7 @@ public class NekoWidget extends AppWidgetProvider {
     public static final String ACTION_CAT_PLAY = "com.siwon.nekodesk.mobile.WIDGET_CAT_PLAY";
     private static final String EXTRA_TODO_ID = "todo_id";
     private static final String EXTRA_DATE_KEY = "date_key";
+    private static final String EXTRA_INDEX = "index";
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -65,9 +66,13 @@ public class NekoWidget extends AppWidgetProvider {
                 toggleTodo(ctx, todoId, dateKey);
             }
         } else if (ACTION_WATER.equals(action)) {
-            addWater(ctx);
+            int idx = intent.getIntExtra(EXTRA_INDEX, -1);
+            if (idx >= 0) setHealth(ctx, "waterDone", "waterGoal", 8, KEY_WATER_ADD, idx);
+            else addWater(ctx);
         } else if (ACTION_VITA.equals(action)) {
-            addVita(ctx);
+            int idx = intent.getIntExtra(EXTRA_INDEX, -1);
+            if (idx >= 0) setHealth(ctx, "vitaDone", "vitaGoal", 1, KEY_VITA_ADD, idx);
+            else addVita(ctx);
         } else if (ACTION_CAT_FEED.equals(action)) {
             feedCat(ctx);
         } else if (ACTION_CAT_PLAY.equals(action)) {
@@ -148,15 +153,33 @@ public class NekoWidget extends AppWidgetProvider {
             if (h == null) return;
             int done = h.optInt("waterDone", 0);
             int goal = h.optInt("waterGoal", 8);
-            if (done >= goal) {
-                h.put("waterDone", 0);
-                sp.edit().putString(KEY_DATA, o.toString()).apply();
-                sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) - done).apply();
-            } else {
-                h.put("waterDone", done + 1);
-                sp.edit().putString(KEY_DATA, o.toString()).apply();
-                sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) + 1).apply();
-            }
+            if (done >= goal) return;
+            h.put("waterDone", done + 1);
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_WATER_ADD, sp.getInt(KEY_WATER_ADD, 0) + 1).apply();
+        } catch (Exception ignored) {}
+
+        refreshAll(ctx);
+    }
+
+    /** 컵·알약 하나를 눌렀다 — 이미 마신 컵이면 그 컵부터 되돌리고, 아니면 그 컵까지 마신 걸로 */
+    private static void setHealth(Context ctx, String doneKey, String goalKey, int defGoal,
+                                  String pendingKey, int idx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String json = sp.getString(KEY_DATA, null);
+        if (json == null) return;
+
+        try {
+            JSONObject o = new JSONObject(json);
+            JSONObject h = o.optJSONObject("health");
+            if (h == null) return;
+            int done = h.optInt(doneKey, 0);
+            int goal = h.optInt(goalKey, defGoal);
+            int next = Math.max(0, Math.min(goal, idx < done ? idx : idx + 1));
+            if (next == done) return;
+            h.put(doneKey, next);
+            sp.edit().putString(KEY_DATA, o.toString())
+              .putInt(pendingKey, sp.getInt(pendingKey, 0) + (next - done)).apply();
         } catch (Exception ignored) {}
 
         refreshAll(ctx);
@@ -173,15 +196,10 @@ public class NekoWidget extends AppWidgetProvider {
             if (h == null) return;
             int done = h.optInt("vitaDone", 0);
             int goal = h.optInt("vitaGoal", 1);
-            if (done >= goal) {
-                h.put("vitaDone", 0);
-                sp.edit().putString(KEY_DATA, o.toString()).apply();
-                sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) - done).apply();
-            } else {
-                h.put("vitaDone", done + 1);
-                sp.edit().putString(KEY_DATA, o.toString()).apply();
-                sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) + 1).apply();
-            }
+            if (done >= goal) return;
+            h.put("vitaDone", done + 1);
+            sp.edit().putString(KEY_DATA, o.toString()).apply();
+            sp.edit().putInt(KEY_VITA_ADD, sp.getInt(KEY_VITA_ADD, 0) + 1).apply();
         } catch (Exception ignored) {}
 
         refreshAll(ctx);
@@ -508,6 +526,12 @@ public class NekoWidget extends AppWidgetProvider {
         for (int i = 0; i < wGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_cup);
             setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_off : R.drawable.w_cup_on);
+            Intent cupIntent = new Intent(ctx, getClass());
+            cupIntent.setAction(ACTION_WATER);
+            cupIntent.putExtra(EXTRA_INDEX, i);
+            PendingIntent cupPi = PendingIntent.getBroadcast(ctx, 210 + i, cupIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            c.setOnClickPendingIntent(R.id.i_tap, cupPi);
             v.addView(R.id.w_water_row, c);
         }
         v.setViewVisibility(R.id.w_water_row, View.VISIBLE);
@@ -530,6 +554,12 @@ public class NekoWidget extends AppWidgetProvider {
         for (int i = 0; i < vGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_pill);
             setBg(c, R.id.i_dot, i < vDone ? R.drawable.w_pill_off : R.drawable.w_pill_on);
+            Intent pillIntent = new Intent(ctx, getClass());
+            pillIntent.setAction(ACTION_VITA);
+            pillIntent.putExtra(EXTRA_INDEX, i);
+            PendingIntent pillPi = PendingIntent.getBroadcast(ctx, 230 + i, pillIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            c.setOnClickPendingIntent(R.id.i_tap, pillPi);
             v.addView(R.id.w_vita_row, c);
         }
 

@@ -107,21 +107,35 @@ struct WidgetData: Codable {
 
         let done = h.waterDone ?? 0
         let goal = h.waterGoal ?? 8
-        if done >= goal {
-            h.waterDone = 0
-            data.health = h
-            if let encoded = try? JSONEncoder().encode(data) {
-                defaults.set(encoded, forKey: widgetDataKey)
-            }
-            defaults.set(defaults.integer(forKey: pendingWaterAddKey) - done, forKey: pendingWaterAddKey)
-        } else {
-            h.waterDone = done + 1
-            data.health = h
-            if let encoded = try? JSONEncoder().encode(data) {
-                defaults.set(encoded, forKey: widgetDataKey)
-            }
-            defaults.set(defaults.integer(forKey: pendingWaterAddKey) + 1, forKey: pendingWaterAddKey)
+        if done >= goal { return }
+        h.waterDone = done + 1
+        data.health = h
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
         }
+        defaults.set(defaults.integer(forKey: pendingWaterAddKey) + 1, forKey: pendingWaterAddKey)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// 컵 하나를 눌렀다 — 이미 마신 컵이면 그 컵부터 되돌리고, 아니면 그 컵까지 마신 걸로
+    static func setWater(index: Int) {
+        guard let defaults = UserDefaults(suiteName: appGroupID),
+              let raw = defaults.data(forKey: widgetDataKey),
+              var data = try? JSONDecoder().decode(WidgetData.self, from: raw),
+              var h = data.health else { return }
+
+        let done = h.waterDone ?? 0
+        let goal = h.waterGoal ?? 8
+        let next = max(0, min(goal, index < done ? index : index + 1))
+        if next == done { return }
+        h.waterDone = next
+        data.health = h
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
+        }
+        defaults.set(defaults.integer(forKey: pendingWaterAddKey) + (next - done), forKey: pendingWaterAddKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -133,21 +147,34 @@ struct WidgetData: Codable {
 
         let done = h.vitaDone ?? 0
         let goal = h.vitaGoal ?? 1
-        if done >= goal {
-            h.vitaDone = 0
-            data.health = h
-            if let encoded = try? JSONEncoder().encode(data) {
-                defaults.set(encoded, forKey: widgetDataKey)
-            }
-            defaults.set(defaults.integer(forKey: pendingVitaAddKey) - done, forKey: pendingVitaAddKey)
-        } else {
-            h.vitaDone = done + 1
-            data.health = h
-            if let encoded = try? JSONEncoder().encode(data) {
-                defaults.set(encoded, forKey: widgetDataKey)
-            }
-            defaults.set(defaults.integer(forKey: pendingVitaAddKey) + 1, forKey: pendingVitaAddKey)
+        if done >= goal { return }
+        h.vitaDone = done + 1
+        data.health = h
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
         }
+        defaults.set(defaults.integer(forKey: pendingVitaAddKey) + 1, forKey: pendingVitaAddKey)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    static func setVita(index: Int) {
+        guard let defaults = UserDefaults(suiteName: appGroupID),
+              let raw = defaults.data(forKey: widgetDataKey),
+              var data = try? JSONDecoder().decode(WidgetData.self, from: raw),
+              var h = data.health else { return }
+
+        let done = h.vitaDone ?? 0
+        let goal = h.vitaGoal ?? 1
+        let next = max(0, min(goal, index < done ? index : index + 1))
+        if next == done { return }
+        h.vitaDone = next
+        data.health = h
+
+        if let encoded = try? JSONEncoder().encode(data) {
+            defaults.set(encoded, forKey: widgetDataKey)
+        }
+        defaults.set(defaults.integer(forKey: pendingVitaAddKey) + (next - done), forKey: pendingVitaAddKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 

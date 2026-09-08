@@ -52,6 +52,38 @@ struct AddVitaIntent: AppIntent {
 }
 
 @available(iOS 17.0, *)
+struct SetWaterIntent: AppIntent {
+    static var title: LocalizedStringResource = "Set Water"
+
+    @Parameter(title: "Cup Index")
+    var index: Int
+
+    init() { self.index = 0 }
+    init(index: Int) { self.index = index }
+
+    func perform() async throws -> some IntentResult {
+        WidgetData.setWater(index: index)
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct SetVitaIntent: AppIntent {
+    static var title: LocalizedStringResource = "Set Vitamin"
+
+    @Parameter(title: "Pill Index")
+    var index: Int
+
+    init() { self.index = 0 }
+    init(index: Int) { self.index = index }
+
+    func perform() async throws -> some IntentResult {
+        WidgetData.setVita(index: index)
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
 struct FeedCatIntent: AppIntent {
     static var title: LocalizedStringResource = "Feed Cat"
 

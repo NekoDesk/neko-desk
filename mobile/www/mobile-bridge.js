@@ -1418,7 +1418,7 @@
     var today = new Date().toDateString();
     if (p.waterAdd) {
       if (src.waterDate !== today) { src.waterDate = today; src.waterCups = 0; }
-      src.waterCups = Math.max(0, Math.min(12, (Number(src.waterCups) || 0) + p.waterAdd));
+      src.waterCups = Math.max(0, Math.min(8, (Number(src.waterCups) || 0) + p.waterAdd));
       p.waterAdd = 0;
       changed = true;
     }

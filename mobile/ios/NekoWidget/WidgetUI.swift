@@ -143,20 +143,18 @@ struct WHealth: View {
     var body: some View {
         VStack(spacing: 0) {
             if let wg = h.waterGoal, wg > 0 {
-                row(label: h.waterLabel ?? "", top: 4, bottom: 2) {
-                    dots(count: min(wg, 12), done: h.waterDone ?? 0,
+                row(label: h.waterLabel ?? "", kind: .water, top: 4, bottom: 2) {
+                    dots(count: min(wg, 12), done: h.waterDone ?? 0, kind: .water,
                          w: 14, h: 17, r: 2,
                          on: WC.cupOn, onLine: WC.cupOnLine, offLine: WC.cupOffLine)
                 }
-                .modifier(TapIntent(kind: .water))
             }
             if let vg = h.vitaGoal, vg > 0 {
-                row(label: h.vitaLabel ?? "", top: 2, bottom: 4) {
-                    dots(count: min(vg, 12), done: h.vitaDone ?? 0,
+                row(label: h.vitaLabel ?? "", kind: .vita, top: 2, bottom: 4) {
+                    dots(count: min(vg, 12), done: h.vitaDone ?? 0, kind: .vita,
                          w: 17, h: 11, r: 4,
                          on: WC.pillOn, onLine: WC.pillOnLine, offLine: WC.pillOffLine)
                 }
-                .modifier(TapIntent(kind: .vita))
             }
         }
         .padding(.horizontal, 10)
@@ -165,12 +163,16 @@ struct WHealth: View {
         .padding(.bottom, 8)
     }
 
-    private func row<C: View>(label: String, top: CGFloat, bottom: CGFloat,
+    /// 글자 쪽을 누르면 한 잔 추가, 컵 하나하나는 그 자리로 맞춘다
+    private func row<C: View>(label: String, kind: TapIntent.Kind, top: CGFloat, bottom: CGFloat,
                               @ViewBuilder content: () -> C) -> some View {
         HStack(spacing: 0) {
             Text(label)
                 .font(.system(size: 11))
                 .foregroundColor(t.dim)
+                .frame(minHeight: 32)
+                .contentShape(Rectangle())
+                .modifier(TapIntent(kind: kind))
             Spacer(minLength: 4)
             content()
                 .padding(.top, top)
@@ -180,22 +182,28 @@ struct WHealth: View {
         }
     }
 
-    /// 안드로이드와 같은 셈 — 이미 채운 만큼이 빈 칸이 되고, 남은 만큼이 색칠된다
-    private func dots(count: Int, done: Int, w: CGFloat, h: CGFloat, r: CGFloat,
+    /// 안드로이드와 같은 셈 — 이미 채운 만큼이 빈 칸이 되고, 남은 만큼이 색칠된다.
+    /// 칸 사이 3pt는 각 칸의 좌우 1.5pt 여백으로 두어 손가락이 닿는 자리를 넓힌다.
+    private func dots(count: Int, done: Int, kind: TapIntent.Kind,
+                      w: CGFloat, h: CGFloat, r: CGFloat,
                       on: Color, onLine: Color, offLine: Color) -> some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 0) {
             ForEach(Array(0..<max(0, count)), id: \.self) { i in
                 RoundedRectangle(cornerRadius: r)
                     .fill(i < done ? WC.white : on)
                     .overlay(RoundedRectangle(cornerRadius: r)
                         .strokeBorder(i < done ? offLine : onLine, lineWidth: 1.5))
                     .frame(width: w, height: h)
+                    .padding(.horizontal, 1.5)
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
+                    .modifier(DotIntent(kind: kind, index: i))
             }
         }
     }
 }
 
-/// 물·비타민 줄 터치 (iOS 17+). 그 아래에선 위젯 전체가 앱을 연다.
+/// 물·비타민 글자 터치 → 한 잔 추가 (iOS 17+). 그 아래에선 위젯 전체가 앱을 연다.
 private struct TapIntent: ViewModifier {
     enum Kind { case water, vita }
     let kind: Kind
@@ -206,6 +214,24 @@ private struct TapIntent: ViewModifier {
             switch kind {
             case .water: Button(intent: AddWaterIntent()) { content }.buttonStyle(.plain)
             case .vita:  Button(intent: AddVitaIntent()) { content }.buttonStyle(.plain)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+/// 컵·알약 하나 터치 (iOS 17+) — 빈 컵이면 거기부터 되돌리고, 색칠된 컵이면 거기까지 마신 걸로
+private struct DotIntent: ViewModifier {
+    let kind: TapIntent.Kind
+    let index: Int
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            switch kind {
+            case .water: Button(intent: SetWaterIntent(index: index)) { content }.buttonStyle(.plain)
+            case .vita:  Button(intent: SetVitaIntent(index: index)) { content }.buttonStyle(.plain)
             }
         } else {
             content
