@@ -13,6 +13,7 @@
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "release": "electron-builder --win --publish always",
+    "version:set": "node scripts/bump-version.js",
     "appx:assets": "node scripts/make-appx-assets.js",
     "build:store": "electron-builder --win nsis --publish never --config.extraMetadata.storeBuild=true --config.win.artifactName=NEKO-DESK-Store-${version}.${ext}",
     "build:msix": "electron-builder --win appx --publish never --config electron-builder.config.js --config.extraMetadata.storeBuild=true",
