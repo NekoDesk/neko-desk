@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  위젯을 고르는 화면에서만 쓰는 예시 그림.
+  진짜 위젯은 코드에서 내용을 채우는데, 고르는 화면에서는 코드가 돌지 않아
+  빈 카드로만 보인다. 그래서 예시 내용을 글자로 박아 둔 판을 따로 만든다.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/w_bg"
+    android:padding="10dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+        <ImageView android:layout_width="26dp" android:layout_height="26dp"
+            android:layout_marginEnd="8dp" android:contentDescription="@null"
+            android:src="@mipmap/ic_launcher_foreground" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="13sp" android:textStyle="bold" android:textColor="#3E3A39"
+            android:letterSpacing="0.08" android:text="NEKO DESK" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:orientation="horizontal" android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:scaleType="fitCenter" android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:src="@drawable/w_cat_white" />
+
+        <LinearLayout
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center" android:paddingLeft="8dp">
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp" android:textColor="#F2506E"
+                android:text="♥ 80%" android:layout_marginBottom="4dp" />
+
+            <ProgressBar
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="10dp"
+                android:layout_marginBottom="10dp"
+                android:max="100" android:progress="80"
+                android:progressDrawable="@drawable/w_mood_bar_progress" />
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:background="@drawable/w_pill_am"
+                android:paddingTop="6dp" android:paddingBottom="6dp"
+                android:textSize="11sp" android:textColor="#5B8DD9"
+                android:text="🐟 먹이" android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center" android:background="@drawable/w_pill_pm"
+                android:paddingTop="6dp" android:paddingBottom="6dp"
+                android:textSize="11sp" android:textColor="#E09A4B"
+                android:text="🎾 놀기" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center" android:textSize="11sp" android:textColor="#9AA0A6"
+        android:paddingTop="4dp" android:text="냐옹이" />
+</LinearLayout>

@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -45,6 +46,7 @@ public class NekoWidget extends AppWidgetProvider {
     private static final String EXTRA_TODO_ID = "todo_id";
     private static final String EXTRA_DATE_KEY = "date_key";
     private static final String EXTRA_INDEX = "index";
+    private static final int MOOD_HEART = 0xFFF2506E;   // 고양이 기분 하트 (iOS와 같은 값)
 
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
@@ -220,9 +222,20 @@ public class NekoWidget extends AppWidgetProvider {
             c.put("pts", pts - 20);
             sp.edit().putString(KEY_DATA, o.toString()).apply();
             sp.edit().putInt(KEY_CAT_FEED, sp.getInt(KEY_CAT_FEED, 0) + 1).apply();
+            meow(ctx);
         } catch (Exception ignored) {}
 
         refreshAll(ctx);
+    }
+
+    /** 밥을 줬을 때 우는 소리. 다 울면 스스로 놓아 준다 (안 놓으면 소리 통로가 쌓인다) */
+    private static void meow(Context ctx) {
+        try {
+            MediaPlayer mp = MediaPlayer.create(ctx, R.raw.cat01);
+            if (mp == null) return;
+            mp.setOnCompletionListener(p -> p.release());
+            mp.start();
+        } catch (Exception ignored) {}
     }
 
     private static void playCat(Context ctx) {
@@ -457,7 +470,6 @@ public class NekoWidget extends AppWidgetProvider {
             String breed = cat != null ? cat.optString("breed", "white") : "white";
             int mood = cat != null ? cat.optInt("mood", 60) : 60;
             String catName = cat != null ? cat.optString("name", "냐옹이") : "냐옹이";
-            int pts = cat != null ? cat.optInt("pts", 0) : 0;
 
             int imgRes;
             switch (breed) {
@@ -468,16 +480,13 @@ public class NekoWidget extends AppWidgetProvider {
             }
             v.setImageViewResource(R.id.w_cat_img, imgRes);
 
-            String moodEmoji = mood >= 80 ? "😆" : mood >= 50 ? "😊" : mood >= 30 ? "😐" : "😢";
-            v.setTextViewText(R.id.w_cat_mood_text, moodEmoji + " " + mood + "%");
-            v.setTextColor(R.id.w_cat_mood_text, cText);
+            v.setTextViewText(R.id.w_cat_mood_text, "♥ " + mood + "%");
+            v.setTextColor(R.id.w_cat_mood_text, MOOD_HEART);
 
             v.setProgressBar(R.id.w_cat_mood_bar, 100, mood, false);
 
             v.setTextViewText(R.id.w_cat_name, catName);
             v.setTextColor(R.id.w_cat_name, cDim);
-
-            v.setTextViewText(R.id.w_cat_feed, "🐟 먹이 (-" + 20 + "pt)");
 
             Intent feedIntent = new Intent(ctx, getClass());
             feedIntent.setAction(ACTION_CAT_FEED);

@@ -15,6 +15,7 @@ enum WC {
     static let ddayBadge = Color(hex: "#E4665F")     // w_dday_item i_badge
     static let ddayDate  = Color(hex: "#E88C86")     // w_dday_item i_date
     static let doneText  = Color(hex: "#9AA0A6")     // 끝낸 할 일 글씨
+    static let moodHeart = Color(hex: "#F2506E")     // 고양이 기분 하트 (안드로이드와 같은 값)
     static let checkOn   = Color(hex: "#4CC08E")     // w_check_on
     static let checkOffLine = Color(hex: "#7FA8E8")  // w_check_off
     static let amBg   = Color(hex: "#E9F1FD")        // w_pill_am
@@ -426,13 +427,6 @@ struct WCatView: View {
         return "Cat_\(valid.contains(breed) ? breed : "white")"
     }
 
-    private var moodEmoji: String {
-        if mood >= 80 { return "😻" }
-        if mood >= 50 { return "😺" }
-        if mood >= 30 { return "😿" }
-        return "🙀"
-    }
-
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 4) {
@@ -451,7 +445,7 @@ struct WCatView: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 4) {
-                    Text(moodEmoji).font(.system(size: 14))
+                    Text("♥").font(.system(size: 15)).foregroundColor(WC.moodHeart)
                     moodBar
                 }
                 if #available(iOSApplicationExtension 17.0, *) {

@@ -2148,7 +2148,7 @@ const STRINGS = {
     pin_title:'📌 일정 고정', pin_everyday:'매일', pin_weekdays:'평일만', pin_weekends:'주말만',
     pin_by_dow:'요일별', pin_apply:'✓ 고정하기', pin_done:'{n}일에 고정했어요',
     pin_cancel:'취소', pin_select_days:'고정할 요일을 선택하세요',
-    pin_unpin:'📌 고정 해제', pin_unpin_hint:'같은 내용의 일정을 모두 삭제합니다',
+    pin_unpin:'📌 고정 해제', pin_unpin_hint:'선택한 날 이후 같은 내용의 일정을 모두 삭제합니다',
     pin_period:'기간', pin_until:'까지', todo_star:'중요 표시',
     pin_unpin_done:'{n}개 일정을 해제했어요', pin_unpin_none:'해제할 일정이 없어요',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
@@ -2400,7 +2400,7 @@ const STRINGS = {
     pin_title:'📌 Pin task', pin_everyday:'Every day', pin_weekdays:'Weekdays only', pin_weekends:'Weekends only',
     pin_by_dow:'By weekday', pin_apply:'✓ Pin', pin_done:'Pinned to {n} days',
     pin_cancel:'Cancel', pin_select_days:'Select the weekdays to pin to',
-    pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes every task with the same text',
+    pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes matching tasks from every later date',
     pin_period:'Period', pin_until:'until', todo_star:'Mark as important',
     pin_unpin_done:'Removed {n} tasks', pin_unpin_none:'No matching tasks to remove',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
@@ -2654,7 +2654,7 @@ const STRINGS = {
     pin_title:'📌 予定を固定', pin_everyday:'毎日', pin_weekdays:'平日のみ', pin_weekends:'週末のみ',
     pin_by_dow:'曜日別', pin_apply:'✓ 固定する', pin_done:'{n}日に固定しました',
     pin_cancel:'キャンセル', pin_select_days:'固定する曜日を選んでください',
-    pin_unpin:'📌 固定解除', pin_unpin_hint:'同じ内容の予定をすべて削除します',
+    pin_unpin:'📌 固定解除', pin_unpin_hint:'選択した日より後の同じ内容の予定をすべて削除します',
     pin_period:'期間', pin_until:'まで', todo_star:'重要マーク',
     pin_unpin_done:'{n}件解除しました', pin_unpin_none:'解除する予定がありません',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
@@ -6657,9 +6657,10 @@ function unpinItem(key, idx) {
   _calUndoLock = true;
   const notes = S.calendarNotes || {};
   let count = 0;
-  // 고정을 풀 때는 앞뒤 가리지 않고 같은 내용을 모두 지운다.
-  // 달마다 남아 있으면 지운 줄 알고 넘어갔다가 다음 달에 다시 나온다.
+  // 아직 오지 않은 날만 지운다 — 이미 지나간 일정은 기록이므로 남긴다.
+  // 그 달만 보면 다음 달에 다시 나오므로 뒤의 모든 달을 본다.
   Object.keys(notes).forEach(dk => {
+    if (dk <= key) return;
     const arr = notes[dk];
     if (!Array.isArray(arr)) return;
     const removed = arr.filter(it => it.text === text);
