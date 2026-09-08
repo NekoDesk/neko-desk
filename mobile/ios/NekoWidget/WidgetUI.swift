@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WidgetKit
 
 // ══════════════════════════════════════════════
@@ -427,15 +428,28 @@ struct WCatView: View {
         return "Cat_\(valid.contains(breed) ? breed : "white")"
     }
 
+    /// 앱이 넘겨 준 그림. 아직 안 왔으면 nil 이라 앱에 넣어 둔 그림으로 그린다.
+    private var sentImage: UIImage? {
+        guard let s = cat?.image, let comma = s.firstIndex(of: ",") else { return nil }
+        let b64 = String(s[s.index(after: comma)...])
+        guard let data = Data(base64Encoded: b64, options: .ignoreUnknownCharacters) else { return nil }
+        return UIImage(data: data)
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 4) {
-                Image(imageName)
-                    .resizable()
-                    .interpolation(.none)
-                    .scaledToFit()
-                    .frame(maxWidth: 100, maxHeight: 100)
-                    .saturation(mood <= 40 ? 0.4 : 1.0)
+                Group {
+                    if let ui = sentImage {
+                        Image(uiImage: ui).resizable()
+                    } else {
+                        Image(imageName).resizable()
+                    }
+                }
+                .interpolation(.none)
+                .scaledToFit()
+                .frame(maxWidth: 100, maxHeight: 100)
+                .saturation(mood <= 40 ? 0.4 : 1.0)
                 Text(name)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(t.text)

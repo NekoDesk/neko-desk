@@ -7,8 +7,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Base64;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.StrikethroughSpan;
@@ -471,14 +474,21 @@ public class NekoWidget extends AppWidgetProvider {
             int mood = cat != null ? cat.optInt("mood", 60) : 60;
             String catName = cat != null ? cat.optString("name", "냐옹이") : "냐옹이";
 
-            int imgRes;
-            switch (breed) {
-                case "tabby": imgRes = R.drawable.w_cat_tabby; break;
-                case "black": imgRes = R.drawable.w_cat_black; break;
-                case "pink":  imgRes = R.drawable.w_cat_pink;  break;
-                default:      imgRes = R.drawable.w_cat_white; break;
+            // 앱이 넘겨 준 진짜 그림을 먼저 쓴다. 고양이는 서버에서 받아 오므로
+            // 앱에 넣어 둔 네 장으로는 새로 등록한 고양이를 그릴 수 없다.
+            Bitmap sent = decodeCat(cat == null ? null : cat.optString("image", null));
+            if (sent != null) {
+                v.setImageViewBitmap(R.id.w_cat_img, sent);
+            } else {
+                int imgRes;
+                switch (breed) {
+                    case "tabby": imgRes = R.drawable.w_cat_tabby; break;
+                    case "black": imgRes = R.drawable.w_cat_black; break;
+                    case "pink":  imgRes = R.drawable.w_cat_pink;  break;
+                    default:      imgRes = R.drawable.w_cat_white; break;
+                }
+                v.setImageViewResource(R.id.w_cat_img, imgRes);
             }
-            v.setImageViewResource(R.id.w_cat_img, imgRes);
 
             v.setTextViewText(R.id.w_cat_mood_text, "♥ " + mood + "%");
             v.setTextColor(R.id.w_cat_mood_text, MOOD_HEART);
@@ -769,6 +779,35 @@ public class NekoWidget extends AppWidgetProvider {
         { R.drawable.w_b_c4_s, R.drawable.w_b_c4_t, R.drawable.w_b_c4_m, R.drawable.w_b_c4_b },
         { R.drawable.w_b_c5_s, R.drawable.w_b_c5_t, R.drawable.w_b_c5_m, R.drawable.w_b_c5_b },
     };
+
+    /**
+     * 앱이 넘겨 준 "data:image/png;base64,..." 를 그림으로 되돌린다.
+     * 위젯 한 판이 통째로 오가는 데는 크기 제한이 있어, 큰 그림은 줄여서 담는다.
+     */
+    private static Bitmap decodeCat(String dataUrl) {
+        if (dataUrl == null || dataUrl.length() == 0) return null;
+        int comma = dataUrl.indexOf(',');
+        if (comma < 0) return null;
+        try {
+            byte[] raw = Base64.decode(dataUrl.substring(comma + 1), Base64.DEFAULT);
+
+            BitmapFactory.Options probe = new BitmapFactory.Options();
+            probe.inJustDecodeBounds = true;
+            BitmapFactory.decodeByteArray(raw, 0, raw.length, probe);
+
+            BitmapFactory.Options opt = new BitmapFactory.Options();
+            int big = Math.max(probe.outWidth, probe.outHeight);
+            int sample = 1;
+            while (big / sample > 256) sample *= 2;
+            opt.inSampleSize = sample;
+
+            return BitmapFactory.decodeByteArray(raw, 0, raw.length, opt);
+        } catch (Exception e) {
+            return null;
+        } catch (OutOfMemoryError e) {
+            return null;
+        }
+    }
 
     private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
 

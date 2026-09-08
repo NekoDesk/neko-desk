@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.0.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.0.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // renderer 는 데스크톱 폴더 구조(../assets/)를 기본으로 쓴다.
   // 모바일 www 는 한 겹 얕으므로 여기서 바로잡아 준다.
@@ -1342,14 +1342,53 @@
 
     // 고양이
     var catSrc = src.cat || {};
-    var breedSlug = { custom_12: 'white', custom_13: 'tabby', custom_14: 'black', custom_15: 'pink' };
+    ensureCatImage(catSrc.breed);
     out.cat = {
-      breed: breedSlug[catSrc.breed] || 'white',
+      // 그림을 아직 못 받았을 때만 쓰는 예비값. 앱에 넣어 둔 네 장 중 하나다.
+      breed: CAT_SLUG[catSrc.breed] || 'white',
+      image: (_catImg.key === catSrc.breed) ? _catImg.data : null,
       mood: Math.max(0, Math.min(100, Number(catSrc.mood) || 60)),
       name: String(catSrc.name || '냐옹이'),
       pts: Math.max(0, Number(src.pts) || 0)
     };
     return out;
+  }
+
+  // ── 위젯에 보낼 고양이 그림 ──────────────────────────
+  // 고양이는 Supabase 에서 받아 오는데 위젯은 앱에 넣어 둔 그림만 쓸 수 있었다.
+  // 그래서 새로 등록한 고양이는 이 표에 없어 전부 흰냥이로 보였다.
+  // 이제 진짜 그림을 글자로 바꿔 함께 보낸다. 처음 넣어 둔 네 마리는
+  // 그림을 받기 전까지 쓸 예비값으로만 남긴다.
+  var CAT_SLUG = { custom_12: 'white', custom_13: 'tabby', custom_14: 'black', custom_15: 'pink' };
+  var _catImg = { key: null, data: null };
+
+  /** 고양이가 바뀌었으면 그림을 받아 둔다. 다 받으면 위젯을 한 번 더 보낸다. */
+  function ensureCatImage(breedId) {
+    if (!breedId || _catImg.key === breedId) return;
+    var b = (window._customBreeds || {})[breedId];
+    var url = b && b.image_url;
+    if (!url) return;
+
+    _catImg.key = breedId;      // 같은 그림을 거듭 받지 않도록 먼저 표시한다
+    _catImg.data = null;
+    fetch(url)
+      .then(function (r) { return r.ok ? r.blob() : null; })
+      .then(function (blob) {
+        if (!blob) return '';
+        return new Promise(function (res) {
+          var fr = new FileReader();
+          fr.onloadend = function () { res(String(fr.result || '')); };
+          fr.onerror = function () { res(''); };
+          fr.readAsDataURL(blob);
+        });
+      })
+      .then(function (dataUrl) {
+        if (_catImg.key !== breedId) return;   // 그 사이 다른 고양이로 갈아탔다
+        if (!dataUrl) return;
+        _catImg.data = dataUrl;
+        try { pushWidget(true); } catch (e) {}
+      })
+      .catch(function () {});
   }
 
   /** 내용이 달라졌을 때만 네이티브로 넘긴다 */

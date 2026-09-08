@@ -219,6 +219,9 @@ struct CatData: Codable {
     var mood: Int?
     var name: String?
     var pts: Int?
+    /// 앱이 받아 넘겨 준 진짜 고양이 그림 ("data:image/png;base64,...").
+    /// 고양이는 서버에서 받아 오므로 앱에 넣어 둔 그림으로는 새로 등록한 고양이를 그릴 수 없다.
+    var image: String?
 }
 
 struct DDayItem: Codable {
