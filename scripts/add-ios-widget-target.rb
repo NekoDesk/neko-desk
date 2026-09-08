@@ -64,8 +64,8 @@ target.build_configurations.each do |config|
   s['CODE_SIGN_ENTITLEMENTS']     = '../NekoWidget/NekoWidget.entitlements'
   s['DEVELOPMENT_TEAM']           = TEAM_ID
   s['SWIFT_VERSION']              = '5.0'
-  s['TARGETED_DEVICE_FAMILY']     = '1,2'
-  s['MARKETING_VERSION']          = '3.0.5'
+  s['TARGETED_DEVICE_FAMILY']     = '1'
+  s['MARKETING_VERSION']          = '3.0.6'
   s['CURRENT_PROJECT_VERSION']    = '1'
   s['GENERATE_INFOPLIST_FILE']    = 'NO'
   s['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
