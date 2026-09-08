@@ -126,6 +126,7 @@ body.electron-dashboard #dashPanel {
   image-rendering: pixelated;
   display: block;
   margin: 0 auto 4px;
+  object-fit: contain;   /* 원본 비율이 제각각이라 늘려 채우면 납작해 보인다 */
 }
 .breed-name {
   font-size: 13px;
@@ -143,6 +144,10 @@ body.electron-dashboard #dashPanel {
 .cat-img-render {
   image-rendering: pixelated;
   display: block;
+  /* 자리는 64x76 처럼 고정인데 img 의 기본값(fill)은 그 칸에 억지로 늘려 채운다.
+     고양이를 서버에서 받아 오게 되면서 원본 비율이 제각각이 되자 납작해 보였다.
+     칸 안에 비율 그대로 들어가게 한다 — 위젯도 같은 방식으로 그린다. */
+  object-fit: contain;
 }
 #widgetCanvas.cat-img-render {
   width: 64px;
