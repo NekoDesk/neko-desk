@@ -1466,6 +1466,7 @@ async function cloudPush(force) {
     return false;
   }
   // 업로드는 통째로 덮어쓰기이므로 직전에 원격을 읽어 병합한다
+  let pulledIn = false;                 // 올리는 길에 상대 변경을 받아왔는가
   try {
     const rg = await cloudFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' });
     if (rg && rg.ok) {
@@ -1477,8 +1478,10 @@ async function cloudPush(force) {
         merged = applyNotesMerge(merged, data, remoteNow);   // 일정은 항목별로
         merged = pickDated(merged, syncState().base, data, remoteNow);
         merged = pickWhole(merged, syncState().base, data, remoteNow);
+        const before = Object.assign({}, data);
         CLOUD_KEYS.forEach(k => { delete data[k]; });
         Object.keys(merged).forEach(k => { data[k] = merged[k]; });
+        pulledIn = CLOUD_KEYS.some(k => !jeq(before[k], data[k]));
       }
     }
   } catch (e) {}
@@ -1496,6 +1499,10 @@ async function cloudPush(force) {
     } catch (e) {}
     setSyncState({ dirty: false });
     setCloudBase(data);
+    // 올리는 길에 합친 상대 변경을 이 기기 화면에도 반영한다.
+    // 이걸 빼먹으면 기준선만 앞서 가고, 다음 병합이 그 차이를 '내가 고쳤다'로 보고
+    // 예전 값을 도로 올려 버린다 — 상대가 올린 고양이 기분이 되돌려지던 원인.
+    if (pulledIn) cloudBroadcast('cloud-apply', { data, notify: '' });
     cloudStatus('push', 'sync_done');
   } else {
     cloudStatus('push', 'sync_fail', r ? ' HTTP ' + r.status : '');

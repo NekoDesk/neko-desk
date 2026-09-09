@@ -8535,12 +8535,18 @@ function init(){
   //
   // 폰은 뺀다. 폰에는 "위젯 창"이 따로 없어 앱을 열 때마다 걸리는데,
   // 그러면 바탕화면 위젯에서 먹이를 주거나 놀아 준 것이 앱을 켜는 순간 사라진다.
-  if (!window._isDashboard && !window._isMobileApp && S.cat && S.cat.mood !== 60) {
+  //
+  // 계정으로 로그인해 여러 기기가 같은 고양이를 보고 있을 때도 같은 이유로 뺀다.
+  // 폰에서 밥을 주고 PC를 켜면 그 기분이 사라져 버린다. 로그인 여부를 알아야
+  // 판단할 수 있으므로 아래 getSession 콜백에서 부른다.
+  window._resetMoodOnLaunch = function (hasAccount) {
+    if (hasAccount) return;
+    if (window._isDashboard || window._isMobileApp) return;
+    if (!S.cat || S.cat.mood === 60) return;
     S.cat.mood = 60;
     saveState();
-    // 다른 기기에도 반영되도록 '올릴 변경 있음'으로 표시 (saveState가 이미 알리지만 명시적으로)
-    try { if (window.electronAPI && window.electronAPI.cloudMarkDirty) window.electronAPI.cloudMarkDirty(); } catch(e) {}
-  }
+    if (typeof updateCatUI === 'function') updateCatUI();
+  };
   renderDdays();
   if (typeof renderAlarms === 'function') renderAlarms();
   renderWorkItems();  // 업무 시간 설정 초기 렌더
@@ -8561,9 +8567,11 @@ function init(){
     window.electronAPI.getSession().then(s => {
       if (s) applySession(s);
       else showLoginGate();
+      try { window._resetMoodOnLaunch(!!(s && !s.guest)); } catch(e) {}
     });
   } else {
     // 브라우저 모드: 게이트 없음
+    try { window._resetMoodOnLaunch(false); } catch(e) {}
   }
   applyCrossDeviceLabel();
   applyTheme(S.theme || 'white'); // 기본 테마: 화이트

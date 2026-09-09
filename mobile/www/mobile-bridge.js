@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -902,6 +902,7 @@
     // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
     // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
     var pushed = null;                       // 실제로 올린 것 (기준선은 이걸로 잡아야 한다)
+    var pulledIn = false;                    // 올리는 길에 상대 변경을 받아왔는가
     return authFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' })
       .then(function (rg) { return rg && rg.ok ? rg.json() : null; })
       .then(function (rows) {
@@ -910,6 +911,7 @@
         if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
         if (remote) payload = pickDated(payload, readBase(), local, remote);
         if (remote) payload = pickWhole(payload, readBase(), local, remote);
+        pulledIn = SYNC_KEYS.some(function (k) { return !jeq(local[k], payload[k]); });
         payload._device = 'mobile';              // 어느 기기가 올렸는지 진단용
         pushed = payload;
         var body = { user_id: s.uid, data: payload, updated_at: new Date().toISOString() };
@@ -929,8 +931,17 @@
             localStorage.setItem(SYNC_TS_KEY, String(back[0].updated_at));
           }
         }).catch(function () {});
+        // 올리는 길에 합친 상대 변경을 이 기기 화면에도 반영한다.
+        // 이걸 빼먹으면 기준선만 앞서 가고, 다음 병합이 그 차이를 '내가 고쳤다'로 보고
+        // 예전 값을 도로 올려 버린다 — 상대가 올린 고양이 기분이 되돌려지던 원인.
+        var applied = local;
+        if (pulledIn) {
+          try { applyRemote(pushed); } catch (e) {}
+          applied = {};
+          SYNC_KEYS.forEach(function (k) { if (pushed[k] !== undefined) applied[k] = pushed[k]; });
+        }
         // 방금 올린 로컬 상태를 기억해 둔다 (다음 비교 기준)
-        try { localStorage.setItem(LAST_PUSH_KEY, JSON.stringify(local)); } catch (e) {}
+        try { localStorage.setItem(LAST_PUSH_KEY, JSON.stringify(applied)); } catch (e) {}
         setBase(pushed || local);            // 클라우드에 있는 것과 같아야 한다
         pushStatus('완료 (' + nowHHMM() + ')');
       } else {
