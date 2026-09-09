@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.0.9-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -310,6 +310,32 @@
         return s.token;
       })
       .catch(function () { return null; });
+  }
+
+  /**
+   * 로그인한 계정이 서버에 아직 있는지 확인하고, 없으면 내보낸다.
+   *
+   * 토큰은 계정을 지워도 만료 전까지 서명이 유효하다. 그래서 401 이 나지 않고,
+   * 저장할 때만 409(없는 user_id 를 가리킴)로 조용히 실패한다 — 화면에는 계속
+   * 로그인된 것처럼 보인다. 토큰이 아니라 계정 자체를 물어야 알 수 있다.
+   */
+  function verifySession() {
+    var s = readSession();
+    if (!s || s.guest || !s.token) return Promise.resolve(true);
+    return fetch(PUBLIC_CFG.SUPABASE_URL + '/auth/v1/user', {
+      headers: { Authorization: 'Bearer ' + s.token, apikey: PUBLIC_CFG.SUPABASE_KEY }
+    })
+      .then(function (r) {
+        if (r.ok) return true;
+        // 401·403·404 = 서버가 이 사람을 모른다. 5xx·끊김은 그냥 통신 문제다.
+        if (r.status >= 400 && r.status < 500) {
+          try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+          try { window.dispatchEvent(new Event('neko-session-expired')); } catch (e) {}
+          return false;
+        }
+        return true;
+      })
+      .catch(function () { return true; });
   }
 
   /** 인증 헤더를 붙여 REST 호출. 401이면 토큰 갱신 후 1회 재시도. */
@@ -888,6 +914,9 @@
         pushStatus('완료 (' + nowHHMM() + ')');
       } else {
         pushStatus('실패' + (r ? ' HTTP ' + r.status : ''));
+        // 409 는 없는 계정을 가리켰다는 신호일 수 있다 (user_id 외래키 위반).
+        // 계정이 살아 있는지 물어보고, 지워졌으면 내보낸다.
+        if (r && r.status === 409) verifySession();
       }
       return ok;
     }).catch(function () { pushStatus('오류'); return false; });
@@ -1614,6 +1643,8 @@
     // 앱 시작 시에도 데이터 주인 확인 (다른 계정 데이터면 비우고 재시작)
     var ses = readSession();
     if (ses && ses.email && enforceDataOwner(ses.email)) return;
+    // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인한다
+    verifySession();
     syncStatus('연결 중...');
     try {
       _lastPullAt = Date.now();

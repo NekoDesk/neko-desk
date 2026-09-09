@@ -1314,6 +1314,31 @@ async function cloudRefreshToken() {
   } catch (e) { return null; }
 }
 
+/**
+ * 로그인한 계정이 서버에 아직 있는지 확인하고, 없으면 내보낸다.
+ *
+ * 토큰은 계정을 지워도 만료 전까지 서명이 유효하다. 그래서 401 이 나지 않고,
+ * 저장할 때만 409(없는 user_id 를 가리킴)로 조용히 실패한다 — 화면에는 계속
+ * 로그인된 것처럼 보인다. 토큰이 아니라 계정 자체를 물어야 알 수 있다.
+ */
+async function verifyCloudSession() {
+  const sb = cloudSession();
+  if (!sb || !CFG.SUPABASE_URL) return true;
+  try {
+    const r = await fetch(CFG.SUPABASE_URL + '/auth/v1/user', {
+      headers: { Authorization: 'Bearer ' + sb.token, apikey: CFG.SUPABASE_ANON_KEY }
+    });
+    if (r.ok) return true;
+    // 401·403·404 = 서버가 이 사람을 모른다. 5xx·끊김은 그냥 통신 문제다.
+    if (r.status >= 400 && r.status < 500) {
+      try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
+      if (mainWindow) mainWindow.webContents.send('session-expired');
+      return false;
+    }
+    return true;
+  } catch (e) { return true; }
+}
+
 async function cloudFetch(pathname, opts, retry) {
   const sb = cloudSession();
   if (!sb || !CFG.SUPABASE_URL) return null;
@@ -1455,6 +1480,9 @@ async function cloudPush(force) {
     cloudStatus('push', 'sync_done');
   } else {
     cloudStatus('push', 'sync_fail', r ? ' HTTP ' + r.status : '');
+    // 409 는 없는 계정을 가리켰다는 신호일 수 있다 (user_id 외래키 위반).
+    // 계정이 살아 있는지 물어보고, 지워졌으면 내보낸다.
+    if (r && r.status === 409) verifyCloudSession();
   }
   return ok;
 }
@@ -1491,6 +1519,8 @@ function startCloudSync() {
   attachCloudFocusPull(mainWindow);
   cloudBump();
   cloudLastPullAt = Date.now();
+  // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인한다
+  verifyCloudSession();
   cloudPull(false);
   cloudTimer = setInterval(() => {
     // 창을 보고 있으면 계속 빠르게 — 폰에서 고친 게 곧바로 보여야 한다
