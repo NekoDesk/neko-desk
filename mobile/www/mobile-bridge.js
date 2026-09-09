@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.5-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -891,22 +891,23 @@
     var s = readSession();
     if (!s || !s.uid) { pushStatus('계정 정보 없음 (재로그인 필요)'); return Promise.resolve(false); }
     var local = collectLocal();
-    // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해.
-    // 다만 이 기기가 이미 올린 적이 있으면(기준선이 있으면) 막지 않는다.
-    // 고양이는 늘 기본값이 있어 '비었나' 판단에서 빼 두었는데, 그 바람에 할 일이
-    // 없는 기기에서는 고양이 기분만 바꾼 것이 영영 올라가지 못했다.
-    if (isEmptyPayload(local) && !readBase()) {
-      pushStatus('올릴 내용 없음');
-      return Promise.resolve(false);
-    }
     // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
     // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
     var pushed = null;                       // 실제로 올린 것 (기준선은 이걸로 잡아야 한다)
     var pulledIn = false;                    // 올리는 길에 상대 변경을 받아왔는가
+    // 텅 빈 기기가 아직 한 번도 올린 적이 없다면(기준선 없음) 올리는 순간 클라우드
+    // 기록을 지우게 된다. 확인하기 전까지는 막아 둔다 — 못 읽었으면 막은 채로 둔다.
+    var blocked = isEmptyPayload(local) && !readBase();
+    var readOk = false;                      // 클라우드를 실제로 읽어 봤는가
     return authFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' })
-      .then(function (rg) { return rg && rg.ok ? rg.json() : null; })
+      .then(function (rg) { readOk = !!(rg && rg.ok); return readOk ? rg.json() : null; })
       .then(function (rows) {
         var remote = (rows && rows.length) ? rows[0].data : null;
+        // 클라우드도 비어 있으면 지울 것이 없다 — 이때는 올려서 기준선을 만든다.
+        // 여기까지 막고 있었던 탓에 기준선이 영영 생기지 않아, 할 일이 없는 기기는
+        // 고양이 기분만 바꿔서는 영영 올리지 못했다.
+        if (blocked && readOk && isEmptyPayload(remote)) blocked = false;
+        if (blocked) return null;
         var payload = remote ? merge3(readBase(), local, remote) : local;
         if (remote) payload = applyNotesMerge(payload, local, remote);   // 일정은 항목별로
         if (remote) payload = pickDated(payload, readBase(), local, remote);
@@ -921,6 +922,7 @@
           body: JSON.stringify(body)
         });
       }).then(function (r) {
+      if (blocked) { pushStatus('올릴 내용 없음'); return false; }
       var ok = !!(r && r.ok);
       if (ok) {
         localStorage.removeItem(DIRTY_KEY);

@@ -1457,22 +1457,21 @@ async function cloudPush(force) {
   if (!sb) { cloudStatus('push', 'sync_need_login'); return false; }
   if (!cloudReady && !force) { cloudStatus('push', 'sync_waiting'); return false; }
   const data = await cloudReadLocal();
-  // 이 기기가 텅 비어 있으면 올리지 않는다 (다른 기기 기록 보호).
-  // 다만 이 기기가 이미 올린 적이 있으면(기준선이 있으면) 막지 않는다.
-  // 고양이는 늘 기본값이 있어 '비었나' 판단에서 빼 두었는데, 그 바람에 할 일이
-  // 없는 기기에서는 고양이 기분만 바꾼 것이 영영 올라가지 못했다.
-  if (cloudIsEmpty(data) && !syncState().base) {
-    cloudStatus('push', 'sync_nothing');
-    return false;
-  }
   // 업로드는 통째로 덮어쓰기이므로 직전에 원격을 읽어 병합한다
   let pulledIn = false;                 // 올리는 길에 상대 변경을 받아왔는가
+  // 텅 빈 기기가 아직 한 번도 올린 적이 없다면(기준선 없음) 올리는 순간 클라우드
+  // 기록을 지우게 된다. 확인하기 전까지는 막아 둔다 — 못 읽었으면 막은 채로 둔다.
+  let blocked = cloudIsEmpty(data) && !syncState().base;
   try {
     const rg = await cloudFetch('/rest/v1/nekodesk_sync?select=data', { method: 'GET' });
     if (rg && rg.ok) {
       const rows = await rg.json();
       const remoteNow = (rows && rows.length) ? rows[0].data : null;
-      if (remoteNow) {
+      // 클라우드도 비어 있으면 지울 것이 없다 — 이때는 올려서 기준선을 만든다.
+      // 여기까지 막고 있었던 탓에 기준선이 영영 생기지 않아, 할 일이 없는 기기는
+      // 고양이 기분만 바꿔서는 영영 올리지 못했다.
+      if (blocked && cloudIsEmpty(remoteNow)) blocked = false;
+      if (!blocked && remoteNow) {
         // 내가 지운 것은 지운 채로, 상대가 더한 것은 살린 채로 올린다
         let merged = merge3(syncState().base, data, remoteNow);
         merged = applyNotesMerge(merged, data, remoteNow);   // 일정은 항목별로
@@ -1485,6 +1484,7 @@ async function cloudPush(force) {
       }
     }
   } catch (e) {}
+  if (blocked) { cloudStatus('push', 'sync_nothing'); return false; }
   data._device = 'pc';
   const r = await cloudFetch('/rest/v1/nekodesk_sync?on_conflict=user_id', {
     method: 'POST',
