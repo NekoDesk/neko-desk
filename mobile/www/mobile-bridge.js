@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -775,6 +775,21 @@
         });
       })
       .catch(function (e) { return { ok: false, why: String(e && e.message || e) }; });
+  };
+
+  /**
+   * 이 기기에 남은 것을 모두 지운다 (계정 삭제 · 데이터 초기화).
+   * 앱 기록만 지우면 바탕화면 위젯에는 할 일이 그대로 남아 있어,
+   * 지웠다고 생각한 사람이 다시 보게 된다.
+   */
+  window._mobileWipeLocal = function () {
+    [STORAGE_KEY, SESSION_KEY, OWNER_KEY, SYNC_TS_KEY, DIRTY_KEY, CLAIM_KEY,
+     BASE_KEY, LAST_PUSH_KEY].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+    var nb = widgetBridge();
+    if (nb && nb.clear) { try { return Promise.resolve(nb.clear()); } catch (e) {} }
+    return Promise.resolve();
   };
 
   /** 클라우드 → 기기 */

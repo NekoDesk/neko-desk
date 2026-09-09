@@ -107,6 +107,16 @@ public class NekoWidget extends AppWidgetProvider {
         }
     }
 
+    /**
+     * 위젯이 들고 있던 것을 통째로 지운다 (계정 삭제 · 데이터 초기화).
+     * 앱 기록만 지우면 바탕화면 위젯에는 할 일이 그대로 남아 있어,
+     * 지웠다고 생각한 사람이 다시 보게 된다.
+     */
+    public static void clear(Context ctx) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply();
+        refreshAll(ctx);
+    }
+
     public static void push(Context ctx, String json) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         sp.edit().putString(KEY_DATA, json).apply();

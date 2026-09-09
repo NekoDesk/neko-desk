@@ -9,8 +9,28 @@ public class NekoWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "push", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getToggles", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clearPendingToggles", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "clearPendingToggles", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise)
     ]
+
+    /// 위젯이 들고 있던 것을 통째로 지운다 (계정 삭제 · 데이터 초기화).
+    /// 앱 기록만 지우면 홈 화면 위젯에는 할 일이 그대로 남아 있어,
+    /// 지웠다고 생각한 사람이 다시 보게 된다.
+    @objc func clear(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: "group.com.siwon.nekodesk.mobile") else {
+            call.resolve()
+            return
+        }
+        for key in ["neko_widget_data", "neko_pending_toggles", "neko_pending_water_add",
+                    "neko_pending_vita_add", "neko_pending_cat_feed", "neko_pending_cat_play"] {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.synchronize()
+        if #available(iOS 14.0, *) {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        call.resolve()
+    }
 
     @objc func push(_ call: CAPPluginCall) {
         guard let json = call.getString("json") else {

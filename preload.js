@@ -48,6 +48,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cloudSyncNow:    () => ipcRenderer.invoke('cloud-sync-now'),
   cloudDeleteMine: () => ipcRenderer.invoke('cloud-delete-mine'),
   cloudDeleteAccount: () => ipcRenderer.invoke('cloud-delete-account'),
+  wipeLocal: () => ipcRenderer.invoke('wipe-local'),
   onCloudApply:    (cb) => ipcRenderer.on('cloud-apply', (e, p) => cb(p)),
   onCloudStatus:   (cb) => ipcRenderer.on('cloud-status', (e, p) => cb(p)),
   setAutoLaunch:  (on) => ipcRenderer.invoke('set-auto-launch', on),

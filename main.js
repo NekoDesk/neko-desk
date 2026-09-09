@@ -753,6 +753,19 @@ ipcMain.handle('logout', () => {
   return true;
 });
 
+/**
+ * 이 기기에 남은 것을 모두 지운다 (계정 삭제).
+ * 계정을 지운 사람은 흔적이 남지 않기를 바란다. 로그인 정보뿐 아니라
+ * 동기화 기준선·승계 기록까지 지워야 다음에 로그인할 때 되살아나지 않는다.
+ * 자동 실행 설정처럼 계정과 무관한 것은 그대로 둔다.
+ */
+ipcMain.handle('wipe-local', () => {
+  const ud = app.getPath('userData');
+  ['session.json', 'sync-state.json', 'claimed_accounts.json', 'ga_client_id.txt']
+    .forEach(n => { try { fs.unlinkSync(path.join(ud, n)); } catch (e) {} });
+  return true;
+});
+
 ipcMain.handle('guest-login', () => {
   const s = { email: 'guest', guest: true };
   writeSessionFile(s);

@@ -2035,7 +2035,7 @@ const STRINGS = {
     reset_btn:'🔄 데이터 초기화',
     session_gone:'로그인이 만료되었어요.\n계정이 삭제되었거나 다른 기기에서 로그아웃되었을 수 있어요.\n\n이 기기의 기록은 그대로 남아 있어요. 다시 로그인하면 이어서 쓸 수 있습니다.',
     acct_del_btn:'🗑 계정 삭제', acct_del_title:'계정 삭제',
-    acct_del_hint:'계정과 클라우드에 저장된 기록이 모두 지워집니다. 되돌릴 수 없어요.',
+    acct_del_hint:'계정과 클라우드, 이 기기에 남은 기록까지 모두 지워집니다. 되돌릴 수 없어요.',
     acct_del_guest:'로그인한 계정이 없어요.',
     acct_del_confirm:'정말 계정을 삭제할까요?\n\n구글 로그인 계정과 클라우드에 저장된 할 일·다이어리·고양이 기록이 모두 지워집니다.\n되돌릴 수 없어요.',
     acct_del_confirm2:'마지막 확인이에요.\n\n지금 삭제하면 다시 되돌릴 수 없습니다. 진행할까요?',
@@ -2302,7 +2302,7 @@ const STRINGS = {
     reset_btn:'🔄 Reset Data',
     session_gone:'Your sign-in has expired.\nThe account may have been deleted, or signed out on another device.\n\nEverything saved on this device is still here. Sign in again to keep syncing.',
     acct_del_btn:'🗑 Delete Account', acct_del_title:'Delete Account',
-    acct_del_hint:'Your account and everything saved in the cloud will be erased. This cannot be undone.',
+    acct_del_hint:'Your account, everything in the cloud, and what is left on this device will all be erased. This cannot be undone.',
     acct_del_guest:'You are not signed in.',
     acct_del_confirm:'Delete your account?\n\nYour Google sign-in and all tasks, diary entries and cat progress saved in the cloud will be erased.\nThis cannot be undone.',
     acct_del_confirm2:'Last check.\n\nOnce deleted this cannot be restored. Continue?',
@@ -2563,7 +2563,7 @@ const STRINGS = {
     reset_btn:'🔄 データ初期化',
     session_gone:'ログインの有効期限が切れました。\nアカウントが削除されたか、他の端末でログアウトされた可能性があります。\n\nこの端末の記録はそのまま残っています。もう一度ログインすると続けて使えます。',
     acct_del_btn:'🗑 アカウント削除', acct_del_title:'アカウント削除',
-    acct_del_hint:'アカウントとクラウドに保存された記録がすべて消えます。元に戻せません。',
+    acct_del_hint:'アカウントとクラウド、この端末に残った記録まですべて消えます。元に戻せません。',
     acct_del_guest:'ログインしているアカウントがありません。',
     acct_del_confirm:'本当にアカウントを削除しますか？\n\nGoogleログインとクラウドに保存された予定・日記・ねこの記録がすべて消えます。\n元に戻せません。',
     acct_del_confirm2:'最終確認です。\n\n削除すると元に戻せません。続けますか？',
@@ -3310,13 +3310,19 @@ async function deleteAccount(){
 
   if (!ok) { alert(L('acct_del_fail') + (why ? '\n\n(' + why + ')' : '')); return; }
 
-  // 계정이 사라졌으니 이 기기에 남은 기록도 지운다. 안 지우면 다음에 로그인하는
-  // 다른 계정으로 남의 기록이 올라간다.
+  // 계정을 지운 사람은 이 기기에서도 흔적이 남지 않기를 바란다.
+  // 앱 기록뿐 아니라 바탕화면 위젯에 넘겨 둔 사본까지 지운다 — 그것만 남으면
+  // 지웠다고 생각한 할 일이 홈 화면에 계속 보인다.
   _skipSave = true;
   ['nekodesk_sync_pushed_at','nekodesk_sync_dirty','nekodesk_sync_claim',
+   'nekodesk_data_owner','nekodesk_products_cache',
    'neko_sync_pushed_at','neko_sync_dirty','neko_sync_claim','neko_data_owner']
     .forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
   localStorage.removeItem(STORAGE_KEY);
+  try {
+    if (typeof window._mobileWipeLocal === 'function') await window._mobileWipeLocal();
+    if (window.electronAPI && window.electronAPI.wipeLocal) await window.electronAPI.wipeLocal();
+  } catch(e) {}
   alert(L('acct_del_done'));
   try {
     if (window.electronAPI && window.electronAPI.logout) { await window.electronAPI.logout(); }
