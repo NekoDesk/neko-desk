@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.0.7-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.0.8-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -724,18 +724,21 @@
     var s = readSession();
     if (!s || s.guest || !s.token) return Promise.resolve(false);
     if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
-    return fetch(PUBLIC_CFG.SUPABASE_URL + '/functions/v1/delete-account', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + s.token,
-        'apikey': PUBLIC_CFG.SUPABASE_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: '{}'
-    })
-      .then(function (r) { return r.json().catch(function () { return {}; }); })
-      .then(function (d) { return !!(d && d.ok); })
-      .catch(function () { return false; });
+    // 토큰을 먼저 새로 받는다. 토큰은 한 시간이면 만료되는데, 만료된 채로 부르면
+    // 게이트웨이가 401 을 주고 그 응답에는 CORS 머리글이 없어 브라우저가 통째로
+    // 막아 버린다 — 그러면 401 을 보고 갱신해 다시 걸 기회조차 없다.
+    return refreshToken()
+      .then(function () {
+        return authFetch('/functions/v1/delete-account', { method: 'POST', body: '{}' });
+      })
+      .then(function (r) {
+        if (!r) return { ok: false, why: '서버에 닿지 못했어요' };
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (d && d.ok) return { ok: true };
+          return { ok: false, why: (d && d.error) ? d.error : ('HTTP ' + r.status) };
+        });
+      })
+      .catch(function (e) { return { ok: false, why: String(e && e.message || e) }; });
   };
 
   /** 클라우드 → 기기 */

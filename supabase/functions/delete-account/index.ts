@@ -13,9 +13,12 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (req) => {
+  // apikey 를 빠뜨리면 안 된다. 앱은 authorization 과 함께 apikey 도 보내는데,
+  // 허용 목록에 없으면 브라우저가 프리플라이트 단계에서 막아 버린다 —
+  // 앱에서는 "서버에 닿지 못했다"로만 보여 원인을 짚기 어렵다.
   const cors = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, content-type",
+    "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
   };
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 

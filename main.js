@@ -1516,16 +1516,11 @@ ipcMain.handle('cloud-delete-account', async () => {
   if (!sb || !sb.token) return false;
   if (cloudPushTimer) { clearTimeout(cloudPushTimer); cloudPushTimer = null; }
   setSyncState({ dirty: false, claim: false, seenTs: '', base: null });
+  // cloudFetch 를 쓴다 — 토큰은 한 시간이면 만료되는데, 저장해 둔 것을 그대로
+  // 보내면 그때부터 계정을 못 지운다. cloudFetch 는 401 이면 갱신하고 다시 건다.
   try {
-    const r = await fetch(CFG.SUPABASE_URL + '/functions/v1/delete-account', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + sb.token,
-        'apikey': CFG.SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: '{}'
-    });
+    const r = await cloudFetch('/functions/v1/delete-account', { method: 'POST', body: '{}' });
+    if (!r || !r.ok) return false;
     const d = await r.json().catch(() => ({}));
     return !!(d && d.ok);
   } catch (e) { return false; }

@@ -3293,16 +3293,19 @@ async function deleteAccount(){
   if (!confirm(L('acct_del_confirm'))) return;
   if (!confirm(L('acct_del_confirm2'))) return;
 
-  let ok = false;
+  let ok = false, why = '';
   try {
     if (window.electronAPI && window.electronAPI.cloudDeleteAccount) {
       ok = await window.electronAPI.cloudDeleteAccount();
     } else if (typeof window._mobileDeleteAccount === 'function') {
-      ok = await window._mobileDeleteAccount();
+      // 폰 쪽은 왜 안 됐는지도 함께 준다 — 안 그러면 화면만 보고는 손쓸 수가 없다
+      const r = await window._mobileDeleteAccount();
+      if (r && typeof r === 'object') { ok = !!r.ok; why = r.why || ''; }
+      else ok = !!r;
     }
-  } catch(e) {}
+  } catch(e) { why = String(e && e.message || e); }
 
-  if (!ok) { alert(L('acct_del_fail')); return; }
+  if (!ok) { alert(L('acct_del_fail') + (why ? '\n\n(' + why + ')' : '')); return; }
 
   // 계정이 사라졌으니 이 기기에 남은 기록도 지운다. 안 지우면 다음에 로그인하는
   // 다른 계정으로 남의 기록이 올라간다.
