@@ -3042,7 +3042,8 @@ function speechBubbleClick() {
     if (S.fruits.length >= 5) {
       showBubble(L('water_full_praise'), true);
     } else {
-      addFruit();
+      playSound('cat01.MP3');           // 물은 컵을 눌렀을 때와 같은 소리로
+      addFruit(true);
       saveState();
       const praised = MSGS('waterPraise')[Math.floor(Math.random() * MSGS('waterPraise').length)];
       showBubble(praised, true);
@@ -3368,11 +3369,12 @@ function earnPts(n) {
   const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
 }
 
-function addFruit() {
+/** @param silent 부르는 쪽에서 이미 소리를 냈으면 열매 소리는 겹치지 않게 뺀다 */
+function addFruit(silent) {
   if (S.fruits.length >= 5) return; // 최대 5개
   const f=['🍋','🍊','🍎','🍇','🍓','🫐','🍑','🍒'];
   S.fruits.push(f[Math.floor(Math.random()*f.length)]);
-  playFruitSound();
+  if (!silent) playFruitSound();
   renderFruits();
   renderHarvestCount();
 }
@@ -4033,7 +4035,7 @@ function drinkWater(i) {
     playSound('cat01.MP3');
     S.waterCups = cur + 1;
     if (S.fruits.length < 5) {
-      addFruit();
+      addFruit(true);                   // 고양이 소리를 냈으니 열매 소리는 겹치지 않게
       toast('reward', L('water_reward_title'), L('water_reward_msg'));
     } else {
       toast('info', L('water_reward_title'), L('water_full_msg'));
