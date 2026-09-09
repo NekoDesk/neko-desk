@@ -715,6 +715,29 @@
       .catch(function () { return false; });
   };
 
+  /**
+   * 계정 자체를 지운다 (로그인 정보 + 클라우드 기록).
+   * 계정 삭제는 서비스 역할 열쇠가 있어야 해서 앱에서 직접 못 한다.
+   * 함수 쪽에서 토큰으로 본인을 확인한 뒤 그 사람 계정만 지운다.
+   */
+  window._mobileDeleteAccount = function () {
+    var s = readSession();
+    if (!s || s.guest || !s.token) return Promise.resolve(false);
+    if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
+    return fetch(PUBLIC_CFG.SUPABASE_URL + '/functions/v1/delete-account', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + s.token,
+        'apikey': PUBLIC_CFG.SUPABASE_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) { return !!(d && d.ok); })
+      .catch(function () { return false; });
+  };
+
   /** 클라우드 → 기기 */
   function syncPull(notify) {
     if (!loggedIn()) return Promise.resolve(false);

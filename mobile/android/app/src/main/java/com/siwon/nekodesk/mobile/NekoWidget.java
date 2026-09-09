@@ -46,6 +46,8 @@ public class NekoWidget extends AppWidgetProvider {
     public static final String ACTION_VITA = "com.siwon.nekodesk.mobile.WIDGET_VITA";
     public static final String ACTION_CAT_FEED = "com.siwon.nekodesk.mobile.WIDGET_CAT_FEED";
     public static final String ACTION_CAT_PLAY = "com.siwon.nekodesk.mobile.WIDGET_CAT_PLAY";
+    public static final String ACTION_CAT_CALL = "com.siwon.nekodesk.mobile.WIDGET_CAT_CALL";
+    private static final String KEY_SND_IDX = "cat_snd_idx";
     private static final String EXTRA_TODO_ID = "todo_id";
     private static final String EXTRA_DATE_KEY = "date_key";
     private static final String EXTRA_INDEX = "index";
@@ -82,6 +84,9 @@ public class NekoWidget extends AppWidgetProvider {
             feedCat(ctx);
         } else if (ACTION_CAT_PLAY.equals(action)) {
             playCat(ctx);
+        } else if (ACTION_CAT_CALL.equals(action)) {
+            // 부르기는 소리만 낸다 — 앱의 '고양이 부르기'와 같다 (기분은 그대로)
+            playSound(ctx, R.raw.cat_calling_01);
         }
     }
 
@@ -231,10 +236,24 @@ public class NekoWidget extends AppWidgetProvider {
         refreshAll(ctx);
     }
 
-    /** 밥을 줬을 때 우는 소리. 다 울면 스스로 놓아 준다 (안 놓으면 소리 통로가 쌓인다) */
+    /** 고양이를 만질 때 나는 소리 — 앱과 같은 차례로 돌아간다 */
+    private static final int[] CAT_TOUCH_SND = {
+        R.raw.cat_touch_06, R.raw.cat_touch_07, R.raw.cat_touch_08, R.raw.cat_touch_01,
+        R.raw.cat_touch_02, R.raw.cat_touch_03, R.raw.cat_touch_04, R.raw.cat_touch_05,
+    };
+
+    /** 다음 차례의 만지는 소리. 어디까지 왔는지는 저장해 둔다 (위젯은 눌릴 때마다 새로 뜬다) */
     private static void meow(Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        int i = (sp.getInt(KEY_SND_IDX, -1) + 1) % CAT_TOUCH_SND.length;
+        sp.edit().putInt(KEY_SND_IDX, i).apply();
+        playSound(ctx, CAT_TOUCH_SND[i]);
+    }
+
+    /** 소리 하나를 낸다. 다 울면 스스로 놓아 준다 (안 놓으면 소리 통로가 쌓인다) */
+    private static void playSound(Context ctx, int resId) {
         try {
-            MediaPlayer mp = MediaPlayer.create(ctx, R.raw.cat01);
+            MediaPlayer mp = MediaPlayer.create(ctx, resId);
             if (mp == null) return;
             mp.setOnCompletionListener(p -> p.release());
             mp.start();
@@ -499,11 +518,13 @@ public class NekoWidget extends AppWidgetProvider {
             v.setTextViewText(R.id.w_cat_name, catName);
             v.setTextColor(R.id.w_cat_name, cDim);
 
-            Intent feedIntent = new Intent(ctx, getClass());
-            feedIntent.setAction(ACTION_CAT_FEED);
-            PendingIntent feedPi = PendingIntent.getBroadcast(ctx, 300, feedIntent,
+            // 먹이 자리에 '부르기'를 둔다. 먹이는 포인트가 들어 앱에서 주는 편이 낫고,
+            // 위젯에서는 소리만 나는 부르기가 손이 덜 간다.
+            Intent callIntent = new Intent(ctx, getClass());
+            callIntent.setAction(ACTION_CAT_CALL);
+            PendingIntent callPi = PendingIntent.getBroadcast(ctx, 302, callIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            v.setOnClickPendingIntent(R.id.w_cat_feed, feedPi);
+            v.setOnClickPendingIntent(R.id.w_cat_feed, callPi);
 
             Intent playIntent = new Intent(ctx, getClass());
             playIntent.setAction(ACTION_CAT_PLAY);

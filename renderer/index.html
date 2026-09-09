@@ -1415,6 +1415,10 @@ select {
                   <button class="btn btn-g" style="flex:1;font-size:12px" onclick="petCat()" data-i18n="cat_pet_btn">🤲 쓰다듬기</button>
                   <button class="btn btn-g" style="flex:1;font-size:12px" onclick="playCat()" data-i18n="cat_play_btn">🧶 놀아주기</button>
                 </div>
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="callCat(1)" data-i18n="cat_call1_btn">📣 고양이 부르기 1</button>
+                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="callCat(2)" data-i18n="cat_call2_btn">📣 고양이 부르기 2</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1497,6 +1501,8 @@ select {
                  data-i18n="privacy_link">🔒 개인정보처리방침</a>
             </div>
             <button class="btn btn-gr" onclick="resetAllData()" style="margin-top:12px;width:100%;opacity:0.75" data-i18n="reset_btn">🔄 데이터 초기화</button>
+            <button class="btn btn-gr" onclick="deleteAccount()" style="margin-top:8px;width:100%;opacity:0.75;color:#f88;border-color:#f88" data-i18n="acct_del_btn">🗑 계정 삭제</button>
+            <div style="font-size:11px;color:var(--gray);margin-top:6px;line-height:1.5" data-i18n="acct_del_hint">계정과 클라우드에 저장된 기록이 모두 지워집니다. 되돌릴 수 없어요.</div>
             <div id="appVersionLabel" style="margin-top:14px;text-align:center;font-size:11px;color:var(--gray);opacity:0.6"></div>
           </div>
         </div>
@@ -2027,6 +2033,13 @@ const STRINGS = {
     mt_col_del:'이 열 삭제', mt_table_del:'표 삭제', mt_color:'표 색 바꾸기',
     fmt_bold:'굵게', fmt_italic:'기울임', fmt_under:'밑줄', fmt_strike:'취소선',
     reset_btn:'🔄 데이터 초기화',
+    acct_del_btn:'🗑 계정 삭제', acct_del_title:'계정 삭제',
+    acct_del_hint:'계정과 클라우드에 저장된 기록이 모두 지워집니다. 되돌릴 수 없어요.',
+    acct_del_guest:'로그인한 계정이 없어요.',
+    acct_del_confirm:'정말 계정을 삭제할까요?\n\n구글 로그인 계정과 클라우드에 저장된 할 일·다이어리·고양이 기록이 모두 지워집니다.\n되돌릴 수 없어요.',
+    acct_del_confirm2:'마지막 확인이에요.\n\n지금 삭제하면 다시 되돌릴 수 없습니다. 진행할까요?',
+    acct_del_done:'계정을 삭제했어요. 그동안 함께해 주셔서 고마워요 🐱',
+    acct_del_fail:'계정을 지우지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.',
     reset_confirm:'정말 모든 데이터를 초기화할까요?\n포인트, 고양이, 소장 아이템이 모두 사라져요!\n\n로그인 중이라면 다른 기기와 클라우드에 저장된 기록도 함께 지워집니다.',
     // 홈
     home_mood:'❤️ 기분', photo_btn:'📸 고양이와 사진 찍기',
@@ -2087,6 +2100,7 @@ const STRINGS = {
     water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
     water_full_msg:'바구니가 가득 찼어요!',
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
+    cat_call1_btn:'📣 고양이 부르기 1', cat_call2_btn:'📣 고양이 부르기 2',
     cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
@@ -2285,6 +2299,13 @@ const STRINGS = {
     mt_col_del:'Delete column', mt_table_del:'Delete table', mt_color:'Change table color',
     fmt_bold:'Bold', fmt_italic:'Italic', fmt_under:'Underline', fmt_strike:'Strikethrough',
     reset_btn:'🔄 Reset Data',
+    acct_del_btn:'🗑 Delete Account', acct_del_title:'Delete Account',
+    acct_del_hint:'Your account and everything saved in the cloud will be erased. This cannot be undone.',
+    acct_del_guest:'You are not signed in.',
+    acct_del_confirm:'Delete your account?\n\nYour Google sign-in and all tasks, diary entries and cat progress saved in the cloud will be erased.\nThis cannot be undone.',
+    acct_del_confirm2:'Last check.\n\nOnce deleted this cannot be restored. Continue?',
+    acct_del_done:'Your account has been deleted. Thanks for spending time with us 🐱',
+    acct_del_fail:'Could not delete the account. Check your connection and try again.',
     reset_confirm:'Reset all data?\nPoints, your cat and owned items will be gone!\n\nIf you are signed in, the copy in the cloud and on your other devices is deleted too.',
     home_mood:'❤️ Mood', photo_btn:'📸 Take Photo',
     home_cycle_title:'⏱ Current Cycle',
@@ -2339,6 +2360,7 @@ const STRINGS = {
     water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
     water_full_msg:'Your basket is full!',
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
+    cat_call1_btn:'📣 Call cat 1', cat_call2_btn:'📣 Call cat 2',
     cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
@@ -2537,6 +2559,13 @@ const STRINGS = {
     mt_col_del:'この列を削除', mt_table_del:'表を削除', mt_color:'表の色を変更',
     fmt_bold:'太字', fmt_italic:'斜体', fmt_under:'下線', fmt_strike:'取り消し線',
     reset_btn:'🔄 データ初期化',
+    acct_del_btn:'🗑 アカウント削除', acct_del_title:'アカウント削除',
+    acct_del_hint:'アカウントとクラウドに保存された記録がすべて消えます。元に戻せません。',
+    acct_del_guest:'ログインしているアカウントがありません。',
+    acct_del_confirm:'本当にアカウントを削除しますか？\n\nGoogleログインとクラウドに保存された予定・日記・ねこの記録がすべて消えます。\n元に戻せません。',
+    acct_del_confirm2:'最終確認です。\n\n削除すると元に戻せません。続けますか？',
+    acct_del_done:'アカウントを削除しました。今までありがとうございました 🐱',
+    acct_del_fail:'アカウントを削除できませんでした。通信状態を確認して、もう一度お試しください。',
     reset_confirm:'本当にすべてのデータを初期化しますか？\nポイント・ネコ・所持アイテムがすべて消えます！\n\nログイン中の場合、クラウドと他の端末の記録も一緒に削除されます。',
     home_mood:'❤️ 気分', photo_btn:'📸 写真を撮る',
     home_cycle_title:'⏱ 現在サイクル',
@@ -2591,6 +2620,7 @@ const STRINGS = {
     water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
     water_full_msg:'かごがいっぱいです！',
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
+    cat_call1_btn:'📣 ねこを呼ぶ 1', cat_call2_btn:'📣 ねこを呼ぶ 2',
     cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
@@ -3249,6 +3279,42 @@ const PRIVACY_URL = 'https://goodenergykr.com/nekodesk/privacy';
 function openPrivacy(){
   if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(PRIVACY_URL);
   else window.open(PRIVACY_URL, '_blank');
+}
+
+/**
+ * 계정을 지운다 — 로그인 정보와 클라우드 기록이 함께 사라진다.
+ * 계정을 만들 수 있는 앱은 앱 안에서 지울 수도 있어야 한다 (App Store 5.1.1(v),
+ * 구글 플레이도 같다). 로그아웃이나 데이터 초기화로는 모자라다.
+ */
+async function deleteAccount(){
+  const s = window._session;
+  if (!s || s.guest) { toast('alert', L('acct_del_title'), L('acct_del_guest')); return; }
+  if (!confirm(L('acct_del_confirm'))) return;
+  if (!confirm(L('acct_del_confirm2'))) return;
+
+  let ok = false;
+  try {
+    if (window.electronAPI && window.electronAPI.cloudDeleteAccount) {
+      ok = await window.electronAPI.cloudDeleteAccount();
+    } else if (typeof window._mobileDeleteAccount === 'function') {
+      ok = await window._mobileDeleteAccount();
+    }
+  } catch(e) {}
+
+  if (!ok) { alert(L('acct_del_fail')); return; }
+
+  // 계정이 사라졌으니 이 기기에 남은 기록도 지운다. 안 지우면 다음에 로그인하는
+  // 다른 계정으로 남의 기록이 올라간다.
+  _skipSave = true;
+  ['nekodesk_sync_pushed_at','nekodesk_sync_dirty','nekodesk_sync_claim',
+   'neko_sync_pushed_at','neko_sync_dirty','neko_sync_claim','neko_data_owner']
+    .forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+  localStorage.removeItem(STORAGE_KEY);
+  alert(L('acct_del_done'));
+  try {
+    if (window.electronAPI && window.electronAPI.logout) { await window.electronAPI.logout(); }
+  } catch(e) {}
+  location.reload();
 }
 
 async function resetAllData(){
@@ -3964,6 +4030,7 @@ function drinkWater(i) {
   _waterEnsureToday();
   const cur = S.waterCups || 0;
   if (i === cur) {                    // 한 잔 마심 → 열매 1개
+    playSound('cat01.MP3');
     S.waterCups = cur + 1;
     if (S.fruits.length < 5) {
       addFruit();
@@ -5089,18 +5156,20 @@ function playSound(name) {
   } catch (e) {}
 }
 
-// 고양이를 만질 때 나는 소리 — 같은 소리만 반복되지 않게 번갈아 낸다
-const CAT_TOUCH_SOUNDS = ['cat_touch_01.MP3', 'cat_touch_02.MP3'];
-let _catTouchIdx = Math.floor(Math.random() * CAT_TOUCH_SOUNDS.length);
+// 고양이를 만질 때 나는 소리 — 정해진 차례대로 하나씩 돌아가며 낸다
+const CAT_TOUCH_SOUNDS = [
+  'cat_touch_06.MP3', 'cat_touch_07.MP3', 'cat_touch_08.MP3', 'cat_touch_01.MP3',
+  'cat_touch_02.MP3', 'cat_touch_03.MP3', 'cat_touch_04.MP3', 'cat_touch_05.MP3'
+];
+let _catTouchIdx = -1;
 
 function playCatTouchSound() {
-  // 무작위로 고르되 방금 낸 것과는 다른 것으로
-  if (CAT_TOUCH_SOUNDS.length > 1) {
-    _catTouchIdx = (_catTouchIdx + 1 + Math.floor(Math.random() * (CAT_TOUCH_SOUNDS.length - 1)))
-                   % CAT_TOUCH_SOUNDS.length;
-  }
+  _catTouchIdx = (_catTouchIdx + 1) % CAT_TOUCH_SOUNDS.length;
   playSound(CAT_TOUCH_SOUNDS[_catTouchIdx]);
 }
+
+/** 고양이 부르기 — 두 가지 부름소리 */
+function callCat(n) { playSound(n === 2 ? 'cat_calling_02.MP3' : 'cat_calling_01.MP3'); }
 
 /** 열매를 얻거나 수확할 때 */
 function playFruitSound() { playSound('fruit_01.MP3'); }
@@ -5209,6 +5278,7 @@ function takeVitamin(i) {
   _vitaEnsureToday();
   const cur = S.vitaminTaken || 0;
   if (i === cur) {
+    playSound('cat01.MP3');
     S.vitaminTaken = cur + 1;
     if (S.vitaminTaken >= vitaGoal()) toast('reward', L('vita_done_title'), L('vita_done_msg'));
   } else if (i === cur - 1) {

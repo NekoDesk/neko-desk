@@ -1506,6 +1506,31 @@ ipcMain.handle('cloud-delete-mine', async () => {
   const r = await cloudFetch('/rest/v1/nekodesk_sync?user_id=eq.' + sb.uid, { method: 'DELETE' });
   return !!(r && r.ok);
 });
+/**
+ * 계정 자체를 지운다 (로그인 정보 + 클라우드 기록).
+ * 계정 삭제는 서비스 역할 열쇠가 있어야 해서 앱에서 직접 못 한다.
+ * 함수 쪽에서 토큰으로 본인을 확인한 뒤 그 사람 계정만 지운다.
+ */
+ipcMain.handle('cloud-delete-account', async () => {
+  const sb = cloudSession();
+  if (!sb || !sb.token) return false;
+  if (cloudPushTimer) { clearTimeout(cloudPushTimer); cloudPushTimer = null; }
+  setSyncState({ dirty: false, claim: false, seenTs: '', base: null });
+  try {
+    const r = await fetch(CFG.SUPABASE_URL + '/functions/v1/delete-account', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + sb.token,
+        'apikey': CFG.SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    });
+    const d = await r.json().catch(() => ({}));
+    return !!(d && d.ok);
+  } catch (e) { return false; }
+});
+
 // 게스트로 쓰던 기록을 계정에 승계할 때 렌더러가 알려준다
 ipcMain.on('cloud-mark-claim', () => setSyncState({ claim: true, dirty: true }));
 

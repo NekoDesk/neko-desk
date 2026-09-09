@@ -51,7 +51,7 @@
                 android:gravity="center" android:background="@drawable/w_pill_am"
                 android:paddingTop="6dp" android:paddingBottom="6dp"
                 android:textSize="11sp" android:textColor="#5B8DD9"
-                android:text="🐟 먹이" android:layout_marginBottom="6dp" />
+                android:text="📣 부르기" android:layout_marginBottom="6dp" />
 
             <TextView
                 android:layout_width="match_parent" android:layout_height="wrap_content"

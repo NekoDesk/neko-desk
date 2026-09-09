@@ -54,7 +54,7 @@
                 android:progress="60"
                 android:progressDrawable="@drawable/w_mood_bar_progress" />
 
-            <!-- 먹이 버튼 -->
+            <!-- 부르기 버튼 (먹이는 포인트가 들어 앱에서 준다) -->
             <TextView android:id="@+id/w_cat_feed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
                 android:paddingBottom="6dp"
                 android:textSize="11sp"
                 android:textColor="#5B8DD9"
-                android:text="🐟 먹이"
+                android:text="📣 부르기"
                 android:layout_marginBottom="6dp" />
 
             <!-- 놀기 버튼 -->
