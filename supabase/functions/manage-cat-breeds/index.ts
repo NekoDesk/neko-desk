@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
       action, name, desc: description, id,
       imgBase64Front, imgBase64Side, imgBase64Back,
       breed_group, concept,
+      name_en, name_ja, desc_en, desc_ja,
     } = body;
 
     const uploadImage = async (b64: string, suffix: string): Promise<string | null> => {
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
     if (action === "list") {
       const { data, error } = await supabase
         .from("cat_breeds")
-        .select("id, name, description, breed_group, concept, image_url, image_url_side, image_url_b")
+        .select("id, name, name_en, name_ja, description, desc_en, desc_ja, breed_group, concept, image_url, image_url_side, image_url_b")
         .order("breed_group", { ascending: true })
         .order("concept", { ascending: true });
       if (error) return json({ ok: false, error: error.message }, 500);
@@ -68,6 +69,8 @@ Deno.serve(async (req) => {
         .from("cat_breeds")
         .insert({
           name, description: description ?? null,
+          name_en: name_en || null, name_ja: name_ja || null,
+          desc_en: desc_en || null, desc_ja: desc_ja || null,
           breed_group: breed_group ?? null, concept: concept ?? null,
           image_url, image_url_side, image_url_b,
         })
@@ -87,6 +90,11 @@ Deno.serve(async (req) => {
         name: name || `${breed_group} · ${concept}`,
       };
       if (description !== undefined) patch.description = description || null;
+      // 비워서 보내면 지운다 — 잘못 넣은 번역을 되돌릴 수 있어야 한다
+      if (name_en !== undefined) patch.name_en = name_en || null;
+      if (name_ja !== undefined) patch.name_ja = name_ja || null;
+      if (desc_en !== undefined) patch.desc_en = desc_en || null;
+      if (desc_ja !== undefined) patch.desc_ja = desc_ja || null;
       if (imgBase64Front) patch.image_url = await uploadImage(imgBase64Front, "F");
       if (imgBase64Side) patch.image_url_side = await uploadImage(imgBase64Side, "S");
       if (imgBase64Back) patch.image_url_b = await uploadImage(imgBase64Back, "B");

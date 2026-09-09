@@ -2750,7 +2750,11 @@ const STRINGS = {
 
 function L(key) {
   const lang = (typeof S !== 'undefined' && S.language) || 'ko';
-  return (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.ko[key] || key;
+  // 일부러 비워 둔 번역이 있다. 영어에는 '개' 같은 세는 단위가 없어 harvest_unit 이 빈 칸이다.
+  // 참/거짓으로 고르면 빈 칸이 '없는 값'으로 취급돼 한국어로 되돌아간다 — 있는지만 본다.
+  const d = STRINGS[lang];
+  if (d && d[key] !== undefined) return d[key];
+  return STRINGS.ko[key] !== undefined ? STRINGS.ko[key] : key;
 }
 
 function applyLang() {
