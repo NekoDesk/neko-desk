@@ -1295,7 +1295,16 @@ async function cloudRefreshToken() {
       headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_ANON_KEY },
       body: JSON.stringify({ refresh_token: sb.refresh })
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      // 4xx 는 "이 사람을 모른다"는 뜻이다 — 다른 기기에서 계정을 지웠거나
+      // 토큰이 끊겼다. 그대로 두면 없는 계정으로 로그인된 것처럼 보인다.
+      // 통신 장애(5xx·끊김)로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
+      if (r.status >= 400 && r.status < 500) {
+        try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
+        if (mainWindow) mainWindow.webContents.send('session-expired');
+      }
+      return null;
+    }
     const j = await r.json();
     if (!j || !j.access_token) return null;
     const s = readSessionFile() || {};

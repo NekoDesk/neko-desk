@@ -76,6 +76,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 자동 업데이트
   onUpdateStatus:  (cb) => ipcRenderer.on('update-status', (e, data) => cb(data)),
+  onSessionExpired: (cb) => ipcRenderer.on('session-expired', () => cb()),
   installUpdateNow: () => ipcRenderer.send('install-update-now'),
 
   // 로그인/위젯 모드 전환

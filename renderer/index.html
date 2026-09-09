@@ -2033,6 +2033,7 @@ const STRINGS = {
     mt_col_del:'이 열 삭제', mt_table_del:'표 삭제', mt_color:'표 색 바꾸기',
     fmt_bold:'굵게', fmt_italic:'기울임', fmt_under:'밑줄', fmt_strike:'취소선',
     reset_btn:'🔄 데이터 초기화',
+    session_gone:'로그인이 만료되었어요.\n계정이 삭제되었거나 다른 기기에서 로그아웃되었을 수 있어요.\n\n이 기기의 기록은 그대로 남아 있어요. 다시 로그인하면 이어서 쓸 수 있습니다.',
     acct_del_btn:'🗑 계정 삭제', acct_del_title:'계정 삭제',
     acct_del_hint:'계정과 클라우드에 저장된 기록이 모두 지워집니다. 되돌릴 수 없어요.',
     acct_del_guest:'로그인한 계정이 없어요.',
@@ -2299,6 +2300,7 @@ const STRINGS = {
     mt_col_del:'Delete column', mt_table_del:'Delete table', mt_color:'Change table color',
     fmt_bold:'Bold', fmt_italic:'Italic', fmt_under:'Underline', fmt_strike:'Strikethrough',
     reset_btn:'🔄 Reset Data',
+    session_gone:'Your sign-in has expired.\nThe account may have been deleted, or signed out on another device.\n\nEverything saved on this device is still here. Sign in again to keep syncing.',
     acct_del_btn:'🗑 Delete Account', acct_del_title:'Delete Account',
     acct_del_hint:'Your account and everything saved in the cloud will be erased. This cannot be undone.',
     acct_del_guest:'You are not signed in.',
@@ -2559,6 +2561,7 @@ const STRINGS = {
     mt_col_del:'この列を削除', mt_table_del:'表を削除', mt_color:'表の色を変更',
     fmt_bold:'太字', fmt_italic:'斜体', fmt_under:'下線', fmt_strike:'取り消し線',
     reset_btn:'🔄 データ初期化',
+    session_gone:'ログインの有効期限が切れました。\nアカウントが削除されたか、他の端末でログアウトされた可能性があります。\n\nこの端末の記録はそのまま残っています。もう一度ログインすると続けて使えます。',
     acct_del_btn:'🗑 アカウント削除', acct_del_title:'アカウント削除',
     acct_del_hint:'アカウントとクラウドに保存された記録がすべて消えます。元に戻せません。',
     acct_del_guest:'ログインしているアカウントがありません。',
@@ -8066,6 +8069,22 @@ function doLogout(){
   if (!window.electronAPI) return;
   window.electronAPI.logout().then(() => location.reload());
 }
+
+/**
+ * 로그인이 더는 통하지 않을 때 (다른 기기에서 계정을 지웠거나 토큰이 끊겼다).
+ * 그냥 두면 없는 계정으로 로그인된 것처럼 보여, 왜 동기화가 안 되는지 알 수 없다.
+ */
+let _sessionGone = false;
+function onSessionExpired(){
+  if (_sessionGone) return;      // 여러 요청이 한꺼번에 실패해도 한 번만
+  _sessionGone = true;
+  alert(L('session_gone'));
+  location.reload();
+}
+if (window.electronAPI && window.electronAPI.onSessionExpired) {
+  window.electronAPI.onSessionExpired(onSessionExpired);
+}
+window.addEventListener('neko-session-expired', onSessionExpired);
 
 function choosePhotoDir(){
   if (!window.electronAPI || !window.electronAPI.choosePhotoDir) {
