@@ -891,8 +891,14 @@
     var s = readSession();
     if (!s || !s.uid) { pushStatus('계정 정보 없음 (재로그인 필요)'); return Promise.resolve(false); }
     var local = collectLocal();
-    // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해
-    if (isEmptyPayload(local)) { pushStatus('올릴 내용 없음'); return Promise.resolve(false); }
+    // 내 기기가 텅 비어있으면 올리지 않음 — 다른 기기 기록을 지우지 않기 위해.
+    // 다만 이 기기가 이미 올린 적이 있으면(기준선이 있으면) 막지 않는다.
+    // 고양이는 늘 기본값이 있어 '비었나' 판단에서 빼 두었는데, 그 바람에 할 일이
+    // 없는 기기에서는 고양이 기분만 바꾼 것이 영영 올라가지 못했다.
+    if (isEmptyPayload(local) && !readBase()) {
+      pushStatus('올릴 내용 없음');
+      return Promise.resolve(false);
+    }
     // 업로드는 '통째로 덮어쓰기'이므로, 올리기 직전에 클라우드의 현재 내용을 읽어
     // 병합한다 — 상대 기기가 방금 올린(내가 아직 안 받은) 기록을 지우지 않기 위해.
     var pushed = null;                       // 실제로 올린 것 (기준선은 이걸로 잡아야 한다)
