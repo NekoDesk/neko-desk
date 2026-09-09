@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.6-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.7-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -61,14 +61,24 @@
    * 게스트로 쓰다 처음 로그인하면 기존 데이터를 그 계정 것으로 승계.
    * @returns true면 재시작 중이므로 호출측은 중단해야 함
    */
-  function enforceDataOwner(email) {
+  function ownerTag(s) { return (s && s.uid) ? 'uid:' + s.uid : 'email:' + ((s && s.email) || ''); }
+  function ownerMatches(stored, s) {
+    if (stored.indexOf('uid:') === 0 && s && s.uid) return stored === 'uid:' + s.uid;
+    var se = stored.indexOf('email:') === 0 ? stored.slice(6) : stored;
+    return se === (s && s.email);
+  }
+  function enforceDataOwner(ses) {
     try {
+      var tag = ownerTag(ses);
       var owner = localStorage.getItem(OWNER_KEY);
-      if (owner && owner !== email) {
+      if (owner && !ownerMatches(owner, ses)) {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(SYNC_TS_KEY);
         localStorage.removeItem(DIRTY_KEY);
-        localStorage.setItem(OWNER_KEY, email);
+        localStorage.removeItem(BASE_KEY);        // 예전 계정과의 합의점도 버린다
+        localStorage.removeItem(LAST_PUSH_KEY);
+        localStorage.removeItem(CLAIM_KEY);
+        localStorage.setItem(OWNER_KEY, tag);
         location.reload();
         return true;
       }
@@ -85,7 +95,7 @@
           localStorage.setItem(DIRTY_KEY, '1');
         }
       }
-      localStorage.setItem(OWNER_KEY, email);
+      localStorage.setItem(OWNER_KEY, tag);
     } catch (e) {}
     return false;
   }
@@ -183,7 +193,7 @@
           };
           writeSession(s);
           // 다른 계정의 데이터가 남아있으면 비우고 재시작 (계정별 분리)
-          if (enforceDataOwner(u.email)) return;
+          if (enforceDataOwner(s)) return;
           finish(s);
           // 로그인 직후 클라우드 데이터 가져오기
           syncPull(true);
@@ -1019,11 +1029,24 @@
   var _notiPlugin = null;
   var _notiTimer = null;
   var _notiLastPlan = '';
-  var _notiState = '확인 중...';      // 설정 화면에 그대로 보여 준다
+  var _notiKey = 'noti_checking';   // 설정 화면에 보여 줄 상태 (문구 열쇠)
+  var _notiExtra = '';              // 오류 메시지처럼 번역할 수 없는 꼬리말
   var _notiCount = 0;
 
-  function notiSay(msg, n) {
-    _notiState = msg;
+  /** 사전에 없으면 열쇠 대신 대비 문구를 쓴다 (사전은 renderer 쪽에 있다) */
+  function LL(key, fallback) {
+    try {
+      if (typeof window.L === 'function') {
+        var v = window.L(key);
+        if (v && v !== key) return v;
+      }
+    } catch (e) {}
+    return fallback || key;
+  }
+
+  function notiSay(key, n, extra) {
+    _notiKey = key;
+    _notiExtra = extra || '';
     if (n !== undefined) _notiCount = n;
     renderNotiRow();
   }
@@ -1049,12 +1072,13 @@
         + 'margin:0 0 10px;font-size:12px;color:var(--gray);line-height:1.5';
       anchor.parentElement.insertBefore(box, anchor.nextSibling);
     }
-    var need = _notiState.indexOf('허용됨') !== 0;
-    var html = '<span style="flex:1;min-width:0">📱 폰 알림: ' + _notiState
-             + (_notiCount ? ' · 예약 ' + _notiCount + '건' : '') + '</span>';
+    var need = (_notiKey !== 'noti_ok' && _notiKey !== 'noti_ok_approx');
+    var state = LL(_notiKey) + (_notiExtra ? ': ' + _notiExtra : '');
+    var cnt = _notiCount ? ' · ' + LL('noti_scheduled', '예약 {n}건').replace('{n}', _notiCount) : '';
+    var html = '<span style="flex:1;min-width:0">' + LL('noti_label', '📱 폰 알림') + ': ' + state + cnt + '</span>';
     if (need) {
       html += '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
-            + 'onclick="window.__nekoAskNoti()">알림 켜기</button>';
+            + 'onclick="window.__nekoAskNoti()">' + LL('noti_enable', '알림 켜기') + '</button>';
     }
     if (box.innerHTML !== html) box.innerHTML = html;
   }
@@ -1063,13 +1087,13 @@
   window.__nekoAskNoti = function () {
     var N = notiPlugin();
     if (!N) return;
-    notiSay('허용 요청 중...');
+    notiSay('noti_asking');
     Promise.resolve(N.requestPermissions ? N.requestPermissions() : null)
       .then(function (st) {
         if (st && st.display === 'granted') { _notiLastPlan = ''; syncNotifications(); }
-        else notiSay('거절됨 (기기 설정에서 켜 주세요)');
+        else notiSay('noti_denied');
       })
-      .catch(function (e) { notiSay('오류: ' + (e && e.message ? e.message : e)); });
+      .catch(function (e) { notiSay('noti_error', undefined, e && e.message ? e.message : String(e)); });
   };
 
   /**
@@ -1203,7 +1227,7 @@
         : (C.getPlatform() !== 'android' && C.getPlatform() !== 'ios' ? ('platform=' + C.getPlatform())
         : ('Plugins=' + (C.Plugins ? Object.keys(C.Plugins).join(',') : '없음')
            + ' / registerPlugin=' + (typeof C.registerPlugin))));
-      notiSay('플러그인을 못 찾음 — ' + why, 0);
+      notiSay('noti_noplugin', 0, why);
       return;
     }
     var src = null;
@@ -1220,7 +1244,7 @@
       return N.checkPermissions ? N.checkPermissions() : { display: 'granted' };
     }).then(function (st) {
       if (!st || st.display !== 'granted') {
-        notiSay(st && st.display === 'denied' ? '꺼져 있음' : '아직 허용 안 함', 0);
+        notiSay(st && st.display === 'denied' ? 'noti_off' : 'noti_notyet', 0);
         return null;                       // 요청은 버튼을 눌렀을 때만
       }
       // 예전 예약을 걷어내고 새로 넣는다
@@ -1231,17 +1255,17 @@
           return N.cancel({ notifications: old.map(function (o) { return { id: o.id }; }) });
         })
         .then(function () { return list.length ? N.schedule({ notifications: list }) : null; })
-        .then(function () { _notiLastPlan = plan; notiSay('허용됨', list.length); })
+        .then(function () { _notiLastPlan = plan; notiSay('noti_ok', list.length); })
         .catch(function (e) {
           // 정확한 시각 예약이 막힌 기기에서는 대략적인 시각으로라도 넣는다
           list.forEach(function (n) { delete n.schedule.allowWhileIdle; });
           return N.schedule({ notifications: list }).then(function () {
             _notiLastPlan = plan;
-            notiSay('허용됨 (시각은 대략)', list.length);
+            notiSay('noti_ok_approx', list.length);
           });
         });
     }).catch(function (e) {
-      notiSay('오류: ' + (e && e.message ? e.message : e), 0);
+      notiSay('noti_error', 0, e && e.message ? e.message : String(e));
     });
   }
 
@@ -1676,7 +1700,7 @@
     }
     // 앱 시작 시에도 데이터 주인 확인 (다른 계정 데이터면 비우고 재시작)
     var ses = readSession();
-    if (ses && ses.email && enforceDataOwner(ses.email)) return;
+    if (ses && ses.email && enforceDataOwner(ses)) return;
     // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인한다
     verifySession();
     syncStatus('연결 중...');
@@ -1930,7 +1954,7 @@
     Object.keys(swap).forEach(function (lang) {
       var d = T[lang];
       if (!d) return;
-      ['todo_edit_hint', 'todo_tip_html'].forEach(function (k) {
+      ['todo_tip_html'].forEach(function (k) {
         if (typeof d[k] !== 'string') return;
         swap[lang].forEach(function (p) { d[k] = d[k].split(p[0]).join(p[1]); });
       });

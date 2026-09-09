@@ -738,14 +738,14 @@ function writeJSON(file, data) {
 function isConfigured() {
   return CFG.GOOGLE_CLIENT_ID && !CFG.GOOGLE_CLIENT_ID.includes('PASTE');
 }
-function sessionInfo(email, guest) {
-  return { email, guest: !!guest, isAdmin: !guest && email === CFG.ADMIN_EMAIL };
+function sessionInfo(email, guest, uid) {
+  return { email, guest: !!guest, isAdmin: !guest && email === CFG.ADMIN_EMAIL, uid: uid || null };
 }
 
 ipcMain.handle('get-session', () => {
   const s = readSessionFile();
   if (!s || !s.email) return null;
-  return sessionInfo(s.email, s.guest);
+  return sessionInfo(s.email, s.guest, s.sb && s.sb.uid);
 });
 
 ipcMain.handle('logout', () => {
@@ -872,7 +872,7 @@ ipcMain.handle('google-login', async () => {
 
     const s = { email: info.email, guest: false, sb };
     writeSessionFile(s);
-    return sessionInfo(info.email, false);
+    return sessionInfo(info.email, false, sb && sb.uid);
   } catch (err) {
     return { error: String(err.message || err) };
   }
@@ -1371,9 +1371,25 @@ async function cloudFetch(pathname, opts, retry) {
   } catch (e) { return null; }
 }
 
+/**
+ * 계정이 바뀌었으면 기준선을 버린다.
+ *
+ * 계정을 지우고 같은 구글 계정으로 다시 만들면 이메일은 같지만 고유번호는
+ * 새것이다. 예전 기준선을 그대로 두면 '내가 고쳤다'는 판정이 어긋나
+ * 지운 기록이 되살아난다.
+ */
+function cloudCheckOwner() {
+  const sb = cloudSession();
+  if (!sb || !sb.uid) return;
+  const st = syncState();
+  if (!st.uid) { setSyncState({ uid: sb.uid }); return; }
+  if (st.uid !== sb.uid) setSyncState({ base: null, seenTs: '', dirty: false, claim: false, uid: sb.uid });
+}
+
 /** 클라우드 → 기기 */
 async function cloudPull(notify) {
   if (cloudBusy || !cloudSession()) return false;
+  cloudCheckOwner();
   cloudBusy = true;
   try {
     // 올릴 것도 없고 기준선도 있으면, 먼저 updated_at만 확인한다.
@@ -1456,6 +1472,7 @@ async function cloudPush(force) {
   const sb = cloudSession();
   if (!sb) { cloudStatus('push', 'sync_need_login'); return false; }
   if (!cloudReady && !force) { cloudStatus('push', 'sync_waiting'); return false; }
+  cloudCheckOwner();
   const data = await cloudReadLocal();
   // 업로드는 통째로 덮어쓰기이므로 직전에 원격을 읽어 병합한다
   let pulledIn = false;                 // 올리는 길에 상대 변경을 받아왔는가

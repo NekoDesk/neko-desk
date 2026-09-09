@@ -1364,7 +1364,7 @@ select {
             <span class="memo-hint" data-i18n="memo_hint">/ 를 입력하면 목록·표를 넣을 수 있어요</span>
           </div>
           <div id="memoDoc" class="memo-doc" contenteditable="true" spellcheck="false"
-               data-ph="여기에 자유롭게 적어보세요..."></div>
+               data-i18n-ph="memo_ph" data-ph="여기에 자유롭게 적어보세요..."></div>
         </div>
         <div id="slashMenu" class="slash-menu" style="display:none"></div>
         <div id="memoFmt" class="memo-fmt">
@@ -1848,12 +1848,17 @@ select {
       <span style="color:#fff;font-size:16px;text-shadow:1px 1px 0 var(--frame-text)">🐱 Neko Desk</span>
     </div>
     <div style="background:var(--panel);border:2px solid var(--frame);border-radius:8px;padding:24px 20px;text-align:center">
+      <div style="display:flex;gap:6px;margin-bottom:16px">
+        <button id="gateLang_ko" onclick="setLang('ko')" class="btn btn-gr" style="flex:1;font-size:12px">한국어</button>
+        <button id="gateLang_en" onclick="setLang('en')" class="btn btn-gr" style="flex:1;font-size:12px">English</button>
+        <button id="gateLang_ja" onclick="setLang('ja')" class="btn btn-gr" style="flex:1;font-size:12px">日本語</button>
+      </div>
       <div style="font-size:32px;margin-bottom:10px">🐱</div>
-      <div style="font-size:15px;color:var(--white);margin-bottom:6px">네코데스크에 오신 걸 환영해요!</div>
-      <div style="font-size:13px;color:var(--gray);margin-bottom:18px">계속하려면 구글 계정으로 로그인해주세요</div>
+      <div style="font-size:15px;color:var(--white);margin-bottom:6px" data-i18n="gate_welcome">네코데스크에 오신 걸 환영해요!</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:18px" data-i18n="gate_sub">계속하려면 구글 계정으로 로그인해주세요</div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--gray);text-align:left;line-height:1.6" data-i18n-html="login_sync_info">☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span></div>
-      <button class="btn btn-g" onclick="doGoogleLogin()" style="width:100%;font-size:15px;margin-bottom:8px">G 구글로 로그인</button>
-      <button class="btn btn-gr" onclick="doGuestLogin()" style="width:100%;font-size:13px">게스트로 둘러보기 (보너스 없음)</button>
+      <button class="btn btn-g" onclick="doGoogleLogin()" style="width:100%;font-size:15px;margin-bottom:8px" data-i18n="gate_google">G 구글로 로그인</button>
+      <button class="btn btn-gr" onclick="doGuestLogin()" style="width:100%;font-size:13px" data-i18n="gate_guest">게스트로 둘러보기 (보너스 없음)</button>
       <div id="loginStatus" style="font-size:12px;color:var(--gray);margin-top:10px"></div>
     </div>
   </div>
@@ -2178,6 +2183,17 @@ const STRINGS = {
     todo_move_tip:'버튼을 <b>캘린더 날짜로 끌어다 놓으면</b> 그 날로 옮겨져요.<br>버튼을 <b>눌러 선택한 뒤 날짜를 클릭</b>해도 됩니다.',
     todo_move_active:'옮길 날짜를 캘린더에서 눌러주세요 (⤴을 다시 누르면 취소)',
     todo_edit_hint:'더블클릭하면 수정할 수 있어요',
+    todo_edit_hint_touch:'길게 누르면 수정할 수 있어요',
+    memo_ph:'여기에 자유롭게 적어보세요...',
+    gate_welcome:'네코데스크에 오신 걸 환영해요!',
+    gate_sub:'계속하려면 구글 계정으로 로그인해주세요',
+    gate_google:'G 구글로 로그인',
+    gate_guest:'게스트로 둘러보기 (보너스 없음)',
+    noti_label:'📱 폰 알림', noti_checking:'확인 중...', noti_asking:'허용 요청 중...',
+    noti_denied:'거절됨 (기기 설정에서 켜 주세요)', noti_off:'꺼져 있음',
+    noti_notyet:'아직 허용 안 함', noti_ok:'허용됨', noti_ok_approx:'허용됨 (시각은 대략)',
+    noti_error:'오류', noti_noplugin:'플러그인을 못 찾음',
+    noti_enable:'알림 켜기', noti_scheduled:'예약 {n}건',
     todo_moved_title:'📅 일정을 옮겼어요',
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
@@ -2439,6 +2455,17 @@ const STRINGS = {
     todo_move_tip:'<b>Drag the button onto a calendar date</b> to move it there.<br>Or <b>click the button, then click a date</b>.',
     todo_move_active:'Pick the target date on the calendar (click ⤴ again to cancel)',
     todo_edit_hint:'Double-click to edit',
+    todo_edit_hint_touch:'Press and hold to edit',
+    memo_ph:'Write anything here...',
+    gate_welcome:'Welcome to Neko Desk!',
+    gate_sub:'Sign in with your Google account to continue',
+    gate_google:'G Sign in with Google',
+    gate_guest:'Continue as guest (no bonus)',
+    noti_label:'📱 Phone alerts', noti_checking:'Checking...', noti_asking:'Requesting permission...',
+    noti_denied:'Denied (turn it on in device settings)', noti_off:'Off',
+    noti_notyet:'Not allowed yet', noti_ok:'Allowed', noti_ok_approx:'Allowed (times are approximate)',
+    noti_error:'Error', noti_noplugin:'Plugin not found',
+    noti_enable:'Turn on alerts', noti_scheduled:'{n} scheduled',
     todo_moved_title:'📅 Moved',
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
@@ -2682,6 +2709,17 @@ const STRINGS = {
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',
     todo_edit_hint:'ダブルクリックで編集',
+    todo_edit_hint_touch:'長押しで編集',
+    memo_ph:'ここに自由に書いてください...',
+    gate_welcome:'ネコデスクへようこそ！',
+    gate_sub:'続けるにはGoogleアカウントでログインしてください',
+    gate_google:'G Googleでログイン',
+    gate_guest:'ゲストで見てみる（ボーナスなし）',
+    noti_label:'📱 スマホ通知', noti_checking:'確認中...', noti_asking:'許可をリクエスト中...',
+    noti_denied:'拒否されました（端末の設定でオンにしてください）', noti_off:'オフ',
+    noti_notyet:'まだ許可していません', noti_ok:'許可済み', noti_ok_approx:'許可済み（時刻は目安）',
+    noti_error:'エラー', noti_noplugin:'プラグインが見つかりません',
+    noti_enable:'通知をオンにする', noti_scheduled:'予約 {n}件',
     todo_moved_title:'📅 移動しました',
     todo_multi_btn:'📅 まとめて何日かに入れる', todo_multi_hint:'カレンダーで入れる日を押して選んでください。もう一度押すと外れます。',
     todo_multi_apply:'✓ {n}日に入れる', todo_multi_none:'先に日を選んでください', todo_multi_done:'{n}日に入れました',
@@ -2725,12 +2763,18 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = L(el.dataset.i18nPlaceholder);
   });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.setAttribute('data-ph', L(el.dataset.i18nPh));      // 빈 메모장에 흐리게 뜨는 예시 문구
+  });
   document.querySelectorAll('[data-i18n-tip]').forEach(el => {
     el.setAttribute('data-tip', L(el.dataset.i18nTip));   // 자체 툴팁 문구
   });
   ['ko','en','ja'].forEach(lang => {
-    const btn = document.getElementById('langBtn_' + lang);
-    if (btn) btn.className = (S.language || 'ko') === lang ? 'btn btn-y' : 'btn btn-gr';
+    const on = (S.language || 'ko') === lang;
+    ['langBtn_', 'gateLang_'].forEach(pre => {       // 설정 탭과 로그인 화면, 둘 다
+      const btn = document.getElementById(pre + lang);
+      if (btn) btn.className = on ? 'btn btn-y' : 'btn btn-gr';
+    });
   });
   // 계정 이메일/게스트 라벨과 동기화 상태는 스크립트로 채우므로 여기서 다시 그린다
   const _s = window._session;
@@ -6143,7 +6187,7 @@ function renderCalendar() {
             ? `<input id="dayItemEdit" class="todo-edit-in" value="${item.text.replace(/"/g,'&quot;')}"
                  onkeydown="if(event.key==='Enter')this.blur(); else if(event.key==='Escape'){_editIdx=-1;renderCalendar();}"
                  onblur="commitEditItem('${_calKey}',${i},this.value)">`
-            : `<span class="todo-text" ondblclick="editDayItem(${i})" data-tip="${L('todo_edit_hint')}"
+            : `<span class="todo-text" ondblclick="editDayItem(${i})" data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
                  style="flex:1;font-size:13px;${item.done?'text-decoration:line-through;opacity:0.5':''}">${item.text.replace(/</g,'&lt;')}</span>`}
           <button onclick="toggleDayItemStar('${_calKey}',${i})" class="star-btn${item.star ? ' on' : ''}"
             title="${L('todo_star')}">${item.star ? '★' : '☆'}</button>
@@ -7999,15 +8043,33 @@ const DATA_OWNER_KEY = 'nekodesk_data_owner';
  * 게스트로 쓰다 처음 로그인하면 기존 데이터를 그 계정 것으로 승계한다.
  * @returns true면 초기화 후 재시작 중이므로 호출측은 중단해야 함
  */
-function enforceDataOwner(email) {
+/**
+ * 이 기기의 기록이 누구 것인지 표시해 둔다.
+ *
+ * 예전에는 이메일로 표시했다. 그런데 계정을 지우고 같은 구글 계정으로 다시
+ * 로그인하면 이메일이 같아 '같은 주인'으로 보였고, 그래서 지웠는데도 다른
+ * 기기에는 예전 기록이 그대로 남았다. 계정 고유번호로 표시하면 지우고 다시
+ * 만든 계정은 다른 주인이 되어 기기마다 깨끗하게 시작한다.
+ *
+ * 어느 한쪽이라도 고유번호를 모르면 이메일로만 비교한다. 예전 판에서
+ * 올라온 기기를 업데이트했다는 이유만으로 지워 버리면 안 되기 때문이다.
+ */
+function _ownerTag(s) { return (s && s.uid) ? 'uid:' + s.uid : 'email:' + ((s && s.email) || ''); }
+function _ownerMatches(stored, s) {
+  if (stored.indexOf('uid:') === 0 && s && s.uid) return stored === 'uid:' + s.uid;
+  const se = stored.indexOf('email:') === 0 ? stored.slice(6) : stored;
+  return se === (s && s.email);
+}
+function enforceDataOwner(s) {
   try {
+    const tag = _ownerTag(s);
     const owner = localStorage.getItem(DATA_OWNER_KEY);
-    if (owner && owner !== email) {
+    if (owner && !_ownerMatches(owner, s)) {
       _skipSave = true;   // 재시작 전에 예전 데이터가 다시 저장되지 않도록
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('nekodesk_sync_pushed_at');
       localStorage.removeItem('nekodesk_sync_dirty');
-      localStorage.setItem(DATA_OWNER_KEY, email);
+      localStorage.setItem(DATA_OWNER_KEY, tag);
       location.reload();
       return true;
     }
@@ -8027,14 +8089,14 @@ function enforceDataOwner(email) {
         if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim();
       }
     }
-    localStorage.setItem(DATA_OWNER_KEY, email);
+    localStorage.setItem(DATA_OWNER_KEY, tag);
   } catch(e) {}
   return false;
 }
 
 function applySession(s){
   window._session = s;
-  if (s && !s.guest && s.email && enforceDataOwner(s.email)) return;
+  if (s && !s.guest && s.email && enforceDataOwner(s)) return;
   hideLoginGate();
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
