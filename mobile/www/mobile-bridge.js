@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.5-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.6-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1908,6 +1908,43 @@
     });
   }
 
+  /**
+   * 안내 문구를 폰에 맞춘다.
+   *
+   * 위에서 일정 수정을 '길게 누르기'로 바꿔 놓고도 문구는 PC 기준인
+   * '더블클릭'으로 남아 있었다. 폰에서는 되지 않는 방법을 안내한 셈이다.
+   * 동작을 바꾼 자리에서 문구도 함께 바꾼다 — PC 쪽 문구는 건드리지 않는다.
+   */
+  function fixTouchWording() {
+    var T = null;
+    try { T = (typeof STRINGS !== 'undefined') ? STRINGS : null; } catch (e) {}
+    if (!T) return;
+    var swap = {
+      ko: [['더블클릭하면 수정할 수 있어요', '길게 누르면 수정할 수 있어요'],
+           ['<b>글씨를 더블클릭</b>하면', '<b>글씨를 길게 누르면</b>']],
+      en: [['Double-click to edit', 'Press and hold to edit'],
+           ['<b>Double-click the text</b> to edit', '<b>Press and hold the text</b> to edit']],
+      ja: [['ダブルクリックで編集', '長押しで編集'],
+           ['<b>文字をダブルクリック</b>すると', '<b>文字を長押し</b>すると']]
+    };
+    Object.keys(swap).forEach(function (lang) {
+      var d = T[lang];
+      if (!d) return;
+      ['todo_edit_hint', 'todo_tip_html'].forEach(function (k) {
+        if (typeof d[k] !== 'string') return;
+        swap[lang].forEach(function (p) { d[k] = d[k].split(p[0]).join(p[1]); });
+      });
+    });
+    // 이미 그려진 줄에도 반영한다 (다시 그리기를 기다리지 않도록)
+    try {
+      var hint = (typeof window.L === 'function') ? window.L('todo_edit_hint') : '';
+      if (hint) {
+        var rows = document.querySelectorAll('.todo-text[data-tip]');
+        for (var i = 0; i < rows.length; i++) rows[i].setAttribute('data-tip', hint);
+      }
+    } catch (e) {}
+  }
+
   // ═══════════════════════════════════════════════
   // 포토부스: 고양이 크기 축소 + 하단 4종 선택줄
   // ═══════════════════════════════════════════════
@@ -2224,6 +2261,7 @@
 
       // 3-3) 모바일엔 더블클릭이 없다 — 일정을 길게 눌러 수정
       try { installLongPressEdit(); } catch (e) {}
+      try { fixTouchWording(); } catch (e) {}
 
       // 4) 바탕화면 위젯에 내용 전달
       try { startWidgetFeed(); } catch (e) {}
