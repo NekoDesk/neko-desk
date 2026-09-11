@@ -1376,13 +1376,21 @@ async function verifyCloudSession() {
   if (r.ok) return true;
   // 갱신하고도 401·403·404 = 서버가 정말 이 사람을 모른다.
   if (r.status === 401 || r.status === 403 || r.status === 404) {
-    sessionLog('verify ' + r.status + ' (갱신 뒤) → 세션 삭제 ' + await authErrorBrief(r));
+    sessionLog('verify ' + r.status + ' → 세션 삭제 ' + await authErrorBrief(r));
     try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
     if (mainWindow) mainWindow.webContents.send('session-expired');
     return false;
   }
   sessionLog('verify ' + r.status + ' → 유지');
   return true;
+}
+
+/** 토큰 자체가 문제(만료·손상)라는 응답인가 — 갱신하면 풀린다 */
+async function isBadJwt(r) {
+  try {
+    const j = await r.clone().json();
+    return !!j && (j.error_code === 'bad_jwt' || /expired/i.test(String(j.msg || j.message || '')));
+  } catch (e) { return false; }
 }
 
 async function cloudFetch(pathname, opts, retry) {
@@ -1396,7 +1404,10 @@ async function cloudFetch(pathname, opts, retry) {
   });
   try {
     const r = await fetch(CFG.SUPABASE_URL + pathname, opts);
-    if (r.status === 401 && !retry) {
+    // 만료된 토큰에 REST(PostgREST)는 401 을, 인증 서버(GoTrue)는 403 bad_jwt 를 준다.
+    // 403 을 그냥 넘기면 계정 확인이 '이 사람을 모른다'로 읽고 내보낸다 —
+    // 한 시간 넘게 껐다 켜면 로그아웃되던 진짜 원인이었다.
+    if (!retry && (r.status === 401 || (r.status === 403 && await isBadJwt(r)))) {
       const t = await cloudRefreshToken();
       return t ? cloudFetch(pathname, opts, true) : null;
     }

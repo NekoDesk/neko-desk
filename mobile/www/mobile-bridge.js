@@ -359,7 +359,16 @@
       });
   }
 
-  /** 인증 헤더를 붙여 REST 호출. 401이면 토큰 갱신 후 1회 재시도. */
+  /** 토큰 자체가 문제(만료·손상)라는 응답인가 — 갱신하면 풀린다 */
+  function isBadJwt(r) {
+    try {
+      return r.clone().json().then(function (j) {
+        return !!j && (j.error_code === 'bad_jwt' || /expired/i.test(String(j.msg || j.message || '')));
+      }, function () { return false; });
+    } catch (e) { return Promise.resolve(false); }
+  }
+
+  /** 인증 헤더를 붙여 REST 호출. 토큰이 만료됐으면 갱신 후 1회 재시도. */
   function authFetch(path, opts, retry) {
     var s = readSession();
     if (!s || !s.token) return Promise.resolve(null);
@@ -370,12 +379,15 @@
       Authorization: 'Bearer ' + s.token,
       'Content-Type': 'application/json'
     });
+    var refreshAndRetry = function () {
+      return refreshToken().then(function (t) { return t ? authFetch(path, opts, true) : null; });
+    };
     return fetch(PUBLIC_CFG.SUPABASE_URL + path, opts).then(function (r) {
-      if (r.status === 401 && !retry) {
-        return refreshToken().then(function (t) {
-          return t ? authFetch(path, opts, true) : null;
-        });
-      }
+      if (retry) return r;
+      // 만료된 토큰에 REST(PostgREST)는 401 을, 인증 서버(GoTrue)는 403 bad_jwt 를 준다.
+      // 403 을 그냥 넘기면 계정 확인이 '이 사람을 모른다'로 읽고 내보낸다.
+      if (r.status === 401) return refreshAndRetry();
+      if (r.status === 403) return isBadJwt(r).then(function (bad) { return bad ? refreshAndRetry() : r; });
       return r;
     }).catch(function () { return null; });
   }
