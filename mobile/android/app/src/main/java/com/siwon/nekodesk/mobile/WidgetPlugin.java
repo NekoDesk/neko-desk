@@ -60,6 +60,20 @@ public class WidgetPlugin extends Plugin {
         }
     }
 
+    /**
+     * 앱이 서버에서 받은 소리 목록을 넘긴다. 내려받기는 시간이 걸리므로
+     * 뒤에서 돌리고 바로 돌아온다 — 위젯은 다음에 눌릴 때부터 새 소리를 쓴다.
+     */
+    @PluginMethod
+    public void setSounds(PluginCall call) {
+        String json = call.getString("json", "");
+        Context ctx = getContext().getApplicationContext();
+        new Thread(() -> {
+            try { NekoWidget.cacheSounds(ctx, json); } catch (Exception ignored) {}
+        }).start();
+        call.resolve();
+    }
+
     /** 위젯이 들고 있던 것을 통째로 지운다 (계정 삭제 · 데이터 초기화) */
     @PluginMethod
     public void clear(PluginCall call) {

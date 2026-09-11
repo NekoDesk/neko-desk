@@ -787,6 +787,17 @@
   };
 
   /**
+   * 서버에서 받은 소리 목록을 안드로이드 위젯에 넘긴다.
+   * 위젯은 앱과 다른 프로세스라 파일로 건네야 한다 — 네이티브 쪽이 내려받아
+   * 앱 전용 폴더에 두고 경로를 남긴다. 없으면 위젯은 내장 소리를 그대로 쓴다.
+   */
+  window._pushWidgetSounds = function (m) {
+    var nb = widgetBridge();
+    if (!nb || !nb.setSounds) return;
+    try { nb.setSounds({ json: JSON.stringify(m) }); } catch (e) {}
+  };
+
+  /**
    * 계정 자체를 지운다 (로그인 정보 + 클라우드 기록).
    * 계정 삭제는 서비스 역할 열쇠가 있어야 해서 앱에서 직접 못 한다.
    * 함수 쪽에서 토큰으로 본인을 확인한 뒤 그 사람 계정만 지운다.

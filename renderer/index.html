@@ -3112,7 +3112,7 @@ function speechBubbleClick() {
     if (S.fruits.length >= 5) {
       showBubble(L('water_full_praise'), true);
     } else {
-      playSound('cat01.MP3');           // 물은 컵을 눌렀을 때와 같은 소리로
+      playWaterSound();                 // 물은 컵을 눌렀을 때와 같은 소리로
       addFruit(true);
       saveState();
       const praised = MSGS('waterPraise')[Math.floor(Math.random() * MSGS('waterPraise').length)];
@@ -4111,7 +4111,7 @@ function drinkWater(i) {
   _waterEnsureToday();
   const cur = S.waterCups || 0;
   if (i === cur) {                    // 한 잔 마심 → 열매 1개
-    playSound('cat01.MP3');
+    playWaterSound();
     S.waterCups = cur + 1;
     if (S.fruits.length < 5) {
       addFruit(true);                   // 고양이 소리를 냈으니 열매 소리는 겹치지 않게
@@ -5237,7 +5237,99 @@ function playSound(name) {
   } catch (e) {}
 }
 
-// 고양이를 만질 때 나는 소리 — 정해진 차례대로 하나씩 돌아가며 낸다
+// ── 서버에 둔 소리 ─────────────────────────────────────
+// 소리도 고양이 이미지처럼 서버에 등록해 두고 앱을 켤 때 받는다. 그래야 앱을 새로
+// 배포하지 않고도 바꿀 수 있다. 다만 소리는 누르는 순간 나야 하므로 켤 때 한 번
+// 내려받아 기기에 두고(IndexedDB) 거기서 낸다. 서버에 없거나 못 받으면 앱에
+// 들어 있는 소리를 그대로 쓴다 — 아래 CAT_TOUCH_SOUNDS 등이 그 대비책이다.
+//
+// 역할: touch(쓰다듬기, 여러 개 차례로) · call1 · call2 · water(물·비타민) · fruit
+let _remoteSounds = null;      // { touch:[url...], call1:url, call2:url, water:url, fruit:url }
+const _soundBlobUrl = {};      // 서버 주소 → 내려받아 둔 것의 로컬 주소
+
+function _sndDb() {
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('neko-sounds', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('files'); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  });
+}
+function _sndGet(db, key) {
+  return new Promise(res => {
+    try {
+      const t = db.transaction('files').objectStore('files').get(key);
+      t.onsuccess = () => res(t.result || null);
+      t.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function _sndPut(db, key, blob) {
+  try { db.transaction('files', 'readwrite').objectStore('files').put(blob, key); } catch (e) {}
+}
+
+async function loadRemoteSounds() {
+  if (!window._cfg || !window._cfg.SUPABASE_URL) return;
+  let rows;
+  try {
+    const r = await fetch(window._cfg.SUPABASE_URL + '/rest/v1/cat_sounds?select=role,ord,file_url&order=role.asc,ord.asc',
+      { headers: sbHeaders() });
+    if (!r.ok) return;
+    rows = await r.json();
+  } catch (e) { return; }
+  if (!Array.isArray(rows) || !rows.length) { _remoteSounds = null; return; }
+
+  const m = { touch: [] };
+  rows.forEach(x => {
+    if (!x.file_url) return;
+    if (x.role === 'touch') m.touch.push(x.file_url);
+    else if (m[x.role] === undefined) m[x.role] = x.file_url;   // 하나만 두는 역할은 첫 것
+  });
+
+  let db = null;
+  try { db = await _sndDb(); } catch (e) {}
+  const urls = m.touch.concat(['call1', 'call2', 'water', 'fruit'].map(k => m[k]).filter(Boolean));
+  await Promise.all(urls.map(async (u) => {
+    try {
+      let blob = db ? await _sndGet(db, u) : null;
+      if (!blob) {
+        const r = await fetch(u);
+        if (!r.ok) return;
+        blob = await r.blob();
+        if (db) _sndPut(db, u, blob);
+      }
+      _soundBlobUrl[u] = URL.createObjectURL(blob);
+    } catch (e) {}
+  }));
+  _remoteSounds = m;
+  // 안드로이드 위젯도 같은 소리를 쓰도록 넘긴다 (위젯은 다른 프로세스라 파일로 건넨다)
+  try { if (typeof window._pushWidgetSounds === 'function') window._pushWidgetSounds(m); } catch (e) {}
+}
+
+/** 역할에 해당하는 서버 소리의 로컬 주소. 없으면 null — 그러면 내장 소리를 쓴다 */
+function _remoteSrc(role, idx) {
+  const m = _remoteSounds;
+  if (!m) return null;
+  const u = role === 'touch' ? (m.touch.length ? m.touch[idx % m.touch.length] : null) : m[role];
+  return (u && _soundBlobUrl[u]) || null;
+}
+
+/** 역할로 소리를 낸다. 서버 소리가 있으면 그것을, 없으면 내장 소리(fallbackName)를 */
+function playRole(role, fallbackName, idx) {
+  const src = _remoteSrc(role, idx || 0);
+  if (!src) { playSound(fallbackName); return; }
+  try {
+    let a = _audioCache[src];
+    if (!a) { a = new Audio(src); a.preload = 'auto'; _audioCache[src] = a; }
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch (e) {}
+}
+
+// 고양이를 만질 때 나는 소리 — 정해진 차례대로 하나씩 돌아가며 낸다 (서버에 없을 때의 내장본)
 const CAT_TOUCH_SOUNDS = [
   'cat_touch_06.MP3', 'cat_touch_07.MP3', 'cat_touch_08.MP3', 'cat_touch_01.MP3',
   'cat_touch_02.MP3', 'cat_touch_03.MP3', 'cat_touch_04.MP3', 'cat_touch_05.MP3'
@@ -5245,15 +5337,23 @@ const CAT_TOUCH_SOUNDS = [
 let _catTouchIdx = -1;
 
 function playCatTouchSound() {
-  _catTouchIdx = (_catTouchIdx + 1) % CAT_TOUCH_SOUNDS.length;
-  playSound(CAT_TOUCH_SOUNDS[_catTouchIdx]);
+  const remote = _remoteSounds && _remoteSounds.touch.length;
+  const n = remote ? _remoteSounds.touch.length : CAT_TOUCH_SOUNDS.length;
+  _catTouchIdx = (_catTouchIdx + 1) % n;
+  playRole('touch', CAT_TOUCH_SOUNDS[_catTouchIdx % CAT_TOUCH_SOUNDS.length], _catTouchIdx);
 }
 
 /** 고양이 부르기 — 두 가지 부름소리 */
-function callCat(n) { playSound(n === 2 ? 'cat_calling_02.MP3' : 'cat_calling_01.MP3'); }
+function callCat(n) {
+  if (n === 2) playRole('call2', 'cat_calling_02.MP3');
+  else playRole('call1', 'cat_calling_01.MP3');
+}
 
 /** 열매를 얻거나 수확할 때 */
-function playFruitSound() { playSound('fruit_01.MP3'); }
+function playFruitSound() { playRole('fruit', 'fruit_01.MP3'); }
+
+/** 물 한 잔 · 비타민 한 알 */
+function playWaterSound() { playRole('water', 'cat01.MP3'); }
 
 // 알람은 직접 등록한 것에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
 function alarmSoundSrc() { return soundSrc('cat01.MP3'); }
@@ -5359,7 +5459,7 @@ function takeVitamin(i) {
   _vitaEnsureToday();
   const cur = S.vitaminTaken || 0;
   if (i === cur) {
-    playSound('cat01.MP3');
+    playWaterSound();
     S.vitaminTaken = cur + 1;
     if (S.vitaminTaken >= vitaGoal()) toast('reward', L('vita_done_title'), L('vita_done_msg'));
   } else if (i === cur - 1) {
@@ -8653,6 +8753,7 @@ function init(){
       window._cfg = cfg;
       loadRemoteProducts();
       loadCustomBreeds();
+      loadRemoteSounds();
       loadAppSettings();
     });
   }

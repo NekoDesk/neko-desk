@@ -48,6 +48,8 @@ public class NekoWidget extends AppWidgetProvider {
     public static final String ACTION_CAT_PLAY = "com.siwon.nekodesk.mobile.WIDGET_CAT_PLAY";
     public static final String ACTION_CAT_CALL = "com.siwon.nekodesk.mobile.WIDGET_CAT_CALL";
     private static final String KEY_SND_IDX = "cat_snd_idx";
+    /** 서버에서 받아 둔 소리의 파일 경로 {"touch":[...],"call1":...} — 없으면 내장 소리 */
+    static final String KEY_SND_PATHS = "cat_snd_paths";
     private static final String EXTRA_TODO_ID = "todo_id";
     private static final String EXTRA_DATE_KEY = "date_key";
     private static final String EXTRA_INDEX = "index";
@@ -86,7 +88,8 @@ public class NekoWidget extends AppWidgetProvider {
             playCat(ctx);
         } else if (ACTION_CAT_CALL.equals(action)) {
             // 부르기는 소리만 낸다 — 앱의 '고양이 부르기'와 같다 (기분은 그대로)
-            playSound(ctx, R.raw.cat_calling_01);
+            String p = soundPath(ctx, "call1", 0);
+            if (p == null || !playFile(ctx, p)) playSound(ctx, R.raw.cat_calling_01);
         }
     }
 
@@ -255,9 +258,109 @@ public class NekoWidget extends AppWidgetProvider {
     /** 다음 차례의 만지는 소리. 어디까지 왔는지는 저장해 둔다 (위젯은 눌릴 때마다 새로 뜬다) */
     private static void meow(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        int i = (sp.getInt(KEY_SND_IDX, -1) + 1) % CAT_TOUCH_SND.length;
+        int remote = touchCount(ctx);
+        int n = remote > 0 ? remote : CAT_TOUCH_SND.length;
+        int i = (sp.getInt(KEY_SND_IDX, -1) + 1) % n;
         sp.edit().putInt(KEY_SND_IDX, i).apply();
-        playSound(ctx, CAT_TOUCH_SND[i]);
+        if (remote > 0) {
+            String p = soundPath(ctx, "touch", i);
+            if (p != null && playFile(ctx, p)) return;
+        }
+        playSound(ctx, CAT_TOUCH_SND[i % CAT_TOUCH_SND.length]);
+    }
+
+    // ── 서버에서 받은 소리 ──────────────────────────────
+    // 앱이 서버 목록을 받으면 여기로 넘긴다. 위젯은 앱과 다른 프로세스라
+    // 파일로 건네야 해서, 내려받아 앱 전용 폴더에 두고 경로만 남긴다.
+    // 이미 받은 파일은 다시 받지 않는다. 못 받으면 내장 소리를 그대로 쓴다.
+
+    /** 앱이 넘긴 목록을 내려받아 두고 경로를 남긴다 — 반드시 백그라운드 스레드에서 */
+    static void cacheSounds(Context ctx, String json) throws Exception {
+        JSONObject m = new JSONObject(json);
+        java.io.File dir = new java.io.File(ctx.getFilesDir(), "sounds");
+        if (!dir.exists()) dir.mkdirs();
+        JSONObject out = new JSONObject();
+        JSONArray touch = m.optJSONArray("touch");
+        JSONArray tp = new JSONArray();
+        if (touch != null) {
+            for (int i = 0; i < touch.length(); i++) {
+                String p = fetchSound(dir, touch.optString(i, ""));
+                if (p != null) tp.put(p);
+            }
+        }
+        out.put("touch", tp);
+        for (String k : new String[]{"call1", "call2", "water", "fruit"}) {
+            String u = m.optString(k, "");
+            if (u.isEmpty()) continue;
+            String p = fetchSound(dir, u);
+            if (p != null) out.put(k, p);
+        }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+           .edit().putString(KEY_SND_PATHS, out.toString()).apply();
+    }
+
+    /** 주소 하나를 내려받는다. 이미 있으면 그 경로를 돌려준다 */
+    private static String fetchSound(java.io.File dir, String url) {
+        if (url == null || url.isEmpty()) return null;
+        try {
+            String name = Integer.toHexString(url.hashCode()) + ".snd";
+            java.io.File f = new java.io.File(dir, name);
+            if (f.exists() && f.length() > 0) return f.getAbsolutePath();
+            java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+            c.setConnectTimeout(8000);
+            c.setReadTimeout(15000);
+            if (c.getResponseCode() != 200) return null;
+            java.io.File tmp = new java.io.File(dir, name + ".part");
+            try (java.io.InputStream in = c.getInputStream();
+                 java.io.FileOutputStream o = new java.io.FileOutputStream(tmp)) {
+                byte[] b = new byte[8192];
+                int r;
+                while ((r = in.read(b)) > 0) o.write(b, 0, r);
+            }
+            if (!tmp.renameTo(f)) return null;
+            return f.getAbsolutePath();
+        } catch (Exception e) { return null; }
+    }
+
+    /** 서버 소리의 파일 경로. 없으면 null — 그러면 내장 소리를 쓴다 */
+    private static String soundPath(Context ctx, String role, int idx) {
+        try {
+            String raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_SND_PATHS, null);
+            if (raw == null) return null;
+            JSONObject m = new JSONObject(raw);
+            if ("touch".equals(role)) {
+                JSONArray a = m.optJSONArray("touch");
+                if (a == null || a.length() == 0) return null;
+                String p = a.optString(idx % a.length(), "");
+                return p.isEmpty() ? null : p;
+            }
+            String p = m.optString(role, "");
+            return p.isEmpty() ? null : p;
+        } catch (Exception e) { return null; }
+    }
+
+    /** 서버에서 받은 쓰다듬기 소리 개수 (0이면 내장본으로) */
+    private static int touchCount(Context ctx) {
+        try {
+            String raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_SND_PATHS, null);
+            if (raw == null) return 0;
+            JSONArray a = new JSONObject(raw).optJSONArray("touch");
+            return a == null ? 0 : a.length();
+        } catch (Exception e) { return 0; }
+    }
+
+    /** 파일로 소리를 낸다. 파일이 없거나 못 열면 false — 부른 쪽이 내장 소리로 넘어간다 */
+    private static boolean playFile(Context ctx, String path) {
+        try {
+            java.io.File f = new java.io.File(path);
+            if (!f.exists() || f.length() == 0) return false;
+            MediaPlayer mp = new MediaPlayer();
+            mp.setDataSource(path);
+            mp.prepare();
+            mp.setOnCompletionListener(p -> p.release());
+            mp.start();
+            return true;
+        } catch (Exception e) { return false; }
     }
 
     /** 소리 하나를 낸다. 다 울면 스스로 놓아 준다 (안 놓으면 소리 통로가 쌓인다) */
