@@ -1299,7 +1299,13 @@ function cloudSession() {
 }
 
 /** 만료된 access_token을 refresh_token으로 갱신하고 파일에 반영 */
+let cloudRefreshing = null;   // 동시에 두 번 갱신하지 않도록 — 갱신 토큰은 한 번 쓰면 바뀐다
 async function cloudRefreshToken() {
+  if (cloudRefreshing) return cloudRefreshing;
+  cloudRefreshing = _cloudRefreshToken().finally(() => { cloudRefreshing = null; });
+  return cloudRefreshing;
+}
+async function _cloudRefreshToken() {
   const sb = cloudSession();
   if (!sb || !sb.refresh || !CFG.SUPABASE_URL) return null;
   try {
@@ -1309,10 +1315,10 @@ async function cloudRefreshToken() {
       body: JSON.stringify({ refresh_token: sb.refresh })
     });
     if (!r.ok) {
-      // 4xx 는 "이 사람을 모른다"는 뜻이다 — 다른 기기에서 계정을 지웠거나
+      // 400·401·403 = 이 갱신 토큰을 모른다 — 다른 기기에서 계정을 지웠거나
       // 토큰이 끊겼다. 그대로 두면 없는 계정으로 로그인된 것처럼 보인다.
-      // 통신 장애(5xx·끊김)로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
-      if (r.status >= 400 && r.status < 500) {
+      // 429(잠깐 너무 자주)·5xx·끊김으로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
+      if (r.status === 400 || r.status === 401 || r.status === 403) {
         try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
         if (mainWindow) mainWindow.webContents.send('session-expired');
       }
@@ -1337,19 +1343,20 @@ async function cloudRefreshToken() {
 async function verifyCloudSession() {
   const sb = cloudSession();
   if (!sb || !CFG.SUPABASE_URL) return true;
-  try {
-    const r = await fetch(CFG.SUPABASE_URL + '/auth/v1/user', {
-      headers: { Authorization: 'Bearer ' + sb.token, apikey: CFG.SUPABASE_ANON_KEY }
-    });
-    if (r.ok) return true;
-    // 401·403·404 = 서버가 이 사람을 모른다. 5xx·끊김은 그냥 통신 문제다.
-    if (r.status >= 400 && r.status < 500) {
-      try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
-      if (mainWindow) mainWindow.webContents.send('session-expired');
-      return false;
-    }
-    return true;
-  } catch (e) { return true; }
+  // 저장된 토큰은 한 시간이면 만료된다. 만료된 토큰으로 물으면 401 이 오는데,
+  // 그건 "이 사람을 모른다"가 아니라 "갱신해라"다. 이걸 그대로 내보내면
+  // 하룻밤 자고 켤 때마다 로그아웃된다. cloudFetch 가 갱신하고 한 번 더 묻는다.
+  const r = await cloudFetch('/auth/v1/user', { method: 'GET' });
+  // 통신 장애면 그대로 둔다. 갱신이 '모른다'로 끝났으면 거기서 이미 내보낸 뒤다.
+  if (!r) return !!cloudSession();
+  if (r.ok) return true;
+  // 갱신하고도 401·403·404 = 서버가 정말 이 사람을 모른다.
+  if (r.status === 401 || r.status === 403 || r.status === 404) {
+    try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
+    if (mainWindow) mainWindow.webContents.send('session-expired');
+    return false;
+  }
+  return true;
 }
 
 async function cloudFetch(pathname, opts, retry) {
@@ -1562,9 +1569,8 @@ function startCloudSync() {
   attachCloudFocusPull(mainWindow);
   cloudBump();
   cloudLastPullAt = Date.now();
-  // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인한다
-  verifyCloudSession();
-  cloudPull(false);
+  // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인하고 나서 받는다
+  verifyCloudSession().then(ok => { if (ok) cloudPull(false); });
   cloudTimer = setInterval(() => {
     // 창을 보고 있으면 계속 빠르게 — 폰에서 고친 게 곧바로 보여야 한다
     try {

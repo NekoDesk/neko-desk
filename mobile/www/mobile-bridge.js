@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.8-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.9-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -293,7 +293,16 @@
   }
 
   /** 만료된 access_token을 refresh_token으로 갱신 */
+  var _refreshing = null;   // 동시에 두 번 갱신하지 않도록 — 갱신 토큰은 한 번 쓰면 바뀐다
   function refreshToken() {
+    if (_refreshing) return _refreshing;
+    _refreshing = _refreshToken().then(
+      function (t) { _refreshing = null; return t; },
+      function (e) { _refreshing = null; throw e; }
+    );
+    return _refreshing;
+  }
+  function _refreshToken() {
     var s = readSession();
     if (!s || !s.refresh) return Promise.resolve(null);
     return fetch(PUBLIC_CFG.SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
@@ -303,10 +312,10 @@
     })
       .then(function (r) {
         if (r.ok) return r.json();
-        // 4xx 는 "이 사람을 모른다"는 뜻이다 — 다른 기기에서 계정을 지웠거나
+        // 400·401·403 = 이 갱신 토큰을 모른다 — 다른 기기에서 계정을 지웠거나
         // 토큰이 끊겼다. 그대로 두면 없는 계정으로 로그인된 것처럼 보인다.
-        // 통신 장애(5xx·끊김)로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
-        if (r.status >= 400 && r.status < 500) {
+        // 429(잠깐 너무 자주)·5xx·끊김으로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
+        if (r.status === 400 || r.status === 401 || r.status === 403) {
           try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
           try { window.dispatchEvent(new Event('neko-session-expired')); } catch (e) {}
         }
@@ -332,20 +341,22 @@
   function verifySession() {
     var s = readSession();
     if (!s || s.guest || !s.token) return Promise.resolve(true);
-    return fetch(PUBLIC_CFG.SUPABASE_URL + '/auth/v1/user', {
-      headers: { Authorization: 'Bearer ' + s.token, apikey: PUBLIC_CFG.SUPABASE_KEY }
-    })
+    // 저장된 토큰은 한 시간이면 만료된다. 만료된 토큰으로 물으면 401 이 오는데,
+    // 그건 "이 사람을 모른다"가 아니라 "갱신해라"다. 이걸 그대로 내보내면
+    // 한참 뒤에 켤 때마다 로그아웃된다. authFetch 가 갱신하고 한 번 더 묻는다.
+    return authFetch('/auth/v1/user', { method: 'GET' })
       .then(function (r) {
+        // 통신 장애면 그대로 둔다. 갱신이 '모른다'로 끝났으면 거기서 이미 내보낸 뒤다.
+        if (!r) return !!readSession();
         if (r.ok) return true;
-        // 401·403·404 = 서버가 이 사람을 모른다. 5xx·끊김은 그냥 통신 문제다.
-        if (r.status >= 400 && r.status < 500) {
+        // 갱신하고도 401·403·404 = 서버가 정말 이 사람을 모른다.
+        if (r.status === 401 || r.status === 403 || r.status === 404) {
           try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
           try { window.dispatchEvent(new Event('neko-session-expired')); } catch (e) {}
           return false;
         }
         return true;
-      })
-      .catch(function () { return true; });
+      });
   }
 
   /** 인증 헤더를 붙여 REST 호출. 401이면 토큰 갱신 후 1회 재시도. */
