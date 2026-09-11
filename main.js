@@ -1298,6 +1298,26 @@ function cloudSession() {
   return (s && s.sb && s.sb.token) ? s.sb : null;
 }
 
+/**
+ * 세션이 왜 끊겼는지 남긴다 — 토큰은 절대 쓰지 않고 서버가 돌려준 상태와 사유만.
+ * 한 시간 넘게 껐다 켜면 로그아웃되는 문제를 쫓는 중이라, 다음에 또 일어나면
+ * 이 파일이 답을 준다. userData/session-debug.log
+ */
+function sessionLog(line) {
+  try {
+    const f = path.join(app.getPath('userData'), 'session-debug.log');
+    try { if (fs.statSync(f).size > 200 * 1024) fs.unlinkSync(f); } catch (e) {}
+    fs.appendFileSync(f, new Date().toISOString() + ' ' + line + '\n');
+  } catch (e) {}
+}
+/** 응답 본문에서 사유만 뽑는다 (error / error_code / msg) */
+async function authErrorBrief(r) {
+  try {
+    const j = await r.json();
+    return JSON.stringify({ error: j.error, error_code: j.error_code, msg: j.msg || j.error_description });
+  } catch (e) { return '(본문 없음)'; }
+}
+
 /** 만료된 access_token을 refresh_token으로 갱신하고 파일에 반영 */
 let cloudRefreshing = null;   // 동시에 두 번 갱신하지 않도록 — 갱신 토큰은 한 번 쓰면 바뀐다
 async function cloudRefreshToken() {
@@ -1318,9 +1338,13 @@ async function _cloudRefreshToken() {
       // 400·401·403 = 이 갱신 토큰을 모른다 — 다른 기기에서 계정을 지웠거나
       // 토큰이 끊겼다. 그대로 두면 없는 계정으로 로그인된 것처럼 보인다.
       // 429(잠깐 너무 자주)·5xx·끊김으로는 내보내지 않는다 — 잠깐 안 될 뿐이니까.
+      const why = await authErrorBrief(r);
       if (r.status === 400 || r.status === 401 || r.status === 403) {
+        sessionLog('refresh ' + r.status + ' → 세션 삭제 ' + why);
         try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
         if (mainWindow) mainWindow.webContents.send('session-expired');
+      } else {
+        sessionLog('refresh ' + r.status + ' → 유지 ' + why);
       }
       return null;
     }
@@ -1352,10 +1376,12 @@ async function verifyCloudSession() {
   if (r.ok) return true;
   // 갱신하고도 401·403·404 = 서버가 정말 이 사람을 모른다.
   if (r.status === 401 || r.status === 403 || r.status === 404) {
+    sessionLog('verify ' + r.status + ' (갱신 뒤) → 세션 삭제 ' + await authErrorBrief(r));
     try { fs.unlinkSync(SESSION_FILE()); } catch (e) {}
     if (mainWindow) mainWindow.webContents.send('session-expired');
     return false;
   }
+  sessionLog('verify ' + r.status + ' → 유지');
   return true;
 }
 
@@ -1570,6 +1596,7 @@ function startCloudSync() {
   cloudBump();
   cloudLastPullAt = Date.now();
   // 다른 기기에서 계정을 지웠을 수 있다 — 먼저 살아 있는지 확인하고 나서 받는다
+  sessionLog('시작 v' + app.getVersion() + ' 세션 ' + (cloudSession() ? '있음' : '없음'));
   verifyCloudSession().then(ok => { if (ok) cloudPull(false); });
   cloudTimer = setInterval(() => {
     // 창을 보고 있으면 계속 빠르게 — 폰에서 고친 게 곧바로 보여야 한다

@@ -65,7 +65,7 @@ target.build_configurations.each do |config|
   s['DEVELOPMENT_TEAM']           = TEAM_ID
   s['SWIFT_VERSION']              = '5.0'
   s['TARGETED_DEVICE_FAMILY']     = '1'
-  s['MARKETING_VERSION']          = '3.1.9'
+  s['MARKETING_VERSION']          = '3.1.10'
   s['CURRENT_PROJECT_VERSION']    = '1'
   s['GENERATE_INFOPLIST_FILE']    = 'NO'
   s['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
