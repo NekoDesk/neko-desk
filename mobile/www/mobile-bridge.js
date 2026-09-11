@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.9-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.1.11-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -437,6 +437,8 @@
       if (data[k] !== undefined) { st[k] = data[k]; changed = true; }
     });
     if (!changed) return false;
+    // 로그인 화면에서 고른 언어가 계정 값에 덮였으면 되돌린다 (renderer 쪽 규칙과 같다)
+    try { if (typeof window._reassertGateLang === 'function') window._reassertGateLang(); } catch (e) {}
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch (e) {}
     if (typeof _applyWidgetPending === 'function') _applyWidgetPending();
     // 글을 쓰는 중이면 그리기는 미룬다 — 쓰던 칸이 사라지면 폰 자판이 내려간다

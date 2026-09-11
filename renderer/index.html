@@ -2793,12 +2793,31 @@ function applyLang() {
   renderCatPage();
 }
 
+/**
+ * 화면 언어는 계정 설정과 함께 동기화되지만, 로그인 화면에서 고른 것만은
+ * 계정에서 내려오는 값보다 우선한다. 방금 눈앞에서 고른 것이 가장 최근의
+ * 뜻이고, 그게 계정 언어가 되어야 한다. 그리고 기기 기록을 비워도 남긴다 —
+ * 다른 계정이 쓰던 기기이거나 계정을 지우고 다시 만들었을 때, 언어까지
+ * 한국어로 돌아가면 방금 고른 사람이 어리둥절해진다.
+ */
+const UI_LANG_KEY = 'nekodesk_ui_lang';
+let _gateLang = null;             // 로그인 화면에서 고른 언어 (로그인 뒤 한 번 다시 세운다)
 function setLang(lang) {
   if (typeof S === 'undefined') return;
   S.language = lang;
+  try { localStorage.setItem(UI_LANG_KEY, lang); } catch(e) {}
+  const gate = document.getElementById('loginGate');
+  if (gate && gate.style.display === 'flex') _gateLang = lang;
   saveState();
   applyLang();
 }
+/** 계정에서 내려온 언어가 로그인 화면의 선택을 덮었으면 되돌린다 (한 번만) */
+function _reassertGateLang() {
+  if (!_gateLang) return;
+  const want = _gateLang; _gateLang = null;
+  if (S.language !== want) { S.language = want; saveState(); applyLang(); }
+}
+window._reassertGateLang = _reassertGateLang;
 
 function saveTheme() {
   if (typeof S !== 'undefined') {
@@ -8102,6 +8121,7 @@ function applySession(s){
   window._session = s;
   if (s && !s.guest && s.email && enforceDataOwner(s)) return;
   hideLoginGate();
+  setTimeout(() => { _gateLang = null; }, 60 * 1000);   // 첫 동기화가 지나면 더는 되돌리지 않는다
   // 계정 정보 표시
   const lbl = document.getElementById('accountLabel');
   if (lbl) lbl.textContent = s.guest ? L('acc_guest') : s.email + (s.isAdmin ? L('acc_admin') : '');
@@ -8471,6 +8491,7 @@ function _cloudApply(data) {
   let changed = false;
   CLOUD_KEYS.forEach(k => { if (data[k] !== undefined) { S[k] = data[k]; changed = true; } });
   if (!changed) return false;
+  _reassertGateLang();
   // saveState()를 거치지 않고 직접 써서 불필요한 업로드 방지
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch(e) {}
   // 글을 쓰는 중이면 그리기는 미룬다 — 쓰던 칸이 사라지면 자판이 내려간다
@@ -8595,6 +8616,13 @@ function toggleAutoLaunch() {
 
 function init(){
   loadState();   // 저장된 데이터 복원
+  // 기록이 비어 있으면(처음 설치·다른 계정으로 로그인·계정 다시 만듦) 기기에 남긴 언어를 쓴다
+  try {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      const ul = localStorage.getItem(UI_LANG_KEY);
+      if (ul) S.language = ul;
+    }
+  } catch(e) {}
 
   // 앱을 새로 실행하면 고양이 기분만 기본값(60)으로 시작한다.
   // 위젯 창 = 앱 시작 시점. 대시보드를 여닫을 때마다 리셋되면 안 되므로 제외.
