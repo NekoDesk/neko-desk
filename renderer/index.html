@@ -1859,6 +1859,7 @@ select {
       <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--gray);text-align:left;line-height:1.6" data-i18n-html="login_sync_info">☁️ <b style="color:var(--white)">구글로 로그인하면</b> 할 일 목록·다이어리·고양이가 계정에 저장돼요.<br>PC·노트북·모바일 앱 어디서 로그인해도 이어서 쓸 수 있어요.<br><span style="opacity:0.7">게스트는 이 기기에만 저장돼요.</span></div>
       <button class="btn btn-g" onclick="doGoogleLogin()" style="width:100%;font-size:15px;margin-bottom:8px" data-i18n="gate_google">G 구글로 로그인</button>
       <button class="btn btn-gr" onclick="doGuestLogin()" style="width:100%;font-size:13px" data-i18n="gate_guest">게스트로 둘러보기 (보너스 없음)</button>
+      <div style="font-size:11px;color:var(--gray);margin-top:8px;line-height:1.6;text-align:left" data-i18n="gate_bonus_hint">보너스란? 구글로 로그인하면 첫 로그인 선물 200포인트(고양이 먹이·아이템)를 받고, PC·폰 어디서든 이어서 쓸 수 있어요. 게스트는 이 기기에만 저장되고 선물이 없어요.</div>
       <div id="loginStatus" style="font-size:12px;color:var(--gray);margin-top:10px"></div>
     </div>
   </div>
@@ -2189,6 +2190,7 @@ const STRINGS = {
     gate_sub:'계속하려면 구글 계정으로 로그인해주세요',
     gate_google:'G 구글로 로그인',
     gate_guest:'게스트로 둘러보기 (보너스 없음)',
+    gate_bonus_hint:'보너스란? 구글로 로그인하면 첫 로그인 선물 200포인트(고양이 먹이·아이템)를 받고, PC·폰 어디서든 이어서 쓸 수 있어요. 게스트는 이 기기에만 저장되고 선물이 없어요.',
     noti_label:'📱 폰 알림', noti_checking:'확인 중...', noti_asking:'허용 요청 중...',
     noti_denied:'거절됨 (기기 설정에서 켜 주세요)', noti_off:'꺼져 있음',
     noti_notyet:'아직 허용 안 함', noti_ok:'허용됨', noti_ok_approx:'허용됨 (시각은 대략)',
@@ -2461,6 +2463,7 @@ const STRINGS = {
     gate_sub:'Sign in with your Google account to continue',
     gate_google:'G Sign in with Google',
     gate_guest:'Continue as guest (no bonus)',
+    gate_bonus_hint:'What is the bonus? Signing in with Google gives you a 200-point welcome gift (cat food and items) and keeps everything in sync across PC and phone. Guest mode stays on this device only, with no gift.',
     noti_label:'📱 Phone alerts', noti_checking:'Checking...', noti_asking:'Requesting permission...',
     noti_denied:'Denied (turn it on in device settings)', noti_off:'Off',
     noti_notyet:'Not allowed yet', noti_ok:'Allowed', noti_ok_approx:'Allowed (times are approximate)',
@@ -2715,6 +2718,7 @@ const STRINGS = {
     gate_sub:'続けるにはGoogleアカウントでログインしてください',
     gate_google:'G Googleでログイン',
     gate_guest:'ゲストで見てみる（ボーナスなし）',
+    gate_bonus_hint:'ボーナスとは？ Googleでログインすると初回特典200ポイント（ねこのごはん・アイテム）がもらえ、PC・スマホどこでも続きから使えます。ゲストはこの端末だけに保存され、特典はありません。',
     noti_label:'📱 スマホ通知', noti_checking:'確認中...', noti_asking:'許可をリクエスト中...',
     noti_denied:'拒否されました（端末の設定でオンにしてください）', noti_off:'オフ',
     noti_notyet:'まだ許可していません', noti_ok:'許可済み', noti_ok_approx:'許可済み（時刻は目安）',
@@ -8183,17 +8187,36 @@ function _ownerMatches(stored, s) {
   const se = stored.indexOf('email:') === 0 ? stored.slice(6) : stored;
   return se === (s && s.email);
 }
+/**
+ * 이 기기의 기록을 비우고 주인을 바꾼 뒤 다시 켠다.
+ * 동기화 기준선도 함께 버린다 — 남겨 두면 다음 병합이 '비어 있는 이 기기'를
+ * '지운 것'으로 읽어 클라우드까지 비워 버린다.
+ */
+async function _wipeForOwner(tag) {
+  _skipSave = true;   // 재시작 전에 예전 데이터가 다시 저장되지 않도록
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    ['nekodesk_sync_pushed_at', 'nekodesk_sync_dirty', 'nekodesk_sync_claim']
+      .forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(DATA_OWNER_KEY, tag);
+  } catch(e) {}
+  try {
+    if (window.electronAPI && window.electronAPI.cloudForgetBase) {
+      await Promise.race([window.electronAPI.cloudForgetBase(), new Promise(r => setTimeout(r, 1500))]);
+    }
+  } catch(e) {}
+  try { if (typeof window._mobileForgetSync === 'function') window._mobileForgetSync(tag); } catch(e) {}
+  location.reload();
+}
+
 function enforceDataOwner(s) {
   try {
     const tag = _ownerTag(s);
-    const owner = localStorage.getItem(DATA_OWNER_KEY);
+    // 'guest' 는 주인이 없는 것과 같다 — 게스트로 쓴 기록은 처음 로그인하는 계정이 물려받는다
+    const stored = localStorage.getItem(DATA_OWNER_KEY);
+    const owner = stored === 'guest' ? null : stored;
     if (owner && !_ownerMatches(owner, s)) {
-      _skipSave = true;   // 재시작 전에 예전 데이터가 다시 저장되지 않도록
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem('nekodesk_sync_pushed_at');
-      localStorage.removeItem('nekodesk_sync_dirty');
-      localStorage.setItem(DATA_OWNER_KEY, tag);
-      location.reload();
+      _wipeForOwner(tag);
       return true;
     }
     if (!owner) {
@@ -8254,12 +8277,28 @@ function doGoogleLogin(){
 }
 
 function doGuestLogin(){
-  window.electronAPI.guestLogin().then(res => { if (res) applySession(res); });
+  window.electronAPI.guestLogin().then(res => {
+    if (!res) return;
+    // 계정으로 쓰던 기기에서 게스트로 들어오면 그 계정의 기록은 보이지 않아야 한다.
+    // 기록은 클라우드에 있으니 그 계정으로 다시 로그인하면 돌아온다.
+    let owner = null;
+    try { owner = localStorage.getItem(DATA_OWNER_KEY); } catch(e) {}
+    if (owner && owner !== 'guest') { _wipeForOwner('guest'); return; }
+    applySession(res);
+  });
 }
 
-function doLogout(){
+async function doLogout(){
   if (!window.electronAPI) return;
-  window.electronAPI.logout().then(() => location.reload());
+  // 올리지 못한 변경이 있으면 먼저 올린다. 나가서 게스트로 들어오면 이 기기 기록을
+  // 비우므로, 여기서 안 올리면 그 변경은 어디에도 남지 않는다. 오래 걸리면 그냥 나간다.
+  try {
+    if (window.electronAPI.cloudSyncNow) {
+      await Promise.race([window.electronAPI.cloudSyncNow(), new Promise(r => setTimeout(r, 8000))]);
+    }
+  } catch(e) {}
+  await window.electronAPI.logout();
+  location.reload();
 }
 
 /**

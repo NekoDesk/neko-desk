@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.1.11-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.2.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -71,6 +71,7 @@
     try {
       var tag = ownerTag(ses);
       var owner = localStorage.getItem(OWNER_KEY);
+      if (owner === 'guest') owner = null;   // 게스트로 쓴 기록은 처음 로그인하는 계정이 물려받는다
       if (owner && !ownerMatches(owner, ses)) {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(SYNC_TS_KEY);
@@ -784,6 +785,17 @@
     return authFetch('/rest/v1/nekodesk_sync?user_id=eq.' + s.uid, { method: 'DELETE' })
       .then(function (r) { return !!(r && r.ok); })
       .catch(function () { return false; });
+  };
+
+  /**
+   * 이 기기의 기록을 비울 때 동기화 흔적도 함께 버린다 (renderer 의 _wipeForOwner 가 부른다).
+   * 기준선을 남겨 두면 다음 병합이 '비어 있는 이 기기'를 '지운 것'으로 읽어 클라우드까지 비운다.
+   */
+  window._mobileForgetSync = function (tag) {
+    [SYNC_TS_KEY, DIRTY_KEY, BASE_KEY, LAST_PUSH_KEY, CLAIM_KEY].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+    try { if (tag) localStorage.setItem(OWNER_KEY, tag); } catch (e) {}
   };
 
   /**
@@ -1823,6 +1835,12 @@
           if (_pendingLogin === resolve) { _pendingLogin = null; resolve(null); }
         }, 180000);
       });
+    },
+    /** 로그아웃 전에 못 올린 변경을 올린다 (renderer 의 doLogout 이 부른다) */
+    cloudSyncNow: function () {
+      if (!loggedIn() || !_syncReady) return Promise.resolve(false);
+      if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
+      return localStorage.getItem(DIRTY_KEY) === '1' ? syncPush() : Promise.resolve(true);
     },
     logout: function () {
       localStorage.removeItem(SESSION_KEY);

@@ -1624,6 +1624,13 @@ function startCloudSync() {
 ipcMain.on('cloud-mark-dirty', () => cloudSchedulePush());
 ipcMain.on('cloud-start', () => startCloudSync());
 ipcMain.handle('cloud-sync-now', () => cloudPull(true));
+// 이 기기의 기록을 비울 때 기준선도 함께 버린다. 남겨 두면 다음 병합이
+// '비어 있는 이 기기'를 '지운 것'으로 읽어 클라우드까지 비워 버린다.
+ipcMain.handle('cloud-forget-base', () => {
+  if (cloudPushTimer) { clearTimeout(cloudPushTimer); cloudPushTimer = null; }
+  setSyncState({ base: null, seenTs: '', dirty: false, claim: false });
+  return true;
+});
 ipcMain.handle('cloud-delete-mine', async () => {
   const sb = cloudSession();
   if (!sb || !sb.uid) return false;
