@@ -464,8 +464,10 @@ body.theme-mono {
    손 아이콘으로만 알린다 — 글자 없이, 눈에 걸리지 않을 만큼만 진하게. */
 .cat-pick { position: relative; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 10px;
-  width: 260px; max-width: 100%; aspect-ratio: 1 / 1;
-  background: var(--panel); border: 2px solid var(--frame); border-radius: 4px;
+  width: 280px; max-width: 100%; aspect-ratio: 1 / 1; padding: 16px;
+  /* 홈의 고양이 상자와 같은 결 — 바탕은 카드색에 흰색을 섞고 테두리는 강조색 */
+  background: color-mix(in srgb, var(--card), #fff 45%);
+  border: 2px solid var(--acc); box-sizing: border-box;
   cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
 .cat-pick:hover { border-color: var(--yellow); }
 .cat-pick:active { transform: scale(0.98); }
@@ -2143,8 +2145,8 @@ const STRINGS = {
     cat_name_lbl:'이름', cat_name_ph:'이름 입력...',
     cat_food_html:'먹이 <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 꾸미기', cat_breed_lbl:'고양이 종류',
-    cat_edit_btn:'✏️ 이름·종류 바꾸기', cat_edit_title:'🐱 고양이 바꾸기',
-    cat_edit_tip:'눌러서 이름·종류 바꾸기',
+    cat_edit_btn:'✏️ 이름·종류 바꾸기', cat_edit_title:'🐱 오늘의 고양이는?',
+    cat_edit_tip:'눌러서 오늘의 고양이 고르기',
     inst_title:'📱 어떤 폰을 쓰세요?', inst_ios:' 아이폰', inst_and:'🤖 안드로이드',
     inst_and_msg:'안드로이드 앱은 아직 만드는 중이에요.<br>출시 전에 먼저 써보고 싶으시면 구글 이메일(@gmail.com)을 남겨 주세요. 선공개 안내를 보내드릴게요.',
     inst_and_ph:'you@gmail.com', inst_and_send:'보내기',
@@ -2429,8 +2431,8 @@ const STRINGS = {
     cat_name_lbl:'Name', cat_name_ph:'Enter name...',
     cat_food_html:'Food <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 Customize', cat_breed_lbl:'Cat breed',
-    cat_edit_btn:'✏️ Name & breed', cat_edit_title:'🐱 Change your cat',
-    cat_edit_tip:'Tap to change name and breed',
+    cat_edit_btn:'✏️ Name & breed', cat_edit_title:"🐱 Who's your cat today?",
+    cat_edit_tip:"Tap to pick today's cat",
     inst_title:'📱 Which phone do you use?', inst_ios:' iPhone', inst_and:'🤖 Android',
     inst_and_msg:'The Android app is still being built.<br>Want to try it before release? Leave your Google address (@gmail.com) and we will send you an early invite.',
     inst_and_ph:'you@gmail.com', inst_and_send:'Send',
@@ -2713,8 +2715,8 @@ const STRINGS = {
     cat_name_lbl:'名前', cat_name_ph:'名前を入力...',
     cat_food_html:'えさ <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 カスタマイズ', cat_breed_lbl:'ねこの種類',
-    cat_edit_btn:'✏️ 名前・種類', cat_edit_title:'🐱 ねこを変える',
-    cat_edit_tip:'押して名前と種類を変える',
+    cat_edit_btn:'✏️ 名前・種類', cat_edit_title:'🐱 今日のねこは？',
+    cat_edit_tip:'押して今日のねこを選ぶ',
     inst_title:'📱 どのスマホをお使いですか？', inst_ios:' iPhone', inst_and:'🤖 Android',
     inst_and_msg:'Android 版はまだ制作中です。<br>リリース前に試したい方は Google のアドレス（@gmail.com）を教えてください。先行のご案内をお送りします。',
     inst_and_ph:'you@gmail.com', inst_and_send:'送信',

@@ -2041,53 +2041,70 @@
    * 칸을 누른 뒤 자판이 다 올라올 즈음 그 칸을 화면 가운데로 끌어 온다.
    */
   function installKeyboardScroll() {
-    var vv = window.visualViewport;
+    // 자판이 없을 때의 화면 높이. 자판이 올라오면 이보다 줄어든다.
+    var fullH = 0;
+    var padded = null;          // 지금 자리를 만들어 둔 칸
 
     function isTypable(el) {
       if (!el || !el.tagName) return false;
       return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true;
     }
-    function bring(el) {
-      if (!isTypable(el)) return;
-      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+
+    /**
+     * 자판이 가린 높이.
+     *
+     * 안드로이드는 adjustResize 로 창 자체를 줄인다. 그러면 visualViewport 와
+     * innerHeight 가 함께 줄어 둘의 차이는 0 이 된다 — 이걸로는 자판을 알아챌 수 없다.
+     * 자판이 없던 때의 높이를 기억해 두고 그것과 견준다.
+     */
+    function hiddenPx() {
+      var vv = window.visualViewport;
+      var now = vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight;
+      if (now > fullH) fullH = now;            // 화면이 커졌다 = 자판이 없는 상태
+      return Math.max(0, Math.round(fullH - now));
+    }
+
+    /** 이 칸을 실제로 굴리는 조상을 찾는다 (대시보드 구조가 바뀌어도 따라간다) */
+    function scrollerOf(el) {
+      for (var p = el && el.parentElement; p; p = p.parentElement) {
+        var ov = '';
+        try { ov = getComputedStyle(p).overflowY; } catch (e) {}
+        if (/(auto|scroll)/.test(ov) && p.scrollHeight > p.clientHeight + 4) return p;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
+
+    function clearPad() {
+      if (padded) { padded.style.paddingBottom = ''; padded = null; }
     }
 
     /**
-     * 자판이 가린 높이만큼 구르는 칸 아래에 자리를 만든다.
-     * 이게 없으면 페이지 맨 아래에 있는 입력칸(디데이·알람)은 더 굴릴 자리가 없어
+     * 자판이 가린 만큼 굴리는 칸 아래에 자리를 만들고, 쓰던 칸을 끌어 올린다.
+     * 자리를 만들지 않으면 페이지 맨 아래의 입력칸(디데이·알람)은 더 굴릴 데가 없어
      * 아무리 끌어 올려도 자판 뒤에 남는다.
      */
-    function fitToKeyboard() {
-      var box = document.querySelector('#dashPanel .dash-body');
-      if (!box || !vv) return;
-      var hidden = Math.max(0, window.innerHeight - vv.height - (vv.offsetTop || 0));
-      box.style.paddingBottom = hidden > 80 ? hidden + 'px' : '';
-      if (hidden > 80) bring(document.activeElement);
+    function fit() {
+      var el = document.activeElement;
+      var hidden = hiddenPx();
+      if (!isTypable(el) || hidden < 80) { clearPad(); return; }
+      var box = scrollerOf(el);
+      if (padded && padded !== box) clearPad();
+      padded = box;
+      box.style.paddingBottom = hidden + 'px';
+      try { el.scrollIntoView({ block: 'center' }); } catch (e) {}
     }
 
-    if (vv) {
-      vv.addEventListener('resize', fitToKeyboard);
-      vv.addEventListener('scroll', fitToKeyboard);
-    }
-    // 자판이 올라오는 데 시간이 걸린다. 창 크기가 바뀌는 것과 별개로 한 번 더 끌어 올린다.
+    var vv = window.visualViewport;
+    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+    window.addEventListener('resize', fit);
+
+    // 자판이 올라오는 데 시간이 걸리고 기기마다 다르다 — 몇 번 나눠 확인한다
     document.addEventListener('focusin', function (e) {
-      var el = e.target;
-      if (!isTypable(el)) return;
-      [120, 350, 650].forEach(function (ms) {
-        setTimeout(function () {
-          if (document.activeElement !== el) return;
-          fitToKeyboard();
-          bring(el);
-        }, ms);
-      });
+      if (!isTypable(e.target)) return;
+      [100, 300, 550, 900].forEach(function (ms) { setTimeout(fit, ms); });
     });
-    // 자판이 내려가면 만들어 둔 자리를 걷는다
     document.addEventListener('focusout', function () {
-      setTimeout(function () {
-        if (isTypable(document.activeElement)) return;
-        var box = document.querySelector('#dashPanel .dash-body');
-        if (box) box.style.paddingBottom = '';
-      }, 200);
+      setTimeout(function () { if (!isTypable(document.activeElement)) clearPad(); }, 250);
     });
   }
 
@@ -2237,7 +2254,9 @@
       // 어떤 상자는 margin-top 으로, 어떤 상자는 margin-bottom 으로 띄워 두어 제각각이었다.
       // 깊이도 탭마다 달라(할 일은 .grid2 > div > .card) 자식 선택자로는 안 걸린다.
       '#dashPanel .dpage .card { margin-top:0 !important; margin-bottom:12px !important; }',
-      '#dashPanel .dpage .grid2 { gap:12px !important; }',
+      // 격자의 틈과 상자 아래 여백이 겹쳐 두 배가 된다 (12 + 12 = 24).
+      // 간격은 상자 여백 하나로만 만든다.
+      '#dashPanel .dpage .grid2 { gap:0 !important; }',
       '#dp-home #homeCycleCard, #dp-home #homeWorkCard { height:auto !important; }',
       '#dp-home .cycle-body { flex:none !important; height:auto !important; }',
       '#dp-home .pomo-wrap { flex:none !important; }',
@@ -2262,7 +2281,7 @@
       '.m-fold .chev { color:var(--gray); font-size:11px; }',
 
       // ── 할 일 목록: 좁은 화면에서 잘리지 않게 ──
-      '#dp-schedule .grid2 { gap:12px !important; }',
+      '#dp-schedule .grid2 { gap:0 !important; }',
       '#dp-schedule .todo-item { gap:6px !important; flex-wrap:nowrap !important; }',
       '#dp-schedule .todo-item .todo-text { min-width:0 !important; flex:1 1 auto !important;',
       '  white-space:normal !important; word-break:break-word; }',
