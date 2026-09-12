@@ -2085,6 +2085,26 @@
 
     function clearPad() {
       if (padded) { padded.style.paddingBottom = ''; padded = null; }
+      var panel = document.getElementById('dashPanel');
+      if (panel) {
+        panel.style.removeProperty('height');
+        panel.style.removeProperty('max-height');
+      }
+    }
+
+    /**
+     * 판 높이를 지금 실제로 보이는 높이에 맞춘다.
+     * CSS 는 dvh 로 잡아 두었지만 그것을 모르는 웹뷰가 있다. 그런 기기에서는 판이
+     * 화면보다 길어져 아래쪽이 화면 밖으로 밀려나고, 굴려도 입력칸이 올라오지 않는다.
+     */
+    function fitPanel() {
+      var panel = document.getElementById('dashPanel');
+      if (!panel) return;
+      var vv = window.visualViewport;
+      var h = Math.round(vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight);
+      if (!h) return;
+      panel.style.setProperty('height', h + 'px', 'important');
+      panel.style.setProperty('max-height', h + 'px', 'important');
     }
 
     /**
@@ -2098,8 +2118,9 @@
     function fit() {
       var el = document.activeElement;
       if (!isTypable(el)) { clearPad(); return; }
+      fitPanel();                 // 판부터 보이는 높이로 줄인다
       var box = scrollerOf(el);
-      if (padded && padded !== box) clearPad();
+      if (padded && padded !== box) { padded.style.paddingBottom = ''; padded = null; }
       padded = box;
       var room = Math.max(hiddenPx(), Math.round(fullH * 0.5));
       box.style.paddingBottom = room + 'px';
@@ -2229,7 +2250,12 @@
   document.addEventListener('DOMContentLoaded', function () {
     var css = [
       // 대시보드 풀스크린 (창 프레임 개념 제거)
-      '#dashPanel { width:100vw !important; height:100vh !important; max-height:100vh !important; border-radius:0 !important; }',
+      // 판 높이는 자판에 따라 줄어드는 단위로 잡는다.
+      // 100vh 는 자판이 올라와도 그대로다 — 판이 화면보다 길어져 아래쪽이 화면 밖으로
+      // 밀려나고, 그러면 아무리 굴려도 입력칸이 보이는 자리로 올라오지 않는다.
+      // dvh 를 모르는 웹뷰를 위해 vh 를 먼저 두고, 아래 JS 가 한 번 더 못 박는다.
+      '#dashPanel { width:100vw !important; height:100vh !important; max-height:100vh !important;',
+      '  height:100dvh !important; max-height:100dvh !important; border-radius:0 !important; }',
       '#dashboard { padding:0 !important; }',
       // 창 최소화/닫기 버튼 숨김 (모바일에선 의미 없음)
       '.dtb-btns { display:none !important; }',
