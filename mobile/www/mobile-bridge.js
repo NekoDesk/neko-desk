@@ -2034,6 +2034,29 @@
   }
 
   /**
+   * 자판이 올라오면 아래쪽 입력칸이 가려진다.
+   *
+   * 안드로이드는 창을 줄여 주긴 하지만, 이미 스크롤된 자리라 브라우저가 알아서
+   * 올려 주지는 않는다. 디데이나 알람처럼 페이지 아래에 있는 칸이 특히 그렇다.
+   * 칸을 누른 뒤 자판이 다 올라올 즈음 그 칸을 화면 가운데로 끌어 온다.
+   */
+  function installKeyboardScroll() {
+    document.addEventListener('focusin', function (e) {
+      var el = e.target;
+      if (!el || !el.tagName) return;
+      var tag = el.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && el.isContentEditable !== true) return;
+      // 자판이 올라오며 창 높이가 바뀌는 데 시간이 걸린다 — 두 번 나눠 확인한다
+      [250, 550].forEach(function (ms) {
+        setTimeout(function () {
+          if (document.activeElement !== el) return;
+          try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) {}
+        }, ms);
+      });
+    });
+  }
+
+  /**
    * 폰은 화면이 좁다. 로고와 '실시간 시계와 동기화 중' 줄은 자리만 차지하므로
    * 머리말을 통째로 감춘다 (CSS 쪽에서). 다만 거기 있던 포인트 단추는 쓸 곳이
    * 있으니 홈 카드의 제목 줄로 옮긴다 — 고양이는 홈의 고양이 그림을 누르면 된다.
@@ -2168,12 +2191,16 @@
       // PC는 창 높이에 딱 맞추는 구조라 폰에서는 내용이 눌려 겹쳤다.
       // 폰에서는 높이를 풀고 위에서 아래로 흐르게 한다.
       // 고양이 박스는 홈의 얼굴이라 남긴다 — 누르면 고양이 탭으로 간다.
+      '#dp-home .vita-pills { margin-bottom:9px !important; }',
       '#dp-home .cat-display { display:flex !important; margin-bottom:12px !important;',
       '  padding:16px 8px !important; gap:8px !important; }',
       '#dp-home.dpage.active { display:block !important; height:auto !important; }',
       '#dp-home .grid2 { display:block !important; flex:none !important; height:auto !important; }',
       '#dp-home .grid2 > div { display:block !important; height:auto !important; min-height:0 !important; }',
       '#dp-home .card { height:auto !important; margin-bottom:12px !important; overflow:visible !important; }',
+      // 상자 사이 간격은 어느 탭에서나 같아야 한다. 탭마다 제각각이면 눈에 걸린다.
+      '#dashPanel .dpage > .card, #dashPanel .dpage > div > .card { margin-bottom:12px !important; }',
+      '#dashPanel .dpage .grid2 { gap:12px !important; }',
       '#dp-home #homeCycleCard, #dp-home #homeWorkCard { height:auto !important; }',
       '#dp-home .cycle-body { flex:none !important; height:auto !important; }',
       '#dp-home .pomo-wrap { flex:none !important; }',
@@ -2185,7 +2212,9 @@
       '#dp-home .water-cups, #dp-home .vita-pills { grid-template-columns:repeat(8,1fr) !important; }',
       // 시간표는 홈 맨 아래. 좁으니 칸을 조금 넓게 잡는다
       '#dp-home #homeWorkCard { overflow:visible !important; }',
-      '#dp-home .tt-body { max-height:44vh !important; }',
+      // 폰은 화면을 위아래로 넘겨 보는 것이 자연스럽다. 시간표 안에서 또 구르게 하면
+      // 손가락이 어디에 걸렸는지 헷갈린다. '보이는 시간'만큼 통째로 펴 둔다.
+      '#dp-home .tt-body { max-height:none !important; overflow-y:visible !important; }',
       '#dp-home .tt-head div, #dp-home .tt-times span { font-size:9px !important; }',
       '#dp-home .tt-bar { flex-wrap:wrap !important; }',
 
@@ -2234,7 +2263,11 @@
 
       // ── 고양이 탭: 잘림/찌그러짐 방지 ──
       '#dp-cat [style*="display:flex"] { flex-wrap:wrap !important; }',
-      '#dp-cat .big-cat { width:110px !important; height:132px !important; flex-shrink:0 !important; }',
+      // 고양이 탭의 주인공이라 폰에서도 크게 (기본 120x144 의 1.4배)
+      '#dp-cat .big-cat { width:168px !important; height:202px !important; flex-shrink:0 !important; }',
+      // PC 는 가로로 두지만 폰은 세로로 쌓는다
+      '#dp-cat .cat-main { flex-direction:column !important; align-items:center !important; gap:14px !important; }',
+      '#dp-cat .cat-main-right { width:100% !important; }',
       '#dp-cat .breed-row { grid-template-columns:repeat(2,1fr) !important; }',
       '#dp-cat .breed-name { white-space:normal !important; font-size:12px !important; }',
       '#dp-cat .breed-desc { white-space:normal !important; font-size:10px !important; }',
@@ -2378,6 +2411,7 @@
       try { installLongPressEdit(); } catch (e) {}
       try { fixTouchWording(); } catch (e) {}
       try { slimHomeForPhone(); } catch (e) {}
+      try { installKeyboardScroll(); } catch (e) {}
 
       // 4) 바탕화면 위젯에 내용 전달
       try { startWidgetFeed(); } catch (e) {}

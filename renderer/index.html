@@ -456,6 +456,20 @@ body.theme-mono {
 #dp-home .big-cat { width: 108px; height: 130px; }
 /* 고양이 탭은 이 그림이 주인공이라 크게 — 기본(120x144)의 1.4배 */
 #dp-cat .big-cat { width: 168px; height: 202px; }
+/* PC 는 가로로: 왼쪽에 고양이, 오른쪽에 기분·단추. 폰에서는 세로로 쌓는다 */
+.cat-main { display: flex; gap: 24px; align-items: flex-start; }
+.cat-main-left { flex: 0 0 auto; text-align: center; }
+.cat-main-right { flex: 1 1 auto; min-width: 0; }
+/* 눌러서 고를 수 있다는 것을 글자 없이 보이게 — 테두리와 모서리의 연필 표 */
+.cat-pick { position: relative; display: inline-block; cursor: pointer; padding: 8px;
+  border: 2px dashed var(--border); border-radius: 12px;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s; }
+.cat-pick:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 45%); }
+.cat-pick:active { transform: scale(0.97); }
+.cat-pick-badge { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--yellow); color: var(--frame-text);
+  font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
+  border: 2px solid var(--panel); pointer-events: none; }
 /* 단추는 칸을 고르게 나눠 갖는다. 글자 길이에 따라 줄이 들쭉날쭉해지지 않도록
    한 줄로 고정하고, 넘치면 말줄임표로 자른다. */
 .cat-btn-row, .cat-btn-grid { display: grid; gap: 6px; }
@@ -1395,17 +1409,19 @@ select {
       <!-- DIARY -->
       <!-- CAT -->
       <div id="dp-cat" class="dpage">
-        <div class="grid2">
+        <div>
           <div class="card">
             <div class="card-title" data-i18n="cat_my_cat">🐱 내 고양이</div>
-            <div>
-              <div style="text-align:center;margin-bottom:14px">
-                <img id="catPageCanvas" class="big-cat cat-img-render" style="margin-bottom:8px;cursor:pointer"
-                  onclick="openCatEdit()" data-i18n-tip="cat_edit_tip">
-                <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow);cursor:pointer"
+            <div class="cat-main">
+              <div class="cat-main-left">
+                <div class="cat-pick" onclick="openCatEdit()" data-i18n-tip="cat_edit_tip">
+                  <img id="catPageCanvas" class="big-cat cat-img-render">
+                  <span class="cat-pick-badge">✎</span>
+                </div>
+                <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow);cursor:pointer;margin-top:6px"
                   id="catNameP" onclick="openCatEdit()">냐옹이</div>
               </div>
-              <div>
+              <div class="cat-main-right">
                 <div class="stat-bar">
                   <div class="stat-row">
                     <span data-i18n="cat_mood">❤️ 기분</span>
