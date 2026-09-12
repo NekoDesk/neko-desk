@@ -37,7 +37,7 @@
     'vitaminOn', 'vitaminTime', 'vitaminTimes', 'vitaminGoal', 'vitaminTaken', 'vitaminDate',
     'waterWorkOnly', 'alarms', 'growthLogs', 'ownedAccs', 'redeemedCoupons',
     // 설정
-    'schedule', 'workItems', 'scheduleItems', 'blocks', 'fillPlan', 'fillRows', 'fillDays', 'fillReplace', 'ttFrom', 'ttTo', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language'
+    'schedule', 'workItems', 'scheduleItems', 'blocks', 'fillPlan', 'fillRows', 'fillDays', 'fillReplace', 'ttFrom', 'ttTo', 'pomoOn', 'focusMins', 'breakMins', 'theme', 'language', 'holidayCountry'
   ];
 
   // 공개 설정만 포함 (비밀키 없음 — Supabase anon key는 공개용으로 설계됨)

@@ -980,6 +980,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border:1px solid var(--yellow); border-radius:6px; padding:8px 10px; margin-bottom:10px; }
 .cal-multi-bar .hint { flex:1; min-width:0; font-size:11px; color:var(--gray); line-height:1.5; }
 .cal-day { min-height:30px; padding:3px 2px; cursor:pointer; border-radius:3px; border:1px solid transparent; vertical-align:top; }
+.cal-hol { font-size:8px; line-height:1.1; color:#f88; text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 .cal-day:hover { border-color:var(--border); background:var(--card); }
 .cal-day.today { border-color:var(--yellow); background:rgba(255,211,105,0.08); }
 .cal-day.has-note::after { content:'•'; display:block; text-align:center; color:var(--yellow); font-size:10px; line-height:1; }
@@ -1384,8 +1386,10 @@ select {
             <div class="card-title" data-i18n="cat_my_cat">🐱 내 고양이</div>
             <div style="display:flex;gap:16px;align-items:flex-start">
               <div style="text-align:center">
-                <img id="catPageCanvas" class="big-cat cat-img-render" style="margin-bottom:8px">
-                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--yellow)" id="catNameP">냐옹이</div>
+                <img id="catPageCanvas" class="big-cat cat-img-render" style="margin-bottom:8px;cursor:pointer"
+                  onclick="openCatEdit()" data-i18n-tip="cat_edit_tip">
+                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--yellow);cursor:pointer"
+                  id="catNameP" onclick="openCatEdit()">냐옹이</div>
               </div>
               <div style="flex:1">
                 <div class="stat-bar">
@@ -1399,12 +1403,8 @@ select {
                 <div class="stat-bar">
 
                 </div>
-                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:10px 0 5px" data-i18n="cat_name_lbl">이름</div>
-                <div style="display:flex;gap:6px;margin-bottom:10px">
-                  <input id="catNameIn" type="text" placeholder="이름 입력..." data-i18n-placeholder="cat_name_ph"
-                    style="background:var(--card);border:2px solid var(--border);color:var(--white);padding:6px;font-size:15px;flex:1;outline:none">
-                  <button class="btn btn-g" onclick="renameCat()">OK</button>
-                </div>
+                <button class="btn btn-g" style="width:100%;font-size:12px;margin:10px 0"
+                  onclick="openCatEdit()" data-i18n="cat_edit_btn">✏️ 이름·종류 바꾸기</button>
                 <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n-html="cat_food_html">먹이 <span style="color:var(--yellow)">(20pts)</span></div>
                 <div style="display:flex;gap:6px">
                   <button class="btn btn-y" onclick="feedCat('참치')">🐟</button>
@@ -1423,13 +1423,7 @@ select {
               </div>
             </div>
           </div>
-          <div>
-            <div class="card" style="margin-bottom:12px">
-              <div class="card-title" data-i18n="cat_deco_title">👒 꾸미기</div>
-              <div style="font-size:12px;color:var(--gray);margin-bottom:5px" data-i18n="cat_breed_lbl">고양이 종류</div>
-              <div class="breed-row" id="breedRow"></div>
-            </div>
-          </div>
+          <!-- 꾸미기는 고양이를 누르면 뜨는 창으로 옮겼다 (catEditModal) -->
         </div>
       </div>
 
@@ -1468,6 +1462,13 @@ select {
                   <button id="langBtn_ja" onclick="setLang('ja')" class="btn btn-gr" style="flex:1;font-size:12px">日本語</button>
                 </div>
               </div>
+            </div>
+            <!-- 공휴일 -->
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-title" data-i18n="holiday_title">🎌 공휴일</div>
+              <div style="font-size:12px;color:var(--gray);margin-bottom:8px" data-i18n="holiday_desc">사는 나라를 고르면 달력에 그 나라 공휴일이 표시돼요. 고르지 않으면 표시하지 않아요.</div>
+              <select id="holidayCountry" onchange="setHolidayCountry(this.value)"
+                style="width:100%;background:var(--card);border:2px solid var(--border);color:var(--white);padding:7px;font-size:13px;outline:none"></select>
             </div>
             <!-- 부팅 시 자동 실행 -->
             <div class="card" id="autoLaunchCard" style="margin-bottom:14px;display:none">
@@ -1580,6 +1581,46 @@ select {
   </div>
 </div>
 
+
+<!-- 고양이 이름·종류 — 고양이를 누르면 뜬다 -->
+<div id="catEditModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeCatEdit(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="cat_edit_title">🐱 고양이 바꾸기</span>
+      <button onclick="closeCatEdit()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n="cat_name_lbl">이름</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <input id="catNameIn" type="text" placeholder="이름 입력..." data-i18n-placeholder="cat_name_ph"
+        style="background:var(--card);border:2px solid var(--border);color:var(--white);padding:6px;font-size:15px;flex:1;min-width:0;outline:none">
+      <button class="btn btn-g" onclick="renameCat()">OK</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n="cat_breed_lbl">고양이 종류</div>
+    <div class="breed-row" id="breedRow"></div>
+  </div>
+</div>
+<!-- 모바일 앱 설치: 아이폰인지 안드로이드인지 고르게 한다 -->
+<div id="installModal" style="display:none;position:fixed;inset:0;z-index:9480;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeInstall(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="inst_title">📱 어떤 폰을 쓰세요?</span>
+      <button onclick="closeInstall()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div id="installPick" style="display:flex;gap:8px">
+      <button class="btn btn-y" style="flex:1;font-size:13px;padding:12px 8px" onclick="pickPhone('ios')" data-i18n="inst_ios"> 아이폰</button>
+      <button class="btn btn-g" style="flex:1;font-size:13px;padding:12px 8px" onclick="pickPhone('and')" data-i18n="inst_and">🤖 안드로이드</button>
+    </div>
+    <div id="installAndroid" style="display:none">
+      <div style="font-size:12px;color:var(--gray);line-height:1.8;margin-bottom:10px" data-i18n="inst_and_msg">안드로이드 앱은 아직 만드는 중이에요.<br>출시 전에 먼저 써보고 싶으시면 구글 이메일(@gmail.com)을 남겨 주세요. 선공개 안내를 보내드릴게요.</div>
+      <div style="display:flex;gap:6px">
+        <input id="testerEmail" type="email" placeholder="you@gmail.com" data-i18n-placeholder="inst_and_ph"
+          style="background:var(--card);border:2px solid var(--border);color:var(--white);padding:8px;font-size:14px;flex:1;min-width:0;outline:none">
+        <button class="btn btn-y" onclick="submitTester()" data-i18n="inst_and_send">보내기</button>
+      </div>
+      <div id="testerMsg" style="font-size:12px;margin-top:8px;line-height:1.6"></div>
+    </div>
+  </div>
+</div>
 <!-- 열매 바구니 / 포인트 교환 -->
 <div id="fruitModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeFruitPopup(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
@@ -2075,6 +2116,14 @@ const STRINGS = {
     cat_name_lbl:'이름', cat_name_ph:'이름 입력...',
     cat_food_html:'먹이 <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 꾸미기', cat_breed_lbl:'고양이 종류',
+    cat_edit_btn:'✏️ 이름·종류 바꾸기', cat_edit_title:'🐱 고양이 바꾸기',
+    cat_edit_tip:'눌러서 이름·종류 바꾸기',
+    inst_title:'📱 어떤 폰을 쓰세요?', inst_ios:' 아이폰', inst_and:'🤖 안드로이드',
+    inst_and_msg:'안드로이드 앱은 아직 만드는 중이에요.<br>출시 전에 먼저 써보고 싶으시면 구글 이메일(@gmail.com)을 남겨 주세요. 선공개 안내를 보내드릴게요.',
+    inst_and_ph:'you@gmail.com', inst_and_send:'보내기',
+    inst_and_bad:'구글 이메일(@gmail.com)로 적어 주세요.',
+    inst_and_sending:'보내는 중...', inst_and_done:'고마워요! 준비되면 메일로 알려드릴게요 🐱',
+    inst_and_fail:'보내지 못했어요. 잠시 뒤 다시 해주세요.',
     cat_sell_title:'🍋 열매로 포인트 사기',
     cat_harvest_lbl:'보유 열매', harvest_unit:'개', cat_per_unit:'· 1개 = 10pts',
     cat_sell_btn:'🍋 팔기',
@@ -2094,6 +2143,8 @@ const STRINGS = {
     // 추가
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기',
+    holiday_title:'🎌 공휴일', holiday_none:'표시하지 않음',
+    holiday_desc:'사는 나라를 고르면 달력에 그 나라 공휴일이 표시돼요. 고르지 않으면 표시하지 않아요.',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
     sync_title:'☁️ 동기화', sync_down:'받기', sync_up:'올리기', sync_idle:'대기 중',
     sync_connecting:'연결 중...', sync_uptodate:'최신', sync_received:'받음', sync_merged:'내 변경 병합',
@@ -2351,6 +2402,14 @@ const STRINGS = {
     cat_name_lbl:'Name', cat_name_ph:'Enter name...',
     cat_food_html:'Food <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 Customize', cat_breed_lbl:'Cat breed',
+    cat_edit_btn:'✏️ Name & breed', cat_edit_title:'🐱 Change your cat',
+    cat_edit_tip:'Tap to change name and breed',
+    inst_title:'📱 Which phone do you use?', inst_ios:' iPhone', inst_and:'🤖 Android',
+    inst_and_msg:'The Android app is still being built.<br>Want to try it before release? Leave your Google address (@gmail.com) and we will send you an early invite.',
+    inst_and_ph:'you@gmail.com', inst_and_send:'Send',
+    inst_and_bad:'Please use a Google address (@gmail.com).',
+    inst_and_sending:'Sending...', inst_and_done:'Thank you! We will email you when it is ready 🐱',
+    inst_and_fail:'Could not send. Please try again in a moment.',
     cat_sell_title:'🍋 Trade Fruits',
     cat_harvest_lbl:'Fruits', harvest_unit:'', cat_per_unit:'· 1 = 10pts',
     cat_sell_btn:'🍋 Sell',
@@ -2368,6 +2427,8 @@ const STRINGS = {
     guide_photo_default:'Desktop (default)', guide_photo_change:'Change folder',
     dash_enc_msg:'Syncing with live clock 🕐',
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek',
+    holiday_title:'🎌 Holidays', holiday_none:'Do not show',
+    holiday_desc:'Pick where you live and public holidays for that country appear on the calendar. Nothing is shown until you pick one.',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
     sync_title:'☁️ Sync', sync_down:'Down', sync_up:'Up', sync_idle:'Idle',
     sync_connecting:'Connecting...', sync_uptodate:'Up to date', sync_received:'Received', sync_merged:'Merged',
@@ -2625,6 +2686,14 @@ const STRINGS = {
     cat_name_lbl:'名前', cat_name_ph:'名前を入力...',
     cat_food_html:'えさ <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 カスタマイズ', cat_breed_lbl:'ねこの種類',
+    cat_edit_btn:'✏️ 名前・種類', cat_edit_title:'🐱 ねこを変える',
+    cat_edit_tip:'押して名前と種類を変える',
+    inst_title:'📱 どのスマホをお使いですか？', inst_ios:' iPhone', inst_and:'🤖 Android',
+    inst_and_msg:'Android 版はまだ制作中です。<br>リリース前に試したい方は Google のアドレス（@gmail.com）を教えてください。先行のご案内をお送りします。',
+    inst_and_ph:'you@gmail.com', inst_and_send:'送信',
+    inst_and_bad:'Google のアドレス（@gmail.com）でお願いします。',
+    inst_and_sending:'送信中...', inst_and_done:'ありがとうございます！準備ができたらメールします 🐱',
+    inst_and_fail:'送信できませんでした。少し後にもう一度お試しください。',
     cat_sell_title:'🍋 フルーツ交換',
     cat_harvest_lbl:'フルーツ', harvest_unit:'個', cat_per_unit:'· 1個 = 10pts',
     cat_sell_btn:'🍋 売る',
@@ -2642,6 +2711,8 @@ const STRINGS = {
     guide_photo_default:'デスクトップ(デフォルト)', guide_photo_change:'フォルダ変更',
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる',
+    holiday_title:'🎌 祝日', holiday_none:'表示しない',
+    holiday_desc:'お住まいの国を選ぶと、その国の祝日がカレンダーに表示されます。選ばなければ何も表示しません。',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
     sync_title:'☁️ 同期', sync_down:'受信', sync_up:'送信', sync_idle:'待機中',
     sync_connecting:'接続中...', sync_uptodate:'最新', sync_received:'受信済み', sync_merged:'変更を統合',
@@ -3278,6 +3349,7 @@ const S = {
   redeemedCoupons: {},
   workItems: null,
   language: 'ko',
+  holidayCountry: '',   // 빈 값이면 공휴일을 표시하지 않는다
 };
 
 // ══════════════════════════════════════════
@@ -3303,7 +3375,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','holidayCountry','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -3334,9 +3406,84 @@ window.addEventListener('beforeunload', saveState);
 
 const NEKODESK_SITE_URL = 'https://goodenergykr.com/nekodesk';
 /** 지금 쓰는 기기의 반대편 앱 안내로 보낸다 */
+/** 고양이 이름·종류 바꾸기 창 (고양이 그림을 누르면 열린다) */
+function openCatEdit(){
+  const el = document.getElementById('catEditModal');
+  if (!el) return;
+  const inp = document.getElementById('catNameIn');
+  if (inp) inp.value = (S.cat && S.cat.name) || '';
+  el.style.display = 'flex';
+  setTimeout(() => { if (inp) inp.focus(); }, 30);
+}
+function closeCatEdit(e){
+  if (e && e.target !== e.currentTarget) return;
+  const el = document.getElementById('catEditModal');
+  if (el) el.style.display = 'none';
+}
+
+/**
+ * 모바일 앱 설치 — 아이폰은 앱스토어로, 안드로이드는 아직 만드는 중이라
+ * 미리 써 볼 사람의 메일을 받는다. 구글 계정이어야 비공개 테스트에 넣을 수 있다.
+ */
+const IOS_STORE_URL = 'https://apps.apple.com/kr/app/neko-desk-%EB%84%A4%EC%BD%94%EB%8D%B0%EC%8A%A4%ED%81%AC/id6809159076';
+function openInstall(){
+  const el = document.getElementById('installModal');
+  if (!el) return;
+  const pick = document.getElementById('installPick');
+  const and = document.getElementById('installAndroid');
+  const msg = document.getElementById('testerMsg');
+  if (pick) pick.style.display = 'flex';
+  if (and) and.style.display = 'none';
+  if (msg) msg.textContent = '';
+  el.style.display = 'flex';
+}
+function closeInstall(e){
+  if (e && e.target !== e.currentTarget) return;
+  const el = document.getElementById('installModal');
+  if (el) el.style.display = 'none';
+}
+function pickPhone(kind){
+  if (kind === 'ios') { _openExtLink(IOS_STORE_URL); closeInstall(); return; }
+  const pick = document.getElementById('installPick');
+  const and = document.getElementById('installAndroid');
+  if (pick) pick.style.display = 'none';
+  if (and) and.style.display = 'block';
+  setTimeout(() => { const i = document.getElementById('testerEmail'); if (i) i.focus(); }, 30);
+}
+/** 테스터 메일을 우리 서버에 남긴다. 넣기만 할 수 있고 읽지는 못한다. */
+async function submitTester(){
+  const i = document.getElementById('testerEmail');
+  const m = document.getElementById('testerMsg');
+  const email = ((i && i.value) || '').trim().toLowerCase();
+  if (!m) return;
+  if (!/^[^\s@]+@gmail\.com$/.test(email)) {
+    m.style.color = 'var(--acc)'; m.textContent = L('inst_and_bad'); return;
+  }
+  if (!window._cfg || !window._cfg.SUPABASE_URL) {
+    m.style.color = 'var(--acc)'; m.textContent = L('inst_and_fail'); return;
+  }
+  m.style.color = 'var(--gray)'; m.textContent = L('inst_and_sending');
+  try {
+    const r = await fetch(window._cfg.SUPABASE_URL + '/rest/v1/tester_signups', {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ email, platform: 'android' }),
+    });
+    if (r.ok || r.status === 409) {      // 409 = 이미 남긴 메일
+      m.style.color = 'var(--mint)'; m.textContent = L('inst_and_done');
+      if (i) i.value = '';
+    } else {
+      m.style.color = 'var(--acc)'; m.textContent = L('inst_and_fail');
+    }
+  } catch (e) {
+    m.style.color = 'var(--acc)'; m.textContent = L('inst_and_fail');
+  }
+}
+
 function openOtherApp(){
-  if (window.electronAPI && window.electronAPI.openExternal) window.electronAPI.openExternal(NEKODESK_SITE_URL);
-  else window.open(NEKODESK_SITE_URL, '_blank');
+  // 폰에서는 PC 앱을 권하는 자리라 사이트로 보낸다. PC 에서는 어떤 폰인지부터 묻는다.
+  if (window.Capacitor) { _openExtLink(NEKODESK_SITE_URL); return; }
+  openInstall();
 }
 /** 모바일이면 'PC 앱', 데스크톱이면 '모바일 앱'을 권한다 */
 function applyCrossDeviceLabel(){
@@ -6204,6 +6351,81 @@ function setCalNotes(key, items) {
   else delete S.calendarNotes[key];
 }
 
+// ── 공휴일 ────────────────────────────────────────────
+// 나라를 고르면 그 나라 공휴일이 달력에 뜬다. 고르지 않으면 아무것도 뜨지 않는다.
+//
+// 날짜는 Nager.Date 라는 공개 자료에서 받는다. 설날·추석·춘절처럼 음력에서
+// 오는 날은 해마다 양력 날짜가 달라져서 앱 안에 적어 둘 수가 없다.
+// 받은 뒤에는 기기에 저장해 두고 그다음부터는 그대로 쓴다 — 한 해 한 번이면 된다.
+// 보내는 것은 나라 이름과 연도뿐이고, 사용자 정보는 아무것도 나가지 않는다.
+const HOLIDAY_API = 'https://date.nager.at/api/v3/PublicHolidays';
+const HOLIDAY_COUNTRIES = [
+  { code: 'KR', ko: '대한민국',     en: 'South Korea',  ja: '韓国' },
+  { code: 'US', ko: '미국',         en: 'United States', ja: 'アメリカ' },
+  { code: 'JP', ko: '일본',         en: 'Japan',        ja: '日本' },
+  { code: 'GB', ko: '영국',         en: 'United Kingdom', ja: 'イギリス' },
+  { code: 'ID', ko: '인도네시아',   en: 'Indonesia',    ja: 'インドネシア' },
+  { code: 'CA', ko: '캐나다',       en: 'Canada',       ja: 'カナダ' },
+  { code: 'CN', ko: '중국',         en: 'China',        ja: '中国' },
+  { code: 'TR', ko: '튀르키예',     en: 'Türkiye',      ja: 'トルコ' },
+  { code: 'DE', ko: '독일',         en: 'Germany',      ja: 'ドイツ' },
+  { code: 'FR', ko: '프랑스',       en: 'France',       ja: 'フランス' },
+];
+
+let _holidays = {};            // "YYYY-MM-DD" → 이름
+const _holidayLoading = {};    // 같은 해를 두 번 받지 않도록
+
+function holidayKey(code, year) { return 'neko_holidays_' + code + '_' + year; }
+
+/** 한 해치를 기기에 있으면 그대로, 없으면 받아서 저장한다 */
+async function loadHolidays(year) {
+  const code = S.holidayCountry;
+  if (!code) return;
+  const k = holidayKey(code, year);
+  if (_holidayLoading[k]) return;
+  let rows = null;
+  try { rows = JSON.parse(localStorage.getItem(k) || "null"); } catch(e) {}
+  if (!rows) {
+    _holidayLoading[k] = true;
+    try {
+      const r = await fetch(HOLIDAY_API + '/' + year + '/' + code);
+      if (r.ok) {
+        const raw = await r.json();
+        if (Array.isArray(raw)) {
+          rows = raw.map(x => [x.date, x.localName || x.name]).filter(x => x[0] && x[1]);
+          try { localStorage.setItem(k, JSON.stringify(rows)); } catch(e) {}
+        }
+      }
+    } catch(e) {}
+    delete _holidayLoading[k];
+    if (!rows) return;                     // 못 받았으면 조용히 넘어간다
+  }
+  let added = false;
+  rows.forEach(([date, name]) => { if (_holidays[date] !== name) { _holidays[date] = name; added = true; } });
+  if (added && typeof renderCalendar === "function") renderCalendar();
+}
+
+/** 나라를 바꾸면 기억해 두었던 것을 비우고 보이는 해부터 다시 받는다 */
+function setHolidayCountry(code) {
+  S.holidayCountry = code || '';
+  _holidays = {};
+  saveState();
+  renderHolidayPicker();
+  if (S.holidayCountry) loadHolidays(_calYear);
+  renderCalendar();
+}
+
+function renderHolidayPicker() {
+  const sel = document.getElementById('holidayCountry');
+  if (!sel) return;
+  const lang = (S.language || 'ko');
+  const none = L('holiday_none');
+  sel.innerHTML = '<option value="">' + none + '</option>' +
+    HOLIDAY_COUNTRIES.map(c =>
+      '<option value="' + c.code + '">' + (c[lang] || c.en) + '</option>').join('');
+  sel.value = S.holidayCountry || '';
+}
+
 function renderCalendar() {
   const leftEl = document.getElementById('calLeftGrid');
   const rightEl = document.getElementById('calRightPanel');
@@ -6248,8 +6470,10 @@ function renderCalendar() {
       // 셀 안에는 날짜만 — 할 일이 있는 날은 숫자 아래에 점만 표시 (다이어리와 동일).
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
       const isMulti = _multiKeys && _multiKeys.indexOf(key) >= 0;
-      lh += `<div class="cal-day${cell.other?' cal-other':''}${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')">
-        <div class="cal-day-num" style="font-size:10px;text-align:center;${isSun&&!cell.other?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
+      const hol = _holidays[key] || null;
+      lh += `<div class="cal-day${cell.other?' cal-other':''}${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')"${hol?` title="${_attr(hol)}"`:''}>
+        <div class="cal-day-num" style="font-size:10px;text-align:center;${(isSun||hol)&&!cell.other?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
+        ${hol && !cell.other ? `<div class="cal-hol">${hol.replace(/</g, '&lt;')}</div>` : ''}
       </div>`;
     }
     lh += `</div>`;
@@ -6257,6 +6481,8 @@ function renderCalendar() {
   }
 
   // ── 오른쪽: 날짜 선택 패널 ──
+  if (S.holidayCountry && _holidays.__year !== _calYear) { _holidays.__year = _calYear; loadHolidays(_calYear); }
+
   if (rightEl) {
     const selLabel = _calKey ? (()=>{const [yy,mm,dd]=_calKey.split('-');return L('date_ymd').replace('{y}',parseInt(yy)).replace('{m}',parseInt(mm)).replace('{d}',parseInt(dd));})() : null;
     const selItems = _calKey ? getCalNotes(_calKey) : [];
@@ -8668,7 +8894,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterOff','waterFrom','waterTo','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language'
+  'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language','holidayCountry'
 ];
 
 /** 지금 어딘가에 글을 쓰고 있는가 (자판이 올라와 있는 상태) */
@@ -8873,6 +9099,7 @@ function init(){
     // 브라우저 모드: 게이트 없음
     try { window._resetMoodOnLaunch(false); } catch(e) {}
   }
+  renderHolidayPicker();
   applyCrossDeviceLabel();
   applyTheme(S.theme || 'white'); // 기본 테마: 화이트
   applyLang();
