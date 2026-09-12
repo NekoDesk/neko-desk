@@ -454,6 +454,17 @@ body.theme-mono {
   position: relative; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
 #dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 58%); }
 #dp-home .big-cat { width: 108px; height: 130px; }
+/* 고양이 탭은 이 그림이 주인공이라 크게 — 기본(120x144)의 1.4배 */
+#dp-cat .big-cat { width: 168px; height: 202px; }
+/* 단추는 칸을 고르게 나눠 갖는다. 글자 길이에 따라 줄이 들쭉날쭉해지지 않도록
+   한 줄로 고정하고, 넘치면 말줄임표로 자른다. */
+.cat-btn-row, .cat-btn-grid { display: grid; gap: 6px; }
+.cat-btn-row  { grid-template-columns: repeat(3, 1fr); }
+.cat-btn-grid { grid-template-columns: repeat(2, 1fr); }
+.cat-btn-row .btn, .cat-btn-grid .btn {
+  width: 100%; font-size: 12px; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 #dp-home .timer-box { padding: 12px; margin-bottom: 10px; }
 #dp-home .timer-big { font-size: 30px; letter-spacing: 2px; }
 #dp-home .prog-track { margin-top: 8px; }
@@ -1387,14 +1398,14 @@ select {
         <div class="grid2">
           <div class="card">
             <div class="card-title" data-i18n="cat_my_cat">🐱 내 고양이</div>
-            <div style="display:flex;gap:16px;align-items:flex-start">
-              <div style="text-align:center">
+            <div>
+              <div style="text-align:center;margin-bottom:14px">
                 <img id="catPageCanvas" class="big-cat cat-img-render" style="margin-bottom:8px;cursor:pointer"
                   onclick="openCatEdit()" data-i18n-tip="cat_edit_tip">
-                <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--yellow);cursor:pointer"
+                <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow);cursor:pointer"
                   id="catNameP" onclick="openCatEdit()">냐옹이</div>
               </div>
-              <div style="flex:1">
+              <div>
                 <div class="stat-bar">
                   <div class="stat-row">
                     <span data-i18n="cat_mood">❤️ 기분</span>
@@ -1406,22 +1417,18 @@ select {
                 <div class="stat-bar">
 
                 </div>
-                <button class="btn btn-g" style="width:100%;font-size:12px;margin:10px 0"
-                  onclick="openCatEdit()" data-i18n="cat_edit_btn">✏️ 이름·종류 바꾸기</button>
-                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n-html="cat_food_html">먹이 <span style="color:var(--yellow)">(20pts)</span></div>
-                <div style="display:flex;gap:6px">
+                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:12px 0 5px" data-i18n-html="cat_food_html">먹이 <span style="color:var(--yellow)">(20pts)</span></div>
+                <div class="cat-btn-row">
                   <button class="btn btn-y" onclick="feedCat('참치')">🐟</button>
                   <button class="btn btn-y" onclick="feedCat('연어')">🍣</button>
                   <button class="btn btn-y" onclick="feedCat('닭')">🍗</button>
                 </div>
-                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:10px 0 5px" data-i18n="cat_touch_lbl">함께 놀기 (무료)</div>
-                <div style="display:flex;gap:6px">
-                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="petCat()" data-i18n="cat_pet_btn">🤲 쓰다듬기</button>
-                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="playCat()" data-i18n="cat_play_btn">🧶 놀아주기</button>
-                </div>
-                <div style="display:flex;gap:6px;margin-top:6px">
-                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="callCat(1)" data-i18n="cat_call1_btn">📣 고양이 부르기 1</button>
-                  <button class="btn btn-g" style="flex:1;font-size:12px" onclick="callCat(2)" data-i18n="cat_call2_btn">📣 고양이 부르기 2</button>
+                <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin:12px 0 5px" data-i18n="cat_touch_lbl">함께 놀기 (무료)</div>
+                <div class="cat-btn-grid">
+                  <button class="btn btn-g" onclick="petCat()" data-i18n="cat_pet_btn">🤲 쓰다듬기</button>
+                  <button class="btn btn-g" onclick="playCat()" data-i18n="cat_play_btn">🧶 놀아주기</button>
+                  <button class="btn btn-g" onclick="callCat(1)" data-i18n="cat_call1_btn">📣 부르기 1</button>
+                  <button class="btn btn-g" onclick="callCat(2)" data-i18n="cat_call2_btn">📣 부르기 2</button>
                 </div>
               </div>
             </div>
@@ -2160,7 +2167,7 @@ const STRINGS = {
     health_pts_msg:'+{n} pts 받았어요!',
     water_full_msg:'바구니가 가득 찼어요!',
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
-    cat_call1_btn:'📣 고양이 부르기 1', cat_call2_btn:'📣 고양이 부르기 2',
+    cat_call1_btn:'📣 부르기 1', cat_call2_btn:'📣 부르기 2',
     cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
@@ -2444,7 +2451,7 @@ const STRINGS = {
     health_pts_msg:'+{n} pts!',
     water_full_msg:'Your basket is full!',
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
-    cat_call1_btn:'📣 Call cat 1', cat_call2_btn:'📣 Call cat 2',
+    cat_call1_btn:'📣 Call 1', cat_call2_btn:'📣 Call 2',
     cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
@@ -2728,7 +2735,7 @@ const STRINGS = {
     health_pts_msg:'+{n} pts もらいました！',
     water_full_msg:'かごがいっぱいです！',
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
-    cat_call1_btn:'📣 ねこを呼ぶ 1', cat_call2_btn:'📣 ねこを呼ぶ 2',
+    cat_call1_btn:'📣 呼ぶ 1', cat_call2_btn:'📣 呼ぶ 2',
     cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
@@ -6474,8 +6481,9 @@ function renderCalendar() {
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
       const isMulti = _multiKeys && _multiKeys.indexOf(key) >= 0;
       const hol = _holidays[key] || null;
-      // 긴 이름은 칸을 비집고 나가 보기 어렵다 — 짧은 말로 바꾸고 원래 이름은 툴팁에 남긴다
-      const holShort = hol ? (hol.length > 5 ? L('holiday_short') : hol) : null;
+      // 칸에는 늘 짧은 말만 쓴다. 이름마다 길이가 다르면 그 주만 넓어지고,
+      // 무슨 날인지는 날짜를 고르면 오른쪽 줄에 나온다.
+      const holShort = hol ? L('holiday_short') : null;
       lh += `<div class="cal-day${cell.other?' cal-other':''}${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')"${hol?` title="${_attr(hol)}"`:''}>
         <div class="cal-day-num" style="font-size:10px;text-align:center;${(isSun||hol)&&!cell.other?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
         ${hol && !cell.other ? `<div class="cal-hol">${holShort.replace(/</g, '&lt;')}</div>` : ''}
@@ -6501,6 +6509,12 @@ function renderCalendar() {
         <button class="todo-help-btn" onclick="openTodoTips()" data-tip="${L('todo_tip_title')}">?</button>
       </span>
     </div>`;
+
+    // 고른 날이 공휴일이면 무슨 날인지 여기에 적는다 (달력 칸에는 짧은 말만 들어간다)
+    const selHol = _calKey ? _holidays[_calKey] : null;
+    if (selHol) {
+      rh += `<div style="text-align:center;font-size:11px;color:#f88;margin:-4px 0 10px">${selHol.replace(/</g, '&lt;')}</div>`;
+    }
 
     // 여러 날에 넣는 중이면 그 화면만 보여 준다
     if (_multiKeys && !_copySrcKey) {

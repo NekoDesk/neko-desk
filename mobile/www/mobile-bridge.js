@@ -2156,7 +2156,6 @@
       '* { -webkit-user-select:none !important; user-select:none !important; -webkit-tap-highlight-color:transparent; }',
       'input, textarea, [contenteditable] { -webkit-user-select:text !important; user-select:text !important; }',
       // ── 탭 바: 균등 너비 + 아이콘/라벨 2줄 ──
-      '#dashPanel .dash-tabs { padding:0 !important; }',
       '#dashPanel .dtab {',
       '  flex:1 1 0 !important; min-width:0 !important;',
       '  display:flex !important; flex-direction:column; align-items:center; justify-content:center;',
@@ -2169,7 +2168,8 @@
       // PC는 창 높이에 딱 맞추는 구조라 폰에서는 내용이 눌려 겹쳤다.
       // 폰에서는 높이를 풀고 위에서 아래로 흐르게 한다.
       // 고양이 박스는 홈의 얼굴이라 남긴다 — 누르면 고양이 탭으로 간다.
-      '#dp-home .cat-display { display:flex !important; margin-bottom:12px !important; }',
+      '#dp-home .cat-display { display:flex !important; margin-bottom:12px !important;',
+      '  padding:16px 8px !important; gap:8px !important; }',
       '#dp-home.dpage.active { display:block !important; height:auto !important; }',
       '#dp-home .grid2 { display:block !important; flex:none !important; height:auto !important; }',
       '#dp-home .grid2 > div { display:block !important; height:auto !important; min-height:0 !important; }',
@@ -2268,7 +2268,10 @@
       '#dashTitlebar { display:none !important; }',
       '#dashPanel .dash-header { display:none !important; }',
       // 제목 줄이 사라지면 탭 줄이 판의 맨 위가 된다 — 테두리를 여기서 닫아 준다
-      '#dashPanel .dash-tabs { border-top:2px solid var(--frame) !important; }',
+      // 탭 줄이 판의 맨 위다 — 아래쪽과 같은 곡률로 모서리를 굴리고,
+      // 아이콘이 테두리에 붙지 않게 위쪽 여백을 준다.
+      '#dashPanel .dash-tabs { border-top:2px solid var(--frame) !important;',
+      '  border-radius:8px 8px 0 0 !important; padding:9px 0 0 0 !important; }',
       '#dp-home .pomo-wrap { display:none !important; }',
       '#homeCycleCard .card-title { gap:10px !important; }',
       '[onclick*="openPhotoBooth"] { display:none !important; }',
