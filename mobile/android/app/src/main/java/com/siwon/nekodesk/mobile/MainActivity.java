@@ -40,6 +40,14 @@ public class MainActivity extends BridgeActivity {
      * 그래서 내용이 담기는 판에 시스템 바 두께만큼 안쪽 여백을 준다.
      * 웹 쪽은 손댈 필요가 없다 — 웹뷰가 이미 안전한 자리에만 놓이므로
      * CSS의 env(safe-area-inset-*)는 0이 되어 여백이 두 번 들어가지 않는다.
+     *
+     * 자판(IME)도 같은 자리에서 함께 다룬다.
+     *
+     * 화면 끝까지 그리는 앱에서는 windowSoftInputMode(adjustPan·adjustResize)가
+     * 무시된다. 자판이 올라와도 창이 줄지도, 밀려 올라가지도 않는다 —
+     * 웹뷰에서 보면 innerHeight 도 visualViewport 도 그대로다. 웹 쪽에서 무엇을 해도
+     * 통하지 않는 이유가 이것이었다. 여기서 자판 두께만큼 아래 여백을 주면
+     * 웹뷰가 그만큼 줄고, 그때부터는 브라우저가 알아서 쓰던 칸을 보이는 자리로 옮긴다.
      */
     private void applySystemBarInsets() {
         final View root = findViewById(android.R.id.content);
@@ -61,7 +69,10 @@ public class MainActivity extends BridgeActivity {
             Insets bars = insets.getInsets(
                     WindowInsetsCompat.Type.systemBars()
                             | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            // 자판이 올라오면 내비게이션 바보다 두껍다 — 둘 중 두꺼운 쪽을 쓴다
+            int bottom = Math.max(bars.bottom, ime.bottom);
+            v.setPadding(bars.left, bars.top, bars.right, bottom);
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(root);
