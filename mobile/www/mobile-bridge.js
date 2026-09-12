@@ -2033,114 +2033,6 @@
     } catch (e) {}
   }
 
-  /**
-   * 자판이 올라오면 아래쪽 입력칸이 가려진다.
-   *
-   * 안드로이드는 창을 줄여 주긴 하지만, 이미 스크롤된 자리라 브라우저가 알아서
-   * 올려 주지는 않는다. 디데이나 알람처럼 페이지 아래에 있는 칸이 특히 그렇다.
-   * 칸을 누른 뒤 자판이 다 올라올 즈음 그 칸을 화면 가운데로 끌어 온다.
-   */
-  function installKeyboardScroll() {
-    var fullH = window.innerHeight || 0;   // 자판이 없을 때의 화면 높이
-    var padded = null;                     // 지금 자리를 만들어 둔 칸
-
-    function isTypable(el) {
-      if (!el || !el.tagName) return false;
-      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true;
-    }
-
-    /**
-     * 자판이 가린 높이.
-     *
-     * 기기마다 가리는 방식이 달라 재는 길을 둘 다 둔다.
-     *  - 창이 줄어드는 기기: innerHeight 가 작아진다 → 예전 높이와의 차이
-     *  - 창은 그대로 두고 덮기만 하는 기기: visualViewport 만 작아진다 → 둘의 차이
-     * 어느 쪽이든 큰 값을 쓴다. 못 재도 아래에서 넉넉히 자리를 만드니 괜찮다.
-     */
-    function hiddenPx() {
-      var vv = window.visualViewport;
-      var h = window.innerHeight;
-      if (h > fullH) fullH = h;
-      var byOverlay = vv ? Math.max(0, h - vv.height - (vv.offsetTop || 0)) : 0;
-      var byResize = Math.max(0, fullH - h);
-      return Math.round(Math.max(byOverlay, byResize));
-    }
-
-    /** 자판 위쪽 가장자리 — 여기보다 아래는 안 보인다고 본다 */
-    function safeBottom() {
-      var vv = window.visualViewport;
-      var h = vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight;
-      return h - 12;
-    }
-
-    /** 이 칸을 실제로 굴리는 조상을 찾는다 (대시보드 구조가 바뀌어도 따라간다) */
-    function scrollerOf(el) {
-      for (var p = el && el.parentElement; p; p = p.parentElement) {
-        var ov = '';
-        try { ov = getComputedStyle(p).overflowY; } catch (e) {}
-        if (/(auto|scroll)/.test(ov) && p.scrollHeight > p.clientHeight + 4) return p;
-      }
-      return document.scrollingElement || document.documentElement;
-    }
-
-    function clearPad() {
-      if (padded) { padded.style.paddingBottom = ''; padded = null; }
-      var panel = document.getElementById('dashPanel');
-      if (panel) {
-        panel.style.removeProperty('height');
-        panel.style.removeProperty('max-height');
-      }
-    }
-
-    /**
-     * 판 높이를 지금 실제로 보이는 높이에 맞춘다.
-     * CSS 는 dvh 로 잡아 두었지만 그것을 모르는 웹뷰가 있다. 그런 기기에서는 판이
-     * 화면보다 길어져 아래쪽이 화면 밖으로 밀려나고, 굴려도 입력칸이 올라오지 않는다.
-     */
-    function fitPanel() {
-      var panel = document.getElementById('dashPanel');
-      if (!panel) return;
-      var vv = window.visualViewport;
-      var h = Math.round(vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight);
-      if (!h) return;
-      panel.style.setProperty('height', h + 'px', 'important');
-      panel.style.setProperty('max-height', h + 'px', 'important');
-    }
-
-    /**
-     * 쓰던 칸을 자판 위로 끌어 올린다.
-     *
-     * scrollIntoView 의 '가운데'는 자판을 모른다 — 자판이 덮기만 하는 기기에서는
-     * 화면 한가운데가 곧 자판 뒤다. 그래서 직접 굴린다.
-     * 그리고 페이지 맨 아래의 칸은 더 굴릴 데가 없어 아래에 자리를 만들어 줘야 한다.
-     * 자판 높이를 못 재는 기기가 있으니 넉넉히 잡는다 — 어차피 자판이 덮는 자리다.
-     */
-    function fit() {
-      var el = document.activeElement;
-      if (!isTypable(el)) { clearPad(); return; }
-      fitPanel();                 // 판부터 보이는 높이로 줄인다
-      var box = scrollerOf(el);
-      if (padded && padded !== box) { padded.style.paddingBottom = ''; padded = null; }
-      padded = box;
-      var room = Math.max(hiddenPx(), Math.round(fullH * 0.5));
-      box.style.paddingBottom = room + 'px';
-      var over = el.getBoundingClientRect().bottom - safeBottom();
-      if (over > 0) box.scrollTop += over + 24;
-    }
-
-    var vv = window.visualViewport;
-    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
-    window.addEventListener('resize', fit);
-
-    // 자판이 올라오는 데 시간이 걸리고 기기마다 다르다 — 몇 번 나눠 확인한다
-    document.addEventListener('focusin', function (e) {
-      if (!isTypable(e.target)) return;
-      [100, 300, 550, 900].forEach(function (ms) { setTimeout(fit, ms); });
-    });
-    document.addEventListener('focusout', function () {
-      setTimeout(function () { if (!isTypable(document.activeElement)) clearPad(); }, 250);
-    });
-  }
 
   /**
    * 폰은 화면이 좁다. 로고와 '실시간 시계와 동기화 중' 줄은 자리만 차지하므로
@@ -2250,12 +2142,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     var css = [
       // 대시보드 풀스크린 (창 프레임 개념 제거)
-      // 판 높이는 자판에 따라 줄어드는 단위로 잡는다.
-      // 100vh 는 자판이 올라와도 그대로다 — 판이 화면보다 길어져 아래쪽이 화면 밖으로
-      // 밀려나고, 그러면 아무리 굴려도 입력칸이 보이는 자리로 올라오지 않는다.
-      // dvh 를 모르는 웹뷰를 위해 vh 를 먼저 두고, 아래 JS 가 한 번 더 못 박는다.
-      '#dashPanel { width:100vw !important; height:100vh !important; max-height:100vh !important;',
-      '  height:100dvh !important; max-height:100dvh !important; border-radius:0 !important; }',
+      // 자판이 올라오면 안드로이드가 창을 통째로 밀어 올린다 (adjustPan) — 아이폰과 같은 움직임이다.
+      // 그래서 판 높이는 화면 높이 그대로 두면 된다. 줄이면 오히려 밀어 올린 것과 엇갈린다.
+      '#dashPanel { width:100vw !important; height:100vh !important; max-height:100vh !important; border-radius:0 !important; }',
       '#dashboard { padding:0 !important; }',
       // 창 최소화/닫기 버튼 숨김 (모바일에선 의미 없음)
       '.dtb-btns { display:none !important; }',
@@ -2507,7 +2396,6 @@
       try { installLongPressEdit(); } catch (e) {}
       try { fixTouchWording(); } catch (e) {}
       try { slimHomeForPhone(); } catch (e) {}
-      try { installKeyboardScroll(); } catch (e) {}
 
       // 4) 바탕화면 위젯에 내용 전달
       try { startWidgetFeed(); } catch (e) {}
