@@ -803,11 +803,17 @@
    * 아이폰은 브라우저 vibrate 가 없어 Haptics 플러그인을 쓴다. 안드로이드는 둘 다 되지만
    * vibrate 가 무늬(길게-짧게-길게)를 낼 수 있어 그쪽을 먼저 쓴다.
    */
-  window._mobileBuzz = function () {
+  window._mobileBuzz = function (kind) {
+    var H = capPlugin('Haptics');
+    if (kind === 'tap') {
+      // 진동 모드에서 소리 대신 내는 손맛 — 아주 짧게
+      try { if (navigator.vibrate && navigator.vibrate(40)) return; } catch (e) {}
+      try { if (H && H.impact) H.impact({ style: 'LIGHT' }); } catch (e) {}
+      return;
+    }
     try {
       if (navigator.vibrate && navigator.vibrate([250, 120, 250, 120, 400])) return;
     } catch (e) {}
-    var H = capPlugin('Haptics');
     if (H && H.vibrate) {
       // 아이폰은 한 번에 길게 못 떨어 세 번 나눠 떤다
       [0, 350, 700].forEach(function (ms) {
@@ -815,6 +821,26 @@
       });
     }
   };
+
+  /**
+   * 폰의 소리 모드(소리·진동·무음)를 받아 둔다. 웹뷰의 소리는 미디어 볼륨으로 나서
+   * 진동 모드여도 그냥 나 버리기 때문에, 앱이 소리를 내기 전에 window._ringerMode 를 본다.
+   * 안드로이드 네이티브가 처음 한 번 답하고 바뀔 때마다 알려 준다. 앱을 다시 볼 때도 한 번 더 묻는다.
+   * 아이폰은 벨소리 스위치를 앱에서 읽을 길이 없어 값이 비고, 앱은 늘 소리로 본다.
+   */
+  function installRingerWatch() {
+    var nb = widgetBridge();
+    if (!nb || typeof nb.getRingerMode !== 'function') return;
+    var set = function (r) { window._ringerMode = (r && r.mode) || 'normal'; };
+    var ask = function () {
+      try { nb.getRingerMode().then(set, function () {}); } catch (e) {}
+    };
+    ask();
+    try { nb.addListener('ringerMode', set); } catch (e) {}
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) ask(); });
+    var App = capPlugin('App');
+    if (App) { try { App.addListener('appStateChange', function (st) { if (st && st.isActive) ask(); }); } catch (e) {} }
+  }
 
   /**
    * 서버에서 받은 소리 목록을 안드로이드 위젯에 넘긴다.
@@ -2412,6 +2438,7 @@
 
       // 3-3) 모바일엔 더블클릭이 없다 — 일정을 길게 눌러 수정
       try { installLongPressEdit(); } catch (e) {}
+      try { installRingerWatch(); } catch (e) {}
       try { fixTouchWording(); } catch (e) {}
       try { slimHomeForPhone(); } catch (e) {}
 

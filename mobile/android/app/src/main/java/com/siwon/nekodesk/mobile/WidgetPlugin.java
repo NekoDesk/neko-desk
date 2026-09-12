@@ -1,7 +1,13 @@
 package com.siwon.nekodesk.mobile;
 
-import android.content.SharedPreferences;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.media.AudioManager;
+
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -13,6 +19,57 @@ import org.json.JSONArray;
 
 @CapacitorPlugin(name = "NekoWidget")
 public class WidgetPlugin extends Plugin {
+
+    // ── 소리 모드(소리·진동·무음) ──────────────────────────
+    // 웹뷰의 소리는 미디어 볼륨으로 나서 진동 모드여도 그냥 나 버린다. 앱이 이 값을 보고
+    // 소리 대신 떨 수 있게 지금 모드를 답하고, 바뀔 때마다 "ringerMode" 로 알린다.
+    private BroadcastReceiver ringerReceiver;
+
+    @Override
+    public void load() {
+        ringerReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent i) { notifyRinger(); }
+        };
+        try {
+            ContextCompat.registerReceiver(getContext(), ringerReceiver,
+                    new IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION),
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
+        } catch (Exception e) {
+            ringerReceiver = null;
+        }
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        if (ringerReceiver != null) {
+            try { getContext().unregisterReceiver(ringerReceiver); } catch (Exception e) {}
+            ringerReceiver = null;
+        }
+    }
+
+    private static String ringerName(Context ctx) {
+        AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return "normal";
+        switch (am.getRingerMode()) {
+            case AudioManager.RINGER_MODE_VIBRATE: return "vibrate";
+            case AudioManager.RINGER_MODE_SILENT:  return "silent";
+            default: return "normal";
+        }
+    }
+
+    private void notifyRinger() {
+        JSObject o = new JSObject();
+        o.put("mode", ringerName(getContext()));
+        notifyListeners("ringerMode", o);
+    }
+
+    @PluginMethod
+    public void getRingerMode(PluginCall call) {
+        JSObject o = new JSObject();
+        o.put("mode", ringerName(getContext()));
+        call.resolve(o);
+    }
 
     @PluginMethod
     public void push(PluginCall call) {

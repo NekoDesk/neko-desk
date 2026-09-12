@@ -9,8 +9,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.util.Base64;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -257,6 +262,7 @@ public class NekoWidget extends AppWidgetProvider {
 
     /** 다음 차례의 만지는 소리. 어디까지 왔는지는 저장해 둔다 (위젯은 눌릴 때마다 새로 뜬다) */
     private static void meow(Context ctx) {
+        if (!soundAllowed(ctx)) return;
         SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         int remote = touchCount(ctx);
         int n = remote > 0 ? remote : CAT_TOUCH_SND.length;
@@ -347,6 +353,36 @@ public class NekoWidget extends AppWidgetProvider {
             JSONArray a = new JSONObject(raw).optJSONArray("touch");
             return a == null ? 0 : a.length();
         } catch (Exception e) { return 0; }
+    }
+
+    /**
+     * 진동·무음 모드면 소리를 내지 않는다. 진동 모드에서는 대신 짧게 떤다.
+     * 앱과 같은 규칙 — 부르기만 예외라서 그쪽은 이걸 거치지 않는다.
+     * @return true 면 소리를 내도 된다
+     */
+    private static boolean soundAllowed(Context ctx) {
+        AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return true;
+        int m = am.getRingerMode();
+        if (m == AudioManager.RINGER_MODE_NORMAL) return true;
+        if (m == AudioManager.RINGER_MODE_VIBRATE) tap(ctx);
+        return false;
+    }
+
+    /** 소리 대신 내는 짧은 떨림 */
+    private static void tap(Context ctx) {
+        try {
+            Vibrator v;
+            if (Build.VERSION.SDK_INT >= 31) {
+                VibratorManager vm = (VibratorManager) ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+                v = vm == null ? null : vm.getDefaultVibrator();
+            } else {
+                v = (Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
+            }
+            if (v == null) return;
+            if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE));
+            else v.vibrate(40);
+        } catch (Exception ignored) {}
     }
 
     /** 파일로 소리를 낸다. 파일이 없거나 못 열면 false — 부른 쪽이 내장 소리로 넘어간다 */
