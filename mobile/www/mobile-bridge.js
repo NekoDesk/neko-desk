@@ -1970,12 +1970,22 @@
     var timer = null;
     var cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
     document.addEventListener('touchstart', function (e) {
-      var el = e.target && e.target.closest ? e.target.closest('.todo-text') : null;
+      var el = e.target && e.target.closest ? e.target.closest('.todo-text, [data-ekind]') : null;
       if (!el) return;
+      cancel();
+      // 디데이·알람은 자기 종류와 번호를 달고 있다 — 할 일과 고치는 길이 다르다
+      var kind = el.getAttribute && el.getAttribute('data-ekind');
+      if (kind) {
+        var eid = el.getAttribute('data-eid');
+        timer = setTimeout(function () {
+          timer = null;
+          if (typeof window.editEntityName === 'function') window.editEntityName(kind, eid);
+        }, 500);
+        return;
+      }
       var row = el.closest('.todo-item[data-idx]');
       if (!row) return;
       var idx = Number(row.dataset.idx);
-      cancel();
       timer = setTimeout(function () {
         timer = null;
         if (typeof window.editDayItem === 'function') window.editDayItem(idx);
@@ -2021,6 +2031,21 @@
         for (var i = 0; i < rows.length; i++) rows[i].setAttribute('data-tip', hint);
       }
     } catch (e) {}
+  }
+
+  /**
+   * 폰은 화면이 좁다. 로고와 '실시간 시계와 동기화 중' 줄은 자리만 차지하므로
+   * 머리말을 통째로 감춘다 (CSS 쪽에서). 다만 거기 있던 포인트 단추는 쓸 곳이
+   * 있으니 홈 카드의 제목 줄로 옮긴다 — 고양이는 홈의 고양이 그림을 누르면 된다.
+   */
+  function slimHomeForPhone() {
+    var pts = document.querySelector('.dash-header .hdr-btn.pts');
+    var title = document.querySelector('#homeCycleCard .card-title');
+    if (!pts || !title || pts.parentElement === title) return;
+    var label = title.querySelector('[data-i18n="home_cycle_title"]');
+    if (label) label.remove();          // 사이클 고리를 감추니 제목도 뜻이 없다
+    pts.style.marginRight = 'auto';
+    title.insertBefore(pts, title.firstChild);
   }
 
   // ═══════════════════════════════════════════════
@@ -2237,6 +2262,10 @@
       // 사진 찍기는 폰에서 잠시 뺀다 — 권한 안내가 없고 갤러리에도 안 들어간다
       '#headerPhotoBtn { display:none !important; }',
       '#photoModal { display:none !important; }',
+      // 좁은 화면에서 자리만 차지하는 것들 — 로고 줄과 사이클 고리
+      '#dashPanel .dash-header { display:none !important; }',
+      '#dp-home .pomo-wrap { display:none !important; }',
+      '#homeCycleCard .card-title { gap:10px !important; }',
       '[onclick*="openPhotoBooth"] { display:none !important; }',
 
       // 카메라 그림은 화면 절반을 넘지 않게 — 아래 버튼이 밀려나지 않도록
@@ -2340,6 +2369,7 @@
       // 3-3) 모바일엔 더블클릭이 없다 — 일정을 길게 눌러 수정
       try { installLongPressEdit(); } catch (e) {}
       try { fixTouchWording(); } catch (e) {}
+      try { slimHomeForPhone(); } catch (e) {}
 
       // 4) 바탕화면 위젯에 내용 전달
       try { startWidgetFeed(); } catch (e) {}

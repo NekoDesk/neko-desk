@@ -89,7 +89,7 @@ public class NekoWidget extends AppWidgetProvider {
         } else if (ACTION_CAT_CALL.equals(action)) {
             // 부르기는 소리만 낸다 — 앱의 '고양이 부르기'와 같다 (기분은 그대로)
             String p = soundPath(ctx, "call1", 0);
-            if (p == null || !playFile(ctx, p)) playSound(ctx, R.raw.cat_calling_01);
+            if (p == null || !playFile(ctx, p)) playSound(ctx, R.raw.cat_calling_03);
         }
     }
 
@@ -251,8 +251,8 @@ public class NekoWidget extends AppWidgetProvider {
 
     /** 고양이를 만질 때 나는 소리 — 앱과 같은 차례로 돌아간다 */
     private static final int[] CAT_TOUCH_SND = {
-        R.raw.cat_touch_06, R.raw.cat_touch_07, R.raw.cat_touch_08, R.raw.cat_touch_01,
-        R.raw.cat_touch_02, R.raw.cat_touch_03, R.raw.cat_touch_04, R.raw.cat_touch_05,
+        R.raw.cat_touch_01, R.raw.cat_touch_02, R.raw.cat_touch_03,
+        R.raw.cat_touch_04, R.raw.cat_touch_05,
     };
 
     /** 다음 차례의 만지는 소리. 어디까지 왔는지는 저장해 둔다 (위젯은 눌릴 때마다 새로 뜬다) */

@@ -56,6 +56,13 @@ const SND_SRC = path.join(ROOT, '..', 'assets', 'sound');
 const SND_OUT = path.join(WWW, 'assets', 'sound');
 if (fs.existsSync(SND_SRC)) {
   fs.mkdirSync(SND_OUT, { recursive: true });
+  // 원본에서 없어진 소리는 여기서도 지운다. 복사만 하면 갈아 끼운 뒤에도
+  // 옛 파일이 남아, 폰에서만 예전 소리가 나는 일이 생긴다.
+  const keep = new Set(fs.readdirSync(SND_SRC));
+  for (const name of fs.readdirSync(SND_OUT)) {
+    if (keep.has(name)) continue;
+    try { fs.unlinkSync(path.join(SND_OUT, name)); console.log('지움: www/assets/sound/' + name); } catch (e) {}
+  }
   for (const name of fs.readdirSync(SND_SRC)) {
     const src = path.join(SND_SRC, name);
     if (!fs.statSync(src).isFile()) continue;

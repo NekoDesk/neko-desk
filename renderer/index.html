@@ -871,6 +871,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 /* 일정 글씨: 더블클릭하면 그 자리에서 수정 */
 .todo-text { position: relative; cursor: text; }
+.dday-name-txt[data-ekind], .alarm-label[data-ekind] { position: relative; cursor: text; }
 .todo-edit-in {
   flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--yellow); color: var(--white);
   padding: 3px 6px; font-size: 13px; outline: none; border-radius: 3px; font-family: inherit;
@@ -1510,14 +1511,11 @@ select {
 
       <!-- MAGAZINE -->
       <div id="dp-magazine" class="dpage">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:13px;background:var(--panel);border:2px solid var(--yellow)">
-          <div style="font-size:26px">📸</div>
-          <div>
-            <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)">GOOD ENERGY MAGAZINE</div>
-            <div style="font-size:14px;color:var(--gray);margin-top:3px" data-i18n="mag_instagram">@good.energy.kr 인스타그램</div>
-          </div>
-          <button onclick="if(window.electronAPI)window.electronAPI.openExternal('https://www.instagram.com/good.energy.kr')"
-            style="margin-left:auto;background:transparent;border:2px solid var(--yellow);color:var(--yellow);font-size:12px;padding:6px 10px;cursor:pointer" data-i18n="mag_follow">📷 팔로우</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:7px 11px;background:var(--panel);border:2px solid var(--yellow)">
+          <div style="font-size:18px">📸</div>
+          <div style="font-family:'Galmuri14',monospace;font-size:12px;color:var(--yellow)">GOOD ENERGY MAGAZINE</div>
+          <button onclick="_openExtLink('https://www.instagram.com/good.energy.kr')"
+            style="margin-left:auto;background:transparent;border:2px solid var(--yellow);color:var(--yellow);font-size:12px;padding:4px 10px;cursor:pointer;white-space:nowrap" data-i18n="mag_seek">🔎 둘러보기</button>
         </div>
         <div id="magLoading" style="text-align:center;padding:30px;color:var(--gray);font-size:12px">⏳ 불러오는 중...</div>
         <div id="magSetup" style="display:none;text-align:center;padding:30px">
@@ -2095,7 +2093,7 @@ const STRINGS = {
     guide_photo_default:'바탕화면 (기본)', guide_photo_change:'폴더 변경',
     // 추가
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
-    mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우',
+    mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
     sync_title:'☁️ 동기화', sync_down:'받기', sync_up:'올리기', sync_idle:'대기 중',
     sync_connecting:'연결 중...', sync_uptodate:'최신', sync_received:'받음', sync_merged:'내 변경 병합',
@@ -2105,6 +2103,7 @@ const STRINGS = {
     sync_config_err:'설정 오류', sync_error:'오류',
     water_lbl:'💧 오늘 마신 물', water_tip:'한 잔 마실 때마다 🍋 열매 +1',
     water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
+    health_pts_msg:'+{n} pts 받았어요!',
     water_full_msg:'바구니가 가득 찼어요!',
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
     cat_call1_btn:'📣 고양이 부르기 1', cat_call2_btn:'📣 고양이 부르기 2',
@@ -2368,7 +2367,7 @@ const STRINGS = {
     guide_photo_sub:'📁 Photo Folder',
     guide_photo_default:'Desktop (default)', guide_photo_change:'Change folder',
     dash_enc_msg:'Syncing with live clock 🕐',
-    mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow',
+    mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
     sync_title:'☁️ Sync', sync_down:'Down', sync_up:'Up', sync_idle:'Idle',
     sync_connecting:'Connecting...', sync_uptodate:'Up to date', sync_received:'Received', sync_merged:'Merged',
@@ -2378,6 +2377,7 @@ const STRINGS = {
     sync_config_err:'Config error', sync_error:'Error',
     water_lbl:'💧 Water today', water_tip:'Each glass earns a 🍋 fruit',
     water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
+    health_pts_msg:'+{n} pts!',
     water_full_msg:'Your basket is full!',
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
     cat_call1_btn:'📣 Call cat 1', cat_call2_btn:'📣 Call cat 2',
@@ -2641,7 +2641,7 @@ const STRINGS = {
     guide_photo_sub:'📁 写真保存先',
     guide_photo_default:'デスクトップ(デフォルト)', guide_photo_change:'フォルダ変更',
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
-    mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー',
+    mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
     sync_title:'☁️ 同期', sync_down:'受信', sync_up:'送信', sync_idle:'待機中',
     sync_connecting:'接続中...', sync_uptodate:'最新', sync_received:'受信済み', sync_merged:'変更を統合',
@@ -2651,6 +2651,7 @@ const STRINGS = {
     sync_config_err:'設定エラー', sync_error:'エラー',
     water_lbl:'💧 今日の水分', water_tip:'1杯ごとに🍋の実 +1',
     water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
+    health_pts_msg:'+{n} pts もらいました！',
     water_full_msg:'かごがいっぱいです！',
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
     cat_call1_btn:'📣 ねこを呼ぶ 1', cat_call2_btn:'📣 ねこを呼ぶ 2',
@@ -3113,15 +3114,11 @@ function startHealthReminders() {
 function speechBubbleClick() {
   if (_isWaterBubble) {
     _isWaterBubble = false;
-    if (S.fruits.length >= 5) {
-      showBubble(L('water_full_praise'), true);
-    } else {
-      playWaterSound();                 // 물은 컵을 눌렀을 때와 같은 소리로
-      addFruit(true);
-      saveState();
-      const praised = MSGS('waterPraise')[Math.floor(Math.random() * MSGS('waterPraise').length)];
-      showBubble(praised, true);
-    }
+    playWaterSound();                   // 물은 컵을 눌렀을 때와 같은 소리로
+    healthReward(1);                    // 포인트는 바구니처럼 차지 않으니 늘 준다
+    saveState();
+    const praised = MSGS('waterPraise')[Math.floor(Math.random() * MSGS('waterPraise').length)];
+    showBubble(praised, true);
   } else {
     openDash();
   }
@@ -3451,6 +3448,18 @@ function earnPts(n) {
   ['ptsDisplay','shopPts'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=S.pts; });
   const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
 }
+
+/**
+ * 물 한 잔·비타민 한 알의 보상.
+ *
+ * 예전에는 열매를 하나 얹었다. 그런데 바구니(최대 5개)가 차면 더 받지 못했고,
+ * 받은 뒤에도 수확해서 팔아야 포인트가 됐다. 물을 마시는 보람이 한참 뒤에 왔다.
+ * 이제 바로 포인트로 준다. 값은 열매 하나를 팔던 값과 같게 둔다.
+ *
+ * 되돌리기(방금 누른 잔을 다시 누르기)에서 같은 만큼 빼야 하므로 한 곳에 모은다.
+ */
+const HEALTH_PTS = 10;
+function healthReward(cups) { earnPts(HEALTH_PTS * cups); }
 
 /** @param silent 부르는 쪽에서 이미 소리를 냈으면 열매 소리는 겹치지 않게 뺀다 */
 function addFruit(silent) {
@@ -4114,18 +4123,14 @@ function renderWaterCups() {
 function drinkWater(i) {
   _waterEnsureToday();
   const cur = S.waterCups || 0;
-  if (i === cur) {                    // 한 잔 마심 → 열매 1개
+  if (i === cur) {                    // 한 잔 마심 → 포인트
     playWaterSound();
     S.waterCups = cur + 1;
-    if (S.fruits.length < 5) {
-      addFruit(true);                   // 고양이 소리를 냈으니 열매 소리는 겹치지 않게
-      toast('reward', L('water_reward_title'), L('water_reward_msg'));
-    } else {
-      toast('info', L('water_reward_title'), L('water_full_msg'));
-    }
-  } else if (i === cur - 1) {         // 방금 마신 잔 취소 → 열매도 되돌림
+    healthReward(1);
+    toast('reward', L('water_reward_title'), L('health_pts_msg').replace('{n}', HEALTH_PTS));
+  } else if (i === cur - 1) {         // 방금 마신 잔 취소 → 포인트도 되돌림
     S.waterCups = cur - 1;
-    if (S.fruits.length) { S.fruits.pop(); renderFruits(); renderHarvestCount(); }
+    healthReward(-1);
   } else {
     return;                           // 그 외 잔은 건너뛸 수 없음
   }
@@ -5164,7 +5169,12 @@ function renderAlarms() {
         data-tip="${a.on === false ? L('alarm_turn_on') : L('alarm_turn_off')}">${a.on === false ? '○' : '●'}</button>
       <span class="alarm-time">${a.time}</span>
       <span class="alarm-body">
-        <span class="alarm-label">${String(a.label || '').replace(/</g, '&lt;')}</span>
+        ${_isEditing('alarm', a.id)
+          ? _nameEditInput('alarm', a.id, a.label || '', 'alarm-label')
+          : `<span class="alarm-label" ondblclick="editEntityName(&quot;alarm&quot;,&quot;${a.id}&quot;)"
+              data-ekind="alarm" data-eid="${a.id}"
+              data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
+              title="${_attr(a.label || '')}">${String(a.label || '').replace(/</g, '&lt;')}</span>`}
         <span class="alarm-days">${alarmDaysLabel(a.days)}</span>
       </span>
       <button class="sch-del-btn" onclick="deleteAlarm('${a.id}')">×</button>
@@ -5333,10 +5343,12 @@ function playRole(role, fallbackName, idx) {
   } catch (e) {}
 }
 
-// 고양이를 만질 때 나는 소리 — 정해진 차례대로 하나씩 돌아가며 낸다 (서버에 없을 때의 내장본)
+// 고양이를 만질 때 나는 소리 — 정해진 차례대로 하나씩 돌아가며 낸다 (서버에 없을 때의 내장본).
+// 이름은 assets/sound 에 실제로 있는 파일과 글자 하나까지 같아야 한다.
+// 윈도우는 대소문자를 안 가리지만 안드로이드·아이폰은 가린다.
 const CAT_TOUCH_SOUNDS = [
-  'cat_touch_06.MP3', 'cat_touch_07.MP3', 'cat_touch_08.MP3', 'cat_touch_01.MP3',
-  'cat_touch_02.MP3', 'cat_touch_03.MP3', 'cat_touch_04.MP3', 'cat_touch_05.MP3'
+  'cat_touch_01.MP3', 'cat_touch_02.MP3',
+  'cat_touch_03.mp3', 'cat_touch_04.mp3', 'cat_touch_05.mp3'
 ];
 let _catTouchIdx = -1;
 
@@ -5349,12 +5361,12 @@ function playCatTouchSound() {
 
 /** 고양이 부르기 — 두 가지 부름소리 */
 function callCat(n) {
-  if (n === 2) playRole('call2', 'cat_calling_02.MP3');
-  else playRole('call1', 'cat_calling_01.MP3');
+  // 내장 부름소리는 하나뿐이라 둘 다 같은 것을 쓴다. 서버에 올리면 따로 난다.
+  playRole(n === 2 ? 'call2' : 'call1', 'cat_calling_03.mp3');
 }
 
 /** 열매를 얻거나 수확할 때 */
-function playFruitSound() { playRole('fruit', 'fruit_01.MP3'); }
+function playFruitSound() { playRole('fruit', 'fruit_02.MP3'); }
 
 /** 물 한 잔 · 비타민 한 알 */
 function playWaterSound() { playRole('water', 'cat01.MP3'); }
@@ -5465,9 +5477,12 @@ function takeVitamin(i) {
   if (i === cur) {
     playWaterSound();
     S.vitaminTaken = cur + 1;
+    healthReward(1);
     if (S.vitaminTaken >= vitaGoal()) toast('reward', L('vita_done_title'), L('vita_done_msg'));
+    else toast('reward', L('vita_title'), L('health_pts_msg').replace('{n}', HEALTH_PTS));
   } else if (i === cur - 1) {
     S.vitaminTaken = cur - 1;
+    healthReward(-1);
   } else {
     return;                           // 건너뛸 수 없음
   }
@@ -7654,6 +7669,52 @@ function ddayLabel(diff) {
   return diff > 0 ? ('D-' + diff) : ('D+' + (-diff));
 }
 
+/**
+ * 디데이·알람 이름을 그 자리에서 고친다. PC 는 더블클릭, 폰은 길게 누르기 —
+ * 할 일 목록과 같은 방식이다. 고치는 동안에는 그 줄만 입력칸으로 바뀐다.
+ */
+let _editEntity = null;              // { kind:'dday'|'alarm', id }
+function editEntityName(kind, id) {
+  _editEntity = { kind: kind, id: id };
+  if (kind === 'dday') renderDdays(); else renderAlarms();
+  setTimeout(() => {
+    const el = document.getElementById('entityNameEdit');
+    if (el) { el.focus(); el.select(); }
+  }, 30);
+}
+function cancelEntityName() {
+  const k = _editEntity && _editEntity.kind;
+  _editEntity = null;
+  if (k === 'dday') renderDdays(); else if (k === 'alarm') renderAlarms();
+}
+function commitEntityName(kind, id, val) {
+  if (!_editEntity || _editEntity.kind !== kind || String(_editEntity.id) !== String(id)) return;
+  _editEntity = null;
+  const t = (val || '').trim();
+  if (kind === 'dday') {
+    const d = (S.ddays || []).find(x => String(x.id) === String(id));
+    if (d && t && t !== d.title) { d.title = t; d.ts = Date.now(); saveState(); }
+    renderDdays();
+  } else {
+    const a = alarmList().find(x => String(x.id) === String(id));
+    if (a && t && t !== a.label) { a.label = t; saveState(); }
+    renderAlarms();
+  }
+}
+/** 고치는 중인 줄인가 */
+function _isEditing(kind, id) {
+  return !!(_editEntity && _editEntity.kind === kind && String(_editEntity.id) === String(id));
+}
+/** 따옴표가 든 이름이 속성값을 깨지 않게 */
+function _attr(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+/** 이름을 고치는 입력칸 한 줄 */
+function _nameEditInput(kind, id, value, cls) {
+  return `<input id="entityNameEdit" class="${cls}" value="${_attr(value)}"
+    style="min-width:0;flex:1 1 auto;font:inherit;color:inherit;background:var(--card);border:1px solid var(--acc);padding:1px 4px"
+    onblur="commitEntityName(&quot;${kind}&quot;,&quot;${id}&quot;,this.value)"
+    onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){cancelEntityName();}">`;
+}
+
 function renderDdays() {
   const el = document.getElementById('ddayList');
   if (!el) return;
@@ -7677,7 +7738,12 @@ function renderDdays() {
     const [yy, mm, dd] = d.date.split('-');
     return `<div class="dday-row">
       <span class="dday-badge${cls}">${ddayLabel(diff)}</span>
-      <span class="dday-name-txt" title="${d.title.replace(/"/g, '&quot;')}">${d.title.replace(/</g, '&lt;')}</span>
+      ${_isEditing('dday', d.id)
+        ? _nameEditInput('dday', d.id, d.title, 'dday-name-txt')
+        : `<span class="dday-name-txt" ondblclick="editEntityName(&quot;dday&quot;,&quot;${d.id}&quot;)"
+            data-ekind="dday" data-eid="${d.id}"
+            data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
+            title="${_attr(d.title)}">${d.title.replace(/</g, '&lt;')}</span>`}
       <span class="dday-when">${parseInt(mm)}/${parseInt(dd)}</span>
       <button class="sch-del-btn" onclick="deleteDday('${d.id}')">×</button>
     </div>`;
