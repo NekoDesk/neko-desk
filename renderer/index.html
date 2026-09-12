@@ -5585,6 +5585,18 @@ function playFruitSound() { playRole('fruit', 'fruit_02.mp3'); }
 function playWaterSound() { playRole('water', 'cat01.mp3'); }
 
 // 알람은 직접 등록한 것에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
+/**
+ * 알람이 울릴 때 폰을 떨게 한다. 진동 모드에서는 소리가 안 나니 이것으로 알아챈다.
+ * 폰 브리지가 있으면 그쪽(아이폰은 Haptics, 안드로이드는 vibrate)에 맡기고,
+ * 없으면 브라우저의 vibrate 를 쓴다. PC 에는 둘 다 없어 조용히 넘어간다.
+ */
+function buzz() {
+  try {
+    if (typeof window._mobileBuzz === 'function') { window._mobileBuzz(); return; }
+    if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 400]);
+  } catch (e) {}
+}
+
 function alarmSoundSrc() { return soundSrc('cat01.mp3'); }
 function playAlarmSound() { playSound('cat01.mp3'); }
 
@@ -5637,6 +5649,7 @@ function checkAlarms() {
     S.alarmFired[a.id] = today + ' ' + hhmm;
     changed = true;
     playAlarmSound();
+    buzz();
     showAlarmBubble('⏰ ' + a.label);
     toast('info', L('alarm_ring_title'), a.label);
     raiseAlarm(a.label);
@@ -5654,6 +5667,7 @@ function checkAlarms() {
       changed = true;
       const label = starting.map(b => b.label || L('blk_new')).join(' · ');
       playWaterSound();                          // 물·비타민과 같은 소리로
+      buzz();
       showAlarmBubble('⏰ ' + label);
       toast('info', L('tt_alarm_ring_title'), label);
       raiseAlarm(label);

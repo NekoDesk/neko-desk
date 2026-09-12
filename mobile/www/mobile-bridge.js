@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.3.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.4.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -796,6 +796,24 @@
       try { localStorage.removeItem(k); } catch (e) {}
     });
     try { if (tag) localStorage.setItem(OWNER_KEY, tag); } catch (e) {}
+  };
+
+  /**
+   * 알람이 울릴 때 폰을 떨게 한다.
+   * 아이폰은 브라우저 vibrate 가 없어 Haptics 플러그인을 쓴다. 안드로이드는 둘 다 되지만
+   * vibrate 가 무늬(길게-짧게-길게)를 낼 수 있어 그쪽을 먼저 쓴다.
+   */
+  window._mobileBuzz = function () {
+    try {
+      if (navigator.vibrate && navigator.vibrate([250, 120, 250, 120, 400])) return;
+    } catch (e) {}
+    var H = capPlugin('Haptics');
+    if (H && H.vibrate) {
+      // 아이폰은 한 번에 길게 못 떨어 세 번 나눠 떤다
+      [0, 350, 700].forEach(function (ms) {
+        setTimeout(function () { try { H.vibrate({ duration: 300 }); } catch (e) {} }, ms);
+      });
+    }
   };
 
   /**
