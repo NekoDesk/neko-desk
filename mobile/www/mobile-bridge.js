@@ -2041,18 +2041,53 @@
    * 칸을 누른 뒤 자판이 다 올라올 즈음 그 칸을 화면 가운데로 끌어 온다.
    */
   function installKeyboardScroll() {
+    var vv = window.visualViewport;
+
+    function isTypable(el) {
+      if (!el || !el.tagName) return false;
+      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true;
+    }
+    function bring(el) {
+      if (!isTypable(el)) return;
+      try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+    }
+
+    /**
+     * 자판이 가린 높이만큼 구르는 칸 아래에 자리를 만든다.
+     * 이게 없으면 페이지 맨 아래에 있는 입력칸(디데이·알람)은 더 굴릴 자리가 없어
+     * 아무리 끌어 올려도 자판 뒤에 남는다.
+     */
+    function fitToKeyboard() {
+      var box = document.querySelector('#dashPanel .dash-body');
+      if (!box || !vv) return;
+      var hidden = Math.max(0, window.innerHeight - vv.height - (vv.offsetTop || 0));
+      box.style.paddingBottom = hidden > 80 ? hidden + 'px' : '';
+      if (hidden > 80) bring(document.activeElement);
+    }
+
+    if (vv) {
+      vv.addEventListener('resize', fitToKeyboard);
+      vv.addEventListener('scroll', fitToKeyboard);
+    }
+    // 자판이 올라오는 데 시간이 걸린다. 창 크기가 바뀌는 것과 별개로 한 번 더 끌어 올린다.
     document.addEventListener('focusin', function (e) {
       var el = e.target;
-      if (!el || !el.tagName) return;
-      var tag = el.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && el.isContentEditable !== true) return;
-      // 자판이 올라오며 창 높이가 바뀌는 데 시간이 걸린다 — 두 번 나눠 확인한다
-      [250, 550].forEach(function (ms) {
+      if (!isTypable(el)) return;
+      [120, 350, 650].forEach(function (ms) {
         setTimeout(function () {
           if (document.activeElement !== el) return;
-          try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) {}
+          fitToKeyboard();
+          bring(el);
         }, ms);
       });
+    });
+    // 자판이 내려가면 만들어 둔 자리를 걷는다
+    document.addEventListener('focusout', function () {
+      setTimeout(function () {
+        if (isTypable(document.activeElement)) return;
+        var box = document.querySelector('#dashPanel .dash-body');
+        if (box) box.style.paddingBottom = '';
+      }, 200);
     });
   }
 
@@ -2198,8 +2233,10 @@
       '#dp-home .grid2 { display:block !important; flex:none !important; height:auto !important; }',
       '#dp-home .grid2 > div { display:block !important; height:auto !important; min-height:0 !important; }',
       '#dp-home .card { height:auto !important; margin-bottom:12px !important; overflow:visible !important; }',
-      // 상자 사이 간격은 어느 탭에서나 같아야 한다. 탭마다 제각각이면 눈에 걸린다.
-      '#dashPanel .dpage > .card, #dashPanel .dpage > div > .card { margin-bottom:12px !important; }',
+      // 상자 사이 간격은 어느 탭에서나 같아야 한다.
+      // 어떤 상자는 margin-top 으로, 어떤 상자는 margin-bottom 으로 띄워 두어 제각각이었다.
+      // 깊이도 탭마다 달라(할 일은 .grid2 > div > .card) 자식 선택자로는 안 걸린다.
+      '#dashPanel .dpage .card { margin-top:0 !important; margin-bottom:12px !important; }',
       '#dashPanel .dpage .grid2 { gap:12px !important; }',
       '#dp-home #homeCycleCard, #dp-home #homeWorkCard { height:auto !important; }',
       '#dp-home .cycle-body { flex:none !important; height:auto !important; }',
@@ -2268,6 +2305,7 @@
       // PC 는 가로로 두지만 폰은 세로로 쌓는다
       '#dp-cat .cat-main { flex-direction:column !important; align-items:center !important; gap:14px !important; }',
       '#dp-cat .cat-main-right { width:100% !important; }',
+      '#dp-cat .cat-pick { width:100% !important; max-width:300px !important; }',
       '#dp-cat .breed-row { grid-template-columns:repeat(2,1fr) !important; }',
       '#dp-cat .breed-name { white-space:normal !important; font-size:12px !important; }',
       '#dp-cat .breed-desc { white-space:normal !important; font-size:10px !important; }',

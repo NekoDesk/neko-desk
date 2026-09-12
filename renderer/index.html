@@ -460,16 +460,17 @@ body.theme-mono {
 .cat-main { display: flex; gap: 24px; align-items: flex-start; }
 .cat-main-left { flex: 0 0 auto; text-align: center; }
 .cat-main-right { flex: 1 1 auto; min-width: 0; }
-/* 눌러서 고를 수 있다는 것을 글자 없이 보이게 — 테두리와 모서리의 연필 표 */
-.cat-pick { position: relative; display: inline-block; cursor: pointer; padding: 8px;
-  border: 2px dashed var(--border); border-radius: 12px;
-  transition: border-color 0.15s, background 0.15s, transform 0.1s; }
-.cat-pick:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 45%); }
-.cat-pick:active { transform: scale(0.97); }
-.cat-pick-badge { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px;
-  border-radius: 50%; background: var(--yellow); color: var(--frame-text);
-  font-size: 13px; line-height: 22px; text-align: center; font-weight: 700;
-  border: 2px solid var(--panel); pointer-events: none; }
+/* 고양이와 이름이 함께 든 정사각형 칸. 누를 수 있다는 것은 모서리 안쪽의
+   손 아이콘으로만 알린다 — 글자 없이, 눈에 걸리지 않을 만큼만 진하게. */
+.cat-pick { position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  width: 260px; max-width: 100%; aspect-ratio: 1 / 1;
+  background: var(--panel); border: 2px solid var(--frame); border-radius: 4px;
+  cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+.cat-pick:hover { border-color: var(--yellow); }
+.cat-pick:active { transform: scale(0.98); }
+.cat-pick-badge { position: absolute; right: 10px; top: 8px; font-size: 17px;
+  filter: grayscale(1) brightness(0.45); opacity: 0.55; pointer-events: none; }
 /* 단추는 칸을 고르게 나눠 갖는다. 글자 길이에 따라 줄이 들쭉날쭉해지지 않도록
    한 줄로 고정하고, 넘치면 말줄임표로 자른다. */
 .cat-btn-row, .cat-btn-grid { display: grid; gap: 6px; }
@@ -1416,10 +1417,10 @@ select {
               <div class="cat-main-left">
                 <div class="cat-pick" onclick="openCatEdit()" data-i18n-tip="cat_edit_tip">
                   <img id="catPageCanvas" class="big-cat cat-img-render">
-                  <span class="cat-pick-badge">✎</span>
+                  <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow)"
+                    id="catNameP">냐옹이</div>
+                  <span class="cat-pick-badge">👆</span>
                 </div>
-                <div style="font-family:'Galmuri14',monospace;font-size:13px;color:var(--yellow);cursor:pointer;margin-top:6px"
-                  id="catNameP" onclick="openCatEdit()">냐옹이</div>
               </div>
               <div class="cat-main-right">
                 <div class="stat-bar">
