@@ -2205,7 +2205,7 @@ const STRINGS = {
     cycle_auto:'출근 시간부터 자동 시작', cycles_unit:'사이클', today_done:'오늘 완료:',
     cycle_home_desc:'55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.',
     work_am:'오전', work_pm:'오후', work_add:'+ 항목 추가', work_new:'새 항목', work_ph:'내용',
-    date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일', date_y:'{y}년',
+    date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일', date_y:'{y}년', date_dots:'{y}.{m}.{d}',
     months_short:'1월,2월,3월,4월,5월,6월,7월,8월,9월,10월,11월,12월',
     cal_pick_tip:'눌러서 년·월 고르기', cal_pick_today:'오늘로',
     dows:'일,월,화,수,목,금,토',
@@ -2507,7 +2507,7 @@ const STRINGS = {
     cycle_auto:'Auto-starts at work time', cycles_unit:'cycles', today_done:'Today:',
     cycle_home_desc:'55 min focus + 5 min break cycle!<br>Drink water and take a stretch.',
     work_am:'AM', work_pm:'PM', work_add:'+ Add item', work_new:'New item', work_ph:'Label',
-    date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}', date_y:'{y}',
+    date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}', date_y:'{y}', date_dots:'{m}/{d}/{y}',
     months_short:'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
     cal_pick_tip:'Tap to pick year and month', cal_pick_today:'Today',
     dows:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
@@ -2805,7 +2805,7 @@ const STRINGS = {
     cycle_auto:'出勤時間に自動開始', cycles_unit:'サイクル', today_done:'今日:',
     cycle_home_desc:'55分集中・5分休憩サイクル！<br>水分補給と軽いストレッチも忘れずに。',
     work_am:'午前', work_pm:'午後', work_add:'+ 追加', work_new:'新しい項目', work_ph:'ラベル',
-    date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日', date_y:'{y}年',
+    date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日', date_y:'{y}年', date_dots:'{y}/{m}/{d}',
     months_short:'1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月',
     cal_pick_tip:'押して年・月を選ぶ', cal_pick_today:'今日へ',
     dows:'日,月,火,水,木,金,土',
@@ -8436,7 +8436,7 @@ function renderDdays() {
             data-ekind="dday" data-eid="${d.id}"
             data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
             title="${_attr(d.title)}">${d.title.replace(/</g, '&lt;')}</span>`}
-      <span class="dday-when">${parseInt(mm)}/${parseInt(dd)}</span>
+      <span class="dday-when">${L('date_dots').replace('{y}', yy).replace('{m}', parseInt(mm)).replace('{d}', parseInt(dd))}</span>
       <button class="sch-del-btn" onclick="deleteDday('${d.id}')">×</button>
     </div>`;
   }).join('');
