@@ -5494,7 +5494,7 @@ function playRole(role, fallbackName, idx) {
 // 이름은 assets/sound 에 실제로 있는 파일과 글자 하나까지 같아야 한다.
 // 윈도우는 대소문자를 안 가리지만 안드로이드·아이폰은 가린다.
 const CAT_TOUCH_SOUNDS = [
-  'cat_touch_01.MP3', 'cat_touch_02.MP3',
+  'cat_touch_01.mp3', 'cat_touch_02.mp3',
   'cat_touch_03.mp3', 'cat_touch_04.mp3', 'cat_touch_05.mp3'
 ];
 let _catTouchIdx = -1;
@@ -5513,14 +5513,14 @@ function callCat(n) {
 }
 
 /** 열매를 얻거나 수확할 때 */
-function playFruitSound() { playRole('fruit', 'fruit_02.MP3'); }
+function playFruitSound() { playRole('fruit', 'fruit_02.mp3'); }
 
 /** 물 한 잔 · 비타민 한 알 */
-function playWaterSound() { playRole('water', 'cat01.MP3'); }
+function playWaterSound() { playRole('water', 'cat01.mp3'); }
 
 // 알람은 직접 등록한 것에서만 낸다. 물·비타민 알림은 지금처럼 조용히 말풍선만.
-function alarmSoundSrc() { return soundSrc('cat01.MP3'); }
-function playAlarmSound() { playSound('cat01.MP3'); }
+function alarmSoundSrc() { return soundSrc('cat01.mp3'); }
+function playAlarmSound() { playSound('cat01.mp3'); }
 
 
 /**
