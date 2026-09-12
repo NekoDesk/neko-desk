@@ -1658,6 +1658,29 @@ select {
     </div>
   </div>
 </div>
+<!-- PC 앱 받기 (폰에서 설정 → PC 앱 설치하러 가기) -->
+<div id="pcInstallModal" style="display:none;position:fixed;inset:0;z-index:9480;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closePcInstall(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="pc_title">💻 PC 앱 받기</span>
+      <button onclick="closePcInstall()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="pc_desc">PC 에서 열면 바로 받을 수 있어요. 지금 폰에서는 아래 링크를 PC 로 보내 두세요.</div>
+
+    <button class="btn btn-y" style="width:100%;font-size:13px;padding:11px 8px;margin-bottom:8px" onclick="_openExtLink(MS_STORE_URL)" data-i18n="pc_win">🪟 Windows · Microsoft Store</button>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="pcMacArm" class="btn btn-g" style="flex:1;font-size:12px;padding:10px 6px" onclick="openMacDmg('arm')" data-i18n="pc_mac_arm">🍎 Mac · Apple Silicon</button>
+      <button id="pcMacX64" class="btn btn-g" style="flex:1;font-size:12px;padding:10px 6px" onclick="openMacDmg('x64')" data-i18n="pc_mac_intel">🍎 Mac · Intel</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin:0 0 12px"></div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:8px" data-i18n="pc_send_lbl">PC 로 보내기</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="_copyText(NEKODESK_SITE_URL)" data-i18n="pc_copy">🔗 링크 복사</button>
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="sharePcLink()" data-i18n="pc_share">📤 공유하기</button>
+    </div>
+  </div>
+</div>
 <!-- 열매 바구니 / 포인트 교환 -->
 <div id="fruitModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeFruitPopup(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
@@ -2170,6 +2193,10 @@ const STRINGS = {
     cat_name_lbl:'이름', cat_name_ph:'이름 입력...',
     cat_food_html:'먹이 <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 꾸미기', cat_breed_lbl:'고양이 종류',
+    pc_title:'💻 PC 앱 받기', pc_desc:'PC 에서 열면 바로 받을 수 있어요. 지금 폰에서는 아래 링크를 PC 로 보내 두세요.',
+    pc_win:'🪟 Windows · Microsoft Store', pc_mac_arm:'🍎 Mac · Apple Silicon', pc_mac_intel:'🍎 Mac · Intel',
+    pc_send_lbl:'PC 로 보내기', pc_copy:'🔗 링크 복사', pc_share:'📤 공유하기',
+    pc_share_text:'NEKO DESK PC 앱 받기 — 내 컴퓨터 위에 사는 픽셀 고양이',
     cat_edit_btn:'✏️ 이름·종류 바꾸기', cat_edit_title:'🐱 오늘의 고양이는?',
     cat_edit_tip:'눌러서 오늘의 고양이 고르기',
     inst_title:'📱 어떤 폰을 쓰세요?', inst_ios:' 아이폰', inst_and:'🤖 안드로이드',
@@ -2460,6 +2487,10 @@ const STRINGS = {
     cat_name_lbl:'Name', cat_name_ph:'Enter name...',
     cat_food_html:'Food <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 Customize', cat_breed_lbl:'Cat breed',
+    pc_title:'💻 Get the PC app', pc_desc:'Open this on your PC to download right away. From your phone, send the link to your PC below.',
+    pc_win:'🪟 Windows · Microsoft Store', pc_mac_arm:'🍎 Mac · Apple Silicon', pc_mac_intel:'🍎 Mac · Intel',
+    pc_send_lbl:'Send to PC', pc_copy:'🔗 Copy link', pc_share:'📤 Share',
+    pc_share_text:'Get the NEKO DESK PC app — a pixel cat that lives on your desk',
     cat_edit_btn:'✏️ Name & breed', cat_edit_title:"🐱 Who's your cat today?",
     cat_edit_tip:"Tap to pick today's cat",
     inst_title:'📱 Which phone do you use?', inst_ios:' iPhone', inst_and:'🤖 Android',
@@ -2748,6 +2779,10 @@ const STRINGS = {
     cat_name_lbl:'名前', cat_name_ph:'名前を入力...',
     cat_food_html:'えさ <span style="color:var(--yellow)">(20pts)</span>',
     cat_deco_title:'👒 カスタマイズ', cat_breed_lbl:'ねこの種類',
+    pc_title:'💻 PC アプリを入手', pc_desc:'PC で開けばすぐダウンロードできます。スマホからは下のリンクを PC に送ってください。',
+    pc_win:'🪟 Windows · Microsoft Store', pc_mac_arm:'🍎 Mac · Apple Silicon', pc_mac_intel:'🍎 Mac · Intel',
+    pc_send_lbl:'PC に送る', pc_copy:'🔗 リンクをコピー', pc_share:'📤 共有',
+    pc_share_text:'NEKO DESK PC アプリを入手 — デスクに住むピクセルねこ',
     cat_edit_btn:'✏️ 名前・種類', cat_edit_title:'🐱 今日のねこは？',
     cat_edit_tip:'押して今日のねこを選ぶ',
     inst_title:'📱 どのスマホをお使いですか？', inst_ios:' iPhone', inst_and:'🤖 Android',
@@ -3546,9 +3581,50 @@ async function submitTester(){
   }
 }
 
+/**
+ * 폰에서 PC 앱을 받는 창. 이미 폰 앱을 깐 사람이 누르는 단추이니 폰 이야기는 하지 않는다.
+ * 스토어와 맥 파일로 바로 보내고, PC 에서 열 수 있게 링크를 복사·공유하는 길을 둔다.
+ * 맥 파일 주소는 GitHub 최신 릴리즈에서 그때그때 읽는다 — 버전마다 이름이 달라서.
+ */
+const MS_STORE_URL = 'https://apps.microsoft.com/detail/9N841LL8H6FJ';
+const NEKODESK_RELEASE_API = 'https://api.github.com/repos/NekoDesk/neko-desk/releases/latest';
+let _macDmg = null;      // { arm, x64 } — 한 번 읽으면 기억해 둔다
+
+function openPcInstall(){
+  const el = document.getElementById('pcInstallModal');
+  if (!el) return;
+  el.style.display = 'flex';
+  if (_macDmg) return;
+  fetch(NEKODESK_RELEASE_API).then(r => r.ok ? r.json() : null).then(j => {
+    const a = (j && j.assets) || [];
+    const find = (suf) => { const x = a.find(z => /\.dmg$/i.test(z.name) && z.name.indexOf(suf) >= 0); return x ? x.browser_download_url : null; };
+    _macDmg = { arm: find('arm64'), x64: find('x64') };
+  }).catch(() => {});
+}
+function closePcInstall(e){
+  if (e && e.target !== e.currentTarget) return;
+  const el = document.getElementById('pcInstallModal');
+  if (el) el.style.display = 'none';
+}
+/** 맥 파일 주소를 아직 못 읽었으면 사이트로 보낸다 — 거기에도 같은 단추가 있다 */
+function openMacDmg(kind){
+  const u = _macDmg && _macDmg[kind];
+  _openExtLink(u || NEKODESK_SITE_URL);
+}
+/** 폰의 공유 창으로 링크를 보낸다. 공유를 못 쓰는 곳이면 복사로 대신한다 */
+async function sharePcLink(){
+  const payload = { title: 'NEKO DESK', text: L('pc_share_text'), url: NEKODESK_SITE_URL };
+  try {
+    const Sh = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+    if (Sh && Sh.share) { await Sh.share(Object.assign({ dialogTitle: L('pc_share') }, payload)); return; }
+    if (navigator.share) { await navigator.share(payload); return; }
+  } catch (e) { return; }              // 공유 창을 그냥 닫은 것 — 조용히
+  _copyText(NEKODESK_SITE_URL);
+}
+
 function openOtherApp(){
-  // 폰에서는 PC 앱을 권하는 자리라 사이트로 보낸다. PC 에서는 어떤 폰인지부터 묻는다.
-  if (window.Capacitor) { _openExtLink(NEKODESK_SITE_URL); return; }
+  // 폰에서는 PC 앱을 받는 창을, PC 에서는 어떤 폰인지부터 묻는 창을 연다.
+  if (window.Capacitor) { openPcInstall(); return; }
   openInstall();
 }
 /** 모바일이면 'PC 앱', 데스크톱이면 '모바일 앱'을 권한다 */
