@@ -980,8 +980,11 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border:1px solid var(--yellow); border-radius:6px; padding:8px 10px; margin-bottom:10px; }
 .cal-multi-bar .hint { flex:1; min-width:0; font-size:11px; color:var(--gray); line-height:1.5; }
 .cal-day { min-height:30px; padding:3px 2px; cursor:pointer; border-radius:3px; border:1px solid transparent; vertical-align:top; }
-.cal-hol { font-size:8px; line-height:1.1; color:#f88; text-align:center;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+/* 공휴일 이름은 칸 너비를 넘기지 않는다. min-width:0 이 없으면 긴 이름이
+   칸을 밀어내 그 주만 넓어진다 (표 칸은 기본이 "내용만큼 넓게"라서). */
+.cal-day { min-width: 0; }
+.cal-hol { font-size:8px; line-height:10px; height:10px; color:#f88; text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; min-width:0; }
 .cal-day:hover { border-color:var(--border); background:var(--card); }
 .cal-day.today { border-color:var(--yellow); background:rgba(255,211,105,0.08); }
 .cal-day.has-note::after { content:'•'; display:block; text-align:center; color:var(--yellow); font-size:10px; line-height:1; }
@@ -2142,7 +2145,7 @@ const STRINGS = {
     guide_photo_default:'바탕화면 (기본)', guide_photo_change:'폴더 변경',
     // 추가
     dash_enc_msg:'실시간 시계와 동기화 중 🕐',
-    mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기',
+    mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기', holiday_short:'공휴일',
     holiday_title:'🎌 공휴일', holiday_none:'표시하지 않음',
     holiday_desc:'사는 나라를 고르면 달력에 그 나라 공휴일이 표시돼요. 고르지 않으면 표시하지 않아요.',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
@@ -2426,7 +2429,7 @@ const STRINGS = {
     guide_photo_sub:'📁 Photo Folder',
     guide_photo_default:'Desktop (default)', guide_photo_change:'Change folder',
     dash_enc_msg:'Syncing with live clock 🕐',
-    mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek',
+    mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek', holiday_short:'Holiday',
     holiday_title:'🎌 Holidays', holiday_none:'Do not show',
     holiday_desc:'Pick where you live and public holidays for that country appear on the calendar. Nothing is shown until you pick one.',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
@@ -2710,7 +2713,7 @@ const STRINGS = {
     guide_photo_sub:'📁 写真保存先',
     guide_photo_default:'デスクトップ(デフォルト)', guide_photo_change:'フォルダ変更',
     dash_enc_msg:'リアルタイム時計と同期中 🕐',
-    mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる',
+    mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる', holiday_short:'祝日',
     holiday_title:'🎌 祝日', holiday_none:'表示しない',
     holiday_desc:'お住まいの国を選ぶと、その国の祝日がカレンダーに表示されます。選ばなければ何も表示しません。',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
@@ -6471,9 +6474,11 @@ function renderCalendar() {
       // 항목 확인·체크·삭제는 날짜를 누를때 오른쪽 패널에서 한다.
       const isMulti = _multiKeys && _multiKeys.indexOf(key) >= 0;
       const hol = _holidays[key] || null;
+      // 긴 이름은 칸을 비집고 나가 보기 어렵다 — 짧은 말로 바꾸고 원래 이름은 툴팁에 남긴다
+      const holShort = hol ? (hol.length > 5 ? L('holiday_short') : hol) : null;
       lh += `<div class="cal-day${cell.other?' cal-other':''}${isToday?' today':''}${isSel&&!_multiKeys?' cal-sel':''}${items.length?' has-note':''}${hasDday(key)?' has-dday':''}${isMulti?' cal-multi':''}" data-key="${key}" onclick="openDayNote('${key}')"${hol?` title="${_attr(hol)}"`:''}>
         <div class="cal-day-num" style="font-size:10px;text-align:center;${(isSun||hol)&&!cell.other?'color:#f88;':''}${isToday?'font-weight:700;color:var(--yellow);':''}">${d}</div>
-        ${hol && !cell.other ? `<div class="cal-hol">${hol.replace(/</g, '&lt;')}</div>` : ''}
+        ${hol && !cell.other ? `<div class="cal-hol">${holShort.replace(/</g, '&lt;')}</div>` : ''}
       </div>`;
     }
     lh += `</div>`;

@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.2.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.3.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -2165,10 +2165,11 @@
       '}',
       '#dashPanel .dtab .mtab-ico { font-size:17px; line-height:1; }',
       '#dashPanel .dtab .mtab-lbl { font-size:10px; letter-spacing:-0.3px; }',
-      // 홈 화면 — 좁은 화면에 맞춰 한 줄로 쌓고, 큰 고양이는 뺀다.
+      // 홈 화면 — 좁은 화면에 맞춰 한 줄로 쌓는다.
       // PC는 창 높이에 딱 맞추는 구조라 폰에서는 내용이 눌려 겹쳤다.
       // 폰에서는 높이를 풀고 위에서 아래로 흐르게 한다.
-      '#dp-home .cat-display { display:none !important; }',
+      // 고양이 박스는 홈의 얼굴이라 남긴다 — 누르면 고양이 탭으로 간다.
+      '#dp-home .cat-display { display:flex !important; margin-bottom:12px !important; }',
       '#dp-home.dpage.active { display:block !important; height:auto !important; }',
       '#dp-home .grid2 { display:block !important; flex:none !important; height:auto !important; }',
       '#dp-home .grid2 > div { display:block !important; height:auto !important; min-height:0 !important; }',
@@ -2262,8 +2263,12 @@
       // 사진 찍기는 폰에서 잠시 뺀다 — 권한 안내가 없고 갤러리에도 안 들어간다
       '#headerPhotoBtn { display:none !important; }',
       '#photoModal { display:none !important; }',
-      // 좁은 화면에서 자리만 차지하는 것들 — 로고 줄과 사이클 고리
+      // 좁은 화면에서 자리만 차지하는 것들 — 제목 줄, 로고 줄, 사이클 고리.
+      // 제목 줄에는 창을 줄이고 닫는 단추가 있는데 폰에는 쓸 일이 없다.
+      '#dashTitlebar { display:none !important; }',
       '#dashPanel .dash-header { display:none !important; }',
+      // 제목 줄이 사라지면 탭 줄이 판의 맨 위가 된다 — 테두리를 여기서 닫아 준다
+      '#dashPanel .dash-tabs { border-top:2px solid var(--frame) !important; }',
       '#dp-home .pomo-wrap { display:none !important; }',
       '#homeCycleCard .card-title { gap:10px !important; }',
       '[onclick*="openPhotoBooth"] { display:none !important; }',
