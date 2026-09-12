@@ -2342,7 +2342,7 @@ const STRINGS = {
     pin_cancel:'취소', pin_select_days:'고정할 요일을 선택하세요',
     pin_unpin:'📌 고정 해제', pin_unpin_hint:'선택한 날 이후 같은 내용의 일정을 모두 삭제합니다',
     pin_period:'기간', pin_until:'까지', todo_star:'중요 표시',
-    multi_rule_lbl:'규칙으로 고르기', multi_rule_hint:'규칙을 고르면 시작 날부터 끝 날까지 해당하는 날이 모두 골라져요. 그 뒤에 달력에서 하나씩 더하거나 뺄 수도 있어요.',
+    multi_rule_lbl:'규칙으로 고르기', multi_rule_hint:'규칙을 고르면 시작 날부터 끝 날까지 해당하는 날이 모두 골라져요. 다시 누르면 풀려요. 달력에서 하나씩 더하거나 뺄 수도 있어요.',
     pin_unpin_done:'{n}개 일정을 해제했어요', pin_unpin_none:'해제할 일정이 없어요',
     todo_prev_day:'◀ 어제', todo_next_day:'내일 ▶', todo_adj_empty:'일정 없음',
     todo_tip_title:'💡 사용 팁',
@@ -2640,7 +2640,7 @@ const STRINGS = {
     pin_cancel:'Cancel', pin_select_days:'Select the weekdays to pin to',
     pin_unpin:'📌 Unpin', pin_unpin_hint:'Removes matching tasks from every later date',
     pin_period:'Period', pin_until:'until', todo_star:'Mark as important',
-    multi_rule_lbl:'Pick by rule', multi_rule_hint:'A rule selects every matching day from the start to the end date. You can still tap the calendar to add or remove days.',
+    multi_rule_lbl:'Pick by rule', multi_rule_hint:'A rule selects every matching day from the start to the end date. Tap it again to clear. You can still tap the calendar to add or remove days.',
     pin_unpin_done:'Removed {n} tasks', pin_unpin_none:'No matching tasks to remove',
     todo_prev_day:'◀ Yesterday', todo_next_day:'Tomorrow ▶', todo_adj_empty:'Nothing planned',
     todo_tip_title:'💡 Tips',
@@ -2952,7 +2952,7 @@ const STRINGS = {
     pin_cancel:'キャンセル', pin_select_days:'固定する曜日を選んでください',
     pin_unpin:'📌 固定解除', pin_unpin_hint:'選択した日より後の同じ内容の予定をすべて削除します',
     pin_period:'期間', pin_until:'まで', todo_star:'重要マーク',
-    multi_rule_lbl:'ルールで選ぶ', multi_rule_hint:'ルールを選ぶと開始日から終了日までの該当日がすべて選ばれます。その後カレンダーで個別に追加・除外もできます。',
+    multi_rule_lbl:'ルールで選ぶ', multi_rule_hint:'ルールを選ぶと開始日から終了日までの該当日がすべて選ばれます。もう一度押すと外れます。カレンダーで個別に追加・除外もできます。',
     pin_unpin_done:'{n}件解除しました', pin_unpin_none:'解除する予定がありません',
     todo_prev_day:'◀ 昨日', todo_next_day:'明日 ▶', todo_adj_empty:'予定なし',
     todo_tip_title:'💡 使い方のヒント',
@@ -4781,11 +4781,31 @@ function fillPlan() {
   };
 }
 
+/**
+ * 칸 색 여섯 가지의 실제 색 — CSS 의 .tt-blk.cN 에서 읽는다 (변수로는 안 두어서).
+ * 테마가 바뀌면 색도 달라지므로 그릴 때마다 읽되, 한 번 그릴 때는 한 번만.
+ */
+function ttPalette() {
+  const out = [];
+  for (let c = 0; c < TT_COLOR_COUNT; c++) {
+    const probe = document.createElement('div');
+    probe.className = 'tt-blk c' + c;
+    probe.style.cssText = 'position:absolute;left:-9999px';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    out.push({ bg: cs.backgroundColor, border: cs.borderTopColor });
+    probe.remove();
+  }
+  return out;
+}
+
 /** 줄 하나의 색 고르개 — 고치기 창의 것과 같은 동그라미를 작게 */
-function fillColorDots(i, cur) {
+function fillColorDots(i, cur, pal) {
+  pal = pal || ttPalette();
   let h = `<button type="button" class="tt-color auto${cur < 0 ? ' on' : ''}" onclick="fillSetColor(${i},-1)"></button>`;
   for (let c = 0; c < TT_COLOR_COUNT; c++) {
-    h += `<button type="button" class="tt-color c${c}${cur === c ? ' on' : ''}" style="background:var(--ttc${c})" onclick="fillSetColor(${i},${c})"></button>`;
+    const st = `background:${pal[c].bg}${cur === c ? '' : ';border-color:' + pal[c].border}`;
+    h += `<button type="button" class="tt-color c${c}${cur === c ? ' on' : ''}" style="${st}" onclick="fillSetColor(${i},${c})"></button>`;
   }
   return h;
 }
@@ -4803,6 +4823,7 @@ function fillDelRow(i) { if (_fillRows.length <= 1) return; _fillRows.splice(i, 
 function renderFillRows() {
   const el = document.getElementById('fillList');
   if (!el) return;
+  const pal = ttPalette();
   el.innerHTML = _fillRows.map((r, i) => `
     <div class="fill-row">
       <div class="fill-row-top">
@@ -4815,7 +4836,7 @@ function renderFillRows() {
         <button type="button" class="fill-bell${r.alarm ? ' on' : ''}" onclick="fillToggleAlarm(${i})" data-tip="${L('fill_alarm')}">${r.alarm ? '🔔' : '🔕'}</button>
         <button type="button" class="sch-del-btn" onclick="fillDelRow(${i})" ${_fillRows.length <= 1 ? 'disabled' : ''}>×</button>
       </div>
-      <div class="tt-colors fill-colors">${fillColorDots(i, r.color)}</div>
+      <div class="tt-colors fill-colors">${fillColorDots(i, r.color, pal)}</div>
     </div>`).join('');
 }
 /**
@@ -7100,10 +7121,12 @@ let _multiKeys = null;      // null이면 평소 화면, 배열이면 고르는 
 // 규칙으로 고른 뒤에도 달력을 눌러 하나씩 더하거나 뺄 수 있다.
 let _multiRule = null;       // { mode, dows, endY, endM, endD } — 넣기를 시작할 때 만든다
 let _multiStartKey = null;   // 규칙의 시작 날 = 넣기를 시작한 날
+let _multiRuleKeys = [];     // 규칙이 골라 준 날짜들 — 규칙을 끄면 이것만 뺀다
 
 function _multiRuleReset() {
   const st = _dkToDate(_calKey) || new Date();
   _multiStartKey = _dateToDk(st);
+  _multiRuleKeys = [];
   // 끝날은 시작 날이 든 달의 마지막 날 (핀 고정과 같다)
   _multiRule = { mode: null, dows: [1, 2, 3, 4, 5], endY: st.getFullYear(), endM: st.getMonth(),
                  endD: new Date(st.getFullYear(), st.getMonth() + 1, 0).getDate() };
@@ -7145,7 +7168,7 @@ function bindMultiRule(root) {
   if (!root || !_multiRule) return;
   root.querySelectorAll('.multi-rule [data-mode]').forEach(el => {
     el.onclick = () => {
-      // 켜져 있는 것을 다시 누르면 규칙을 끈다 — 고른 날짜는 그대로 두고 직접 고르기로
+      // 켜져 있는 것을 다시 누르면 규칙을 끈다 — 규칙이 골랐던 날짜도 함께 빠진다
       _multiRule.mode = (_multiRule.mode === el.dataset.mode) ? null : el.dataset.mode;
       multiRuleApply();
     };
@@ -7169,10 +7192,16 @@ function bindMultiRule(root) {
   });
 }
 
-/** 규칙과 기간으로 날짜를 다시 고른다. 규칙이 꺼져 있으면 지금 고른 것을 그대로 둔다. */
+/**
+ * 규칙과 기간으로 날짜를 다시 고른다. 규칙이 골라 준 날짜는 따로 기억해 두었다가
+ * 규칙이 바뀌거나 꺼지면 그것만 빼고 새로 넣는다 — 달력에서 직접 누른 날은 남는다.
+ */
 function multiRuleApply() {
   const r = _multiRule;
   if (!r || !_multiKeys) return;
+  // 먼저 지난 규칙이 넣어 준 날짜를 뺀다 (시작 날은 처음부터 있던 것이라 남긴다)
+  _multiKeys = _multiKeys.filter(k => k === _multiStartKey || _multiRuleKeys.indexOf(k) < 0);
+  _multiRuleKeys = [];
   if (!r.mode) { renderCalendar(); return; }
   const dows = r.mode === 'everyday' ? [0, 1, 2, 3, 4, 5, 6]
              : r.mode === 'weekdays' ? [1, 2, 3, 4, 5]
@@ -7188,7 +7217,8 @@ function multiRuleApply() {
       at.setDate(at.getDate() + 1);
     }
   }
-  _multiKeys = keys;
+  _multiRuleKeys = keys;
+  keys.forEach(k => { if (_multiKeys.indexOf(k) < 0) _multiKeys.push(k); });
   renderCalendar();
 }
 
