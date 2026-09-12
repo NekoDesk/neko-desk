@@ -2041,9 +2041,8 @@
    * 칸을 누른 뒤 자판이 다 올라올 즈음 그 칸을 화면 가운데로 끌어 온다.
    */
   function installKeyboardScroll() {
-    // 자판이 없을 때의 화면 높이. 자판이 올라오면 이보다 줄어든다.
-    var fullH = 0;
-    var padded = null;          // 지금 자리를 만들어 둔 칸
+    var fullH = window.innerHeight || 0;   // 자판이 없을 때의 화면 높이
+    var padded = null;                     // 지금 자리를 만들어 둔 칸
 
     function isTypable(el) {
       if (!el || !el.tagName) return false;
@@ -2053,15 +2052,25 @@
     /**
      * 자판이 가린 높이.
      *
-     * 안드로이드는 adjustResize 로 창 자체를 줄인다. 그러면 visualViewport 와
-     * innerHeight 가 함께 줄어 둘의 차이는 0 이 된다 — 이걸로는 자판을 알아챌 수 없다.
-     * 자판이 없던 때의 높이를 기억해 두고 그것과 견준다.
+     * 기기마다 가리는 방식이 달라 재는 길을 둘 다 둔다.
+     *  - 창이 줄어드는 기기: innerHeight 가 작아진다 → 예전 높이와의 차이
+     *  - 창은 그대로 두고 덮기만 하는 기기: visualViewport 만 작아진다 → 둘의 차이
+     * 어느 쪽이든 큰 값을 쓴다. 못 재도 아래에서 넉넉히 자리를 만드니 괜찮다.
      */
     function hiddenPx() {
       var vv = window.visualViewport;
-      var now = vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight;
-      if (now > fullH) fullH = now;            // 화면이 커졌다 = 자판이 없는 상태
-      return Math.max(0, Math.round(fullH - now));
+      var h = window.innerHeight;
+      if (h > fullH) fullH = h;
+      var byOverlay = vv ? Math.max(0, h - vv.height - (vv.offsetTop || 0)) : 0;
+      var byResize = Math.max(0, fullH - h);
+      return Math.round(Math.max(byOverlay, byResize));
+    }
+
+    /** 자판 위쪽 가장자리 — 여기보다 아래는 안 보인다고 본다 */
+    function safeBottom() {
+      var vv = window.visualViewport;
+      var h = vv ? Math.min(vv.height, window.innerHeight) : window.innerHeight;
+      return h - 12;
     }
 
     /** 이 칸을 실제로 굴리는 조상을 찾는다 (대시보드 구조가 바뀌어도 따라간다) */
@@ -2079,19 +2088,23 @@
     }
 
     /**
-     * 자판이 가린 만큼 굴리는 칸 아래에 자리를 만들고, 쓰던 칸을 끌어 올린다.
-     * 자리를 만들지 않으면 페이지 맨 아래의 입력칸(디데이·알람)은 더 굴릴 데가 없어
-     * 아무리 끌어 올려도 자판 뒤에 남는다.
+     * 쓰던 칸을 자판 위로 끌어 올린다.
+     *
+     * scrollIntoView 의 '가운데'는 자판을 모른다 — 자판이 덮기만 하는 기기에서는
+     * 화면 한가운데가 곧 자판 뒤다. 그래서 직접 굴린다.
+     * 그리고 페이지 맨 아래의 칸은 더 굴릴 데가 없어 아래에 자리를 만들어 줘야 한다.
+     * 자판 높이를 못 재는 기기가 있으니 넉넉히 잡는다 — 어차피 자판이 덮는 자리다.
      */
     function fit() {
       var el = document.activeElement;
-      var hidden = hiddenPx();
-      if (!isTypable(el) || hidden < 80) { clearPad(); return; }
+      if (!isTypable(el)) { clearPad(); return; }
       var box = scrollerOf(el);
       if (padded && padded !== box) clearPad();
       padded = box;
-      box.style.paddingBottom = hidden + 'px';
-      try { el.scrollIntoView({ block: 'center' }); } catch (e) {}
+      var room = Math.max(hiddenPx(), Math.round(fullH * 0.5));
+      box.style.paddingBottom = room + 'px';
+      var over = el.getBoundingClientRect().bottom - safeBottom();
+      if (over > 0) box.scrollTop += over + 24;
     }
 
     var vv = window.visualViewport;
@@ -2324,7 +2337,7 @@
       // PC 는 가로로 두지만 폰은 세로로 쌓는다
       '#dp-cat .cat-main { flex-direction:column !important; align-items:center !important; gap:14px !important; }',
       '#dp-cat .cat-main-right { width:100% !important; }',
-      '#dp-cat .cat-pick { width:100% !important; max-width:300px !important; }',
+      '#dp-cat .cat-pick { max-width:100% !important; }',
       '#dp-cat .breed-row { grid-template-columns:repeat(2,1fr) !important; }',
       '#dp-cat .breed-name { white-space:normal !important; font-size:12px !important; }',
       '#dp-cat .breed-desc { white-space:normal !important; font-size:10px !important; }',
