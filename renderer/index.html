@@ -1207,6 +1207,9 @@ select {
 .diary-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-left:44px;margin-bottom:6px}
 .diary-cal-header{display:flex;align-items:center;justify-content:space-between;font-family:'Galmuri14',monospace;font-size:12px;color:var(--white);margin-bottom:8px}
 .cal-nav,.diary-cal-nav{background:none;border:none;color:var(--gray);cursor:pointer;font-size:17px;line-height:1;padding:2px 8px;border-radius:4px}
+/* 년월 글씨 — 눌러서 멀리 갈 수 있다는 것을 살짝 보이게 */
+.cal-ym{background:none;border:1px solid transparent;border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--white);font-family:'Galmuri14',monospace;font-size:12px;position:relative}
+.cal-ym:hover{border-color:var(--border);background:var(--card)}
 .cal-nav:hover,.diary-cal-nav:hover{color:var(--white);background:rgba(255,255,255,0.1)}
 /* 다이어리 캘린더 — 할 일 목록 캘린더(.cal-*)와 동일한 규격 */
 .diary-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px}
@@ -1678,6 +1681,21 @@ select {
     <div style="display:flex;gap:8px">
       <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="_copyText(NEKODESK_SITE_URL)" data-i18n="pc_copy">🔗 링크 복사</button>
       <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="sharePcLink()" data-i18n="pc_share">📤 공유하기</button>
+    </div>
+  </div>
+</div>
+<!-- 달력 년·월 고르기 (년월 글씨를 누르면 뜬다) -->
+<div id="calPickModal" style="display:none;position:fixed;inset:0;z-index:9475;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeCalPick(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:340px;width:88%" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <button class="cal-nav" onclick="calPickYear(-1)">◀</button>
+      <span id="calPickYear" style="font-family:'Galmuri14',monospace;font-size:15px;color:var(--white)"></span>
+      <button class="cal-nav" onclick="calPickYear(1)">▶</button>
+    </div>
+    <div id="calPickMonths" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="calPickToday()" data-i18n="cal_pick_today">오늘로</button>
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeCalPick()" data-i18n="remind_cancel">취소</button>
     </div>
   </div>
 </div>
@@ -2179,7 +2197,9 @@ const STRINGS = {
     cycle_auto:'출근 시간부터 자동 시작', cycles_unit:'사이클', today_done:'오늘 완료:',
     cycle_home_desc:'55분 집중 후 5분 휴식 사이클!<br>물도 마시고 잠시 일어나 스트레칭도 합니다.',
     work_am:'오전', work_pm:'오후', work_add:'+ 항목 추가', work_new:'새 항목', work_ph:'내용',
-    date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일',
+    date_ym:'{y}년 {m}월', date_ymd:'{y}년 {m}월 {d}일', date_y:'{y}년',
+    months_short:'1월,2월,3월,4월,5월,6월,7월,8월,9월,10월,11월,12월',
+    cal_pick_tip:'눌러서 년·월 고르기', cal_pick_today:'오늘로',
     dows:'일,월,화,수,목,금,토',
     // To Do List
     todo_memo_title:'📓 메모장', todo_memo_ph:'자유롭게 메모하세요...',
@@ -2475,7 +2495,9 @@ const STRINGS = {
     cycle_auto:'Auto-starts at work time', cycles_unit:'cycles', today_done:'Today:',
     cycle_home_desc:'55 min focus + 5 min break cycle!<br>Drink water and take a stretch.',
     work_am:'AM', work_pm:'PM', work_add:'+ Add item', work_new:'New item', work_ph:'Label',
-    date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}',
+    date_ym:'{m}/{y}', date_ymd:'{m}/{d}/{y}', date_y:'{y}',
+    months_short:'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
+    cal_pick_tip:'Tap to pick year and month', cal_pick_today:'Today',
     dows:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
     todo_memo_title:'📓 Notes', todo_memo_ph:'Write notes...',
     todo_date_ph:'Select a date ◀',
@@ -2767,7 +2789,9 @@ const STRINGS = {
     cycle_auto:'出勤時間に自動開始', cycles_unit:'サイクル', today_done:'今日:',
     cycle_home_desc:'55分集中・5分休憩サイクル！<br>水分補給と軽いストレッチも忘れずに。',
     work_am:'午前', work_pm:'午後', work_add:'+ 追加', work_new:'新しい項目', work_ph:'ラベル',
-    date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日',
+    date_ym:'{y}年{m}月', date_ymd:'{y}年{m}月{d}日', date_y:'{y}年',
+    months_short:'1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月',
+    cal_pick_tip:'押して年・月を選ぶ', cal_pick_today:'今日へ',
     dows:'日,月,火,水,木,金,土',
     todo_memo_title:'📓 メモ', todo_memo_ph:'自由にメモ...',
     todo_date_ph:'日付を選択 ◀',
@@ -6615,7 +6639,7 @@ function renderCalendar() {
     let lh = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <button class="cal-nav" onclick="calPrev()">◀</button>
-        <span style="font-family:'Galmuri14',monospace;font-size:12px">${L('date_ym').replace('{y}',y).replace('{m}',m+1)}</span>
+        <button type="button" class="cal-ym" onclick="openCalPick()" data-tip="${L('cal_pick_tip')}">${L('date_ym').replace('{y}',y).replace('{m}',m+1)}</button>
         <button class="cal-nav" onclick="calNext()">▶</button>
       </div>
       <div class="cal-grid">
@@ -7558,6 +7582,48 @@ function deleteDayItem(key, i) {
   items.splice(i, 1);
   setCalNotes(key, items);
   saveState(); renderCalendar();
+}
+/**
+ * 달력의 년·월 글씨를 누르면 한 번에 멀리 갈 수 있는 창. 화살표로 한 달씩 넘겨
+ * 몇 해 전으로 가는 것은 너무 오래 걸린다.
+ */
+let _calPickYear = null;
+function openCalPick() {
+  _calPickYear = _calYear;
+  renderCalPick();
+  const m = document.getElementById('calPickModal');
+  if (m) m.style.display = 'flex';
+}
+function closeCalPick(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('calPickModal');
+  if (m) m.style.display = 'none';
+}
+function calPickYear(d) { _calPickYear += d; renderCalPick(); }
+function renderCalPick() {
+  const y = document.getElementById('calPickYear');
+  if (y) y.textContent = L('date_y').replace('{y}', _calPickYear);
+  const g = document.getElementById('calPickMonths');
+  if (!g) return;
+  const names = L('months_short').split(',');
+  const now = new Date();
+  g.innerHTML = names.map((nm, i) => {
+    const cur = _calPickYear === _calYear && i === _calMonth;
+    const today = _calPickYear === now.getFullYear() && i === now.getMonth();
+    return `<button type="button" class="btn ${cur ? 'btn-y' : 'btn-gr'}" style="font-size:12px;padding:8px 0${today && !cur ? ';border-color:var(--yellow)' : ''}"
+      onclick="calPickMonth(${i})">${nm}</button>`;
+  }).join('');
+}
+function calPickMonth(m) {
+  _calYear = _calPickYear; _calMonth = m;
+  renderCalendar();
+  closeCalPick();
+}
+function calPickToday() {
+  const n = new Date();
+  _calYear = n.getFullYear(); _calMonth = n.getMonth();
+  renderCalendar();
+  closeCalPick();
 }
 function calPrev() { _calMonth--; if(_calMonth<0){_calMonth=11;_calYear--;} renderCalendar(); }
 function calNext() { _calMonth++; if(_calMonth>11){_calMonth=0;_calYear++;} renderCalendar(); }
