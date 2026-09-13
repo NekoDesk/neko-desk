@@ -505,7 +505,7 @@ body.theme-black {
 /* 사이클 카드: 왼쪽 타이머 · 오른쪽 물컵 */
 .cycle-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .water-col { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.water-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; }
+.water-hd { font-family: 'Galmuri14', monospace; font-size: 12px; color: color-mix(in srgb, var(--gray), var(--white) 60%); white-space: nowrap; }
 .water-hd b { color: var(--mint); }
 /* 여덟 개가 한 줄. 개수가 그보다 적거나 어중간하게 남으면 가운데로 모인다 */
 .water-cups, .vita-pills { display: flex; flex-wrap: wrap; justify-content: center;
@@ -538,14 +538,17 @@ body.theme-black {
 .wcup.next { background: var(--yellow); cursor: pointer; }
 .wcup.undo { cursor: pointer; }
 .water-col { gap: 6px; }
-.water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center;
-  line-height: 1.5; max-width: 200px; margin-bottom: 2px; }
+/* 안내 글씨 — 흐린 회색에 opacity 까지 겹쳐 잘 안 보였다. 한 칸 키우고 진하게 */
+.water-tip { font-size: 11px; color: color-mix(in srgb, var(--gray), var(--white) 45%);
+  text-align: center; line-height: 1.55; max-width: 210px; margin-bottom: 2px; }
 /* 영양제 주의 — 눈에 걸리되 소리치지는 않게 */
-.vita-warn { font-size: 9px; color: #e8908a; opacity: 0.9; text-align: center;
-  line-height: 1.6; max-width: 240px; margin: -2px 0 2px; }
+.vita-warn { font-size: 10px; color: #c9534a; text-align: center;
+  line-height: 1.6; max-width: 250px; margin: -2px 0 2px; }
+/* 어두운 바탕에서는 같은 붉은색이 묻힌다 — 밝은 쪽으로 */
+body.theme-black .vita-warn { color: #f2938b; }
 
 /* 비타민: 물컵과 같은 자리, 알약 모양 픽셀 그림 */
-.vita-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; margin-top: 4px; }
+.vita-hd { font-family: 'Galmuri14', monospace; font-size: 12px; color: color-mix(in srgb, var(--gray), var(--white) 60%); white-space: nowrap; margin-top: 4px; }
 .vita-hd b { color: var(--yellow); }
 
 /* 알약: 위 절반은 주황, 아래 절반은 흰색. 안 먹은 알은 회색으로 잠들어 있다 */
