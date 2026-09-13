@@ -103,16 +103,16 @@ let wThemes: [String: WTheme] = [
         text: Color(hex: "#584A6A"), dim: Color(hex: "#B3A3C6"), accent: Color(hex: "#A98EC8"), isDark: false
     ),
     "black": WTheme(
-        bg: Color(hex: "#131317"), bgLine: Color(hex: "#35353E"),
-        row: Color(hex: "#1B1B21"), rowLine: Color(hex: "#48506A"),
-        rowDone: Color(hex: "#26262E"), rowDoneLine: Color(hex: "#35353E"),
-        side: Color(hex: "#1B1B21"), sideLine: Color(hex: "#35353E"),
-        dday: Color(hex: "#1B1B21"), ddayLine: Color(hex: "#6B393A"),
-        ttFrame: Color(hex: "#1B1B21"), ttFrameLine: Color(hex: "#666671"),
-        ttHead: Color(hex: "#26262E"), ttHeadLine: Color(hex: "#35353E"),
-        ttEmpty: Color(hex: "#1B1B21"), ttEmptyLine: Color(hex: "#35353E"),
-        ttTodayHead: Color(hex: "#7B6840"), ttTodayHeadLine: Color(hex: "#9D844C"),
-        text: Color(hex: "#E9E9EE"), dim: Color(hex: "#8E8E9A"), accent: Color(hex: "#8091C4"), isDark: true
+        bg: Color(hex: "#242429"), bgLine: Color(hex: "#4B4B56"),
+        row: Color(hex: "#2E2E35"), rowLine: Color(hex: "#5F657F"),
+        rowDone: Color(hex: "#3A3A43"), rowDoneLine: Color(hex: "#4B4B56"),
+        side: Color(hex: "#2E2E35"), sideLine: Color(hex: "#4B4B56"),
+        dday: Color(hex: "#2E2E35"), ddayLine: Color(hex: "#774446"),
+        ttFrame: Color(hex: "#2E2E35"), ttFrameLine: Color(hex: "#83838E"),
+        ttHead: Color(hex: "#3A3A43"), ttHeadLine: Color(hex: "#4B4B56"),
+        ttEmpty: Color(hex: "#2E2E35"), ttEmptyLine: Color(hex: "#4B4B56"),
+        ttTodayHead: Color(hex: "#8C7B56"), ttTodayHeadLine: Color(hex: "#AE9864"),
+        text: Color(hex: "#F4F4F8"), dim: Color(hex: "#B0B0BC"), accent: Color(hex: "#9AA9DA"), isDark: true
     ),
 ];
 

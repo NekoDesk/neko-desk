@@ -45,7 +45,7 @@ final class WidgetTheme {
         { 0xFF4A5A6E, 0xFF9FB4C8, 0xFF84AAD2 },
         { 0xFF486054, 0xFF9CBAAD, 0xFF7CBBA2 },
         { 0xFF584A6A, 0xFFB3A3C6, 0xFFA98EC8 },
-        { 0xFFE9E9EE, 0xFF8E8E9A, 0xFF8091C4 },
+        { 0xFFF4F4F8, 0xFFB0B0BC, 0xFF9AA9DA },
     };
 
     private static final int[][] BLK_LIGHT = {

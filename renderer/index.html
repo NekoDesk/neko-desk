@@ -196,7 +196,7 @@ body.theme-mono {
   background: radial-gradient(ellipse at 50% 50%, #1a1a1a 0%, #0a0a0a 60%, #111 100%);
 }
 body.theme-black {
-  background: radial-gradient(ellipse at 40% 40%, #16161b 0%, #0c0c0f 60%, #08080a 100%);
+  background: radial-gradient(ellipse at 40% 40%, #2c2c34 0%, #202027 60%, #1a1a20 100%);
 }
 
 /* ── 데스크탑 힌트 ── */
@@ -826,12 +826,12 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-blk.c4 { border-color:#A2D0BA; background:#E4F5EC; }
 .tt-blk.c5 { border-color:#C2AADE; background:#F0E8FA; }
 /* 블랙 테마 — 같은 여섯 계열을 어둡게. 글씨가 밝아서 파스텔 위에서는 안 읽힌다 */
-body.theme-black .tt-blk.c0 { border-color:#4e5a6d; background:#232a34; }
-body.theme-black .tt-blk.c1 { border-color:#635a41; background:#2e2a20; }
-body.theme-black .tt-blk.c2 { border-color:#6a4655; background:#33232b; }
-body.theme-black .tt-blk.c3 { border-color:#415876; background:#1f2836; }
-body.theme-black .tt-blk.c4 { border-color:#3f6456; background:#1f2e28; }
-body.theme-black .tt-blk.c5 { border-color:#584a6e; background:#2a2436; }
+body.theme-black .tt-blk.c0 { border-color:#65758d; background:#38424f; }
+body.theme-black .tt-blk.c1 { border-color:#84775a; background:#453f31; }
+body.theme-black .tt-blk.c2 { border-color:#8a5d71; background:#4b3642; }
+body.theme-black .tt-blk.c3 { border-color:#56759b; background:#313e53; }
+body.theme-black .tt-blk.c4 { border-color:#528372; background:#31463d; }
+body.theme-black .tt-blk.c5 { border-color:#756492; background:#403752; }
 /* 팝업에서 고르는 동그라미 */
 .tt-colors { display:flex; gap:7px; align-items:center; }
 .tt-color { width:26px; height:26px; border-radius:50%; cursor:pointer; padding:0;
@@ -839,7 +839,7 @@ body.theme-black .tt-blk.c5 { border-color:#584a6e; background:#2a2436; }
 .tt-color.on { border-color:var(--white); box-shadow:0 0 0 2px var(--yellow); }
 .tt-color.auto { background:repeating-linear-gradient(45deg,#DCF0E8,#DCF0E8 5px,#FCEEDC 5px,#FCEEDC 10px); }
 /* 블랙에서는 '종류에 맡김' 동그라미도 어둡게 — 혼자 하얗게 튄다 */
-body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#1f2e28,#1f2e28 5px,#2e2a20 5px,#2e2a20 10px); }
+body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#31463d,#31463d 5px,#453f31 5px,#453f31 10px); }
 /* 시간표 버전 고르기 — 네모 단추 둘 */
 .tt-ver { flex:1; display:flex; flex-direction:column; gap:3px; align-items:center;
   border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; padding:10px 6px; }
@@ -2129,8 +2129,8 @@ const THEMES = [
   { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #fbf8ff 0%, #f6f0fd 60%, #f0e8fa 100%)',
     vars:{ '--frame-bg':'#ddcaf0','--frame':'#c2aade','--frame-light':'#f0e8fa','--frame-text':'#9b83ba','--bg':'#faf7fe','--panel':'#fdfbff','--card':'#f4eefb','--acc':'#a98ec8','--mint':'#8ccabb','--yellow':'#d4b573','--white':'#584a6a','--gray':'#b3a3c6','--border':'#e8ddf4' }, preview:'linear-gradient(135deg,#fbf8ff,#f0e8fa)' },
   // 하나뿐인 어두운 테마. 위젯도 이 이름을 보고 어두운 색으로 그린다 (make-widget-themes.js 의 DARK)
-  { id:'black',  name:'⬛ 블랙', bg:'radial-gradient(ellipse at 40% 40%, #16161b 0%, #0c0c0f 60%, #08080a 100%)',
-    vars:{ '--frame-bg':'#2b2b33','--frame':'#4a4a57','--frame-light':'#3a3a45','--frame-text':'#a9a9b8','--bg':'#131317','--panel':'#1b1b21','--card':'#26262e','--acc':'#8091c4','--mint':'#5ab699','--yellow':'#e2b855','--white':'#e9e9ee','--gray':'#8e8e9a','--border':'#35353e' }, preview:'linear-gradient(135deg,#33333c,#0b0b0d)' },
+  { id:'black',  name:'⬛ 블랙', bg:'radial-gradient(ellipse at 40% 40%, #2c2c34 0%, #202027 60%, #1a1a20 100%)',
+    vars:{ '--frame-bg':'#3d3d47','--frame':'#5b5b69','--frame-light':'#4c4c58','--frame-text':'#c4c4d0','--bg':'#242429','--panel':'#2e2e35','--card':'#3a3a43','--acc':'#9aa9da','--mint':'#74cbaf','--yellow':'#f0cb6d','--white':'#f4f4f8','--gray':'#b0b0bc','--border':'#4b4b56' }, preview:'linear-gradient(135deg,#4a4a55,#232329)' },
 ];
 let currentTheme = 'white';
 

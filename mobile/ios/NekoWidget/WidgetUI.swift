@@ -54,15 +54,15 @@ enum TTColor {
         (Color(hex: "#A2D0BA"), Color(hex: "#E4F5EC")),
         (Color(hex: "#C2AADE"), Color(hex: "#F0E8FA")),
     ]
-    static let workDark = (line: Color(hex: "#3F6456"), fill: Color(hex: "#1F2E28"))
-    static let restDark = (line: Color(hex: "#635A41"), fill: Color(hex: "#2E2A20"))
+    static let workDark = (line: Color(hex: "#528372"), fill: Color(hex: "#31463D"))
+    static let restDark = (line: Color(hex: "#84775A"), fill: Color(hex: "#453F31"))
     static let paletteDark: [(line: Color, fill: Color)] = [
-        (Color(hex: "#4E5A6D"), Color(hex: "#232A34")),
-        (Color(hex: "#635A41"), Color(hex: "#2E2A20")),
-        (Color(hex: "#6A4655"), Color(hex: "#33232B")),
-        (Color(hex: "#415876"), Color(hex: "#1F2836")),
-        (Color(hex: "#3F6456"), Color(hex: "#1F2E28")),
-        (Color(hex: "#584A6E"), Color(hex: "#2A2436")),
+        (Color(hex: "#65758D"), Color(hex: "#38424F")),
+        (Color(hex: "#84775A"), Color(hex: "#453F31")),
+        (Color(hex: "#8A5D71"), Color(hex: "#4B3642")),
+        (Color(hex: "#56759B"), Color(hex: "#313E53")),
+        (Color(hex: "#528372"), Color(hex: "#31463D")),
+        (Color(hex: "#756492"), Color(hex: "#403752")),
     ]
 
     static func of(_ b: BlockItem, dark: Bool = false) -> (line: Color, fill: Color) {
