@@ -10,10 +10,10 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.BitmapShader;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -1136,14 +1136,18 @@ public class NekoWidget extends AppWidgetProvider {
                 sl.draw(cv);
                 cv.restore();
             }
-            // 네 모서리를 틀 안쪽 곡률만큼 깎는다.
-            // 그림은 네모라서 그냥 두면 둥근 틀 밖으로 모서리가 삐져나온다
-            // (틀 반지름 9dp 에서 안쪽 여백 1.2dp 를 뺀 만큼).
-            Paint cut = new Paint(Paint.ANTI_ALIAS_FLAG);
-            cut.setColor(0xFF000000);
-            cut.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-            cv.drawRoundRect(new RectF(0, 0, W, H), 7.8f * d, 7.8f * d, cut);
-            return bm;
+            // 네 모서리를 틀 안쪽 곡률만큼 깎는다 (틀 반지름 9dp - 안쪽 여백 1.2dp).
+            // 그림은 네모라서 그냥 두면 둥근 틀 밖으로 모서리가 삐져나온다.
+            //
+            // 지우는 방식(xfermode)은 그린 자리만 건드려서 모서리 바깥에 손이 닿지 않았다.
+            // 그래서 다 그린 그림을 둥근 네모 안에만 다시 한 번 옮겨 그린다 — 그 바깥은
+            // 아예 칠해지지 않으므로 모서리가 남을 수가 없다.
+            Bitmap out = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
+            Paint sp = new Paint(Paint.ANTI_ALIAS_FLAG);
+            sp.setShader(new BitmapShader(bm, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+            new Canvas(out).drawRoundRect(new RectF(0, 0, W, H), 7.8f * d, 7.8f * d, sp);
+            bm.recycle();
+            return out;
         } catch (Throwable t) {
             return null;                                      // 못 그리면 예전 격자로
         }
