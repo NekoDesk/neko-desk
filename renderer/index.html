@@ -639,6 +639,7 @@ body.theme-black .vita-warn { color: #f2938b; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
 .todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after,
+.dday-name-txt[data-tip]::after, .alarm-label[data-tip]::after,
 .cat-display[data-tip]::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
@@ -651,10 +652,12 @@ body.theme-black .vita-warn { color: #f2938b; }
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
 .hdr-btn::after { top:calc(100% + 8px); }
 .todo-text::after { bottom:calc(100% + 4px); left:0; right:auto; }   /* 글씨 위쪽, 왼쪽 정렬 */
+.dday-name-txt::after, .alarm-label::after { bottom:calc(100% + 4px); left:0; right:auto; }
 .hdr-btn:not([data-tip])::after { content:none; }
 .cat-display[data-tip]::after { top:calc(100% + 6px); }
 .todo-handle:hover::after, .todo-help-btn:hover::after,
 .hdr-btn:hover::after, .todo-text:hover::after,
+.dday-name-txt[data-tip]:hover::after, .alarm-label[data-tip]:hover::after,
 .cat-display[data-tip]:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item, .work-item-row { position:relative; }
@@ -4976,7 +4979,12 @@ function ttTapDown(e, info) {
 
 function ttTapCancel() { _ttTap = null; }
 
+// 지금 손가락이 칸 위에서 무언가 하고 있는가 (그러면 포인터 쪽 소식은 듣지 않는다)
+let _ttTouchId = null;
+let _ttMenuClosedAt = 0;           // 메뉴를 바깥 누름으로 닫은 때
+
 function ttTapUp(e) {
+  if (_ttTouchId !== null) return;              // 손가락 차례 — 터치 쪽에서 끝낸다
   const tap = _ttTap;
   ttTapCancel();
   if (!tap) return;
@@ -4998,10 +5006,76 @@ function ttBlkClick(e, id) {
   if (_ttMove || _ttHold) return;                // 옮기는 중
   if (Date.now() - _ttMenuAt < 400) return;      // 방금 pointerup 으로 이미 열었다
   if (Date.now() - _ttMovedAt < 500) return;     // 방금 옮기고 난 뒤의 클릭
+  if (Date.now() - _ttMenuClosedAt < 500) return; // 방금 메뉴를 닫은 누름이다
   ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: e.clientX, clientY: e.clientY }, id);
 }
 document.addEventListener('pointerup', ttTapUp);
-document.addEventListener('pointercancel', ttTapCancel);
+document.addEventListener('pointercancel', () => { if (_ttTouchId === null) ttTapCancel(); });
+
+// ── 폰: 손가락은 터치 이벤트로 ────────────────────────
+// 포인터 이벤트는 아이폰(WKWebView)에서 화면 넘기기 제스처에 쉽게 뺏긴다. 뺏기면
+// pointercancel 이 오면서 열이 끊겨, 꾹 눌러 옮기기는 시작도 못 하고 톡 누르기도 사라진다.
+// 터치 이벤트는 그렇게 끊기지 않고, touchmove 를 막으면 화면도 따라 움직이지 않는다.
+function _ttTouch(e) {
+  if (_ttTouchId === null) return e.changedTouches[0];
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === _ttTouchId) return e.changedTouches[i];
+  }
+  return null;
+}
+
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length > 1) { ttHoldCancel(); ttTapCancel(); _ttTouchId = null; return; }
+  const el = (e.target && e.target.closest) ? e.target.closest('.tt-blk') : null;
+  if (!el) return;
+  const t = e.changedTouches[0];
+  _ttTouchId = t.identifier;
+  ttTapDown({ clientX: t.clientX, clientY: t.clientY }, { id: el.dataset.id });
+  ttHoldCancel();
+  _ttHold = setTimeout(() => {
+    _ttHold = null;
+    ttTapCancel();
+    ttMoveStart({ clientX: t.clientX, clientY: t.clientY, pointerId: -1 }, el.dataset.id, el, true);
+    buzz('tap');
+  }, TT_HOLD_MS);
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  const t = _ttTouch(e);
+  if (!t) return;
+  if (_ttMove && _ttMove.touch) {
+    e.preventDefault();                          // 옮기는 동안 화면이 따라 움직이지 않게
+    ttMoveMove({ clientX: t.clientX, clientY: t.clientY });
+    return;
+  }
+  // 아직 잡기 전인데 손가락이 움직였다면 화면을 넘기려는 것이다
+  if (_ttTap && Math.abs(t.clientX - _ttTap.x0) + Math.abs(t.clientY - _ttTap.y0) > TT_TAP_SLOP) {
+    ttHoldCancel();
+    ttTapCancel();
+    _ttTouchId = null;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+  const t = _ttTouch(e);
+  if (!t) return;
+  _ttTouchId = null;
+  if (_ttMove && _ttMove.touch) { ttMoveUp(e); return; }
+  ttHoldCancel();
+  const tap = _ttTap;
+  ttTapCancel();
+  if (!tap) return;
+  if (Math.abs(t.clientX - tap.x0) + Math.abs(t.clientY - tap.y0) > TT_TAP_SLOP) return;
+  if (Date.now() - _ttMenuClosedAt < 500) return;   // 방금 메뉴를 닫은 누름이다
+  ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: tap.x0, clientY: tap.y0 }, tap.id);
+}, { passive: true });
+
+document.addEventListener('touchcancel', (e) => {
+  _ttTouchId = null;
+  ttHoldCancel();
+  if (_ttMove && _ttMove.touch) ttMoveUp(e);
+  else ttTapCancel();
+}, { passive: true });
 
 function ttMove(e) {
   if (!_ttDrag) return;
@@ -5534,20 +5608,12 @@ const TT_HOLD_MS = 320;   // 안드로이드가 제 길게 누르기를 잡는 ~
 
 function ttBlkDown(e, id) {
   if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
+  // 손가락은 터치 이벤트가 맡는다 (아래 touchstart) — 아이폰에서 포인터 열이 끊기기 때문.
+  // 여기서 전파를 막으면 안 된다. 막으면 '바깥을 누르면 메뉴 닫기'가 있는 document 까지
+  // 소식이 가지 않아, 메뉴를 닫으려고 칸을 눌러도 닫히지 않는다 (메뉴는 칸 위에 뜬다).
+  if (ttIsTouch(e)) return;
   e.stopPropagation();                                     // 새 칸 만들기와 겹치지 않게
   const el = e.currentTarget;
-  if (ttIsTouch(e)) {
-    ttTapDown(e, { id });                                  // 톡 누르면 메뉴
-    const pid = e.pointerId, x = e.clientX, y = e.clientY;
-    ttHoldCancel();
-    _ttHold = setTimeout(() => {
-      _ttHold = null;
-      ttTapCancel();                                       // 메뉴 말고 옮기기로
-      ttMoveStart({ clientX: x, clientY: y, pointerId: pid }, id, el, true);
-      buzz('tap');                                         // 잡았다는 손맛
-    }, TT_HOLD_MS);
-    return;
-  }
   e.preventDefault();
   ttMoveStart(e, id, el, false);
 }
@@ -5588,6 +5654,8 @@ function ttMoveMark() {
 }
 
 function ttMoveMove(e) {
+  // 손가락 차례면 터치 쪽에서 부른 것만 받는다 (포인터 소식은 아이폰에서 못 믿는다)
+  if (_ttTouchId !== null && e && typeof e.type === 'string' && e.type.indexOf('pointer') === 0) return;
   // 꾹 누르기를 기다리는 중에 손가락이 움직이면 화면을 넘기려는 것이다
   if (_ttHold && _ttTap && Math.abs(e.clientX - _ttTap.x0) + Math.abs(e.clientY - _ttTap.y0) > TT_TAP_SLOP) ttHoldCancel();
   if (!_ttMove) return;
@@ -5629,12 +5697,16 @@ function ttGhost(col, start, dur, ok) {
 function ttGhostClear() { document.querySelectorAll('#ttGrid .tt-ghost').forEach(el => el.remove()); }
 
 function ttMoveUp(e) {
+  const isPointer = !!(e && typeof e.type === 'string' && e.type.indexOf('pointer') === 0);
+  // 손가락 차례면 포인터 쪽 끝 소식은 듣지 않는다. 아이폰은 손가락이 아직 붙어 있는데도
+  // pointercancel 을 먼저 보내서, 그걸 들으면 옮기다 말고 놓아 버린다.
+  if (isPointer && _ttTouchId !== null) return;
   ttHoldCancel();
   if (!_ttMove) return;
   const d = _ttMove; _ttMove = null;
   // 터치가 끊긴 것(pointercancel)이라면 마지막으로 멀쩡했던 자리에 놓는다 — 그냥 없던 일이
   // 되면 옮기던 손이 허탈하다. 겹쳐서 못 놓는 자리였으면 제자리에 둔다.
-  const cancelled = !!(e && e.type === 'pointercancel');
+  const cancelled = !!(e && (e.type === 'pointercancel' || e.type === 'touchcancel'));
   if (cancelled && d.moved && !d.ok && d.lastStart !== undefined) {
     d.day = d.lastDay; d.start = d.lastStart; d.ok = true;
   }
@@ -5649,11 +5721,6 @@ function ttMoveUp(e) {
 document.addEventListener('pointermove', ttMoveMove);
 document.addEventListener('pointerup', ttMoveUp);
 document.addEventListener('pointercancel', ttMoveUp);
-// 폰에서 옮기는 동안에는 화면이 따라 움직이지 않게 막는다.
-// touch-action 은 손가락이 닿는 순간에 정해져서 도중에 바꿔도 듣지 않는다.
-document.addEventListener('touchmove', (e) => {
-  if (_ttMove && _ttMove.touch && _ttMove.moved) e.preventDefault();
-}, { passive: false });
 
 /** 칸을 그 요일 그 시각으로 옮긴다. 길이는 그대로. */
 function ttMoveTo(id, day, start) {
@@ -5753,9 +5820,14 @@ function ttMenuAct(what) {
     updateCycleUI();
   }
 }
+// 메뉴 바깥을 누르면 닫는다. 닫은 때를 적어 두어 그 누름이 다시 메뉴를 열지 않게 한다 —
+// 메뉴는 누른 자리에 뜨므로, 닫으려고 누른 자리가 방금 그 칸 위인 경우가 많다.
 document.addEventListener('pointerdown', (e) => {
   const m = document.getElementById('ttMenu');
-  if (m && m.style.display === 'block' && !m.contains(e.target)) ttCloseMenu();
+  if (m && m.style.display === 'block' && !m.contains(e.target)) {
+    ttCloseMenu();
+    _ttMenuClosedAt = Date.now();
+  }
 });
 
 // ── 칸 색 고르기 ──────────────────────────────────

@@ -2042,11 +2042,15 @@
   // ═══════════════════════════════════════════════
   function installLongPressEdit() {
     var timer = null;
+    var x0 = 0, y0 = 0;
     var cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
     document.addEventListener('touchstart', function (e) {
       var el = e.target && e.target.closest ? e.target.closest('.todo-text, [data-ekind]') : null;
       if (!el) return;
       cancel();
+      var t0 = e.changedTouches[0];
+      x0 = t0 ? t0.clientX : 0;
+      y0 = t0 ? t0.clientY : 0;
       // 디데이·알람은 자기 종류와 번호를 달고 있다 — 할 일과 고치는 길이 다르다
       var kind = el.getAttribute && el.getAttribute('data-ekind');
       if (kind) {
@@ -2065,7 +2069,15 @@
         if (typeof window.editDayItem === 'function') window.editDayItem(idx);
       }, 500);
     }, { passive: true });
-    ['touchend', 'touchmove', 'touchcancel', 'scroll'].forEach(function (ev) {
+    // 손가락이 조금 떨렸다고 그만두면 안 된다 — 아이폰은 가만히 누르고 있어도
+    // touchmove 를 잘게 보낸다. 10px 넘게 움직였을 때만 화면을 넘기는 것으로 본다.
+    document.addEventListener('touchmove', function (e) {
+      if (!timer) return;
+      var t = e.changedTouches[0];
+      if (!t) return;
+      if (Math.abs(t.clientX - x0) + Math.abs(t.clientY - y0) > 10) cancel();
+    }, { passive: true });
+    ['touchend', 'touchcancel'].forEach(function (ev) {
       document.addEventListener(ev, cancel, { passive: true });
     });
   }
@@ -2352,6 +2364,10 @@
       '}',
       '#photoFrame { width:96% !important; margin:auto !important; }',
       // 사진 찍기는 폰에서 잠시 뺀다 — 권한 안내가 없고 갤러리에도 안 들어간다
+      // 아이폰은 글씨를 오래 누르면 선택·복사 손잡이가 떠서 '꾹 누르기'를 가로챈다.
+      // 이 자리들은 길게 눌러 고치는 곳이라 선택 자체를 꺼 둔다.
+      '.todo-text, [data-ekind] { -webkit-touch-callout:none !important;',
+      '  -webkit-user-select:none !important; user-select:none !important; }',
       '#headerPhotoBtn { display:none !important; }',
       '#photoModal { display:none !important; }',
       // 좁은 화면에서 자리만 차지하는 것들 — 제목 줄, 로고 줄, 사이클 고리.
