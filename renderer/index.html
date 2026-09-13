@@ -5034,6 +5034,9 @@ function _ttTouch(e) {
 
 document.addEventListener('touchstart', (e) => {
   if (e.touches.length > 1) { ttHoldCancel(); ttTapCancel(); _ttTouchId = null; return; }
+  // 잡고 있던 것이 남아 있으면 먼저 내려놓는다. 손을 뗀 소식을 놓쳐 점선이 남아 있을 때,
+  // 아무 데나 한 번 누르면 풀리도록.
+  if (_ttMove) ttMoveCancel();
   const el = (e.target && e.target.closest) ? e.target.closest('.tt-blk') : null;
   if (!el) return;
   const t = e.changedTouches[0];
@@ -5068,7 +5071,8 @@ document.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 document.addEventListener('touchend', (e) => {
-  const t = _ttTouch(e);
+  // 번호가 안 맞아도 손을 다 뗐으면 끝난 것으로 본다 — 그냥 넘기면 점선이 남는다
+  const t = _ttTouch(e) || (e.touches.length === 0 ? e.changedTouches[0] : null);
   if (!t) return;
   _ttTouchId = null;
   if (_ttMove && _ttMove.touch) { ttMoveUp(e); return; }
@@ -5713,6 +5717,18 @@ function ttGhost(col, start, dur, ok) {
 }
 function ttGhostClear() { document.querySelectorAll('#ttGrid .tt-ghost').forEach(el => el.remove()); }
 
+/** 옮기지 않고 그냥 내려놓는다 (다른 곳을 누르거나, 끝 소식을 놓쳤을 때) */
+function ttMoveCancel() {
+  const d = _ttMove;
+  _ttMove = null;
+  _ttTouchId = null;
+  ttHoldCancel();
+  document.body.classList.remove('dragging-item');
+  if (d && d.el) d.el.classList.remove('moving');
+  ttGhostClear();
+  if (_ttRenderPending) renderTimetable();
+}
+
 function ttMoveUp(e) {
   const isPointer = !!(e && typeof e.type === 'string' && e.type.indexOf('pointer') === 0);
   // 손가락 차례면 포인터 쪽 끝 소식은 듣지 않는다. 아이폰은 손가락이 아직 붙어 있는데도
@@ -5850,6 +5866,8 @@ document.addEventListener('pointerdown', (e) => {
     ttCloseMenu();
     _ttMenuClosedAt = Date.now();
   }
+  // 잡은 채로 남아 있는데 칸 밖을 누르면 내려놓는다
+  if (_ttMove && !(e.target && e.target.closest && e.target.closest('.tt-blk'))) ttMoveCancel();
 });
 
 // ── 칸 색 고르기 ──────────────────────────────────
