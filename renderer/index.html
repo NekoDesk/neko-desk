@@ -5236,7 +5236,7 @@ document.addEventListener('keydown', (e) => {
 let _ttMove = null;
 let _ttHold = null;                 // 폰에서 꾹 누르기를 기다리는 중
 const TT_MOVE_THRESHOLD = 4;
-const TT_HOLD_MS = 420;
+const TT_HOLD_MS = 320;   // 안드로이드가 제 길게 누르기를 잡는 ~500ms 보다 앞서야 한다
 
 function ttBlkDown(e, id) {
   if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
@@ -5260,6 +5260,16 @@ function ttBlkDown(e, id) {
 
 function ttHoldCancel() { if (_ttHold) { clearTimeout(_ttHold); _ttHold = null; } }
 
+// 안드로이드는 손가락을 오래 누르면 제 나름의 "길게 누르기"를 판정해 contextmenu 를 쏜다.
+// 그러면 (1) 칸 메뉴가 뜨고 (2) 브라우저가 제 제스처를 시작하며 터치 열을 pointercancel 로
+// 끊어 버려서, 옮기던 중에 손이 뚝 끊겼다. 잡는 중에는 이 이벤트를 여기서 삼켜
+// 칸에 걸린 oncontextmenu 까지 가지 못하게 한다 (끌어 올리는 단계에서 막아야 취소도 안 온다).
+document.addEventListener('contextmenu', (e) => {
+  if (!_ttHold && !_ttMove) return;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
+
 function ttMoveStart(e, id, el, touch) {
   const blk = blockList().find(b => b.id === id);
   if (!blk) return;
@@ -5277,6 +5287,7 @@ function ttMoveStart(e, id, el, touch) {
 }
 
 function ttMoveMark() {
+  ttCloseMenu();                        // 열려 있던 메뉴가 손가락을 가로채지 않게
   document.body.classList.add('dragging-item');
   if (_ttMove && _ttMove.el) _ttMove.el.classList.add('moving');
   if (_ttMove) ttGhost(_ttMove.col, _ttMove.start, _ttMove.dur, true);
@@ -5303,6 +5314,7 @@ function ttMoveMove(e) {
   _ttMove.day = day;
   _ttMove.start = st;
   _ttMove.ok = !ttOverlaps(day, st, st + _ttMove.dur, _ttMove.id);
+  if (_ttMove.ok) { _ttMove.lastDay = day; _ttMove.lastStart = st; }   // 끊겨도 돌아갈 자리
   ttGhost(col, st, _ttMove.dur, _ttMove.ok);
 }
 
@@ -5322,10 +5334,16 @@ function ttGhost(col, start, dur, ok) {
 }
 function ttGhostClear() { document.querySelectorAll('#ttGrid .tt-ghost').forEach(el => el.remove()); }
 
-function ttMoveUp() {
+function ttMoveUp(e) {
   ttHoldCancel();
   if (!_ttMove) return;
   const d = _ttMove; _ttMove = null;
+  // 터치가 끊긴 것(pointercancel)이라면 마지막으로 멀쩡했던 자리에 놓는다 — 그냥 없던 일이
+  // 되면 옮기던 손이 허탈하다. 겹쳐서 못 놓는 자리였으면 제자리에 둔다.
+  const cancelled = !!(e && e.type === 'pointercancel');
+  if (cancelled && d.moved && !d.ok && d.lastStart !== undefined) {
+    d.day = d.lastDay; d.start = d.lastStart; d.ok = true;
+  }
   document.body.classList.remove('dragging-item');
   if (d.el) d.el.classList.remove('moving');
   ttGhostClear();
