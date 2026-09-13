@@ -1284,12 +1284,22 @@ function claimMergeVal(rv, lv, field) {
   }
   return lv;
 }
-function cloudClaimMerge(remote, local) {
+// 시간표는 합칠 수가 없다 — 겹쳐 놓으면 두 개가 한 자리에 포개진다.
+// 그래서 고른 쪽 것만 통째로 쓴다 (보이는 시간대·길이 설정도 따라간다).
+const TT_PICK_KEYS = ['blocks', 'ttFrom', 'ttTo', 'ttTall'];
+function cloudClaimMerge(remote, local, ttPick) {
   const out = {};
   CLOUD_KEYS.forEach(k => {
     const v = claimMergeVal(remote ? remote[k] : undefined, local ? local[k] : undefined, k);
     if (v !== undefined) out[k] = v;
   });
+  if (ttPick === 'local' || ttPick === 'remote') {
+    const src = (ttPick === 'local') ? local : remote;
+    TT_PICK_KEYS.forEach(k => {
+      if (src && src[k] !== undefined) out[k] = src[k];
+      else if (k === 'blocks') out[k] = [];      // 고른 쪽에 시간표가 없으면 비운다
+    });
+  }
   return out;
 }
 
@@ -1482,14 +1492,14 @@ async function cloudPull(notify) {
     // 안 올라간 내 변경이 있으면 원격으로 덮어쓰지 않고 병합해서 올린다
     if (st.claim || cloudPushTimer || st.dirty) {
       const local = await cloudReadLocal();
-      let merged = st.claim ? cloudClaimMerge(remote, local)
+      let merged = st.claim ? cloudClaimMerge(remote, local, st.claimBlocks)
                             : merge3(st.base, local, remote);
       merged = applyNotesMerge(merged, local, remote);   // 일정은 항목별로 다시 판정
       merged = pickDated(merged, st.base, local, remote); // 물·비타민은 날짜를 먼저 본다
       merged = pickWhole(merged, st.base, local, remote); // 설정 목록은 통째로
       cloudBump();
       cloudBroadcast('cloud-apply', { data: merged, notify: st.claim ? 'claim' : '' });
-      setSyncState({ claim: false });
+      setSyncState({ claim: false, claimBlocks: '' });
       // 기준선은 여기서 옮기지 않는다 — 아직 안 올라간 값이라, 옮겨 두면
       // 곧이은 올리기가 '나는 안 고쳤다'로 보고 예전 값을 도로 올린다.
       cloudStatus('pull', 'sync_merged');
@@ -1664,7 +1674,11 @@ ipcMain.handle('cloud-delete-account', async () => {
 });
 
 // 게스트로 쓰던 기록을 계정에 승계할 때 렌더러가 알려준다
-ipcMain.on('cloud-mark-claim', () => setSyncState({ claim: true, dirty: true }));
+// 게스트 기록 승계 — 시간표는 한쪽만 쓰므로 어느 쪽인지도 함께 받아 둔다
+ipcMain.on('cloud-mark-claim', (e, opts) => {
+  const pick = (opts && opts.blocks === 'remote') ? 'remote' : 'local';
+  setSyncState({ claim: true, claimBlocks: pick, dirty: true });
+});
 
 // 앱이 꺼지기 전, 예약만 되고 안 올라간 변경을 즉시 올린다
 app.on('before-quit', () => {

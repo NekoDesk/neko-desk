@@ -24,6 +24,7 @@
   var DIRTY_KEY = 'neko_sync_dirty';      // 아직 클라우드에 안 올라간 변경 존재 표시 (재시작에도 유지)
   var OWNER_KEY = 'neko_data_owner';      // 이 기기 데이터의 주인 계정 (계정별 데이터 분리)
   var CLAIM_KEY = 'neko_sync_claim';
+  var CLAIM_TT_KEY = 'neko_sync_claim_tt';   // 승계할 때 어느 쪽 시간표를 쓸지
   var LAST_PUSH_KEY = 'neko_sync_last_push';   // 마지막으로 올린 내용(비교용)
   var BASE_KEY = 'neko_sync_base';             // 두 기기가 마지막으로 합의한 상태      // 게스트로 쓴 기록을 계정에 합쳐야 함
 
@@ -767,12 +768,22 @@
     }
     return lv;
   }
-  function claimMerge(remote, local) {
+  // 시간표는 합칠 수가 없다 — 겹쳐 놓으면 두 개가 한 자리에 포개진다.
+  // 그래서 고른 쪽 것만 통째로 쓴다 (보이는 시간대·길이 설정도 따라간다).
+  var TT_PICK_KEYS = ['blocks', 'ttFrom', 'ttTo', 'ttTall'];
+  function claimMerge(remote, local, ttPick) {
     var out = {};
     SYNC_KEYS.forEach(function (k) {
       var v = claimMergeVal(remote ? remote[k] : undefined, local ? local[k] : undefined, k);
       if (v !== undefined) out[k] = v;
     });
+    if (ttPick === 'local' || ttPick === 'remote') {
+      var src = (ttPick === 'local') ? local : remote;
+      TT_PICK_KEYS.forEach(function (k) {
+        if (src && src[k] !== undefined) out[k] = src[k];
+        else if (k === 'blocks') out[k] = [];
+      });
+    }
     return out;
   }
 
@@ -820,6 +831,18 @@
         setTimeout(function () { try { H.vibrate({ duration: 300 }); } catch (e) {} }, ms);
       });
     }
+  };
+
+  /**
+   * 게스트로 쓴 기록을 이 계정이 물려받는다고 표시한다 (renderer 가 물어본 뒤에 부른다).
+   * opts.blocks 는 어느 쪽 시간표를 쓸지 — local(이 기기) 또는 remote(계정).
+   */
+  window._mobileMarkClaim = function (opts) {
+    try {
+      localStorage.setItem(CLAIM_KEY, '1');
+      localStorage.setItem(CLAIM_TT_KEY, (opts && opts.blocks === 'remote') ? 'remote' : 'local');
+      localStorage.setItem(DIRTY_KEY, '1');
+    } catch (e) {}
   };
 
   /**
@@ -958,7 +981,8 @@
         // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
         if (claim || _pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
           var loc = collectLocal();
-          var merged = claim ? claimMerge(remote, loc)
+          var ttPick = localStorage.getItem(CLAIM_TT_KEY) || '';
+          var merged = claim ? claimMerge(remote, loc, ttPick)
                              : merge3(readBase(), loc, remote);
           merged = applyNotesMerge(merged, loc, remote);   // 일정은 항목별로 다시 판정
           merged = pickDated(merged, readBase(), loc, remote);  // 물·비타민은 날짜를 먼저 본다
@@ -967,6 +991,7 @@
           // 기준선은 여기서 옮기지 않는다. 아직 클라우드에 올라가지 않았는데
           // 옮겨 두면 곧이은 올리기가 '나는 안 고쳤다'로 보고 예전 값을 도로 올린다.
           localStorage.removeItem(CLAIM_KEY);
+          localStorage.removeItem(CLAIM_TT_KEY);
           if (claim) toast('info', '☁️ 동기화', '게스트로 쓴 기록을 계정에 합쳤어요');
           syncStatus('내 변경 병합 (' + nowHHMM() + ')');
           return syncPush(true);

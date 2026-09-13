@@ -871,6 +871,10 @@ body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#31
 .tt-ver i { font-size:10px; font-style:normal; color:var(--gray); opacity:0.7; text-align:center; line-height:1.4; }
 .tt-ver.on { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 88%); }
 .tt-ver.on b { color:var(--white); }
+/* 합치기 창의 뒤로 가기 */
+.claim-back { background:none; border:1px solid var(--border); border-radius:4px; color:var(--gray);
+  font-size:11px; line-height:1; padding:4px 7px; cursor:pointer; }
+.claim-back:hover { color:var(--white); border-color:var(--gray); }
 /* 지금 이 시간인 칸 — 노랗게 반짝이고 위에 말풍선이 붙는다 */
 .tt-blk.now { box-shadow:0 0 0 2px var(--yellow) inset; animation:ttNowGlow 4.5s ease-in-out infinite; }
 @keyframes ttNowGlow {
@@ -1850,11 +1854,31 @@ select {
 <!-- 게스트로 쓰던 기록을 계정에 합칠지 (처음 로그인할 때 한 번) -->
 <div id="claimModal" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,0.78);align-items:center;justify-content:center">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:20px 22px;max-width:380px;width:88%">
-    <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:10px" data-i18n="claim_title">☁️ 이 기기에 적어 둔 기록이 있어요</div>
-    <div id="claimWhat" style="font-size:12px;color:var(--white);line-height:1.8;margin-bottom:6px"></div>
-    <div style="font-size:11px;color:var(--gray);line-height:1.8;margin-bottom:16px" data-i18n="claim_hint">합치면 계정에 있던 기록과 이 기기 기록이 모두 남아요. 계정 기록만 쓰면 이 기기 기록은 사라집니다.</div>
-    <button class="btn btn-y" style="width:100%;font-size:12px;padding:10px 6px;margin-bottom:8px" onclick="claimAnswer(true)" data-i18n="claim_merge">✓ 계정에 합치기 (권장)</button>
-    <button class="btn btn-gr" style="width:100%;font-size:12px;padding:9px 6px" onclick="claimAnswer(false)" data-i18n="claim_drop">계정 기록만 쓰기</button>
+    <!-- ① 무엇을 할지 -->
+    <div id="claimStep1">
+      <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:10px" data-i18n="claim_title">☁️ 이 기기에 게스트로 이용한 기록이 있어요</div>
+      <div id="claimWhat" style="font-size:12px;color:var(--white);line-height:1.8;margin-bottom:6px"></div>
+      <div style="font-size:11px;color:var(--gray);line-height:1.8;margin-bottom:16px" data-i18n="claim_hint">합치면 계정에 있던 기록과 이 기기 기록이 모두 남아요. 계정 기록만 쓰면 이 기기 기록은 사라집니다.</div>
+      <button class="btn btn-y" style="width:100%;font-size:12px;padding:10px 6px;margin-bottom:8px" onclick="claimStep2()" data-i18n="claim_merge">✓ 계정에 합치기 (권장)</button>
+      <button class="btn btn-gr" style="width:100%;font-size:12px;padding:9px 6px;margin-bottom:8px" onclick="claimAnswer('remote')" data-i18n="claim_drop">계정 기록만 쓰기</button>
+      <button class="btn btn-gr" style="width:100%;font-size:12px;padding:9px 6px;color:var(--gray)" onclick="claimAnswer('cancel')" data-i18n="claim_cancel">취소 (다음에 로그인)</button>
+    </div>
+
+    <!-- ② 시간표는 겹칠 수 없어 한쪽만 고른다 -->
+    <div id="claimStep2" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="claim-back" onclick="claimStep1()" data-i18n-tip="claim_back">◀</button>
+        <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="claim_tt_title">🕐 어느 시간표를 쓸까요?</span>
+      </div>
+      <div style="font-size:11px;color:var(--gray);line-height:1.8;margin-bottom:14px" data-i18n="claim_tt_hint">시간표는 겹쳐 놓을 수 없어서 한쪽만 씁니다. 할 일·다이어리·메모는 둘 다 남아요.</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button type="button" class="tt-ver on" id="claimTt0" onclick="claimPickTt(0)">
+          <b data-i18n="claim_tt_here">이 기기 시간표</b><i id="claimTtCount"></i></button>
+        <button type="button" class="tt-ver" id="claimTt1" onclick="claimPickTt(1)">
+          <b data-i18n="claim_tt_acc">계정 시간표</b><i data-i18n="claim_tt_acc_sub">다른 기기에 있던 것</i></button>
+      </div>
+      <button class="btn btn-y" style="width:100%;font-size:12px;padding:10px 6px" onclick="claimAnswer('merge')" data-i18n="claim_ok">✓ 확인</button>
+    </div>
   </div>
 </div>
 
@@ -2397,7 +2421,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기', holiday_short:'공휴일',
     holiday_title:'🎌 공휴일', holiday_none:'표시하지 않음',
     holiday_desc:'사는 나라를 고르면 달력에 그 나라 공휴일이 표시돼요. 고르지 않으면 표시하지 않아요.',
-    claim_title:'☁️ 이 기기에 적어 둔 기록이 있어요',
+    claim_title:'☁️ 이 기기에 게스트로 이용한 기록이 있어요', claim_cancel:'취소 (다음에 로그인)',
+    claim_back:'뒤로', claim_ok:'✓ 확인', claim_tt_title:'🕐 어느 시간표를 쓸까요?',
+    claim_tt_hint:'시간표는 겹쳐 놓을 수 없어서 한쪽만 씁니다. 할 일·다이어리·메모는 둘 다 남아요.',
+    claim_tt_here:'이 기기 시간표', claim_tt_here_sub:'게스트로 만든 {n}칸',
+    claim_tt_acc:'계정 시간표', claim_tt_acc_sub:'다른 기기에 있던 것',
     claim_hint:'합치면 계정에 있던 기록과 이 기기 기록이 모두 남아요. 계정 기록만 쓰면 이 기기 기록은 사라집니다.',
     claim_merge:'✓ 계정에 합치기 (권장)', claim_drop:'계정 기록만 쓰기',
     claim_n_todo:'할 일 {n}개', claim_n_diary:'다이어리 {n}일', claim_n_block:'시간표 {n}칸',
@@ -2720,7 +2748,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek', holiday_short:'Holiday',
     holiday_title:'🎌 Holidays', holiday_none:'Do not show',
     holiday_desc:'Pick where you live and public holidays for that country appear on the calendar. Nothing is shown until you pick one.',
-    claim_title:'☁️ This device has notes of its own',
+    claim_title:'☁️ You have notes from using this device as a guest', claim_cancel:'Cancel (sign in later)',
+    claim_back:'Back', claim_ok:'✓ OK', claim_tt_title:'🕐 Which timetable should I keep?',
+    claim_tt_hint:'Two timetables cannot sit on top of each other, so only one is kept. To-dos, diary and notes keep both.',
+    claim_tt_here:'This device', claim_tt_here_sub:'{n} blocks made as a guest',
+    claim_tt_acc:'My account', claim_tt_acc_sub:'the one from another device',
     claim_hint:'Merging keeps both what is in the account and what is on this device. Using only the account will drop the notes on this device.',
     claim_merge:'✓ Merge into my account (recommended)', claim_drop:'Use the account only',
     claim_n_todo:'{n} to-dos', claim_n_diary:'{n} diary days', claim_n_block:'{n} timetable blocks',
@@ -3043,7 +3075,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる', holiday_short:'祝日',
     holiday_title:'🎌 祝日', holiday_none:'表示しない',
     holiday_desc:'お住まいの国を選ぶと、その国の祝日がカレンダーに表示されます。選ばなければ何も表示しません。',
-    claim_title:'☁️ この端末に書いた記録があります',
+    claim_title:'☁️ この端末にゲストで使った記録があります', claim_cancel:'キャンセル（あとでログイン）',
+    claim_back:'戻る', claim_ok:'✓ 確認', claim_tt_title:'🕐 どちらの時間割を使いますか？',
+    claim_tt_hint:'時間割は重ねられないので片方だけ使います。やること・日記・メモは両方残ります。',
+    claim_tt_here:'この端末の時間割', claim_tt_here_sub:'ゲストで作った{n}枠',
+    claim_tt_acc:'アカウントの時間割', claim_tt_acc_sub:'他の端末にあったもの',
     claim_hint:'合わせるとアカウントの記録もこの端末の記録も残ります。アカウントだけを使うと、この端末の記録は消えます。',
     claim_merge:'✓ アカウントに合わせる（おすすめ）', claim_drop:'アカウントの記録だけ使う',
     claim_n_todo:'やること{n}件', claim_n_diary:'日記{n}日', claim_n_block:'時間割{n}枠',
@@ -9524,20 +9560,49 @@ function _guestSummary(saved) {
 }
 
 let _claimResolve = null;
-/** 물어보고 답을 기다린다 — true 면 합치기 */
-function askClaim(parts) {
+let _claimTt = 0;              // 0 = 이 기기 시간표, 1 = 계정 시간표
+
+/**
+ * 물어보고 답을 기다린다 — { action:'merge'|'remote'|'cancel', blocks:'local'|'remote' }
+ */
+function askClaim(parts, blockCount) {
   const el = document.getElementById('claimModal');
-  if (!el) return Promise.resolve(true);
+  if (!el) return Promise.resolve({ action: 'merge', blocks: 'local' });
   const what = document.getElementById('claimWhat');
   if (what) what.textContent = parts.join(' · ');
+  const cnt = document.getElementById('claimTtCount');
+  if (cnt) cnt.textContent = L('claim_tt_here_sub').replace('{n}', blockCount || 0);
+  _claimTt = 0;
+  claimPickTt(0);
+  claimStep1();
   el.style.display = 'flex';
   return new Promise(res => { _claimResolve = res; });
 }
-function claimAnswer(merge) {
+
+function claimStep1() {
+  const a = document.getElementById('claimStep1'), b = document.getElementById('claimStep2');
+  if (a) a.style.display = 'block';
+  if (b) b.style.display = 'none';
+}
+/** 합치기로 정했으면 시간표를 어느 쪽으로 할지 한 번 더 묻는다 */
+function claimStep2() {
+  const a = document.getElementById('claimStep1'), b = document.getElementById('claimStep2');
+  if (a) a.style.display = 'none';
+  if (b) b.style.display = 'block';
+}
+function claimPickTt(i) {
+  _claimTt = i;
+  for (let k = 0; k < 2; k++) {
+    const el = document.getElementById('claimTt' + k);
+    if (el) el.classList.toggle('on', k === i);
+  }
+}
+
+function claimAnswer(action) {
   const el = document.getElementById('claimModal');
   if (el) el.style.display = 'none';
   const r = _claimResolve; _claimResolve = null;
-  if (r) r(!!merge);
+  if (r) r({ action: action, blocks: _claimTt === 1 ? 'remote' : 'local' });
 }
 
 function enforceDataOwner(s) {
@@ -9597,12 +9662,18 @@ async function decideDataOwner(s) {
   const saved = _claimPending; _claimPending = null;
   const parts = _guestSummary(saved);
   if (!parts.length) return false;
-  const merge = await askClaim(parts);
-  if (!merge) { _wipeForOwner(_ownerTag(s)); return true; }
+  const ans = await askClaim(parts, (saved.blocks || []).length);
+  if (ans.action === 'cancel') {                 // 로그인을 없던 일로
+    try { if (window.electronAPI && window.electronAPI.logout) await window.electronAPI.logout(); } catch (e) {}
+    location.reload();
+    return true;
+  }
+  if (ans.action === 'remote') { _wipeForOwner(_ownerTag(s)); return true; }
   // 합치기로 정했다 — 이제 이 기기의 주인은 이 계정이다 (다음부터는 묻지 않는다)
   try { localStorage.setItem(DATA_OWNER_KEY, _ownerTag(s)); } catch (e) {}
-  if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim();
-  if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim();
+  const opt = { blocks: ans.blocks };
+  if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim(opt);
+  if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim(opt);
   return false;
 }
 

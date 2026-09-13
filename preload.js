@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onStoreUpdate: (fn) => ipcRenderer.on('store-update', (e, p) => fn(p)),
   // 클라우드 동기화 — 주기와 네트워크는 메인이 소유한다
   cloudMarkDirty:  () => ipcRenderer.send('cloud-mark-dirty'),
-  cloudMarkClaim:  () => ipcRenderer.send('cloud-mark-claim'),
+  cloudMarkClaim:  (opts) => ipcRenderer.send('cloud-mark-claim', opts || null),
   cloudStart:      () => ipcRenderer.send('cloud-start'),
   cloudSyncNow:    () => ipcRenderer.invoke('cloud-sync-now'),
   cloudDeleteMine: () => ipcRenderer.invoke('cloud-delete-mine'),
