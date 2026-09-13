@@ -164,6 +164,7 @@ body.electron-dashboard #dashPanel {
 :root { --lift-1: 10%; --lift-2: 20%; --lift-3: 45%; --lift-4: 58%; }
 body.theme-black { --lift-1: 4%; --lift-2: 9%; --lift-3: 13%; --lift-4: 17%; }
 body {
+  color: var(--white);
   min-height: 100vh;
   overflow: hidden;
   font-family: 'Noto Sans KR', sans-serif;
@@ -529,10 +530,15 @@ body.theme-black {
 .wcup.done .wwave { display: none; }                /* 다 마신 컵은 비어 있음 */
 .wcup.next { background: var(--yellow); cursor: pointer; }
 .wcup.undo { cursor: pointer; }
-.water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center; }
+.water-col { gap: 6px; }
+.water-tip { font-size: 10px; color: var(--gray); opacity: 0.75; text-align: center;
+  line-height: 1.5; max-width: 200px; margin-bottom: 2px; }
+/* 영양제 주의 — 눈에 걸리되 소리치지는 않게 */
+.vita-warn { font-size: 9px; color: #e8908a; opacity: 0.9; text-align: center;
+  line-height: 1.55; max-width: 200px; margin: -2px 0 2px; }
 
 /* 비타민: 물컵과 같은 자리, 알약 모양 픽셀 그림 */
-.vita-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; margin-top: 2px; }
+.vita-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; margin-top: 4px; }
 .vita-hd b { color: var(--yellow); }
 .vita-pills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 /* 알약: 위 절반은 주황, 아래 절반은 흰색. 안 먹은 알은 회색으로 잠들어 있다 */
@@ -810,6 +816,9 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
 /* 오후는 아주 살짝만 밝게 — 오전/오후가 갈리되 튀지 않게 */
 .tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff var(--lift-3)); }
+/* 블랙에서는 테두리 색(--border)이 오후 칸 바탕과 거의 같아 격자가 안 보인다 */
+body.theme-black .tt-hour, body.theme-black .tt-times span { border-top-color:#616170; }
+body.theme-black .tt-col { border-left-color:#616170; }
 .tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff var(--lift-3)); }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
@@ -871,7 +880,7 @@ body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#31
 .fill-colors { gap:5px; }
 .fill-colors .tt-color { width:18px; height:18px; }
 .fill-alarm-row { display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:7px; }
-.fill-bell { background:none; border:1px solid var(--border); border-radius:3px; width:24px; height:22px; padding:0; cursor:pointer; font-size:11px; line-height:1; opacity:0.55; flex-shrink:0; }
+.fill-bell { background:none; border:1px solid var(--border); border-radius:3px; width:24px; height:22px; padding:0; cursor:pointer; font-size:11px; line-height:1; opacity:0.55; flex-shrink:0; color:var(--white); }
 /* 언제 울릴지 고르는 작은 칩 — 알림이 꺼져 있으면 흐리게 두되 누를 수는 있다 */
 .lead-chip { flex:1 1 auto; font-size:10px; padding:4px 5px; cursor:pointer; border-radius:4px;
   border:1px solid var(--border); background:var(--card); color:var(--gray); white-space:nowrap; }
@@ -1382,9 +1391,11 @@ select {
                 <div class="water-col">
                   <div class="water-hd"><span data-i18n="water_lbl">💧 오늘 마신 물</span> <b id="waterCount">0</b>/8</div>
                   <div class="water-cups" id="waterCups"></div>
-                  <div class="water-tip" data-i18n="water_tip">한 잔 마실 때마다 🍋 열매 +1</div>
-                  <div class="vita-hd" id="vitaHd"><span data-i18n="vita_lbl">💊 오늘 먹은 비타민</span> <b id="vitaCount">0</b>/<span id="vitaGoal">1</span></div>
+                  <div class="water-tip" data-i18n="water_tip">당신의 맑고 건강한 피부를 위해 수분보충! +10pt</div>
+                  <div class="vita-hd" id="vitaHd"><span data-i18n="vita_lbl">💊 오늘 먹은 영양제</span> <b id="vitaCount">0</b>/<span id="vitaGoal">1</span></div>
                   <div class="vita-pills" id="vitaPills"></div>
+                  <div class="water-tip" data-i18n="vita_tip">작은 실천으로 일상 속 영양 불균형 해소! +10pt</div>
+                  <div class="vita-warn" data-i18n="vita_warn">⚠ 권장량 이상 먹으면 오히려 역효과! 영양제는 반드시 일일 권장 정량만 섭취하세요!</div>
                 </div>
               </div>
             </div>
@@ -1851,10 +1862,11 @@ select {
 <div id="ttRangeModal" style="display:none;position:fixed;inset:0;z-index:9469;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtRange(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:360px;width:88%" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="range_title">🕘 보이는 시간대</span>
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="range_title">⚙ 시간표 설정</span>
       <button onclick="closeTtRange()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
     </div>
-    <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="range_hint">시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.</div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="range_lbl">보이는 시간대</div>
+    <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:10px" data-i18n="range_hint">시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;justify-content:center">
       <span id="rangeFromCtl"></span>
       <span style="color:var(--gray)">~</span>
@@ -1990,7 +2002,7 @@ select {
 
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--white);margin-bottom:14px;cursor:pointer">
       <input type="checkbox" id="rsVitaOn" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer" onchange="rsMarkDirty(true)">
-      <span data-i18n="remind_vita_on">비타민 먹을 시간 알려주기</span>
+      <span data-i18n="remind_vita_on">영양제 먹을 시간 알려주기</span>
     </label>
 
     <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="remind_vita_time">알림 시각</div>
@@ -2358,7 +2370,9 @@ const STRINGS = {
     sync_nothing:'올릴 내용 없음', sync_waiting:'연결 대기 중', sync_need_login:'로그인 필요',
     sync_relogin:'구글 로그인 필요 (로그아웃 후 다시 로그인)', sync_unsupported:'지원 안 됨',
     sync_config_err:'설정 오류', sync_error:'오류',
-    water_lbl:'💧 오늘 마신 물', water_tip:'한 잔 마실 때마다 🍋 열매 +1',
+    water_lbl:'💧 오늘 마신 물', water_tip:'당신의 맑고 건강한 피부를 위해 수분보충! +10pt',
+    vita_tip:'작은 실천으로 일상 속 영양 불균형 해소! +10pt',
+    vita_warn:'⚠ 권장량 이상 먹으면 오히려 역효과! 영양제는 반드시 일일 권장 정량만 섭취하세요!',
     water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
     health_pts_msg:'+{n} pts 받았어요!',
     water_full_msg:'바구니가 가득 찼어요!',
@@ -2384,8 +2398,8 @@ const STRINGS = {
     tt_ver_lbl:'시간표 버전', tt_ver_short:'짧은 버전', tt_ver_short_sub:'한 주가 한눈에',
     tt_ver_tall:'긴 버전', tt_ver_tall_sub:'짧은 일정도 잘 보여요',
     tt_ver_hint:'긴 버전은 한 시간 칸을 세 배로 늘려요. 10~20분짜리 일정도 이름과 시각이 다 보입니다.',
-    tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
-    range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
+    tt_range_btn:'시간표 설정', range_title:'⚙ 시간표 설정',
+    range_lbl:'보이는 시간대', range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
     fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
     fill_items_hint:'앞 항목부터 다음 항목까지가 한 칸이 돼요. 맨 아래 \'휴식 (끝)\'은 하루가 끝나는 시각이라 칸이 되지 않습니다. 시간 순서는 저절로 맞춰집니다.',
     fill_need_two:'항목이 두 개 이상 있어야 해요',
@@ -2408,7 +2422,7 @@ const STRINGS = {
     dup_too_late:'그 시각에 넣으면 자정을 넘어요',
     tt_menu_edit:'✏️ 수정하기', tt_menu_del:'🗑 지우기',
     tt_tips_title:'💡 시간표 사용 팁',
-    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌면</b> 10분 단위로 자리를 옮겨요. 다른 요일로도 갑니다. 폰에서는 칸을 <b>꾹 누른 뒤</b> 끄세요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
+    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다. 폰에서는 <b>개별 채우기</b>를 쓰세요.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·색·알림을 고칠 수 있어요.<br>PC 는 <b>마우스 오른쪽 버튼</b>, 폰은 <b>톡 누르면</b> 메뉴가 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌면</b> 10분 단위로 자리를 옮겨요. 다른 요일로도 갑니다. 폰에서는 칸을 <b>꾹 누른 뒤</b> 끄세요. 놓일 자리가 점선으로 보이고, 다른 일정과 겹치면 붉게 변하며 놓이지 않아요.<br><br><b style="color:var(--white)">알림</b><br>메뉴의 <b>알림 켜기</b>를 누르면 언제 울릴지 고를 수 있어요 — 시작할 때 · 5 · 10 · 20 · 30분 전. 켜 둔 칸에는 🔔 이 붙습니다.<br><b>같은 일정 모두 알림 켜기</b>로 이름이 같은 칸을 한 번에 켜고 끌 수 있어요.<br><br><b style="color:var(--white)">복제하기</b><br>메뉴의 <b>복제하기</b>로 그 일정을 다른 요일·다른 시각에 그대로 다시 놓아요. 길이·이름·색·알림이 함께 갑니다.<br><br><b style="color:var(--white)">한 번에 채우기</b><br><b>일괄 채우기</b>는 일정을 여러 줄 적어 고른 요일에 한 번에 넣어요. 겹치는 기존 일정은 지우고 덮어쓸 수 있습니다.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style="color:var(--white)">시간표 설정</b><br>아래 <b>시간표 설정</b>에서 몇 시부터 몇 시까지 보여줄지 정하고 <b>짧은 버전 · 긴 버전</b>을 고를 수 있어요. 긴 버전은 칸이 세 배로 길어져 10~20분짜리 일정도 이름과 시각이 다 보입니다.<br><br><b style="color:var(--white)">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
     fill_items:'일정', fill_add_row:'+ 일정 추가', fill_need_row:'일정을 한 줄 이상 적어 주세요',
     fill_rows_hint:'줄마다 시간·내용·색을 따로 정해요. 🔔 을 누르면 알림이 켜지고, 옆에서 언제 울릴지 고를 수 있어요.',
     tt_menu_alarm_all_on:'🔔 같은 일정 모두 알림 켜기', tt_menu_alarm_all_off:'🔕 같은 일정 모두 알림 끄기',
@@ -2435,14 +2449,14 @@ const STRINGS = {
     fb_title:'⏱ 집중 · 휴식 길이', fb_focus:'집중', fb_break:'휴식', fb_min:'분',
     fb_hint:'한 사이클은 {c}분이 됩니다. 45·10처럼 학교 시간표에 맞춰도 좋아요.',
     remind_btn:'🔔 알림 설정', remind_title:'🔔 알림 설정',
-    remind_vita_on:'비타민 먹을 시간 알려주기', remind_vita_time:'알림 시각',
+    remind_vita_on:'영양제 먹을 시간 알려주기', remind_vita_time:'알림 시각',
     remind_vita_goal:'하루에 먹는 영양제 알 수',
     remind_vita_hint:'영양제를 여러 알 드신다면 그 개수만큼 늘려주세요 (최대 12알)',
     remind_cancel:'취소', remind_save:'✓ 저장', remind_saved:'설정을 저장했어요',
-    vita_lbl:'💊 오늘 먹은 비타민', vita_done_title:'💊 잘했어요!',
-    vita_done_msg:'오늘 비타민 다 챙겨 먹었어요',
-    vitamin_title:'💊 비타민 시간', vitamin_msg:'비타민 1알 챙겨 드시는 건 어때요?',
-    vitamin_bubble:'비타민 1알 챙겨 먹어요 💊',
+    vita_lbl:'💊 오늘 먹은 영양제', vita_done_title:'💊 잘했어요!',
+    vita_done_msg:'오늘 영양제 다 챙겨 먹었어요',
+    vitamin_title:'💊 영양제 시간', vitamin_msg:'영양제 한 알 챙겨 드시는 건 어때요?',
+    vitamin_bubble:'영양제 한 알 챙겨 먹어요 💊',
     todo_multi_btn:'📅 여러 날에 한 번에 넣기', todo_multi_hint:'달력에서 넣을 날짜를 눌러 고르세요. 다시 누르면 빠집니다.',
     todo_multi_apply:'✓ {n}일에 넣기', todo_multi_none:'날짜를 먼저 골라 주세요', todo_multi_done:'{n}일에 넣었어요',
     todo_copy_day:'📋 일정 복붙', todo_copy_day_hint:'선택한 날짜의 일정을 복사합니다. 붙여넣을 날짜를 달력에서 고르세요.',
@@ -2672,7 +2686,9 @@ const STRINGS = {
     sync_nothing:'Nothing to upload', sync_waiting:'Waiting', sync_need_login:'Sign-in required',
     sync_relogin:'Sign in with Google (sign out, then sign in again)', sync_unsupported:'Not supported',
     sync_config_err:'Config error', sync_error:'Error',
-    water_lbl:'💧 Water today', water_tip:'Each glass earns a 🍋 fruit',
+    water_lbl:'💧 Water today', water_tip:'Stay hydrated for clear, healthy skin! +10pt',
+    vita_tip:'A small habit that evens out your daily nutrition! +10pt',
+    vita_warn:'⚠ More than the recommended amount backfires. Stick to the daily dose on the label.',
     water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
     health_pts_msg:'+{n} pts!',
     water_full_msg:'Your basket is full!',
@@ -2698,8 +2714,8 @@ const STRINGS = {
     tt_ver_lbl:'Timetable size', tt_ver_short:'Short', tt_ver_short_sub:'The whole week at a glance',
     tt_ver_tall:'Tall', tt_ver_tall_sub:'Short blocks stay readable',
     tt_ver_hint:'Tall makes each hour three times taller, so even a 10~20 minute block shows its name and time.',
-    tt_range_btn:'Hours shown', range_title:'🕘 Hours shown',
-    range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
+    tt_range_btn:'Timetable setup', range_title:'⚙ Timetable setup',
+    range_lbl:'Hours shown', range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
     fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
     fill_items_hint:'Each row runs until the next one. The last row ends the day. Rows sort themselves by time.',
     fill_need_two:'You need at least two rows',
@@ -2722,7 +2738,7 @@ const STRINGS = {
     dup_too_late:'That start time runs past midnight',
     tt_menu_edit:'✏️ Edit', tt_menu_del:'🗑 Delete',
     tt_tips_title:'💡 Timetable tips',
-    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot to move it in 10-minute steps, to another day too. On a phone, <b>press and hold</b> the slot first.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
+    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min). On a phone, use <b>Add one</b>.<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time, color and alarm.<br><b>Right-click</b> on a PC, or <b>tap</b> on a phone, for the menu.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot to move it in 10-minute steps, to another day too. On a phone, <b>press and hold</b> the slot first. The target spot is outlined; it turns red and refuses to drop if it overlaps another slot.<br><br><b style="color:var(--white)">Alarm</b><br><b>Turn alarm on</b> in the menu asks when to ring — at start, or 5 / 10 / 20 / 30 minutes before. Slots with an alarm show 🔔.<br><b>Alarm on for all with this name</b> switches every slot with the same name at once.<br><br><b style="color:var(--white)">Duplicate</b><br><b>Duplicate</b> in the menu puts the same slot on other days at a time you pick. Length, name, color and alarm come along.<br><br><b style="color:var(--white)">Bulk fill</b><br><b>Bulk fill</b> takes several blocks at once and puts them on the days you pick. It can replace existing blocks in the overlapping time.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style="color:var(--white)">Timetable setup</b><br><b>Timetable setup</b> below sets the visible hours and picks <b>Short</b> or <b>Tall</b>. Tall makes each hour three times taller, so even a 10~20 minute block shows its name and time.<br><br><b style="color:var(--white)">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
     fill_items:'Blocks', fill_add_row:'+ Add block', fill_need_row:'Add at least one block',
     fill_rows_hint:'Each row has its own time, name and color. Tap 🔔 to turn the alarm on, then pick when it rings.',
     tt_menu_alarm_all_on:'🔔 Alarm on for all with this name', tt_menu_alarm_all_off:'🔕 Alarm off for all with this name',
@@ -2753,7 +2769,7 @@ const STRINGS = {
     remind_vita_goal:'Supplement pills per day',
     remind_vita_hint:'Taking several supplements? Set the number you take (up to 12)',
     remind_cancel:'Cancel', remind_save:'✓ Save', remind_saved:'Settings saved',
-    vita_lbl:'💊 Vitamins today', vita_done_title:'💊 Nice work!',
+    vita_lbl:'💊 Supplements today', vita_done_title:'💊 Nice work!',
     vita_done_msg:'You took all your vitamins today',
     vitamin_title:'💊 Vitamin time', vitamin_msg:'How about taking a vitamin?',
     vitamin_bubble:'Time for a vitamin 💊',
@@ -2986,7 +3002,9 @@ const STRINGS = {
     sync_nothing:'送信する内容なし', sync_waiting:'接続待ち', sync_need_login:'ログインが必要',
     sync_relogin:'Googleでログインしてください（ログアウト後に再ログイン）', sync_unsupported:'非対応',
     sync_config_err:'設定エラー', sync_error:'エラー',
-    water_lbl:'💧 今日の水分', water_tip:'1杯ごとに🍋の実 +1',
+    water_lbl:'💧 今日の水分', water_tip:'すこやかな肌のために水分補給！ +10pt',
+    vita_tip:'小さな習慣で毎日の栄養バランスを整えよう！ +10pt',
+    vita_warn:'⚠ 推奨量を超えると逆効果。1日の目安量を守って飲んでください。',
     water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
     health_pts_msg:'+{n} pts もらいました！',
     water_full_msg:'かごがいっぱいです！',
@@ -3012,8 +3030,8 @@ const STRINGS = {
     tt_ver_lbl:'時間割の大きさ', tt_ver_short:'短い版', tt_ver_short_sub:'一週間がひと目で',
     tt_ver_tall:'長い版', tt_ver_tall_sub:'短い予定も見やすく',
     tt_ver_hint:'長い版は1時間の枠を3倍に伸ばします。10~20分の予定も名前と時刻が見えます。',
-    tt_range_btn:'表示する時間', range_title:'🕘 表示する時間',
-    range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
+    tt_range_btn:'時間割の設定', range_title:'⚙ 時間割の設定',
+    range_lbl:'表示する時間帯', range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
     fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
     fill_items_hint:'前の項目から次の項目までが1枠になります。最後の項目で一日が終わります。時間順は自動で並びます。',
     fill_need_two:'項目が2つ以上必要です',
@@ -3036,7 +3054,7 @@ const STRINGS = {
     dup_too_late:'その時刻だと日をまたぎます',
     tt_menu_edit:'✏️ 直す', tt_menu_del:'🗑 消す',
     tt_tips_title:'💡 時間割の使い方',
-    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>すると10分単位で動きます。別の曜日にも移せます。スマホでは枠を<b>長押ししてから</b>動かします。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
+    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。スマホでは<b>1件ずつ追加</b>を。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・色・通知を直せます。<br>PC は<b>右クリック</b>、スマホは<b>軽く押す</b>とメニューが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>すると10分単位で動きます。別の曜日にも移せます。スマホでは枠を<b>長押ししてから</b>動かします。置く場所が点線で見え、他の予定と重なると赤くなって置けません。<br><br><b style="color:var(--white)">通知</b><br>メニューの<b>通知をオン</b>を押すと、いつ知らせるか選べます — 開始時・5・10・20・30分前。オンの枠には 🔔 が付きます。<br><b>同じ予定すべて通知オン</b>で同じ名前の枠をまとめて切り替えられます。<br><br><b style="color:var(--white)">複製する</b><br>メニューの<b>複製する</b>で、同じ予定を別の曜日・別の時刻にそのまま置けます。長さ・名前・色・通知も一緒に。<br><br><b style="color:var(--white)">まとめて入力</b><br><b>まとめて入力</b>は予定を何行か書いて、選んだ曜日に一度に入れます。重なる既存の予定は消して上書きもできます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。その枠ではタイマーが休み時間として進みます。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style="color:var(--white)">時間割の設定</b><br>下の<b>時間割の設定</b>で表示する時間帯と<b>短い版・長い版</b>を選べます。長い版は1時間の枠が3倍になり、10~20分の予定も名前と時刻が見えます。<br><br><b style="color:var(--white)">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
     fill_items:'予定', fill_add_row:'+ 予定を追加', fill_need_row:'予定を1行以上入れてください',
     fill_rows_hint:'行ごとに時間・内容・色を決めます。🔔 を押すと通知がオンになり、隣でいつ知らせるか選べます。',
     tt_menu_alarm_all_on:'🔔 同じ予定すべて通知オン', tt_menu_alarm_all_off:'🔕 同じ予定すべて通知オフ',
@@ -3067,7 +3085,7 @@ const STRINGS = {
     remind_vita_goal:'1日に飲むサプリの錠数',
     remind_vita_hint:'サプリを何錠か飲む方はその数に合わせてください（最大12錠）',
     remind_cancel:'キャンセル', remind_save:'✓ 保存', remind_saved:'設定を保存しました',
-    vita_lbl:'💊 今日飲んだビタミン', vita_done_title:'💊 えらい！',
+    vita_lbl:'💊 今日のサプリ', vita_done_title:'💊 えらい！',
     vita_done_msg:'今日のビタミンを全部飲みました',
     vitamin_title:'💊 ビタミンの時間', vitamin_msg:'ビタミンを1粒いかがですか？',
     vitamin_bubble:'ビタミンを1粒どうぞ 💊',

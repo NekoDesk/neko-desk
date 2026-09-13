@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.4.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.5.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1110,9 +1110,9 @@
 
   var NOTI_WORDS = {
     ko: { water: '물 마실 시간', waterBody: '물 한 잔 마시고 와요',
-          vita: '비타민 먹을 시간', vitaBody: '오늘 챙길 비타민이 남아 있어요', alarm: '알람' },
+          vita: '영양제 먹을 시간', vitaBody: '오늘 챙길 영양제가 남아 있어요', alarm: '알람' },
     en: { water: 'Water time', waterBody: 'Go grab a glass of water',
-          vita: 'Vitamin time', vitaBody: "Don't forget today's vitamins", alarm: 'Alarm' },
+          vita: 'Supplement time', vitaBody: "Don't forget today's supplements", alarm: 'Alarm' },
     ja: { water: '水を飲む時間', waterBody: 'コップ一杯どうぞ',
           vita: 'サプリの時間', vitaBody: '今日の分がまだ残っています', alarm: 'アラーム' }
   };
@@ -1385,15 +1385,15 @@
   var WIDGET_WORDS = {
     ko: { empty: '오늘 할 일이 없어요', head: '📝 오늘 할 일', done: '완료',
           am: '오전', pm: '오후', yday: '어제', tmr: '내일', none: '없음',
-          water: '💧 오늘 마신 물', vita: '💊 비타민', table: '🕐 시간표', ttEmpty: '시간표가 비어 있어요',
+          water: '💧 오늘 마신 물', vita: '💊 영양제', table: '🕐 시간표', ttEmpty: '시간표가 비어 있어요',
           dows: ['일','월','화','수','목','금','토'] },
     en: { empty: 'Nothing scheduled today', head: '📝 Today', done: 'done',
           am: 'AM', pm: 'PM', yday: 'Yesterday', tmr: 'Tomorrow', none: 'None',
-          water: '💧 Water today', vita: '💊 Vitamins', table: '🕐 Timetable', ttEmpty: 'Timetable is empty',
+          water: '💧 Water today', vita: '💊 Supplements', table: '🕐 Timetable', ttEmpty: 'Timetable is empty',
           dows: ['Su','Mo','Tu','We','Th','Fr','Sa'] },
     ja: { empty: '今日の予定はありません', head: '📝 今日の予定', done: '完了',
           am: '午前', pm: '午後', yday: '昨日', tmr: '明日', none: 'なし',
-          water: '💧 今日の水', vita: '💊 ビタミン', table: '🕐 時間割', ttEmpty: '時間割がありません',
+          water: '💧 今日の水', vita: '💊 サプリ', table: '🕐 時間割', ttEmpty: '時間割がありません',
           dows: ['日','月','火','水','木','金','土'] }
   };
 
