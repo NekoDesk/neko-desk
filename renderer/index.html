@@ -4891,6 +4891,7 @@ function renderTimetable() {
       return `<div class="tt-blk ${cc ? '' : (b.type === 'rest' ? 'rest' : '')}${cc}${now ? ' now' : ''}"
         data-id="${b.id}" style="top:${top}px;height:${hgt}px"
         onpointerdown="ttBlkDown(event,'${b.id}')"
+        onclick="ttBlkClick(event,'${b.id}')"
         ondblclick="event.stopPropagation();ttEdit('${b.id}')"
         oncontextmenu="ttBlkMenu(event,'${b.id}')">
         <b style="-webkit-line-clamp:${lines}">${bell}${String(b.label || '').replace(/</g, '&lt;')}</b>
@@ -4982,6 +4983,22 @@ function ttTapUp(e) {
   // 손가락이 움직였으면 화면을 넘긴 것이지 누른 게 아니다
   if (Math.abs(e.clientX - tap.x0) + Math.abs(e.clientY - tap.y0) > TT_TAP_SLOP) return;
   ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: tap.x0, clientY: tap.y0 }, tap.id);
+}
+
+/**
+ * 폰에서 칸을 톡 눌렀을 때의 두 번째 길.
+ *
+ * 메뉴는 위의 pointerup 에서 여는데, 그 전에 pointercancel 이 오면 눌렀던 기록이 지워져
+ * 메뉴가 뜨지 않는다. 아이폰(WKWebView)은 화면을 넘길 수 있는 자리에서 손가락이 닿으면
+ * 가벼운 톡에도 그 취소를 쉽게 보낸다 — 그래서 안드로이드는 되고 아이폰만 안 됐다.
+ * 클릭은 취소가 오간 뒤에도 오고, 진짜로 화면을 넘겼을 때는 오지 않는다. 여기서 한 번 더 받는다.
+ */
+function ttBlkClick(e, id) {
+  if (!window._isMobileApp) return;              // PC 는 끌기·더블클릭을 쓴다
+  if (_ttMove || _ttHold) return;                // 옮기는 중
+  if (Date.now() - _ttMenuAt < 400) return;      // 방금 pointerup 으로 이미 열었다
+  if (Date.now() - _ttMovedAt < 500) return;     // 방금 옮기고 난 뒤의 클릭
+  ttBlkMenu({ preventDefault() {}, stopPropagation() {}, clientX: e.clientX, clientY: e.clientY }, id);
 }
 document.addEventListener('pointerup', ttTapUp);
 document.addEventListener('pointercancel', ttTapCancel);
@@ -5511,6 +5528,7 @@ document.addEventListener('keydown', (e) => {
 // 폰에서는 톡 누르면 메뉴, 꾹 누르면 옮기기 — 그냥 끌면 화면이 넘어가야 하니까.
 let _ttMove = null;
 let _ttHold = null;                 // 폰에서 꾹 누르기를 기다리는 중
+let _ttMovedAt = 0;                 // 마지막으로 칸을 옮긴 때 (그 뒤의 클릭은 무시한다)
 const TT_MOVE_THRESHOLD = 4;
 const TT_HOLD_MS = 320;   // 안드로이드가 제 길게 누르기를 잡는 ~500ms 보다 앞서야 한다
 
@@ -5624,6 +5642,7 @@ function ttMoveUp(e) {
   if (d.el) d.el.classList.remove('moving');
   ttGhostClear();
   if (!d.moved) { ttEdit(d.id); return; }          // 마우스로 그냥 누른 것
+  _ttMovedAt = Date.now();
   if (!d.ok) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
   ttMoveTo(d.id, d.day, d.start);
 }
