@@ -4989,6 +4989,7 @@ function ttTapCancel() { _ttTap = null; }
 
 // 지금 손가락이 칸 위에서 무언가 하고 있는가 (그러면 포인터 쪽 소식은 듣지 않는다)
 let _ttTouchId = null;
+let _ttFinger = { x: 0, y: 0 };    // 마지막으로 본 손가락 자리 (꾹 누르기가 끝날 때 쓴다)
 let _ttMenuClosedAt = 0;           // 메뉴를 바깥 누름으로 닫은 때
 
 function ttTapUp(e) {
@@ -5044,12 +5045,14 @@ document.addEventListener('touchstart', (e) => {
   // 손가락 자리는 숫자로 베껴 둔다. Touch 는 잠시 뒤에 다시 읽으면 값이 달라질 수 있어
   // (아이폰), 0.32초 뒤 타이머에서 그대로 읽으면 잡는 자리가 어긋난다.
   const tx = t.clientX, ty = t.clientY, tid = el.dataset.id;
+  _ttFinger = { x: tx, y: ty };
   ttTapDown({ clientX: tx, clientY: ty }, { id: tid });
   ttHoldCancel();
   _ttHold = setTimeout(() => {
     _ttHold = null;
     ttTapCancel();
-    ttMoveStart({ clientX: tx, clientY: ty, pointerId: -1 }, tid, el, true);
+    // 잡는 순간의 손가락 자리로 잰다 (누르는 사이에 조금 움직였을 수 있다)
+    ttMoveStart({ clientX: _ttFinger.x, clientY: _ttFinger.y, pointerId: -1 }, tid, el, true);
     buzz('tap');
   }, TT_HOLD_MS);
 }, { passive: true });
@@ -5057,6 +5060,7 @@ document.addEventListener('touchstart', (e) => {
 document.addEventListener('touchmove', (e) => {
   const t = _ttTouch(e);
   if (!t) return;
+  _ttFinger = { x: t.clientX, y: t.clientY };
   if (_ttMove && _ttMove.touch) {
     e.preventDefault();                          // 옮기는 동안 화면이 따라 움직이지 않게
     ttMoveMove({ clientX: t.clientX, clientY: t.clientY });
@@ -5651,17 +5655,17 @@ function ttMoveStart(e, id, el, touch) {
   // 잡고 있는 사이에 화면을 다시 그렸으면 예전 조각을 들고 있을 수 있다 — 지금 것으로 다시 찾는다
   const live = document.querySelector('.tt-blk[data-id="' + id + '"]');
   if (live) el = live;
-  const col = el.closest('.tt-col');
-  if (!col) return;                       // 자리를 못 재면 잡지 않는다 (어긋난 채로 옮기느니)
+  let col = el.closest('.tt-col');
+  if (!col) col = document.querySelector('#ttGrid .tt-col[data-day="' + blk.day + '"]');
+  if (!col) return;
+
   _ttMove = {
     id, el, touch, col,
-    x0: e.clientX, y0: e.clientY,
+    x0: e.clientX, y0: e.clientY,                       // 잡기 시작한 손가락 자리
     moved: touch,                                    // 꾹 누른 것은 이미 잡은 것이다
     dur: Math.max(TT_SNAP, toMin(blk.end) - toMin(blk.start)),
-    // 손가락은 칸 안에서 잡는다 — 밖의 값이 나오면 칸 안으로 당겨 맞춘다
-    grab: Math.max(0, Math.min(toMin(blk.end) - toMin(blk.start),
-                               ttYToMinRaw(col, e.clientY) - toMin(blk.start))),
     day: blk.day, start: toMin(blk.start), ok: true,
+    start0: toMin(blk.start),                          // 잡기 시작할 때 칸이 있던 자리
   };
   if (touch) ttMoveMark();
   try { el.setPointerCapture(e.pointerId); } catch (err) {}
@@ -5691,7 +5695,16 @@ function ttMoveMove(e) {
   _ttMove.col = col;
 
   const [lo, hi] = ttRange();
-  let st = Math.round((ttYToMinRaw(col, e.clientY) - _ttMove.grab) / TT_SNAP) * TT_SNAP;
+  // 칸은 손가락이 움직인 만큼만 따라간다.
+  //
+  // 예전에는 손가락이 지금 몇 시 자리에 있는지를 격자에서 다시 재고, 거기서 "칸의 어디를
+  // 잡았는지"를 빼서 놓일 자리를 구했다. 그 두 번의 셈 가운데 하나라도 어긋나면 —
+  // 보이는 시간대, 한 시간의 높이, 칸줄의 위치, 아이폰에서 손가락 좌표와 화면 좌표가
+  // 어긋나는 일 — 잡은 자리가 0으로 주저앉아 칸의 윗변이 손가락에 끌려왔다.
+  //
+  // 움직인 거리만 쓰면 그런 어긋남이 통째로 상쇄된다. 손가락이 가만히 있으면 칸도
+  // 가만히 있고, 30분만큼 내리면 칸도 30분만큼 내려간다 — 어디를 잡았든.
+  let st = Math.round((_ttMove.start0 + (e.clientY - _ttMove.y0) / ttRowH() * 60) / TT_SNAP) * TT_SNAP;
   st = Math.max(lo, Math.min(hi - _ttMove.dur, st));
   const day = Number(col.dataset.day);
   _ttMove.day = day;
