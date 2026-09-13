@@ -639,7 +639,7 @@ body.theme-black .vita-warn { color: #f2938b; }
 /* 자체 툴팁 — 브라우저 기본 title은 1초 이상 걸리고 모양도 제각각이라 직접 만든다.
    배경은 카드색에 흰색을 조금 섞어 테마마다 한 톤 밝게. */
 .todo-handle::after, .todo-help-btn::after, .hdr-btn::after, .todo-text::after,
-.dday-name-txt[data-tip]::after, .alarm-label[data-tip]::after,
+.ename[data-tip]::after,
 .cat-display[data-tip]::after {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
@@ -652,12 +652,12 @@ body.theme-black .vita-warn { color: #f2938b; }
 .todo-help-btn::after { top:calc(100% + 6px); }     /* 패널 맨 위라 아래쪽으로 */
 .hdr-btn::after { top:calc(100% + 8px); }
 .todo-text::after { bottom:calc(100% + 4px); left:0; right:auto; }   /* 글씨 위쪽, 왼쪽 정렬 */
-.dday-name-txt::after, .alarm-label::after { bottom:calc(100% + 4px); left:0; right:auto; }
+.ename::after { bottom:calc(100% + 4px); left:0; right:auto; }
 .hdr-btn:not([data-tip])::after { content:none; }
 .cat-display[data-tip]::after { top:calc(100% + 6px); }
 .todo-handle:hover::after, .todo-help-btn:hover::after,
 .hdr-btn:hover::after, .todo-text:hover::after,
-.dday-name-txt[data-tip]:hover::after, .alarm-label[data-tip]:hover::after,
+.ename[data-tip]:hover::after,
 .cat-display[data-tip]:hover::after { opacity:1; visibility:visible; }
 body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-item, .work-item-row { position:relative; }
@@ -762,7 +762,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   flex-shrink:0; min-width:52px; text-align:center; }
 .dday-badge.past { color:var(--gray); }
 .dday-badge.today { color:var(--yellow); }
-.dday-name-txt { flex:1; min-width:0; font-size:13px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dday-name-txt { display:block; min-width:0; font-size:13px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dday-when { font-size:10px; color:var(--gray); flex-shrink:0; }
 .dday-empty { font-size:12px; color:var(--gray); padding:8px 0; text-align:center; }
 .dday-add { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
@@ -961,7 +961,7 @@ body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#31
 .alarm-row.off .alarm-toggle { color:var(--gray); }
 .alarm-time { font-family:'Galmuri14',monospace; font-size:13px; color:var(--yellow); flex-shrink:0; }
 .alarm-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
-.alarm-label { font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.alarm-label { display:block; font-size:12px; color:var(--white); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .alarm-days { font-size:10px; color:var(--gray); }
 .alarm-dows { display:flex; gap:4px; margin:8px 0 6px; }
 .alarm-dow { flex:1; font-size:11px; padding:4px 0; cursor:pointer; border-radius:4px;
@@ -986,7 +986,10 @@ body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#31
 .cal-day.cal-drop { border-color:var(--mint) !important; background:rgba(120,220,190,0.18) !important; }
 /* 일정 글씨: 더블클릭하면 그 자리에서 수정 */
 .todo-text { position: relative; cursor: text; }
-.dday-name-txt[data-ekind], .alarm-label[data-ekind] { position: relative; cursor: text; }
+/* 이름 자리는 긴 이름을 잘라 보여 주려고 넘침을 감춘다. 그러면 그 안에서 뜨는 말풍선까지
+   함께 잘려서 아무것도 안 보인다. 감추지 않는 겉(.ename)을 하나 두고 말풍선은 거기에 붙인다. */
+.ename { position: relative; flex: 1; min-width: 0; cursor: text; }
+.ename > .dday-name-txt, .ename > .alarm-label, .ename > input { width: 100%; }
 .todo-edit-in {
   flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--yellow); color: var(--white);
   padding: 3px 6px; font-size: 13px; outline: none; border-radius: 3px; font-family: inherit;
@@ -4849,9 +4852,14 @@ function ttRange() {
   return [lo, hi];
 }
 
+let _ttRenderPending = false;
 function renderTimetable() {
   const el = document.getElementById('ttGrid');
   if (!el) return;
+  // 칸을 옮기는 중에는 다시 그리지 않는다. 3초마다 도는 동기화가 이 자리를 새로 그리면
+  // 손에 쥔 조각이 사라져 옮기던 것이 끊긴다. 놓고 나서 한 번 그린다.
+  if (_ttMove && _ttMove.moved) { _ttRenderPending = true; return; }
+  _ttRenderPending = false;
   const [lo, hi] = ttRange();
   const hours = (hi - lo) / 60;
   const dows = dowNames();
@@ -5030,12 +5038,15 @@ document.addEventListener('touchstart', (e) => {
   if (!el) return;
   const t = e.changedTouches[0];
   _ttTouchId = t.identifier;
-  ttTapDown({ clientX: t.clientX, clientY: t.clientY }, { id: el.dataset.id });
+  // 손가락 자리는 숫자로 베껴 둔다. Touch 는 잠시 뒤에 다시 읽으면 값이 달라질 수 있어
+  // (아이폰), 0.32초 뒤 타이머에서 그대로 읽으면 잡는 자리가 어긋난다.
+  const tx = t.clientX, ty = t.clientY, tid = el.dataset.id;
+  ttTapDown({ clientX: tx, clientY: ty }, { id: tid });
   ttHoldCancel();
   _ttHold = setTimeout(() => {
     _ttHold = null;
     ttTapCancel();
-    ttMoveStart({ clientX: t.clientX, clientY: t.clientY, pointerId: -1 }, el.dataset.id, el, true);
+    ttMoveStart({ clientX: tx, clientY: ty, pointerId: -1 }, tid, el, true);
     buzz('tap');
   }, TT_HOLD_MS);
 }, { passive: true });
@@ -5633,13 +5644,19 @@ document.addEventListener('contextmenu', (e) => {
 function ttMoveStart(e, id, el, touch) {
   const blk = blockList().find(b => b.id === id);
   if (!blk) return;
+  // 잡고 있는 사이에 화면을 다시 그렸으면 예전 조각을 들고 있을 수 있다 — 지금 것으로 다시 찾는다
+  const live = document.querySelector('.tt-blk[data-id="' + id + '"]');
+  if (live) el = live;
   const col = el.closest('.tt-col');
+  if (!col) return;                       // 자리를 못 재면 잡지 않는다 (어긋난 채로 옮기느니)
   _ttMove = {
     id, el, touch, col,
     x0: e.clientX, y0: e.clientY,
     moved: touch,                                    // 꾹 누른 것은 이미 잡은 것이다
     dur: Math.max(TT_SNAP, toMin(blk.end) - toMin(blk.start)),
-    grab: col ? (ttYToMinRaw(col, e.clientY) - toMin(blk.start)) : 0,
+    // 손가락은 칸 안에서 잡는다 — 밖의 값이 나오면 칸 안으로 당겨 맞춘다
+    grab: Math.max(0, Math.min(toMin(blk.end) - toMin(blk.start),
+                               ttYToMinRaw(col, e.clientY) - toMin(blk.start))),
     day: blk.day, start: toMin(blk.start), ok: true,
   };
   if (touch) ttMoveMark();
@@ -5715,8 +5732,13 @@ function ttMoveUp(e) {
   ttGhostClear();
   if (!d.moved) { ttEdit(d.id); return; }          // 마우스로 그냥 누른 것
   _ttMovedAt = Date.now();
-  if (!d.ok) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
+  if (!d.ok) {
+    toast('alert', L('tt_title'), L('tt_overlap'));
+    if (_ttRenderPending) renderTimetable();
+    return;
+  }
   ttMoveTo(d.id, d.day, d.start);
+  if (_ttRenderPending) renderTimetable();
 }
 document.addEventListener('pointermove', ttMoveMove);
 document.addEventListener('pointerup', ttMoveUp);
@@ -6212,11 +6234,11 @@ function renderAlarms() {
       <span class="alarm-time">${a.time}</span>
       <span class="alarm-body">
         ${_isEditing('alarm', a.id)
-          ? _nameEditInput('alarm', a.id, a.label || '', 'alarm-label')
-          : `<span class="alarm-label" ondblclick="editEntityName(&quot;alarm&quot;,&quot;${a.id}&quot;)"
-              data-ekind="alarm" data-eid="${a.id}"
-              data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
-              title="${_attr(a.label || '')}">${String(a.label || '').replace(/</g, '&lt;')}</span>`}
+          ? `<span class="ename">${_nameEditInput('alarm', a.id, a.label || '', 'alarm-label')}</span>`
+          : `<span class="ename" data-ekind="alarm" data-eid="${a.id}"
+              data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}">
+              <span class="alarm-label" ondblclick="editEntityName(&quot;alarm&quot;,&quot;${a.id}&quot;)"
+                title="${_attr(a.label || '')}">${String(a.label || '').replace(/</g, '&lt;')}</span></span>`}
         <span class="alarm-days">${alarmDaysLabel(a.days)}</span>
       </span>
       <button class="sch-del-btn" onclick="deleteAlarm('${a.id}')">×</button>
@@ -9093,11 +9115,11 @@ function renderDdays() {
     return `<div class="dday-row">
       <span class="dday-badge${cls}">${ddayLabel(diff)}</span>
       ${_isEditing('dday', d.id)
-        ? _nameEditInput('dday', d.id, d.title, 'dday-name-txt')
-        : `<span class="dday-name-txt" ondblclick="editEntityName(&quot;dday&quot;,&quot;${d.id}&quot;)"
-            data-ekind="dday" data-eid="${d.id}"
-            data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}"
-            title="${_attr(d.title)}">${d.title.replace(/</g, '&lt;')}</span>`}
+        ? `<span class="ename">${_nameEditInput('dday', d.id, d.title, 'dday-name-txt')}</span>`
+        : `<span class="ename" data-ekind="dday" data-eid="${d.id}"
+            data-tip="${L(window._isMobileApp ? 'todo_edit_hint_touch' : 'todo_edit_hint')}">
+            <span class="dday-name-txt" ondblclick="editEntityName(&quot;dday&quot;,&quot;${d.id}&quot;)"
+              title="${_attr(d.title)}">${d.title.replace(/</g, '&lt;')}</span></span>`}
       <span class="dday-when">${L('date_dots').replace('{y}', yy).replace('{m}', parseInt(mm)).replace('{d}', parseInt(dd))}</span>
       <button class="sch-del-btn" onclick="deleteDday('${d.id}')">×</button>
     </div>`;
