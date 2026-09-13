@@ -489,6 +489,20 @@ public class NekoWidget extends AppWidgetProvider {
         v.setInt(viewId, "setBackgroundResource", resId);
     }
 
+    /**
+     * 물 한 잔을 그린다. 컵 모양(아래가 좁은 사다리꼴)은 shape 로는 못 그려서 벡터 그림을 쓰는데,
+     * 위젯에 벡터를 넣는 것은 안드로이드 7(N)부터 믿을 수 있다. 그 아래에서는 예전 네모로 둔다.
+     * @param empty 이미 마신 자리(빈 컵)면 true
+     */
+    private static void setCup(RemoteViews v, boolean empty) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            setBg(v, R.id.i_dot, 0);
+            v.setImageViewResource(R.id.i_dot, empty ? R.drawable.w_cup2_off : R.drawable.w_cup2_on);
+        } else {
+            setBg(v, R.id.i_dot, empty ? R.drawable.w_cup_off : R.drawable.w_cup_on);
+        }
+    }
+
     private static CharSequence struck(String text) {
         SpannableString s = new SpannableString(text);
         s.setSpan(new StrikethroughSpan(), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -715,7 +729,7 @@ public class NekoWidget extends AppWidgetProvider {
         v.removeAllViews(R.id.w_water_row);
         for (int i = 0; i < wGoal && i < 12; i++) {
             RemoteViews c = new RemoteViews(pkg, R.layout.w_cup);
-            setBg(c, R.id.i_dot, i < wDone ? R.drawable.w_cup_off : R.drawable.w_cup_on);
+            setCup(c, i < wDone);
             Intent cupIntent = new Intent(ctx, getClass());
             cupIntent.setAction(ACTION_WATER);
             cupIntent.putExtra(EXTRA_INDEX, i);

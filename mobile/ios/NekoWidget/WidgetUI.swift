@@ -60,6 +60,29 @@ enum TTColor {
     }
 }
 
+/// 물 한 잔 — 아래가 좁은 컵 모양. 네모보다 무엇을 세는지 한눈에 들어온다.
+struct CupShape: Shape, InsettableShape {
+    var amount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: amount, dy: amount)
+        let taper = r.width * 0.16          // 아래를 이만큼씩 좁힌다
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX - taper, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + taper, y: r.maxY))
+        p.closeSubpath()
+        return p
+    }
+
+    func inset(by a: CGFloat) -> some InsettableShape {
+        var c = self
+        c.amount += a
+        return c
+    }
+}
+
 /// 모서리를 따로 굴리는 네모.
 /// 시간표 칸이 위아래로 이어질 때 이음매가 둥글면 끊겨 보여서, 안드로이드
 /// layer-list(_s/_t/_m/_b)가 하던 일을 여기서 한다. iOS 14도 써야 해서
@@ -145,22 +168,22 @@ struct WHealth: View {
     var body: some View {
         VStack(spacing: 0) {
             if let wg = h.waterGoal, wg > 0 {
-                row(label: h.waterLabel ?? "", kind: .water, top: 4, bottom: 2) {
+                row(label: h.waterLabel ?? "", kind: .water, top: 3, bottom: 1) {
                     dots(count: min(wg, 12), done: h.waterDone ?? 0, kind: .water,
-                         w: 14, h: 17, r: 2,
+                         w: 13, h: 14, r: 2, cup: true,
                          on: WC.cupOn, onLine: WC.cupOnLine, offLine: WC.cupOffLine)
                 }
             }
             if let vg = h.vitaGoal, vg > 0 {
-                row(label: h.vitaLabel ?? "", kind: .vita, top: 2, bottom: 4) {
+                row(label: h.vitaLabel ?? "", kind: .vita, top: 1, bottom: 3) {
                     dots(count: min(vg, 12), done: h.vitaDone ?? 0, kind: .vita,
-                         w: 17, h: 11, r: 4,
+                         w: 17, h: 10, r: 4, cup: false,
                          on: WC.pillOn, onLine: WC.pillOnLine, offLine: WC.pillOffLine)
                 }
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.vertical, 3)
         .wbox(t.side, t.sideLine, radius: 12, width: 1)
         .padding(.bottom, 8)
     }
@@ -172,7 +195,7 @@ struct WHealth: View {
             Text(label)
                 .font(.system(size: 11))
                 .foregroundColor(t.dim)
-                .frame(minHeight: 32)
+                .frame(minHeight: 25)
                 .contentShape(Rectangle())
                 .modifier(TapIntent(kind: kind))
             Spacer(minLength: 4)
@@ -180,27 +203,40 @@ struct WHealth: View {
                 .padding(.top, top)
                 .padding(.bottom, bottom)
                 .padding(.horizontal, 6)
-                .frame(minHeight: 32)
+                .frame(minHeight: 25)
         }
     }
 
     /// 안드로이드와 같은 셈 — 이미 채운 만큼이 빈 칸이 되고, 남은 만큼이 색칠된다.
     /// 칸 사이 3pt는 각 칸의 좌우 1.5pt 여백으로 두어 손가락이 닿는 자리를 넓힌다.
     private func dots(count: Int, done: Int, kind: TapIntent.Kind,
-                      w: CGFloat, h: CGFloat, r: CGFloat,
+                      w: CGFloat, h: CGFloat, r: CGFloat, cup: Bool,
                       on: Color, onLine: Color, offLine: Color) -> some View {
         HStack(spacing: 0) {
             ForEach(Array(0..<max(0, count)), id: \.self) { i in
-                RoundedRectangle(cornerRadius: r)
-                    .fill(i < done ? WC.white : on)
-                    .overlay(RoundedRectangle(cornerRadius: r)
-                        .strokeBorder(i < done ? offLine : onLine, lineWidth: 1.5))
+                dot(filled: i >= done, r: r, cup: cup, on: on, onLine: onLine, offLine: offLine)
                     .frame(width: w, height: h)
                     .padding(.horizontal, 1.5)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 5)
                     .contentShape(Rectangle())
                     .modifier(DotIntent(kind: kind, index: i))
             }
+        }
+    }
+
+    /// 물은 컵 모양, 비타민은 알약 모양 — 칠하고 테두리를 두르는 방법은 같다
+    @ViewBuilder
+    private func dot(filled: Bool, r: CGFloat, cup: Bool,
+                     on: Color, onLine: Color, offLine: Color) -> some View {
+        if cup {
+            CupShape()
+                .fill(filled ? on : WC.white)
+                .overlay(CupShape().strokeBorder(filled ? onLine : offLine, lineWidth: 1.5))
+        } else {
+            RoundedRectangle(cornerRadius: r)
+                .fill(filled ? on : WC.white)
+                .overlay(RoundedRectangle(cornerRadius: r)
+                    .strokeBorder(filled ? onLine : offLine, lineWidth: 1.5))
         }
     }
 }
@@ -547,7 +583,7 @@ struct WTimetable: View {
             } else {
                 head
                 GeometryReader { geo in
-                    grid(rowH: rowHeight(for: geo.size.height))
+                    grid(rowH: rowHeight(for: geo.size.height), width: geo.size.width)
                 }
             }
         }
@@ -581,29 +617,59 @@ struct WTimetable: View {
         .overlay(RCorners(tl: 7, tr: 7).stroke(t.ttHeadLine, lineWidth: 0.8))
     }
 
-    private func grid(rowH: CGFloat) -> some View {
+    private func grid(rowH: CGFloat, width: CGFloat) -> some View {
         let s = span
         let cellFont: CGFloat = rowH >= 31 ? 10 : (rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7))
         let hourFont: CGFloat = rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7)
-        return VStack(spacing: 0) {
-            ForEach(Array(s.from..<s.to), id: \.self) { h in
-                HStack(spacing: 0) {
-                    Text(String(format: "%02d", h))
-                        .font(.system(size: hourFont))
-                        .foregroundColor(WC.ttHour)
-                        .frame(width: 22, height: rowH)
-                    ForEach(Array(0..<7), id: \.self) { d in
-                        cell(day: d, hour: h, last: h == s.to - 1 && d == 6, font: cellFont)
-                            .frame(maxWidth: .infinity, minHeight: rowH, maxHeight: rowH)
+        // 칸 색은 한 시간짜리 조각으로 깔고, 이름은 그 위에 블록 하나로 얹는다.
+        // 그래야 두 시간짜리 일정의 이름이 두 줄 세 줄로 다 보인다.
+        return ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                ForEach(Array(s.from..<s.to), id: \.self) { h in
+                    HStack(spacing: 0) {
+                        Text(String(format: "%02d", h))
+                            .font(.system(size: hourFont))
+                            .foregroundColor(WC.ttHour)
+                            .frame(width: 22, height: rowH)
+                        ForEach(Array(0..<7), id: \.self) { d in
+                            cell(day: d, hour: h, last: h == s.to - 1 && d == 6)
+                                .frame(maxWidth: .infinity, minHeight: rowH, maxHeight: rowH)
+                        }
                     }
                 }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            labels(rowH: rowH, width: width, font: cellFont)
+        }
+    }
+
+    /// 블록마다 이름을 한 번씩 — 보이는 범위로 잘라 그 자리에 얹는다.
+    /// 들어갈 줄 수는 높이로 셈하고, 넘치면 마지막 줄 끝에 … 이 붙는다.
+    private func labels(rowH: CGFloat, width: CGFloat, font: CGFloat) -> some View {
+        let s = span
+        let colW = max(0, (width - 22) / 7)
+        let lineH = font * 1.25
+        return ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in
+            let top = max(b.start, s.from * 60)
+            let bottom = min(b.end, s.to * 60)
+            let name = b.label ?? ""
+            if bottom > top && !name.isEmpty && b.day >= 0 && b.day < 7 {
+                let y = CGFloat(top - s.from * 60) / 60 * rowH
+                let hgt = CGFloat(bottom - top) / 60 * rowH
+                Text(name)
+                    .font(.system(size: font))
+                    .foregroundColor(t.text)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(max(1, Int((hgt - 2) / lineH)))
+                    .truncationMode(.tail)
+                    .frame(width: max(0, colW - 5), height: max(0, hgt - 2))
+                    .offset(x: 22 + colW * CGFloat(b.day) + 2.5, y: y + 1)
+            }
         }
     }
 
     @ViewBuilder
-    private func cell(day: Int, hour: Int, last: Bool, font: CGFloat) -> some View {
+    private func cell(day: Int, hour: Int, last: Bool) -> some View {
         let hit = blocks.first { $0.day == day && hour * 60 < $0.end && (hour + 1) * 60 > $0.start }
         if let b = hit {
             let starts = b.start >= hour * 60 && b.start < (hour + 1) * 60
@@ -620,13 +686,6 @@ struct WTimetable: View {
                     .padding(.horizontal, 2)
                     .padding(.top, starts ? 1 : 0)
                     .padding(.bottom, ends ? 1 : 0)
-                if starts {
-                    Text(b.label ?? "")
-                        .font(.system(size: font))
-                        .foregroundColor(t.text)
-                        .lineLimit(1)
-                        .padding(.horizontal, 1)
-                }
             }
         } else {
             RCorners(br: last ? 7 : 0)

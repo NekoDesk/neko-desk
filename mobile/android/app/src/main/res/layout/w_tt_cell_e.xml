@@ -5,5 +5,5 @@
     android:layout_width="0dp" android:layout_height="31dp" android:layout_weight="1"
     android:gravity="center" android:paddingLeft="1dp" android:paddingRight="1dp"
     android:textSize="10sp" android:textColor="#3E3A39"
-    android:maxLines="1" android:ellipsize="end"
+    android:maxLines="2" android:ellipsize="end"
     android:background="@drawable/w_tt_empty" android:text="" />

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 물 한 잔 — 아래가 좁은 컵 모양. 선은 가운데로 그려지므로 0.75만큼 안으로 들여 그린다 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp" android:height="17dp"
+    android:viewportWidth="14" android:viewportHeight="17">
+    <path
+        android:pathData="M0.75,0.75 L13.25,0.75 L11.1,16.25 L2.9,16.25 Z"
+        android:fillColor="#4FB8EF"
+        android:strokeColor="#3AA0D8"
+        android:strokeWidth="1.5" />
+</vector>

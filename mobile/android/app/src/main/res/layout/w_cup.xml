@@ -10,5 +10,6 @@
         android:id="@+id/i_dot"
         android:layout_width="14dp" android:layout_height="17dp"
         android:contentDescription="@null"
+        android:scaleType="fitXY"
         android:background="@drawable/w_cup_off" />
 </FrameLayout>

@@ -186,8 +186,9 @@ struct NekoMainWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: NekoProvider(sample: .sampleBasic)) { entry in
+            // 어제·내일 칸은 넣지 않는다 — 아이폰 위젯은 세로가 짧아 다 들어가지 않는다
             NekoWidgetView(data: entry.data,
-                           showHealth: true, showDday: true, showTodo: true, showSides: true)
+                           showHealth: true, showDday: true, showTodo: true)
         }
         .configurationDisplayName("NEKO DESK")
         .description("오늘의 D-day와 할 일을 바탕화면에서 바로 보여줍니다.")

@@ -824,6 +824,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   border:2px solid var(--border); }
 .tt-color.on { border-color:var(--white); box-shadow:0 0 0 2px var(--yellow); }
 .tt-color.auto { background:repeating-linear-gradient(45deg,#DCF0E8,#DCF0E8 5px,#FCEEDC 5px,#FCEEDC 10px); }
+/* 시간표 버전 고르기 — 네모 단추 둘 */
+.tt-ver { flex:1; display:flex; flex-direction:column; gap:3px; align-items:center;
+  border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; padding:10px 6px; }
+.tt-ver b { font-size:12px; font-weight:400; color:var(--gray); }
+.tt-ver i { font-size:10px; font-style:normal; color:var(--gray); opacity:0.7; text-align:center; line-height:1.4; }
+.tt-ver.on { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 88%); }
+.tt-ver.on b { color:var(--white); }
 /* 지금 이 시간인 칸 — 노랗게 반짝이고 위에 말풍선이 붙는다 */
 .tt-blk.now { box-shadow:0 0 0 2px var(--yellow) inset; animation:ttNowGlow 4.5s ease-in-out infinite; }
 @keyframes ttNowGlow {
@@ -858,6 +865,13 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-blk i { display:block; font-size:9px; color:var(--gray); font-style:normal; line-height:1.2; }
 .tt-draft { position:absolute; left:2px; right:2px; border-radius:3px; pointer-events:none;
   border:1px dashed var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 82%); }
+/* 옮기는 중 — 원래 자리는 흐리게, 놓일 자리는 점선으로 */
+.tt-blk.moving { opacity:0.3; }
+.tt-ghost { position:absolute; z-index:6; pointer-events:none; border-radius:3px;
+  border:2px dashed var(--acc); background:color-mix(in srgb, var(--acc), transparent 88%);
+  color:var(--white); font-family:'Galmuri14',monospace; font-size:9px; line-height:1.2;
+  padding:2px 3px; overflow:hidden; box-sizing:border-box; }
+.tt-ghost.bad { border-color:#f88; background:color-mix(in srgb, #f88, transparent 86%); }
 .tt-line { position:absolute; left:0; right:0; height:3px; background:var(--acc);
   border-radius:2px; pointer-events:none; z-index:5; box-shadow:0 0 6px var(--acc); }
 .tt-tip { font-size:10px; color:var(--gray); opacity:0.8; margin-top:7px; line-height:1.5; }
@@ -1769,6 +1783,35 @@ select {
   </div>
 </div>
 
+<!-- 칸 복제하기 -->
+<div id="ttDupModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtDup(event)">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:380px;width:90%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:700;color:var(--white)" data-i18n="dup_title">📄 일정 복제하기</span>
+      <button onclick="closeTtDup()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div id="dupWhat" style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px"></div>
+
+    <div style="font-size:12px;color:var(--gray);margin-bottom:6px" data-i18n="dup_days">넣을 요일</div>
+    <div class="alarm-dows" id="dupDows" style="margin-top:0"></div>
+
+    <div style="font-size:12px;color:var(--gray);margin:14px 0 6px" data-i18n="dup_start">시작 시각</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span id="dupStartCtl"></span>
+      <span id="dupEndHint" style="font-size:11px;color:var(--gray)"></span>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:16px">
+      <input type="checkbox" id="dupReplace" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
+      <span data-i18n="fill_overlap">겹치는 시간의 기존 일정은 지우고 덮어쓰기</span>
+    </label>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeTtDup()" data-i18n="remind_cancel">취소</button>
+      <button class="btn btn-y" style="flex:1;font-size:12px" onclick="applyTtDup()" data-i18n="dup_apply">✓ 복제하기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 보이는 시간대 -->
 <div id="ttRangeModal" style="display:none;position:fixed;inset:0;z-index:9469;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtRange(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:360px;width:88%" onclick="event.stopPropagation()">
@@ -1777,10 +1820,21 @@ select {
       <button onclick="closeTtRange()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
     </div>
     <div style="font-size:11px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="range_hint">시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;justify-content:center">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;justify-content:center">
       <span id="rangeFromCtl"></span>
       <span style="color:var(--gray)">~</span>
       <span id="rangeToCtl"></span>
+    </div>
+
+    <div style="font-size:12px;color:var(--gray);margin-bottom:7px" data-i18n="tt_ver_lbl">시간표 버전</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button type="button" class="tt-ver" id="ttVer0" onclick="pickTtVer(0)">
+        <b data-i18n="tt_ver_short">짧은 버전</b><i data-i18n="tt_ver_short_sub">한 주가 한눈에</i></button>
+      <button type="button" class="tt-ver" id="ttVer1" onclick="pickTtVer(1)">
+        <b data-i18n="tt_ver_tall">긴 버전</b><i data-i18n="tt_ver_tall_sub">짧은 일정도 잘 보여요</i></button>
+    </div>
+    <div style="font-size:10px;color:var(--gray);opacity:0.75;line-height:1.6;margin-bottom:16px" data-i18n="tt_ver_hint">
+      긴 버전은 한 시간 칸을 세 배로 늘려요. 10~20분짜리 일정도 이름과 시각이 다 보입니다.
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-gr" style="flex:1;font-size:12px" onclick="closeTtRange()" data-i18n="remind_cancel">취소</button>
@@ -1840,6 +1894,7 @@ select {
 <!-- 시간표 칸 우클릭 메뉴 -->
 <div id="ttMenu" style="display:none;position:fixed;z-index:9468;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,0.35)">
   <button class="tt-menu-item" onclick="ttMenuAct('edit')" data-i18n="tt_menu_edit">✏️ 수정하기</button>
+  <button class="tt-menu-item" onclick="ttMenuAct('dup')" data-i18n="tt_menu_dup">📄 복제하기</button>
   <button class="tt-menu-item" id="ttMenuAlarm" onclick="ttMenuAct('alarm')">🔔 알림 켜기</button>
   <button class="tt-menu-item" id="ttMenuAlarmAll" onclick="ttMenuAct('alarmall')">🔔 같은 일정 모두 알림 켜기</button>
   <button class="tt-menu-item" onclick="ttMenuAct('delete')" data-i18n="tt_menu_del">🗑 지우기</button>
@@ -2284,6 +2339,9 @@ const STRINGS = {
     remind_time_dup:'이미 있는 시각이에요', remind_time_full:'시각은 8개까지 넣을 수 있어요',
     remind_water_off:'물 마시기 알림 끄기', remind_water_span:'알림 받을 시간',
     remind_water_hint:'고른 시간 동안 정시마다 한 번씩 알려 드려요',
+    tt_ver_lbl:'시간표 버전', tt_ver_short:'짧은 버전', tt_ver_short_sub:'한 주가 한눈에',
+    tt_ver_tall:'긴 버전', tt_ver_tall_sub:'짧은 일정도 잘 보여요',
+    tt_ver_hint:'긴 버전은 한 시간 칸을 세 배로 늘려요. 10~20분짜리 일정도 이름과 시각이 다 보입니다.',
     tt_range_btn:'보이는 시간', range_title:'🕘 보이는 시간대',
     range_hint:'시간표에 보여줄 범위예요. 이 밖에 일정이 있으면 그만큼 저절로 넓어집니다.',
     fill_items:'하루 흐름', fill_t_work:'집중', fill_t_rest:'쉼', fill_t_end:'끝',
@@ -2300,9 +2358,15 @@ const STRINGS = {
     pomo_preview:'집중 {f}분 + 휴식 {b}분 = 한 사이클 {c}분',
     pomo_range:'집중 5~180분, 휴식 1~60분 사이로 적어주세요',
     mode_off:'⏸ 타이머 꺼짐', next_off:'포모도로 타이머를 꺼 두었어요',
+    tt_menu_dup:'📄 복제하기',
+    dup_title:'📄 일정 복제하기', dup_days:'넣을 요일', dup_start:'시작 시각',
+    dup_what:'‘{label}’ ({len}) 을 고른 요일의 이 시각에 그대로 놓아요.',
+    dup_len_hm:'{h}시간 {m}분', dup_len_h:'{h}시간', dup_len_m:'{m}분',
+    dup_apply:'✓ 복제하기', dup_done:'{n}곳에 넣었어요', dup_skipped:'({n}곳은 겹쳐서 건너뛰었어요)',
+    dup_too_late:'그 시각에 넣으면 자정을 넘어요',
     tt_menu_edit:'✏️ 수정하기', tt_menu_del:'🗑 지우기',
     tt_tips_title:'💡 시간표 사용 팁',
-    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌어서</b> 다른 자리에 놓으면 그 사이로 들어가요. 뒤에 있던 일정은 그만큼 뒤로 밀립니다. 다른 요일로도 옮길 수 있어요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
+    tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌면</b> 10분 단위로 자리를 옮겨요. 다른 요일로도 갑니다. 폰에서는 칸을 <b>꾹 누른 뒤</b> 끄세요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
     fill_items:'일정', fill_add_row:'+ 일정 추가', fill_need_row:'일정을 한 줄 이상 적어 주세요',
     fill_rows_hint:'줄마다 시간·내용·색을 따로 정해요. 🔔 을 켜면 그 일정이 시작할 때 알려 드려요.',
     tt_menu_alarm_all_on:'🔔 같은 일정 모두 알림 켜기', tt_menu_alarm_all_off:'🔕 같은 일정 모두 알림 끄기',
@@ -2582,6 +2646,9 @@ const STRINGS = {
     remind_time_dup:'That time is already there', remind_time_full:'Up to 8 times',
     remind_water_off:'Turn water reminders off', remind_water_span:'Remind between',
     remind_water_hint:'One nudge on the hour, during the hours you pick',
+    tt_ver_lbl:'Timetable size', tt_ver_short:'Short', tt_ver_short_sub:'The whole week at a glance',
+    tt_ver_tall:'Tall', tt_ver_tall_sub:'Short blocks stay readable',
+    tt_ver_hint:'Tall makes each hour three times taller, so even a 10~20 minute block shows its name and time.',
     tt_range_btn:'Hours shown', range_title:'🕘 Hours shown',
     range_hint:'The range the timetable shows. It widens on its own if a slot falls outside.',
     fill_items:'Your day', fill_t_work:'Focus', fill_t_rest:'Rest', fill_t_end:'End',
@@ -2598,9 +2665,15 @@ const STRINGS = {
     pomo_preview:'{f} min focus + {b} min break = {c} min per cycle',
     pomo_range:'Focus 5~180 min, break 1~60 min',
     mode_off:'⏸ Timer off', next_off:'Pomodoro timer is turned off',
+    tt_menu_dup:'📄 Duplicate',
+    dup_title:'📄 Duplicate block', dup_days:'Days to add', dup_start:'Start time',
+    dup_what:'Puts “{label}” ({len}) at this time on the days you pick.',
+    dup_len_hm:'{h}h {m}m', dup_len_h:'{h}h', dup_len_m:'{m}m',
+    dup_apply:'✓ Duplicate', dup_done:'Added to {n}', dup_skipped:'({n} skipped — already taken)',
+    dup_too_late:'That start time runs past midnight',
     tt_menu_edit:'✏️ Edit', tt_menu_del:'🗑 Delete',
     tt_tips_title:'💡 Timetable tips',
-    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot between others to slide it in — later slots shift back. You can drop it on another day too.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
+    tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot to move it in 10-minute steps, to another day too. On a phone, <b>press and hold</b> the slot first.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
     fill_items:'Blocks', fill_add_row:'+ Add block', fill_need_row:'Add at least one block',
     fill_rows_hint:'Each row has its own time, name and color. Turn on 🔔 to be notified when it starts.',
     tt_menu_alarm_all_on:'🔔 Alarm on for all with this name', tt_menu_alarm_all_off:'🔕 Alarm off for all with this name',
@@ -2880,6 +2953,9 @@ const STRINGS = {
     remind_time_dup:'すでにある時刻です', remind_time_full:'時刻は8個までです',
     remind_water_off:'水のお知らせを止める', remind_water_span:'お知らせする時間',
     remind_water_hint:'選んだ時間のあいだ、毎正時に一度お知らせします',
+    tt_ver_lbl:'時間割の大きさ', tt_ver_short:'短い版', tt_ver_short_sub:'一週間がひと目で',
+    tt_ver_tall:'長い版', tt_ver_tall_sub:'短い予定も見やすく',
+    tt_ver_hint:'長い版は1時間の枠を3倍に伸ばします。10~20分の予定も名前と時刻が見えます。',
     tt_range_btn:'表示する時間', range_title:'🕘 表示する時間',
     range_hint:'時間割に見せる範囲です。外に予定があればその分だけ広がります。',
     fill_items:'一日の流れ', fill_t_work:'集中', fill_t_rest:'休み', fill_t_end:'終わり',
@@ -2896,9 +2972,15 @@ const STRINGS = {
     pomo_preview:'集中{f}分 + 休憩{b}分 = 1サイクル{c}分',
     pomo_range:'集中は5~180分、休憩は1~60分で',
     mode_off:'⏸ タイマーオフ', next_off:'ポモドーロタイマーはオフです',
+    tt_menu_dup:'📄 複製する',
+    dup_title:'📄 予定を複製', dup_days:'入れる曜日', dup_start:'開始時刻',
+    dup_what:'「{label}」({len}) を選んだ曜日のこの時刻にそのまま置きます。',
+    dup_len_hm:'{h}時間{m}分', dup_len_h:'{h}時間', dup_len_m:'{m}分',
+    dup_apply:'✓ 複製する', dup_done:'{n}か所に入れました', dup_skipped:'({n}か所は重なるので飛ばしました)',
+    dup_too_late:'その時刻だと日をまたぎます',
     tt_menu_edit:'✏️ 直す', tt_menu_del:'🗑 消す',
     tt_tips_title:'💡 時間割の使い方',
-    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>して他の枠の間に置くと、そこに入り後ろの予定がずれます。別の曜日にも移せます。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
+    tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>すると10分単位で動きます。別の曜日にも移せます。スマホでは枠を<b>長押ししてから</b>動かします。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
     fill_items:'予定', fill_add_row:'+ 予定を追加', fill_need_row:'予定を1行以上入れてください',
     fill_rows_hint:'行ごとに時間・内容・色を決めます。🔔 をオンにすると開始時に知らせます。',
     tt_menu_alarm_all_on:'🔔 同じ予定すべて通知オン', tt_menu_alarm_all_off:'🔕 同じ予定すべて通知オフ',
@@ -3469,6 +3551,7 @@ const S = {
   fillDays: null,        // (구버전) 고른 요일
   ttFrom: '05:00',       // 시간표에 보여줄 시작 시각
   ttTo: '22:00',         // 시간표에 보여줄 끝 시각
+  ttTall: false,         // 시간표 긴 버전 (한 시간 칸을 세 배로)
   blocks: null,          // 시간표 [{id, day:0~6, start:'HH:MM', end:'HH:MM', label, type:'work'|'rest'}]
                          // null이면 예전 출근·점심·퇴근 설정에서 옮겨온다
   focusMins: 55,         // 한 번에 집중하는 시간 (분)
@@ -3520,7 +3603,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','holidayCountry','diaryEntries']
+    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','ttTall','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','holidayCountry','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -4536,7 +4619,11 @@ function nextBlock(day, min) {
 
 
 // ── 시간표 격자 그리기 ────────────────────────────────
-const TT_ROW_H = 26;      // 한 시간 높이(px)
+// 한 시간 높이(px). 짧은 버전은 한눈에, 긴 버전은 세 배로 늘려 10~20분짜리 일정도
+// 이름과 시각이 다 보이게 한다. 고른 것은 S.ttTall 에 남는다.
+const TT_ROW_SHORT = 26;
+const TT_ROW_TALL = 78;
+function ttRowH() { return S.ttTall ? TT_ROW_TALL : TT_ROW_SHORT; }
 const TT_SNAP = 10;       // 10분 단위로 맞춘다
 let _ttDrag = null;
 
@@ -4577,7 +4664,7 @@ function renderTimetable() {
   let times = '';
   for (let h = 0; h < hours; h++) {
     const hh = (lo / 60) + h;
-    times += `<span class="${hh >= 12 ? 'pm' : ''}" style="height:${TT_ROW_H}px;line-height:${TT_ROW_H}px">${('0' + hh).slice(-2)}</span>`;
+    times += `<span class="${hh >= 12 ? 'pm' : ''}" style="height:${ttRowH()}px;line-height:${ttRowH()}px">${('0' + hh).slice(-2)}</span>`;
   }
 
   let cols = '';
@@ -4585,14 +4672,14 @@ function renderTimetable() {
     let rows = '';
     for (let h = 0; h < hours; h++) {
       const hh = (lo / 60) + h;
-      rows += `<div class="tt-hour${hh >= 12 ? ' pm' : ''}" style="height:${TT_ROW_H}px"></div>`;
+      rows += `<div class="tt-hour${hh >= 12 ? ' pm' : ''}" style="height:${ttRowH()}px"></div>`;
     }
     const blks = blocksOf(d).map(b => {
       // 보이는 범위 밖으로 삐져나가지 않게 잘라서 그린다
       const s = Math.max(toMin(b.start), lo), e = Math.min(toMin(b.end), hi);
       if (e <= s) return '';
-      const top = (s - lo) / 60 * TT_ROW_H;
-      const hgt = Math.max(14, (e - s) / 60 * TT_ROW_H);
+      const top = (s - lo) / 60 * ttRowH();
+      const hgt = Math.max(14, (e - s) / 60 * ttRowH());
       const now = d === today && nowMin >= toMin(b.start) && nowMin < toMin(b.end);
       const cc = (b.color >= 0 && b.color <= 5) ? (' c' + b.color) : '';
       // 말풍선은 칸 위에 얹는다. 맨 위 칸이면 자리가 없으니 칸 안으로 내린다.
@@ -4652,11 +4739,16 @@ window.addEventListener('resize', () => {
   if (typeof ttFitHeight === 'function') setTimeout(ttFitHeight, 60);
 });
 
-/** 세로 위치 → 분 (10분 단위로 맞춤) */
-function ttYToMin(col, clientY) {
+/** 세로 위치 → 분 (있는 그대로) */
+function ttYToMinRaw(col, clientY) {
   const lo = Number(document.getElementById('ttGrid').dataset.lo || 480);
   const r = col.getBoundingClientRect();
-  const min = lo + (clientY - r.top) / TT_ROW_H * 60;
+  return lo + (clientY - r.top) / ttRowH() * 60;
+}
+
+/** 세로 위치 → 분 (10분 단위로 맞춤) */
+function ttYToMin(col, clientY) {
+  const min = ttYToMinRaw(col, clientY);
   return Math.max(0, Math.min(24 * 60, Math.round(min / TT_SNAP) * TT_SNAP));
 }
 
@@ -4708,8 +4800,8 @@ function ttMove(e) {
     _ttDrag.el.className = 'tt-draft';
     _ttDrag.col.appendChild(_ttDrag.el);
   }
-  _ttDrag.el.style.top = ((a - lo) / 60 * TT_ROW_H) + 'px';
-  _ttDrag.el.style.height = Math.max(4, (b - a) / 60 * TT_ROW_H) + 'px';
+  _ttDrag.el.style.top = ((a - lo) / 60 * ttRowH()) + 'px';
+  _ttDrag.el.style.height = Math.max(4, (b - a) / 60 * ttRowH()) + 'px';
 }
 
 function ttUp() {
@@ -4843,10 +4935,10 @@ function renderFillRows() {
  * 새 칸이 들어갈 자리에 있던 칸을 그만큼 잘라 낸다.
  * 완전히 덮이면 없애고, 한쪽만 겹치면 그 쪽을 줄이고, 가운데를 가로지르면 둘로 가른다.
  */
-function cutBlocksAround(list, day, s0, e0) {
+function cutBlocksAround(list, day, s0, e0, keepId) {
   const out = [];
   list.forEach(b => {
-    if (b.day !== day) { out.push(b); return; }
+    if (b.day !== day || (keepId && b.id === keepId)) { out.push(b); return; }
     const bs = toMin(b.start), be = toMin(b.end);
     if (be <= s0 || bs >= e0) { out.push(b); return; }          // 안 겹친다
     if (bs >= s0 && be <= e0) return;                            // 통째로 덮인다
@@ -4939,8 +5031,18 @@ function openTtOne() {
 }
 
 // ── 보이는 시간대 ────────────────────────────────────
+let _ttVerPick = 0;                 // 저장을 누를 때까지는 미리 골라만 둔다
+function pickTtVer(v) {
+  _ttVerPick = v;
+  for (let i = 0; i < 2; i++) {
+    const b = document.getElementById('ttVer' + i);
+    if (b) b.classList.toggle('on', i === v);
+  }
+}
+
 function openTtRange() {
   const g = (i) => document.getElementById(i);
+  pickTtVer(S.ttTall ? 1 : 0);
   const hourSel = (id, from, to, cur) => {
     let o = '';
     for (let h = from; h <= to; h++) o += `<option value="${h}"${h === cur ? ' selected' : ''}>${_tPad(h)}</option>`;
@@ -4965,12 +5067,110 @@ function applyTtRange() {
   if (!(b > a)) { toast('alert', L('range_title'), L('tt_bad_time')); return; }
   S.ttFrom = _tPad(a) + ':00';
   S.ttTo = (b >= 24) ? '24:00' : (_tPad(b) + ':00');
+  S.ttTall = (_ttVerPick === 1);
   saveState();
   renderTimetable();
   closeTtRange();
 }
 
 
+
+// ── 칸 복제하기 ───────────────────────────────────────
+// 한 번 만든 일정을 다른 요일·다른 시각에 그대로 다시 놓는다.
+// 길이·이름·색·알림은 그대로 가고, 시작 시각만 고른 값으로 맞춘다.
+let _ttDupId = null;
+
+function openTtDup(id) {
+  const b = blockList().find(x => x.id === id);
+  if (!b) return;
+  _ttDupId = id;
+  const g = (i) => document.getElementById(i);
+  const dur = toMin(b.end) - toMin(b.start);
+  if (g('dupWhat')) {
+    g('dupWhat').textContent = L('dup_what')
+      .replace('{label}', b.label || L('blk_new'))
+      .replace('{len}', dupLenText(dur));
+  }
+  if (g('dupStartCtl')) g('dupStartCtl').innerHTML = timeCtlHtml(b.start, 'id="dupStart" onchange="dupSyncEnd()"');
+  if (g('dupReplace')) g('dupReplace').checked = false;
+  const dw = g('dupDows');
+  if (dw) {
+    dw.innerHTML = dowNames().map((nm, i) =>
+      `<button type="button" class="alarm-dow${i === 0 ? ' sun' : ''}${i === b.day ? ' on' : ''}"
+         data-dow="${i}" onclick="toggleAlarmDow(this)">${nm}</button>`).join('');
+  }
+  dupSyncEnd();
+  const m = g('ttDupModal');
+  if (m) m.style.display = 'flex';
+}
+
+/** 몇 시간 몇 분짜리인지 — 시간만, 분만, 둘 다 있는 경우를 갈라 쓴다 */
+function dupLenText(dur) {
+  const h = Math.floor(dur / 60), m = dur % 60;
+  if (h && m) return L('dup_len_hm').replace('{h}', h).replace('{m}', m);
+  if (h) return L('dup_len_h').replace('{h}', h);
+  return L('dup_len_m').replace('{m}', m);
+}
+
+/** 고른 시작 시각에 맞춰 끝나는 때를 옆에 적어 준다 */
+function dupSyncEnd() {
+  const b = blockList().find(x => x.id === _ttDupId);
+  const st = document.getElementById('dupStart');
+  const el = document.getElementById('dupEndHint');
+  if (!b || !st || !el) return;
+  const dur = toMin(b.end) - toMin(b.start);
+  const end = Math.min(24 * 60, toMin(st.value) + dur);
+  el.textContent = '~ ' + toHHMM(end);
+}
+
+function closeTtDup(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('ttDupModal');
+  if (m) m.style.display = 'none';
+}
+
+function applyTtDup() {
+  const src = blockList().find(x => x.id === _ttDupId);
+  if (!src) { closeTtDup(); return; }
+  const g = (i) => document.getElementById(i);
+  const days = Array.from(document.querySelectorAll('#dupDows .alarm-dow.on')).map(b => Number(b.dataset.dow));
+  if (!days.length) { toast('alert', L('dup_title'), L('fill_need_day')); return; }
+  const st = g('dupStart') ? toMin(g('dupStart').value) : toMin(src.start);
+  const dur = toMin(src.end) - toMin(src.start);
+  if (st + dur > 24 * 60) { toast('alert', L('dup_title'), L('dup_too_late')); return; }
+  const replace = !!(g('dupReplace') && g('dupReplace').checked);
+
+  ttSnapshot();
+  let list = blockList();
+  let made = 0, skipped = 0;
+  days.forEach(d => {
+    // 원본 자리에 그대로 겹치면 넣을 것이 없다
+    if (d === src.day && st === toMin(src.start)) { skipped++; return; }
+    if (replace) list = cutBlocksAround(list, d, st, st + dur, src.id);
+    else if (list.some(b => b.day === d && st < toMin(b.end) && st + dur > toMin(b.start))) { skipped++; return; }
+    const copy = { id: newAlarmId(), day: d, start: toHHMM(st), end: toHHMM(st + dur),
+                   label: src.label, type: src.type || 'work' };
+    if (src.color >= 0) copy.color = src.color;
+    if (src.alarm) copy.alarm = true;
+    list.push(copy);
+    made++;
+  });
+  S.blocks = list;
+
+  // 넣은 자리가 보이는 시간대 밖이면 그만큼 넓힌다
+  const vlo = toMin(S.ttFrom || '05:00'), vhi = toMin(S.ttTo || '22:00');
+  if (st < vlo) S.ttFrom = toHHMM(Math.max(0, Math.floor(st / 60) * 60));
+  if (st + dur > vhi) S.ttTo = toHHMM(Math.min(24 * 60, Math.ceil((st + dur) / 60) * 60));
+
+  saveState();
+  renderTimetable();
+  updateCycleUI();
+  closeTtDup();
+  if (made) {
+    toast('info', L('dup_title'), L('dup_done').replace('{n}', made)
+      + (skipped ? ' ' + L('dup_skipped').replace('{n}', skipped) : ''));
+  } else toast('alert', L('dup_title'), L('tt_overlap'));
+}
 
 // ── 되돌리기 · 다시 실행 ─────────────────────────────
 // 시간표는 실수로 끌거나 지우기 쉬워서, 바꾸기 직전 상태를 쌓아 둔다.
@@ -5029,108 +5229,129 @@ document.addEventListener('keydown', (e) => {
   if (e.altKey) ttRedo(); else ttUndo();
 });
 
-// ── 칸 옮기기: 다른 칸 사이에 끼워 넣으면 뒤 일정이 밀린다 ──
+// ── 칸 옮기기 ─────────────────────────────────────────
+// 끌면 손가락·마우스를 따라 10분 단위로 움직인다. 다른 요일로도 간다.
+// 예전에는 다른 칸 사이로 "끼워 넣기"만 되어서 갈 수 있는 자리가 너무 적었다.
+// 폰에서는 톡 누르면 메뉴, 꾹 누르면 옮기기 — 그냥 끌면 화면이 넘어가야 하니까.
 let _ttMove = null;
+let _ttHold = null;                 // 폰에서 꾹 누르기를 기다리는 중
 const TT_MOVE_THRESHOLD = 4;
+const TT_HOLD_MS = 420;
 
 function ttBlkDown(e, id) {
   if (e.button !== undefined && e.button !== 0) return;   // 좌클릭만
   e.stopPropagation();                                     // 새 칸 만들기와 겹치지 않게
-  if (ttIsTouch(e)) { ttTapDown(e, { id }); return; }
+  const el = e.currentTarget;
+  if (ttIsTouch(e)) {
+    ttTapDown(e, { id });                                  // 톡 누르면 메뉴
+    const pid = e.pointerId, x = e.clientX, y = e.clientY;
+    ttHoldCancel();
+    _ttHold = setTimeout(() => {
+      _ttHold = null;
+      ttTapCancel();                                       // 메뉴 말고 옮기기로
+      ttMoveStart({ clientX: x, clientY: y, pointerId: pid }, id, el, true);
+      buzz('tap');                                         // 잡았다는 손맛
+    }, TT_HOLD_MS);
+    return;
+  }
   e.preventDefault();
-  _ttMove = { id, x0: e.clientX, y0: e.clientY, moved: false, day: null, at: null, line: null };
-  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  ttMoveStart(e, id, el, false);
+}
+
+function ttHoldCancel() { if (_ttHold) { clearTimeout(_ttHold); _ttHold = null; } }
+
+function ttMoveStart(e, id, el, touch) {
+  const blk = blockList().find(b => b.id === id);
+  if (!blk) return;
+  const col = el.closest('.tt-col');
+  _ttMove = {
+    id, el, touch, col,
+    x0: e.clientX, y0: e.clientY,
+    moved: touch,                                    // 꾹 누른 것은 이미 잡은 것이다
+    dur: Math.max(TT_SNAP, toMin(blk.end) - toMin(blk.start)),
+    grab: col ? (ttYToMinRaw(col, e.clientY) - toMin(blk.start)) : 0,
+    day: blk.day, start: toMin(blk.start), ok: true,
+  };
+  if (touch) ttMoveMark();
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function ttMoveMark() {
+  document.body.classList.add('dragging-item');
+  if (_ttMove && _ttMove.el) _ttMove.el.classList.add('moving');
+  if (_ttMove) ttGhost(_ttMove.col, _ttMove.start, _ttMove.dur, true);
 }
 
 function ttMoveMove(e) {
+  // 꾹 누르기를 기다리는 중에 손가락이 움직이면 화면을 넘기려는 것이다
+  if (_ttHold && _ttTap && Math.abs(e.clientX - _ttTap.x0) + Math.abs(e.clientY - _ttTap.y0) > TT_TAP_SLOP) ttHoldCancel();
   if (!_ttMove) return;
   if (!_ttMove.moved) {
     if (Math.abs(e.clientX - _ttMove.x0) + Math.abs(e.clientY - _ttMove.y0) < TT_MOVE_THRESHOLD) return;
     _ttMove.moved = true;
-    document.body.classList.add('dragging-item');
+    ttMoveMark();
   }
   const under = document.elementFromPoint(e.clientX, e.clientY);
-  const col = under && under.closest ? under.closest('.tt-col') : null;
-  ttClearLine();
-  if (!col) { _ttMove.day = null; _ttMove.at = null; return; }
+  const col = (under && under.closest && under.closest('.tt-col')) || _ttMove.col;
+  if (!col) return;
+  _ttMove.col = col;
 
+  const [lo, hi] = ttRange();
+  let st = Math.round((ttYToMinRaw(col, e.clientY) - _ttMove.grab) / TT_SNAP) * TT_SNAP;
+  st = Math.max(lo, Math.min(hi - _ttMove.dur, st));
   const day = Number(col.dataset.day);
-  const list = blocksOf(day).filter(b => b.id !== _ttMove.id);
-  const lo = Number(document.getElementById('ttGrid').dataset.lo || 300);
-  const r = col.getBoundingClientRect();
-  const y = e.clientY - r.top;
-
-  // 어느 칸 사이인지 — 각 칸의 한가운데를 기준으로 앞/뒤를 가린다
-  let at = list.length;
-  for (let i = 0; i < list.length; i++) {
-    const mid = ((toMin(list[i].start) + toMin(list[i].end)) / 2 - lo) / 60 * TT_ROW_H;
-    if (y < mid) { at = i; break; }
-  }
   _ttMove.day = day;
-  _ttMove.at = at;
-
-  // 들어갈 자리를 가로선으로 보여준다
-  const lineY = at === 0
-    ? (list.length ? (toMin(list[0].start) - lo) / 60 * TT_ROW_H : y)
-    : (toMin(list[at - 1].end) - lo) / 60 * TT_ROW_H;
-  const line = document.createElement('div');
-  line.className = 'tt-line';
-  line.style.top = Math.max(0, lineY - 1) + 'px';
-  col.appendChild(line);
-  _ttMove.line = line;
+  _ttMove.start = st;
+  _ttMove.ok = !ttOverlaps(day, st, st + _ttMove.dur, _ttMove.id);
+  ttGhost(col, st, _ttMove.dur, _ttMove.ok);
 }
 
-function ttClearLine() {
-  document.querySelectorAll('#ttGrid .tt-line').forEach(el => el.remove());
+/** 놓일 자리를 그려 준다 — 겹치면 붉게 */
+function ttGhost(col, start, dur, ok) {
+  const body = document.querySelector('#ttGrid .tt-body');
+  if (!body || !col) return;
+  let g = body.querySelector('.tt-ghost');
+  if (!g) { g = document.createElement('div'); g.className = 'tt-ghost'; body.appendChild(g); }
+  const lo = Number(document.getElementById('ttGrid').dataset.lo || 300);
+  g.classList.toggle('bad', !ok);
+  g.style.left = (col.offsetLeft + 2) + 'px';
+  g.style.width = Math.max(0, col.offsetWidth - 4) + 'px';
+  g.style.top = ((start - lo) / 60 * ttRowH()) + 'px';
+  g.style.height = Math.max(6, dur / 60 * ttRowH()) + 'px';
+  g.textContent = toHHMM(start) + '~' + toHHMM(start + dur);
 }
+function ttGhostClear() { document.querySelectorAll('#ttGrid .tt-ghost').forEach(el => el.remove()); }
 
 function ttMoveUp() {
+  ttHoldCancel();
   if (!_ttMove) return;
   const d = _ttMove; _ttMove = null;
   document.body.classList.remove('dragging-item');
-  ttClearLine();
-  if (!d.moved) { ttEdit(d.id); return; }       // 움직이지 않았으면 그냥 누른 것
-  if (d.day === null || d.at === null) return;
-  ttInsertAt(d.id, d.day, d.at);
+  if (d.el) d.el.classList.remove('moving');
+  ttGhostClear();
+  if (!d.moved) { ttEdit(d.id); return; }          // 마우스로 그냥 누른 것
+  if (!d.ok) { toast('alert', L('tt_title'), L('tt_overlap')); return; }
+  ttMoveTo(d.id, d.day, d.start);
 }
 document.addEventListener('pointermove', ttMoveMove);
 document.addEventListener('pointerup', ttMoveUp);
 document.addEventListener('pointercancel', ttMoveUp);
+// 폰에서 옮기는 동안에는 화면이 따라 움직이지 않게 막는다.
+// touch-action 은 손가락이 닿는 순간에 정해져서 도중에 바꿔도 듣지 않는다.
+document.addEventListener('touchmove', (e) => {
+  if (_ttMove && _ttMove.touch && _ttMove.moved) e.preventDefault();
+}, { passive: false });
 
-/**
- * 칸을 그 요일의 at 번째 자리에 끼워 넣는다.
- * 길이는 그대로 두고, 뒤에 있던 칸들은 겹치지 않게 뒤로 민다.
- */
-function ttInsertAt(id, day, at) {
+/** 칸을 그 요일 그 시각으로 옮긴다. 길이는 그대로. */
+function ttMoveTo(id, day, start) {
   const blk = blockList().find(b => b.id === id);
   if (!blk) return;
+  if (blk.day === day && toMin(blk.start) === start) return;   // 제자리
   ttSnapshot();
   const dur = toMin(blk.end) - toMin(blk.start);
-  const list = blocksOf(day).filter(b => b.id !== id);
-
-  // 시작 시각: 앞 칸이 끝나는 때 (맨 앞이면 원래 시각 그대로)
-  let start = (at === 0) ? toMin(blk.start) : toMin(list[at - 1].end);
-  if (at === 0 && list.length && start + dur > toMin(list[0].start)) start = toMin(blk.start);
-  if (start + dur > 24 * 60) start = 24 * 60 - dur;
-
   blk.day = day;
   blk.start = toHHMM(start);
-  blk.end = toHHMM(start + dur);
-
-  // 끼워 넣은 자리부터 뒤로 밀기
-  const after = list.slice(at);
-  let cursor = start + dur;
-  after.forEach(b => {
-    if (toMin(b.start) < cursor) {
-      const d2 = toMin(b.end) - toMin(b.start);
-      b.start = toHHMM(cursor);
-      b.end = toHHMM(Math.min(24 * 60, cursor + d2));
-      cursor = toMin(b.end);
-    } else {
-      cursor = toMin(b.end);
-    }
-  });
-
+  blk.end = toHHMM(Math.min(24 * 60, start + dur));
   saveState();
   renderTimetable();
   updateCycleUI();
@@ -5174,6 +5395,7 @@ function ttMenuAct(what) {
     toast('info', L('tt_title'), L(b.alarm ? 'tt_alarm_on_msg' : 'tt_alarm_off_msg'));
     return;
   }
+  if (what === 'dup') { openTtDup(id); return; }
   if (what === 'alarmall') {
     const me = blockList().find(x => x.id === id);
     if (!me) return;
@@ -9360,7 +9582,7 @@ const CLOUD_KEYS = [
   // 고양이·진행 상태
   'cat','pts','fruits','harvestedFruits','waterOff','waterFrom','waterTo','waterCups','waterDate','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','growthLogs','ownedAccs','redeemedCoupons',
   // 설정
-  'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','pomoOn','focusMins','breakMins','theme','language','holidayCountry'
+  'schedule','workItems','scheduleItems','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','ttTall','pomoOn','focusMins','breakMins','theme','language','holidayCountry'
 ];
 
 /** 지금 어딘가에 글을 쓰고 있는가 (자판이 올라와 있는 상태) */
