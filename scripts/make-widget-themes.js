@@ -21,20 +21,39 @@ function readThemes() {
   const html = fs.readFileSync(RENDERER, 'utf8');
   const at = html.indexOf('const THEMES');
   if (at < 0) throw new Error('renderer/index.html에서 THEMES를 찾지 못했습니다');
-  const seg = html.slice(at, at + 8000);
+  // THEMES 배열이 끝나는 곳까지만 (뒤에 오는 코드에서 엉뚱한 걸 줍지 않게)
+  const end = html.indexOf('\n];', at);
+  const seg = html.slice(at, end < 0 ? at + 12000 : end);
   const out = [];
   const re = /\{ id:'(\w+)',[\s\S]*?vars:\{([\s\S]*?)\}/g;
   let m;
-  while ((m = re.exec(seg)) && out.length < 6) {
+  while ((m = re.exec(seg))) {
     const vars = {};
     let v;
     const vre = /'--([\w-]+)':'([^']+)'/g;
     while ((v = vre.exec(m[2]))) vars[v[1]] = v[2];
     out.push({ id: m[1], vars });
   }
-  if (out.length !== 6) throw new Error('테마를 6개 읽지 못했습니다 (' + out.length + ')');
+  if (out.length < 6) throw new Error('테마를 다 읽지 못했습니다 (' + out.length + ')');
   return out;
 }
+
+/** 어두운 테마 — 시간표 칸 색을 따로 쓴다 */
+const DARK = ['black'];
+const isDark = (id) => DARK.indexOf(id) >= 0;
+
+// 시간표 칸 색 (테두리, 바탕). 밝은 테마는 renderer 의 .tt-blk 와 같은 값,
+// 어두운 테마는 body.theme-black 의 덧칠과 같은 값이어야 앱과 위젯이 같아 보인다.
+const BLOCK_LIGHT = {
+  w:  ['#9AD3BF', '#DCF0E8'], r:  ['#EFCB9A', '#FCEEDC'],
+  c0: ['#A2AEC2', '#EDF0F5'], c1: ['#CFC0A0', '#F7F1DF'], c2: ['#E2A8C0', '#FBE7EF'],
+  c3: ['#A6C4E2', '#E6F0FA'], c4: ['#A2D0BA', '#E4F5EC'], c5: ['#C2AADE', '#F0E8FA'],
+};
+const BLOCK_DARK = {
+  w:  ['#3f6456', '#1f2e28'], r:  ['#635a41', '#2e2a20'],
+  c0: ['#4e5a6d', '#232a34'], c1: ['#635a41', '#2e2a20'], c2: ['#6a4655', '#33232b'],
+  c3: ['#415876', '#1f2836'], c4: ['#3f6456', '#1f2e28'], c5: ['#584a6e', '#2a2436'],
+};
 
 /** #rgb → #AARRGGBB (안드로이드 표기) */
 function hex(c) {
@@ -84,6 +103,32 @@ const PARTS = [
   ['w_tt_today_br',  v => shape(mix(v.yellow, v.panel, 0.9), mix(v.yellow, v.border, 0.7), 0.6, BR_R(7), '오늘 요일 칸 (오른쪽 아래 끝)')],
 ];
 
+/**
+ * 시간표 칸 한 조각. 좌우는 늘 테두리, 위아래는 그 칸이 시작·끝인지에 따라.
+ * piece: s(혼자) t(위) m(가운데) b(아래)
+ */
+function blockPiece(line, fill, piece) {
+  const top = (piece === 's' || piece === 't') ? 3 : 0;
+  const bot = (piece === 's' || piece === 'b') ? 3 : 0;
+  const r = (a, b) => '<corners android:topLeftRadius="' + a + 'dp" android:topRightRadius="' + a
+    + 'dp" android:bottomLeftRadius="' + b + 'dp" android:bottomRightRadius="' + b + 'dp" />';
+  return '<?xml version="1.0" encoding="utf-8"?>\n'
+    + '<!-- 시간표 한 조각. 좌우는 늘 테두리, 위아래는 위아래. -->\n'
+    + '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">\n'
+    + '    <item android:left="1dp" android:right="1dp">\n'
+    + '        <shape android:shape="rectangle">\n'
+    + '            <solid android:color="' + hex(line) + '" />\n'
+    + '            ' + r(top, bot) + '\n'
+    + '        </shape>\n    </item>\n'
+    + '    <item android:left="2dp" android:right="2dp" android:top="'
+    + (piece === 's' || piece === 't' ? 1 : 0) + 'dp" android:bottom="'
+    + (piece === 's' || piece === 'b' ? 1 : 0) + 'dp">\n'
+    + '        <shape android:shape="rectangle">\n'
+    + '            <solid android:color="' + hex(fill) + '" />\n'
+    + '            ' + r(Math.max(0, top - 1), Math.max(0, bot - 1)) + '\n'
+    + '        </shape>\n    </item>\n</layer-list>\n';
+}
+
 const themes = readThemes();
 let n = 0;
 for (const th of themes) {
@@ -93,10 +138,28 @@ for (const th of themes) {
     fs.writeFileSync(path.join(DRAWABLE, file), make(th.vars));
     n++;
   }
+  // 어두운 테마만 칸 색을 따로 만든다 (밝은 테마는 손으로 만든 w_b_*.xml 을 그대로 쓴다)
+  if (!isDark(th.id)) continue;
+  for (const key of Object.keys(BLOCK_DARK)) {
+    const [line, fill] = BLOCK_DARK[key];
+    for (const piece of ['s', 't', 'm', 'b']) {
+      fs.writeFileSync(path.join(DRAWABLE, 'w_b_' + key + '_' + piece + '_' + th.id + '.xml'),
+                       blockPiece(line, fill, piece));
+      n++;
+    }
+  }
 }
 console.log('배경 그림 ' + n + '개 (' + themes.map(t => t.id).join(', ') + ')');
 
 // ── 코드에서 고를 수 있게 표를 만들어 둔다 ──
+/** 시간표 칸 그림 표 한 벌 (일·쉼·색0~5 × 혼자·위·가운데·아래) */
+function blockTable(suffix) {
+  const kinds = ['w', 'r', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
+  return kinds.map(k =>
+    '        { ' + ['s', 't', 'm', 'b'].map(p => 'R.drawable.w_b_' + k + '_' + p + suffix).join(', ') + ' },\n'
+  ).join('');
+}
+
 const idx = PARTS.map(([name]) => name);
 let java = `package com.siwon.nekodesk.mobile;
 
@@ -124,6 +187,9 @@ for (const th of themes) {
 }
 java += `    };
 
+    /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
+    private static final boolean[] DARK = { ${themes.map(t => isDark(t.id)).join(', ')} };
+
     /** 글자 색 — { 본문, 흐린 글씨, 강조 } */
     private static final int[][] TEXT = {
 `;
@@ -133,6 +199,13 @@ for (const th of themes) {
   java += '        { ' + c(v.white) + ', ' + c(v.gray) + ', ' + c(v.acc) + ' },\n';
 }
 java += `    };
+
+    private static final int[][] BLK_LIGHT = {
+${blockTable('')}    };
+
+    private static final int[][] BLK_DARK = {
+${blockTable('_black')}    };
+
 
     static int index(String id) {
         for (int i = 0; i < IDS.length; i++) {
@@ -145,6 +218,12 @@ java += `    };
     static int text(int theme) { return TEXT[theme][0]; }
     static int dim(int theme) { return TEXT[theme][1]; }
     static int accent(int theme) { return TEXT[theme][2]; }
+
+    /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
+    static boolean dark(int theme) { return DARK[theme]; }
+
+    /** 시간표 칸 그림 — [종류][조각]. 종류는 일·쉼·색0~5, 조각은 혼자·위·가운데·아래 */
+    static int[][] blocks(int theme) { return dark(theme) ? BLK_DARK : BLK_LIGHT; }
 }
 `;
 fs.writeFileSync(path.join(JAVA, 'WidgetTheme.java'), java);
@@ -187,6 +266,7 @@ for (const [name] of SWIFT_PARTS) {
 swift += `    let text: Color
     let dim: Color
     let accent: Color
+    let isDark: Bool
 }
 
 let wThemes: [String: WTheme] = [
@@ -199,7 +279,8 @@ for (const th of themes) {
     const [fill, line] = make(v);
     args.push('        ' + name + ': ' + c(fill) + ', ' + name + 'Line: ' + c(line));
   }
-  args.push('        text: ' + c(v.white) + ', dim: ' + c(v.gray) + ', accent: ' + c(v.acc));
+  args.push('        text: ' + c(v.white) + ', dim: ' + c(v.gray) + ', accent: ' + c(v.acc)
+            + ', isDark: ' + (isDark(th.id) ? 'true' : 'false'));
   swift += '    "' + th.id + '": WTheme(\n' + args.join(',\n') + '\n    ),\n';
 }
 swift += `];

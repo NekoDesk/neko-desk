@@ -22,7 +22,7 @@ final class WidgetTheme {
     static final int TT_EMPTY_BR = 10;
     static final int TT_TODAY_BR = 11;
 
-    private static final String[] IDS = { "white", "ivory", "bpink", "pblue", "pmint", "ppurple" };
+    private static final String[] IDS = { "white", "ivory", "bpink", "pblue", "pmint", "ppurple", "black" };
 
     private static final int[][] SETS = {
         { R.drawable.w_bg, R.drawable.w_row_bg, R.drawable.w_row_done_bg, R.drawable.w_side_bg, R.drawable.w_dday_bg, R.drawable.w_tt_frame, R.drawable.w_tt_headbg, R.drawable.w_tt_empty, R.drawable.w_tt_today, R.drawable.w_tt_todayhead, R.drawable.w_tt_empty_br, R.drawable.w_tt_today_br },
@@ -31,7 +31,11 @@ final class WidgetTheme {
         { R.drawable.w_bg_pblue, R.drawable.w_row_bg_pblue, R.drawable.w_row_done_bg_pblue, R.drawable.w_side_bg_pblue, R.drawable.w_dday_bg_pblue, R.drawable.w_tt_frame_pblue, R.drawable.w_tt_headbg_pblue, R.drawable.w_tt_empty_pblue, R.drawable.w_tt_today_pblue, R.drawable.w_tt_todayhead_pblue, R.drawable.w_tt_empty_br_pblue, R.drawable.w_tt_today_br_pblue },
         { R.drawable.w_bg_pmint, R.drawable.w_row_bg_pmint, R.drawable.w_row_done_bg_pmint, R.drawable.w_side_bg_pmint, R.drawable.w_dday_bg_pmint, R.drawable.w_tt_frame_pmint, R.drawable.w_tt_headbg_pmint, R.drawable.w_tt_empty_pmint, R.drawable.w_tt_today_pmint, R.drawable.w_tt_todayhead_pmint, R.drawable.w_tt_empty_br_pmint, R.drawable.w_tt_today_br_pmint },
         { R.drawable.w_bg_ppurple, R.drawable.w_row_bg_ppurple, R.drawable.w_row_done_bg_ppurple, R.drawable.w_side_bg_ppurple, R.drawable.w_dday_bg_ppurple, R.drawable.w_tt_frame_ppurple, R.drawable.w_tt_headbg_ppurple, R.drawable.w_tt_empty_ppurple, R.drawable.w_tt_today_ppurple, R.drawable.w_tt_todayhead_ppurple, R.drawable.w_tt_empty_br_ppurple, R.drawable.w_tt_today_br_ppurple },
+        { R.drawable.w_bg_black, R.drawable.w_row_bg_black, R.drawable.w_row_done_bg_black, R.drawable.w_side_bg_black, R.drawable.w_dday_bg_black, R.drawable.w_tt_frame_black, R.drawable.w_tt_headbg_black, R.drawable.w_tt_empty_black, R.drawable.w_tt_today_black, R.drawable.w_tt_todayhead_black, R.drawable.w_tt_empty_br_black, R.drawable.w_tt_today_br_black },
     };
+
+    /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
+    private static final boolean[] DARK = { false, false, false, false, false, false, true };
 
     /** 글자 색 — { 본문, 흐린 글씨, 강조 } */
     private static final int[][] TEXT = {
@@ -41,7 +45,31 @@ final class WidgetTheme {
         { 0xFF4A5A6E, 0xFF9FB4C8, 0xFF84AAD2 },
         { 0xFF486054, 0xFF9CBAAD, 0xFF7CBBA2 },
         { 0xFF584A6A, 0xFFB3A3C6, 0xFFA98EC8 },
+        { 0xFFE9E9EE, 0xFF8E8E9A, 0xFF8091C4 },
     };
+
+    private static final int[][] BLK_LIGHT = {
+        { R.drawable.w_b_w_s, R.drawable.w_b_w_t, R.drawable.w_b_w_m, R.drawable.w_b_w_b },
+        { R.drawable.w_b_r_s, R.drawable.w_b_r_t, R.drawable.w_b_r_m, R.drawable.w_b_r_b },
+        { R.drawable.w_b_c0_s, R.drawable.w_b_c0_t, R.drawable.w_b_c0_m, R.drawable.w_b_c0_b },
+        { R.drawable.w_b_c1_s, R.drawable.w_b_c1_t, R.drawable.w_b_c1_m, R.drawable.w_b_c1_b },
+        { R.drawable.w_b_c2_s, R.drawable.w_b_c2_t, R.drawable.w_b_c2_m, R.drawable.w_b_c2_b },
+        { R.drawable.w_b_c3_s, R.drawable.w_b_c3_t, R.drawable.w_b_c3_m, R.drawable.w_b_c3_b },
+        { R.drawable.w_b_c4_s, R.drawable.w_b_c4_t, R.drawable.w_b_c4_m, R.drawable.w_b_c4_b },
+        { R.drawable.w_b_c5_s, R.drawable.w_b_c5_t, R.drawable.w_b_c5_m, R.drawable.w_b_c5_b },
+    };
+
+    private static final int[][] BLK_DARK = {
+        { R.drawable.w_b_w_s_black, R.drawable.w_b_w_t_black, R.drawable.w_b_w_m_black, R.drawable.w_b_w_b_black },
+        { R.drawable.w_b_r_s_black, R.drawable.w_b_r_t_black, R.drawable.w_b_r_m_black, R.drawable.w_b_r_b_black },
+        { R.drawable.w_b_c0_s_black, R.drawable.w_b_c0_t_black, R.drawable.w_b_c0_m_black, R.drawable.w_b_c0_b_black },
+        { R.drawable.w_b_c1_s_black, R.drawable.w_b_c1_t_black, R.drawable.w_b_c1_m_black, R.drawable.w_b_c1_b_black },
+        { R.drawable.w_b_c2_s_black, R.drawable.w_b_c2_t_black, R.drawable.w_b_c2_m_black, R.drawable.w_b_c2_b_black },
+        { R.drawable.w_b_c3_s_black, R.drawable.w_b_c3_t_black, R.drawable.w_b_c3_m_black, R.drawable.w_b_c3_b_black },
+        { R.drawable.w_b_c4_s_black, R.drawable.w_b_c4_t_black, R.drawable.w_b_c4_m_black, R.drawable.w_b_c4_b_black },
+        { R.drawable.w_b_c5_s_black, R.drawable.w_b_c5_t_black, R.drawable.w_b_c5_m_black, R.drawable.w_b_c5_b_black },
+    };
+
 
     static int index(String id) {
         for (int i = 0; i < IDS.length; i++) {
@@ -54,4 +82,10 @@ final class WidgetTheme {
     static int text(int theme) { return TEXT[theme][0]; }
     static int dim(int theme) { return TEXT[theme][1]; }
     static int accent(int theme) { return TEXT[theme][2]; }
+
+    /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
+    static boolean dark(int theme) { return DARK[theme]; }
+
+    /** 시간표 칸 그림 — [종류][조각]. 종류는 일·쉼·색0~5, 조각은 혼자·위·가운데·아래 */
+    static int[][] blocks(int theme) { return dark(theme) ? BLK_DARK : BLK_LIGHT; }
 }

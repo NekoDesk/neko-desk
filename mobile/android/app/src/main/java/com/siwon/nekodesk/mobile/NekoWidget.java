@@ -599,7 +599,7 @@ public class NekoWidget extends AppWidgetProvider {
 
             if (done) {
                 row.setTextViewText(R.id.i_text, struck(text));
-                row.setTextColor(R.id.i_text, 0xFF9AA0A6);
+                row.setTextColor(R.id.i_text, cDim);
             } else {
                 row.setTextViewText(R.id.i_text, text);
                 row.setTextColor(R.id.i_text, cText);
@@ -701,9 +701,9 @@ public class NekoWidget extends AppWidgetProvider {
             setBg(v, R.id.w_tmr_box, WidgetTheme.bg(th, WidgetTheme.SIDE_BG));
             v.setTextColor(R.id.w_yday_title, cDim);
             v.setTextColor(R.id.w_tmr_title, cDim);
-            fillSide(v, pkg, o.optJSONObject("yesterday"), stale,
+            fillSide(v, pkg, o.optJSONObject("yesterday"), stale, th,
                      R.id.w_yday_title, R.id.w_yday_list, R.id.w_yday_empty, noneWord);
-            fillSide(v, pkg, o.optJSONObject("tomorrow"), stale,
+            fillSide(v, pkg, o.optJSONObject("tomorrow"), stale, th,
                      R.id.w_tmr_title, R.id.w_tmr_list, R.id.w_tmr_empty, noneWord);
         }
 
@@ -934,7 +934,7 @@ public class NekoWidget extends AppWidgetProvider {
                     int ci = hit.optInt("color", -1);
                     int style = (ci >= 0 && ci < 6) ? (2 + ci)
                               : (hit.optBoolean("rest", false) ? 1 : 0);
-                    setBg(cell, R.id.i_text, TT_BG[style][ttPiece(starts, ends)]);
+                    setBg(cell, R.id.i_text, WidgetTheme.blocks(th)[style][ttPiece(starts, ends)]);
                     cell.setTextColor(R.id.i_text, WidgetTheme.text(th));
                     if (starts) cell.setTextViewText(R.id.i_text, hit.optString("label", ""));
                 } else {
@@ -953,17 +953,6 @@ public class NekoWidget extends AppWidgetProvider {
         if (ends) return 3;
         return 2;
     }
-
-    private static final int[][] TT_BG = {
-        { R.drawable.w_b_w_s,  R.drawable.w_b_w_t,  R.drawable.w_b_w_m,  R.drawable.w_b_w_b  },
-        { R.drawable.w_b_r_s,  R.drawable.w_b_r_t,  R.drawable.w_b_r_m,  R.drawable.w_b_r_b  },
-        { R.drawable.w_b_c0_s, R.drawable.w_b_c0_t, R.drawable.w_b_c0_m, R.drawable.w_b_c0_b },
-        { R.drawable.w_b_c1_s, R.drawable.w_b_c1_t, R.drawable.w_b_c1_m, R.drawable.w_b_c1_b },
-        { R.drawable.w_b_c2_s, R.drawable.w_b_c2_t, R.drawable.w_b_c2_m, R.drawable.w_b_c2_b },
-        { R.drawable.w_b_c3_s, R.drawable.w_b_c3_t, R.drawable.w_b_c3_m, R.drawable.w_b_c3_b },
-        { R.drawable.w_b_c4_s, R.drawable.w_b_c4_t, R.drawable.w_b_c4_m, R.drawable.w_b_c4_b },
-        { R.drawable.w_b_c5_s, R.drawable.w_b_c5_t, R.drawable.w_b_c5_m, R.drawable.w_b_c5_b },
-    };
 
     /**
      * 앱이 넘겨 준 "data:image/png;base64,..." 를 그림으로 되돌린다.
@@ -996,7 +985,7 @@ public class NekoWidget extends AppWidgetProvider {
 
     private static String _tPad2(int n) { return (n < 10 ? "0" : "") + n; }
 
-    private void fillSide(RemoteViews v, String pkg, JSONObject side, boolean stale,
+    private void fillSide(RemoteViews v, String pkg, JSONObject side, boolean stale, int th,
                           int titleId, int listId, int emptyId, String noneWord) {
         v.removeAllViews(listId);
         v.setTextViewText(titleId, (side == null) ? "" : side.optString("label", ""));
@@ -1014,10 +1003,10 @@ public class NekoWidget extends AppWidgetProvider {
             row.setTextViewText(R.id.i_chk, done ? "✓" : "");
             if (done) {
                 row.setTextViewText(R.id.i_text, struck(text));
-                row.setTextColor(R.id.i_text, 0xFFBDC1C6);
+                row.setTextColor(R.id.i_text, WidgetTheme.dim(th));
             } else {
                 row.setTextViewText(R.id.i_text, text);
-                row.setTextColor(R.id.i_text, 0xFF5F6368);
+                row.setTextColor(R.id.i_text, WidgetTheme.text(th));
             }
             v.addView(listId, row);
             shown++;

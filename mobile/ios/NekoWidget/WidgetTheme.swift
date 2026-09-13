@@ -26,6 +26,7 @@ struct WTheme {
     let text: Color
     let dim: Color
     let accent: Color
+    let isDark: Bool
 }
 
 let wThemes: [String: WTheme] = [
@@ -39,7 +40,7 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#EEF1F5"), ttHeadLine: Color(hex: "#D8DEE8"),
         ttEmpty: Color(hex: "#FFFFFF"), ttEmptyLine: Color(hex: "#D8DEE8"),
         ttTodayHead: Color(hex: "#E5D1A3"), ttTodayHeadLine: Color(hex: "#D9BE82"),
-        text: Color(hex: "#33405A"), dim: Color(hex: "#8C98AD"), accent: Color(hex: "#5A6B8C")
+        text: Color(hex: "#33405A"), dim: Color(hex: "#8C98AD"), accent: Color(hex: "#5A6B8C"), isDark: false
     ),
     "ivory": WTheme(
         bg: Color(hex: "#FDFBF5"), bgLine: Color(hex: "#EBE4D4"),
@@ -51,7 +52,7 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#F7F3E8"), ttHeadLine: Color(hex: "#EBE4D4"),
         ttEmpty: Color(hex: "#FFFEFA"), ttEmptyLine: Color(hex: "#EBE4D4"),
         ttTodayHead: Color(hex: "#E7D7B3"), ttTodayHeadLine: Color(hex: "#DDC89A"),
-        text: Color(hex: "#5A5346"), dim: Color(hex: "#A89E8C"), accent: Color(hex: "#C9A184")
+        text: Color(hex: "#5A5346"), dim: Color(hex: "#A89E8C"), accent: Color(hex: "#C9A184"), isDark: false
     ),
     "bpink": WTheme(
         bg: Color(hex: "#FFF6F8"), bgLine: Color(hex: "#F5DDE5"),
@@ -63,7 +64,7 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#FBEDF1"), ttHeadLine: Color(hex: "#F5DDE5"),
         ttEmpty: Color(hex: "#FFFBFC"), ttEmptyLine: Color(hex: "#F5DDE5"),
         ttTodayHead: Color(hex: "#EED5BD"), ttTodayHeadLine: Color(hex: "#E8C7A7"),
-        text: Color(hex: "#6B525A"), dim: Color(hex: "#C5AAB3"), accent: Color(hex: "#D68FA8")
+        text: Color(hex: "#6B525A"), dim: Color(hex: "#C5AAB3"), accent: Color(hex: "#D68FA8"), isDark: false
     ),
     "pblue": WTheme(
         bg: Color(hex: "#F7FAFE"), bgLine: Color(hex: "#DDE9F5"),
@@ -75,7 +76,7 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#EEF5FC"), ttHeadLine: Color(hex: "#DDE9F5"),
         ttEmpty: Color(hex: "#FBFDFF"), ttEmptyLine: Color(hex: "#DDE9F5"),
         ttTodayHead: Color(hex: "#E2D8BE"), ttTodayHeadLine: Color(hex: "#D8CAA7"),
-        text: Color(hex: "#4A5A6E"), dim: Color(hex: "#9FB4C8"), accent: Color(hex: "#84AAD2")
+        text: Color(hex: "#4A5A6E"), dim: Color(hex: "#9FB4C8"), accent: Color(hex: "#84AAD2"), isDark: false
     ),
     "pmint": WTheme(
         bg: Color(hex: "#F7FCF9"), bgLine: Color(hex: "#DCEFE5"),
@@ -87,7 +88,7 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#EEF8F2"), ttHeadLine: Color(hex: "#DCEFE5"),
         ttEmpty: Color(hex: "#FBFEFC"), ttEmptyLine: Color(hex: "#DCEFE5"),
         ttTodayHead: Color(hex: "#E2DAB9"), ttTodayHeadLine: Color(hex: "#D7CCA1"),
-        text: Color(hex: "#486054"), dim: Color(hex: "#9CBAAD"), accent: Color(hex: "#7CBBA2")
+        text: Color(hex: "#486054"), dim: Color(hex: "#9CBAAD"), accent: Color(hex: "#7CBBA2"), isDark: false
     ),
     "ppurple": WTheme(
         bg: Color(hex: "#FAF7FE"), bgLine: Color(hex: "#E8DDF4"),
@@ -99,7 +100,19 @@ let wThemes: [String: WTheme] = [
         ttHead: Color(hex: "#F4EEFB"), ttHeadLine: Color(hex: "#E8DDF4"),
         ttEmpty: Color(hex: "#FDFBFF"), ttEmptyLine: Color(hex: "#E8DDF4"),
         ttTodayHead: Color(hex: "#E6D4BE"), ttTodayHeadLine: Color(hex: "#DCC5A7"),
-        text: Color(hex: "#584A6A"), dim: Color(hex: "#B3A3C6"), accent: Color(hex: "#A98EC8")
+        text: Color(hex: "#584A6A"), dim: Color(hex: "#B3A3C6"), accent: Color(hex: "#A98EC8"), isDark: false
+    ),
+    "black": WTheme(
+        bg: Color(hex: "#131317"), bgLine: Color(hex: "#35353E"),
+        row: Color(hex: "#1B1B21"), rowLine: Color(hex: "#48506A"),
+        rowDone: Color(hex: "#26262E"), rowDoneLine: Color(hex: "#35353E"),
+        side: Color(hex: "#1B1B21"), sideLine: Color(hex: "#35353E"),
+        dday: Color(hex: "#1B1B21"), ddayLine: Color(hex: "#6B393A"),
+        ttFrame: Color(hex: "#1B1B21"), ttFrameLine: Color(hex: "#666671"),
+        ttHead: Color(hex: "#26262E"), ttHeadLine: Color(hex: "#35353E"),
+        ttEmpty: Color(hex: "#1B1B21"), ttEmptyLine: Color(hex: "#35353E"),
+        ttTodayHead: Color(hex: "#7B6840"), ttTodayHeadLine: Color(hex: "#9D844C"),
+        text: Color(hex: "#E9E9EE"), dim: Color(hex: "#8E8E9A"), accent: Color(hex: "#8091C4"), isDark: true
     ),
 ];
 

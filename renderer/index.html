@@ -159,6 +159,10 @@ body.electron-dashboard #dashPanel {
 }
 
 /* ── 테마 변수 ── */
+/* 면을 한 겹 띄울 때 얹는 밝기. 밝은 테마는 하얗게, 어두운 테마는 아주 조금만 —
+   같은 45%를 어두운 바탕에 얹으면 그 자리만 허옇게 떠 버린다. */
+:root { --lift-1: 10%; --lift-2: 20%; --lift-3: 45%; --lift-4: 58%; }
+body.theme-black { --lift-1: 4%; --lift-2: 9%; --lift-3: 13%; --lift-4: 17%; }
 body {
   min-height: 100vh;
   overflow: hidden;
@@ -190,6 +194,9 @@ body.theme-warm {
 }
 body.theme-mono {
   background: radial-gradient(ellipse at 50% 50%, #1a1a1a 0%, #0a0a0a 60%, #111 100%);
+}
+body.theme-black {
+  background: radial-gradient(ellipse at 40% 40%, #16161b 0%, #0c0c0f 60%, #08080a 100%);
 }
 
 /* ── 데스크탑 힌트 ── */
@@ -452,7 +459,7 @@ body.theme-mono {
 #dp-home .card-title { margin-bottom: 9px; }
 #dp-home .cat-display { flex-shrink: 0; padding: 8px; gap: 4px; margin-bottom: 0 !important;
   position: relative; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-#dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff 58%); }
+#dp-home .cat-display:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--card), #fff var(--lift-4)); }
 #dp-home .big-cat { width: 108px; height: 130px; }
 /* 고양이 탭은 이 그림이 주인공이라 크게 — 기본(120x144)의 1.4배 */
 #dp-cat .big-cat { width: 168px; height: 202px; }
@@ -468,7 +475,7 @@ body.theme-mono {
   align-items: center; justify-content: center; gap: 10px;
   width: 320px; height: 320px; max-width: 100%; padding: 16px;
   /* 홈의 고양이 상자와 같은 결 — 바탕은 카드색에 흰색을 섞고 테두리는 강조색 */
-  background: color-mix(in srgb, var(--card), #fff 45%);
+  background: color-mix(in srgb, var(--card), #fff var(--lift-3));
   border: 2px solid var(--acc); box-sizing: border-box;
   cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
 .cat-pick:hover { border-color: var(--yellow); }
@@ -544,7 +551,7 @@ body.theme-mono {
   background: #fdf6ec;
 }
 .vpill.done::before { background: var(--border); }
-.vpill.done::after  { background: color-mix(in srgb, var(--border), #fff 25%); }
+.vpill.done::after  { background: color-mix(in srgb, var(--border), #fff var(--lift-2)); }
 .vpill.next { border-color: var(--yellow); cursor: pointer; }
 .vpill.undo { cursor: pointer; }
 
@@ -572,7 +579,7 @@ body.theme-mono {
 /* 고양이 자리는 카드보다 한 톤 밝게 — 어두우면 고양이가 묻힌다 */
 .cat-display {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 16px; background: color-mix(in srgb, var(--card), #fff 45%);
+  padding: 16px; background: color-mix(in srgb, var(--card), #fff var(--lift-3));
   border: 2px solid var(--acc);
 }
 .big-cat { image-rendering: pixelated; width: 120px; height: 144px; }
@@ -612,7 +619,7 @@ body.theme-mono {
   content:attr(data-tip); position:absolute; right:0;
   white-space:nowrap; font-size:11px; padding:4px 8px; color:var(--white);
   background:var(--card);
-  background:color-mix(in srgb, var(--card), #fff 16%);
+  background:color-mix(in srgb, var(--card), #fff var(--lift-2));
   border:1px solid var(--border); border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.22);
   opacity:0; visibility:hidden; pointer-events:none;
   transition:opacity 0.1s ease 0.04s, visibility 0s linear 0.04s; z-index:60; }
@@ -691,7 +698,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 글씨를 고르면 뜨는 서식 막대 */
 .memo-fmt {
   position:fixed; z-index:9999; display:none; gap:2px; padding:4px;
-  background:color-mix(in srgb, var(--card), #fff 10%);
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1));
   border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,0.25);
 }
 .memo-fmt button {
@@ -712,7 +719,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* '/' 명령 메뉴 */
 .slash-menu {
   position:fixed; z-index:9998; min-width:210px; padding:5px;
-  background:color-mix(in srgb, var(--card), #fff 10%);
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1));
   border:1px solid var(--border); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.28);
 }
 .slash-item { display:flex; align-items:center; gap:9px; padding:7px 9px; cursor:pointer; border-radius:4px; font-size:13px; color:var(--white); }
@@ -745,7 +752,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
    (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
 .todo-adj { background:var(--card);
-  background:color-mix(in srgb, var(--card), #fff 12%);
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1));
   border:1px solid var(--border); border-radius:4px;
   padding:7px 9px; margin-bottom:8px; cursor:pointer; }
 /* 어제·내일은 목록 아래에 반반씩 나란히 */
@@ -802,8 +809,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-col { position:relative; border-left:1px solid var(--border); overflow:hidden; }
 .tt-hour { border-top:1px solid var(--border); box-sizing:border-box; }
 /* 오후는 아주 살짝만 밝게 — 오전/오후가 갈리되 튀지 않게 */
-.tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff 45%); }
-.tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff 45%); }
+.tt-hour.pm { background:color-mix(in srgb, var(--panel), #fff var(--lift-3)); }
+.tt-times span.pm { background:color-mix(in srgb, var(--panel), #fff var(--lift-3)); }
 .tt-col.today { background:rgba(255,211,105,0.05); }
 .tt-blk { position:absolute; left:2px; right:2px; border-radius:3px; overflow:hidden;
   padding:2px 3px; cursor:pointer; box-sizing:border-box;
@@ -818,12 +825,21 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .tt-blk.c3 { border-color:#A6C4E2; background:#E6F0FA; }
 .tt-blk.c4 { border-color:#A2D0BA; background:#E4F5EC; }
 .tt-blk.c5 { border-color:#C2AADE; background:#F0E8FA; }
+/* 블랙 테마 — 같은 여섯 계열을 어둡게. 글씨가 밝아서 파스텔 위에서는 안 읽힌다 */
+body.theme-black .tt-blk.c0 { border-color:#4e5a6d; background:#232a34; }
+body.theme-black .tt-blk.c1 { border-color:#635a41; background:#2e2a20; }
+body.theme-black .tt-blk.c2 { border-color:#6a4655; background:#33232b; }
+body.theme-black .tt-blk.c3 { border-color:#415876; background:#1f2836; }
+body.theme-black .tt-blk.c4 { border-color:#3f6456; background:#1f2e28; }
+body.theme-black .tt-blk.c5 { border-color:#584a6e; background:#2a2436; }
 /* 팝업에서 고르는 동그라미 */
 .tt-colors { display:flex; gap:7px; align-items:center; }
 .tt-color { width:26px; height:26px; border-radius:50%; cursor:pointer; padding:0;
   border:2px solid var(--border); }
 .tt-color.on { border-color:var(--white); box-shadow:0 0 0 2px var(--yellow); }
 .tt-color.auto { background:repeating-linear-gradient(45deg,#DCF0E8,#DCF0E8 5px,#FCEEDC 5px,#FCEEDC 10px); }
+/* 블랙에서는 '종류에 맡김' 동그라미도 어둡게 — 혼자 하얗게 튄다 */
+body.theme-black .tt-color.auto { background:repeating-linear-gradient(45deg,#1f2e28,#1f2e28 5px,#2e2a20 5px,#2e2a20 10px); }
 /* 시간표 버전 고르기 — 네모 단추 둘 */
 .tt-ver { flex:1; display:flex; flex-direction:column; gap:3px; align-items:center;
   border:1px solid var(--border); border-radius:6px; background:var(--card); cursor:pointer; padding:10px 6px; }
@@ -859,7 +875,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 언제 울릴지 고르는 작은 칩 — 알림이 꺼져 있으면 흐리게 두되 누를 수는 있다 */
 .lead-chip { flex:1 1 auto; font-size:10px; padding:4px 5px; cursor:pointer; border-radius:4px;
   border:1px solid var(--border); background:var(--card); color:var(--gray); white-space:nowrap; }
-.lead-chip.on { border-color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 22%); color:var(--yellow); font-weight:700; }
+.lead-chip.on { border-color:var(--yellow); background:color-mix(in srgb, var(--card), #fff var(--lift-2)); color:var(--yellow); font-weight:700; }
 .lead-chip.off { opacity:0.4; }
 .fill-bell.on { opacity:1; border-color:var(--yellow); }
 /* 핀 팝업의 끝날 고르개 — 브라우저 기본 select 는 크고 글씨가 달라 옆의 시작 날짜와 어긋났다 */
@@ -904,7 +920,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 
 /* 알람 */
 .alarm-row { display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:5px;
-  background:color-mix(in srgb, var(--card), #fff 8%); border:1px solid var(--border); border-radius:5px; }
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1)); border:1px solid var(--border); border-radius:5px; }
 .alarm-row.off { opacity:0.45; }
 .alarm-toggle { background:transparent; border:none; color:var(--mint); font-size:13px;
   cursor:pointer; padding:0; line-height:1; flex-shrink:0; }
@@ -916,7 +932,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .alarm-dows { display:flex; gap:4px; margin:8px 0 6px; }
 .alarm-dow { flex:1; font-size:11px; padding:4px 0; cursor:pointer; border-radius:4px;
   border:1px solid var(--border); background:var(--card); color:var(--gray); }
-.alarm-dow.on { border-color:var(--yellow); background:color-mix(in srgb, var(--card), #fff 22%); color:var(--yellow); font-weight:700; }
+.alarm-dow.on { border-color:var(--yellow); background:color-mix(in srgb, var(--card), #fff var(--lift-2)); color:var(--yellow); font-weight:700; }
 .alarm-dow.sun { color:#f88; }
 .alarm-dow.sun.on { border-color:#f88; color:#f88; }
 .alarm-add { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
@@ -927,7 +943,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .todo-adj-row { display:flex; gap:8px; margin-top:10px; align-items:stretch; }
 .todo-adj-row .todo-adj { flex:1 1 0; min-width:0; margin-bottom:0; }
 .todo-adj:hover { border-color:var(--mint);
-  background:color-mix(in srgb, var(--card), #fff 20%); }
+  background:color-mix(in srgb, var(--card), #fff var(--lift-2)); }
 .todo-adj-hd { font-family:'Galmuri14',monospace; font-size:10px; color:var(--gray); margin-bottom:4px; }
 .todo-adj-item { font-size:11px; color:var(--white); opacity:0.85; line-height:1.55;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2112,6 +2128,9 @@ const THEMES = [
     vars:{ '--frame-bg':'#c4e4d4','--frame':'#a2d0ba','--frame-light':'#e4f5ec','--frame-text':'#6fa892','--bg':'#f7fcf9','--panel':'#fbfefc','--card':'#eef8f2','--acc':'#7cbba2','--mint':'#7cbba2','--yellow':'#d4b573','--white':'#486054','--gray':'#9cbaad','--border':'#dcefe5' }, preview:'linear-gradient(135deg,#f8fdfa,#e8f6ef)' },
   { id:'ppurple',name:'💜 페일 퍼플', bg:'radial-gradient(ellipse at 40% 40%, #fbf8ff 0%, #f6f0fd 60%, #f0e8fa 100%)',
     vars:{ '--frame-bg':'#ddcaf0','--frame':'#c2aade','--frame-light':'#f0e8fa','--frame-text':'#9b83ba','--bg':'#faf7fe','--panel':'#fdfbff','--card':'#f4eefb','--acc':'#a98ec8','--mint':'#8ccabb','--yellow':'#d4b573','--white':'#584a6a','--gray':'#b3a3c6','--border':'#e8ddf4' }, preview:'linear-gradient(135deg,#fbf8ff,#f0e8fa)' },
+  // 하나뿐인 어두운 테마. 위젯도 이 이름을 보고 어두운 색으로 그린다 (make-widget-themes.js 의 DARK)
+  { id:'black',  name:'⬛ 블랙', bg:'radial-gradient(ellipse at 40% 40%, #16161b 0%, #0c0c0f 60%, #08080a 100%)',
+    vars:{ '--frame-bg':'#2b2b33','--frame':'#4a4a57','--frame-light':'#3a3a45','--frame-text':'#a9a9b8','--bg':'#131317','--panel':'#1b1b21','--card':'#26262e','--acc':'#8091c4','--mint':'#5ab699','--yellow':'#e2b855','--white':'#e9e9ee','--gray':'#8e8e9a','--border':'#35353e' }, preview:'linear-gradient(135deg,#33333c,#0b0b0d)' },
 ];
 let currentTheme = 'white';
 
@@ -2459,6 +2478,7 @@ const STRINGS = {
     todo_moved_title:'📅 일정을 옮겼어요',
     theme_white:'⬜ 화이트', theme_ivory:'🤍 맑은 아이보리', theme_bpink:'🌸 베이비 핑크',
     theme_pblue:'🩵 페일 블루', theme_pmint:'🍃 페일 민트', theme_ppurple:'💜 페일 퍼플',
+    theme_black:'⬛ 블랙',
     tab_diary:'📔 다이어리', diary_cam_btn:'고양이와 사진찍기', diary_attach_btn:'이미지 첨부',
     diary_save_btn:'저장', diary_ph:'오늘의 기록...',
     diary_saved_title:'저장됨', diary_saved_msg:'다이어리가 저장됐어요!',
@@ -2772,6 +2792,7 @@ const STRINGS = {
     todo_moved_title:'📅 Moved',
     theme_white:'⬜ White', theme_ivory:'🤍 Clear Ivory', theme_bpink:'🌸 Baby Pink',
     theme_pblue:'🩵 Pale Blue', theme_pmint:'🍃 Pale Mint', theme_ppurple:'💜 Pale Purple',
+    theme_black:'⬛ Black',
     tab_diary:'📔 Diary', diary_cam_btn:'Photo with Cat', diary_attach_btn:'Attach Image',
     login_sync_info:'☁️ <b style="color:var(--white)">Sign in with Google</b> to save your to-dos, diary and cat to your account.<br>Continue anywhere — PC, laptop, or the mobile app.<br><span style="opacity:0.7">Guest data stays on this device only.</span>', autostart_title:'🚀 Launch at Startup', autostart_desc:'Start NEKO DESK automatically when your PC turns on', autostart_on:'On', autostart_off:'Off',
     diary_save_btn:'Save', diary_ph:'Write today\'s diary...',
@@ -3085,6 +3106,7 @@ const STRINGS = {
     todo_move_active:'移動先の日付をカレンダーで選んでください（⤴をもう一度押すと取消）',
     theme_white:'⬜ ホワイト', theme_ivory:'🤍 クリアアイボリー', theme_bpink:'🌸 ベイビーピンク',
     theme_pblue:'🩵 ペールブルー', theme_pmint:'🍃 ペールミント', theme_ppurple:'💜 ペールパープル',
+    theme_black:'⬛ ブラック',
     tab_diary:'📔 ダイアリー', diary_cam_btn:'ねこと写真', diary_attach_btn:'画像を添付',
     login_sync_info:'☁️ <b style="color:var(--white)">Googleでログインすると</b>やることリスト・日記・猫がアカウントに保存されます。<br>PC・ノートPC・モバイルどこからでも続きから使えます。<br><span style="opacity:0.7">ゲストはこの端末のみに保存されます。</span>', autostart_title:'🚀 起動時に自動実行', autostart_desc:'PCを起動するとNEKO DESKが自動で始まります', autostart_on:'オン', autostart_off:'オフ',
     diary_save_btn:'保存', diary_ph:'今日の日記を書かう...',

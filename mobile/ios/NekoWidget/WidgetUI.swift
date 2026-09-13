@@ -41,6 +41,8 @@ enum WC {
 }
 
 /// 시간표 칸 색 — (테두리, 바탕). 안드로이드 w_b_*.xml 과 같다.
+/// 어두운 테마에서는 밝은 파스텔이 눈부시고 흰 글씨도 안 읽혀서 어두운 짝을 따로 둔다
+/// (앱의 body.theme-black .tt-blk 와 같은 값).
 enum TTColor {
     static let work = (line: Color(hex: "#9AD3BF"), fill: Color(hex: "#DCF0E8"))
     static let rest = (line: Color(hex: "#EFCB9A"), fill: Color(hex: "#FCEEDC"))
@@ -52,10 +54,22 @@ enum TTColor {
         (Color(hex: "#A2D0BA"), Color(hex: "#E4F5EC")),
         (Color(hex: "#C2AADE"), Color(hex: "#F0E8FA")),
     ]
+    static let workDark = (line: Color(hex: "#3F6456"), fill: Color(hex: "#1F2E28"))
+    static let restDark = (line: Color(hex: "#635A41"), fill: Color(hex: "#2E2A20"))
+    static let paletteDark: [(line: Color, fill: Color)] = [
+        (Color(hex: "#4E5A6D"), Color(hex: "#232A34")),
+        (Color(hex: "#635A41"), Color(hex: "#2E2A20")),
+        (Color(hex: "#6A4655"), Color(hex: "#33232B")),
+        (Color(hex: "#415876"), Color(hex: "#1F2836")),
+        (Color(hex: "#3F6456"), Color(hex: "#1F2E28")),
+        (Color(hex: "#584A6E"), Color(hex: "#2A2436")),
+    ]
 
-    static func of(_ b: BlockItem) -> (line: Color, fill: Color) {
+    static func of(_ b: BlockItem, dark: Bool = false) -> (line: Color, fill: Color) {
+        let pal = dark ? paletteDark : palette
         let ci = b.color ?? -1
-        if ci >= 0 && ci < palette.count { return palette[ci] }
+        if ci >= 0 && ci < pal.count { return pal[ci] }
+        if dark { return b.isRest ? restDark : workDark }
         return b.isRest ? rest : work
     }
 }
@@ -629,7 +643,7 @@ struct WTimetable: View {
                     HStack(spacing: 0) {
                         Text(String(format: "%02d", h))
                             .font(.system(size: hourFont))
-                            .foregroundColor(WC.ttHour)
+                            .foregroundColor(t.isDark ? t.dim : WC.ttHour)
                             .frame(width: 22, height: rowH)
                         ForEach(Array(0..<7), id: \.self) { d in
                             cell(day: d, hour: h, last: h == s.to - 1 && d == 6)
@@ -674,7 +688,7 @@ struct WTimetable: View {
         if let b = hit {
             let starts = b.start >= hour * 60 && b.start < (hour + 1) * 60
             let ends = b.end > hour * 60 && b.end <= (hour + 1) * 60
-            let c = TTColor.of(b)
+            let c = TTColor.of(b, dark: t.isDark)
             ZStack {
                 RCorners(tl: starts ? 3 : 0, tr: starts ? 3 : 0,
                          bl: ends ? 3 : 0, br: ends ? 3 : 0)
