@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.5.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.5.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1547,10 +1547,12 @@
     // 오늘 마신 물 · 챙겨 먹은 비타민 (날짜가 바뀌었으면 0으로 본다)
     var today = new Date().toDateString();
     var vitaGoal = parseInt(src.vitaminGoal, 10);
-    if (!(vitaGoal >= 1 && vitaGoal <= 12)) vitaGoal = 1;
+    if (!(vitaGoal >= 1 && vitaGoal <= 16)) vitaGoal = 1;
+    var waterGoal = parseInt(src.waterGoal, 10);
+    if (!(waterGoal >= 1 && waterGoal <= 16)) waterGoal = 8;
     out.health = {
-      waterLabel: w.water, waterGoal: 8,
-      waterDone: (src.waterDate === today) ? Math.min(8, Number(src.waterCups) || 0) : 0,
+      waterLabel: w.water, waterGoal: waterGoal,
+      waterDone: (src.waterDate === today) ? Math.min(waterGoal, Number(src.waterCups) || 0) : 0,
       vitaLabel: w.vita, vitaGoal: vitaGoal,
       vitaDone: (src.vitaminDate === today) ? Math.min(vitaGoal, Number(src.vitaminTaken) || 0) : 0,
     };
@@ -2083,12 +2085,12 @@
    * 머리말을 통째로 감춘다 (CSS 쪽에서). 다만 거기 있던 포인트 단추는 쓸 곳이
    * 있으니 홈 카드의 제목 줄로 옮긴다 — 고양이는 홈의 고양이 그림을 누르면 된다.
    */
+  // 포인트 단추를 사이클 카드 제목 줄로 옮기던 일 — 이제 renderer 가 처음부터 거기에 둔다.
+  // 예전 판에서 온 화면(머리줄에 포인트가 남아 있는 경우)만 옮겨 준다.
   function slimHomeForPhone() {
     var pts = document.querySelector('.dash-header .hdr-btn.pts');
     var title = document.querySelector('#homeCycleCard .card-title');
     if (!pts || !title || pts.parentElement === title) return;
-    var label = title.querySelector('[data-i18n="home_cycle_title"]');
-    if (label) label.remove();          // 사이클 고리를 감추니 제목도 뜻이 없다
     pts.style.marginRight = 'auto';
     title.insertBefore(pts, title.firstChild);
   }
@@ -2237,7 +2239,6 @@
       '#dp-home .pomo-wrap { min-height:190px !important; }',
       '#dp-home .pomo { max-height:190px !important; }',
       '#dp-home .water-col { margin-right:0 !important; }',
-      '#dp-home .water-cups, #dp-home .vita-pills { grid-template-columns:repeat(8,1fr) !important; }',
       // 시간표는 홈 맨 아래. 좁으니 칸을 조금 넓게 잡는다
       '#dp-home #homeWorkCard { overflow:visible !important; }',
       // 폰은 화면을 위아래로 넘겨 보는 것이 자연스럽다. 시간표 안에서 또 구르게 하면
