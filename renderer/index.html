@@ -854,7 +854,7 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 .fill-row-mid input { flex:1 1 auto; min-width:0; }
 .fill-colors { gap:5px; }
 .fill-colors .tt-color { width:18px; height:18px; }
-.fill-bell { background:none; border:1px solid var(--border); border-radius:3px; width:24px; height:24px; padding:0; cursor:pointer; font-size:12px; line-height:1; opacity:0.55; flex-shrink:0; }
+.fill-bell { background:none; border:1px solid var(--border); border-radius:3px; min-width:24px; height:24px; padding:0 3px; cursor:pointer; font-size:11px; line-height:1; opacity:0.55; flex-shrink:0; }
 .fill-bell.on { opacity:1; border-color:var(--yellow); }
 /* 핀 팝업의 끝날 고르개 — 브라우저 기본 select 는 크고 글씨가 달라 옆의 시작 날짜와 어긋났다 */
 .pin-dsel { font:inherit; font-size:11px; line-height:1.2; color:var(--white); background:var(--card);
@@ -1770,7 +1770,7 @@ select {
     <div id="fillList"></div>
     <button class="sch-add-btn" style="width:100%;margin-top:6px" onclick="fillAddRow()" data-i18n="fill_add_row">+ 일정 추가</button>
     <div style="font-size:10px;color:var(--gray);opacity:0.75;line-height:1.6;margin:8px 0 12px" data-i18n="fill_rows_hint">
-      줄마다 시간·내용·색을 따로 정해요. 🔔 을 켜면 그 일정이 시작할 때 알려 드려요.
+      줄마다 시간·내용·색을 따로 정해요. 🔔 을 누를 때마다 시작할 때 · 5 · 10 · 20 · 30분 전으로 바뀌어요.
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:16px">
       <input type="checkbox" id="fillReplace" checked style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
@@ -1927,10 +1927,14 @@ select {
     <div style="font-size:12px;color:var(--gray);margin-bottom:7px" data-i18n="tt_color">칸 색</div>
     <div class="tt-colors" id="ttColors" style="margin-bottom:12px"></div>
 
-    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:18px">
-      <input type="checkbox" id="ttAlarm" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
-      <span data-i18n="fill_alarm">이 일정 시작 시간에 알림 울리기</span>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);cursor:pointer;margin-bottom:8px">
+      <input type="checkbox" id="ttAlarm" onchange="ttAlarmToggled()" style="width:14px;height:14px;accent-color:var(--yellow);cursor:pointer">
+      <span data-i18n="tt_alarm_lbl">이 일정에 알림 울리기</span>
     </label>
+    <div id="ttLeadRow" style="display:none;margin:0 0 18px 22px">
+      <div style="font-size:11px;color:var(--gray);margin-bottom:5px" data-i18n="tt_alarm_when">언제 알려 드릴까요</div>
+      <div class="alarm-dows" id="ttLeads" style="margin:0"></div>
+    </div>
 
     <div style="display:flex;gap:8px">
       <button class="btn btn-gr" style="flex:0 0 auto;font-size:12px;color:#f88;border-color:#f88" onclick="ttDeleteEdit()" data-i18n="tt_delete">삭제</button>
@@ -2368,11 +2372,14 @@ const STRINGS = {
     tt_tips_title:'💡 시간표 사용 팁',
     tt_tips_body:'<b style="color:var(--white)">칸 만들기</b><br>빈 곳을 위아래로 <b>끌면</b> 그만큼 칸이 생겨요. 10분 단위로 맞춰집니다.<br><br><b style="color:var(--white)">고치기</b><br>칸을 <b>누르거나 더블클릭</b>하면 이름·요일·시각·종류를 고칠 수 있어요.<br>칸에 <b>마우스 오른쪽 버튼</b>을 누르면 수정·지우기가 바로 나옵니다.<br><br><b style="color:var(--white)">옮기기</b><br>칸을 <b>끌면</b> 10분 단위로 자리를 옮겨요. 다른 요일로도 갑니다. 폰에서는 칸을 <b>꾹 누른 뒤</b> 끄세요.<br><br><b style="color:var(--white)">집중 · 쉼</b><br>점심처럼 쉬는 시간은 종류를 <b>쉼</b>으로 두세요. 그 칸에서는 타이머가 쉬는 시간으로 흐릅니다.<br><br><b style="color:var(--white)">칸 밖의 시간</b><br>시간표에 없는 시간에는 <b>타이머만 조용히</b> 흐르고 알림은 울리지 않아요. 사이클은 시간표 칸 안에서만 돕니다.<br><br><b style=\"color:var(--white)\">보이는 시간대</b><br>아래 <b>보이는 시간</b>에서 몇 시부터 몇 시까지 보여줄지 정할 수 있어요. 그 밖에 일정이 있으면 저절로 넓어집니다.<br><br><b style=\"color:var(--white)\">되돌리기</b><br>제목 옆 <b>↶ ↷</b> 로 방금 한 일을 되돌리거나 다시 할 수 있어요. <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b> 도 됩니다.',
     fill_items:'일정', fill_add_row:'+ 일정 추가', fill_need_row:'일정을 한 줄 이상 적어 주세요',
-    fill_rows_hint:'줄마다 시간·내용·색을 따로 정해요. 🔔 을 켜면 그 일정이 시작할 때 알려 드려요.',
+    fill_rows_hint:'줄마다 시간·내용·색을 따로 정해요. 🔔 을 누를 때마다 시작할 때 · 5 · 10 · 20 · 30분 전으로 바뀌어요.',
     tt_menu_alarm_all_on:'🔔 같은 일정 모두 알림 켜기', tt_menu_alarm_all_off:'🔕 같은 일정 모두 알림 끄기',
     fill_time:'시간', fill_content:'내용', fill_content_ph:'예: 오전 업무',
     fill_alarm:'이 일정 시작 시간에 알림 울리기', fill_overlap:'겹치는 시간의 기존 일정은 지우고 덮어쓰기',
     tt_menu_alarm_on:'🔔 알림 켜기', tt_menu_alarm_off:'🔕 알림 끄기', tt_menu_del_same:'🧹 같은 일정 모두 지우기',
+    tt_alarm_lbl:'이 일정에 알림 울리기', tt_alarm_when:'언제 알려 드릴까요',
+    tt_alarm_at_start:'시작할 때', tt_alarm_before:'{n}분 전', tt_alarm_soon:'{name} ({n}분 뒤 시작)',
+    tt_alarm_on_lead_msg:'이 일정 {n}분 전에 알려드릴게요',
     tt_alarm_on_msg:'이 일정이 시작할 때 알려드릴게요', tt_alarm_off_msg:'알림을 껐어요', tt_alarm_ring_title:'⏰ 일정 시작',
     tt_title:'시간표', tt_fill:'일괄 채우기', tt_one:'개별 채우기', tt_clear:'비우기',
     tt_one_full:'오늘은 빈 자리가 없어요. 있는 칸을 눌러 고쳐 주세요.',
@@ -2675,11 +2682,14 @@ const STRINGS = {
     tt_tips_title:'💡 Timetable tips',
     tt_tips_body:'<b style="color:var(--white)">Add</b><br><b>Drag</b> on an empty area to make a slot (snaps to 10 min).<br><br><b style="color:var(--white)">Edit</b><br><b>Click or double-click</b> a slot to change its name, day, time and type.<br><b>Right-click</b> a slot for edit / delete.<br><br><b style="color:var(--white)">Move</b><br><b>Drag</b> a slot to move it in 10-minute steps, to another day too. On a phone, <b>press and hold</b> the slot first.<br><br><b style="color:var(--white)">Focus · Rest</b><br>Set lunch and similar to <b>Rest</b>; the timer counts them as break time.<br><br><b style="color:var(--white)">Outside the timetable</b><br>The timer keeps ticking <b>quietly</b> — no bubbles, no alerts. Cycles only run inside slots.<br><br><b style=\"color:var(--white)\">Hours shown</b><br>Use <b>Hours shown</b> below to set the visible range. It widens on its own if a slot falls outside.<br><br><b style=\"color:var(--white)\">Undo</b><br><b>↶ ↷</b> next to the title, or <b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>.',
     fill_items:'Blocks', fill_add_row:'+ Add block', fill_need_row:'Add at least one block',
-    fill_rows_hint:'Each row has its own time, name and color. Turn on 🔔 to be notified when it starts.',
+    fill_rows_hint:'Each row has its own time, name and color. Tap 🔔 to cycle: at start · 5 · 10 · 20 · 30 minutes before.',
     tt_menu_alarm_all_on:'🔔 Alarm on for all with this name', tt_menu_alarm_all_off:'🔕 Alarm off for all with this name',
     fill_time:'Time', fill_content:'What', fill_content_ph:'e.g. Morning work',
     fill_alarm:'Ring when this block starts', fill_overlap:'Replace existing blocks in the overlapping time',
     tt_menu_alarm_on:'🔔 Turn alarm on', tt_menu_alarm_off:'🔕 Turn alarm off', tt_menu_del_same:'🧹 Delete all with this name',
+    tt_alarm_lbl:'Ring an alarm for this block', tt_alarm_when:'When should I ring?',
+    tt_alarm_at_start:'At start', tt_alarm_before:'{n} min', tt_alarm_soon:'{name} (starts in {n} min)',
+    tt_alarm_on_lead_msg:'I will ring {n} minutes before',
     tt_alarm_on_msg:'I will ring when this block starts', tt_alarm_off_msg:'Alarm turned off', tt_alarm_ring_title:'⏰ Block starting',
     tt_title:'Timetable', tt_fill:'Bulk fill', tt_one:'Add one', tt_clear:'Clear',
     tt_one_full:'No free hour left today. Tap an existing block to edit it.',
@@ -2982,11 +2992,14 @@ const STRINGS = {
     tt_tips_title:'💡 時間割の使い方',
     tt_tips_body:'<b style="color:var(--white)">作る</b><br>空いたところを上下に<b>ドラッグ</b>すると枠ができます（10分単位）。<br><br><b style="color:var(--white)">直す</b><br>枠を<b>押すかダブルクリック</b>すると名前・曜日・時刻・種類を直せます。<br>枠を<b>右クリック</b>すると直す・消すが出ます。<br><br><b style="color:var(--white)">動かす</b><br>枠を<b>ドラッグ</b>すると10分単位で動きます。別の曜日にも移せます。スマホでは枠を<b>長押ししてから</b>動かします。<br><br><b style="color:var(--white)">集中 · 休み</b><br>昼休みなどは種類を<b>休み</b>に。<br><br><b style="color:var(--white)">時間割の外</b><br>タイマーだけが<b>静かに</b>進み、通知は鳴りません。サイクルは枠の中だけで回ります。<br><br><b style=\"color:var(--white)\">表示する時間</b><br>下の<b>表示する時間</b>で見せる範囲を決められます。<br><br><b style=\"color:var(--white)\">元に戻す</b><br>タイトル横の<b>↶ ↷</b>、または<b>Ctrl+Z</b> / <b>Ctrl+Alt+Z</b>。',
     fill_items:'予定', fill_add_row:'+ 予定を追加', fill_need_row:'予定を1行以上入れてください',
-    fill_rows_hint:'行ごとに時間・内容・色を決めます。🔔 をオンにすると開始時に知らせます。',
+    fill_rows_hint:'行ごとに時間・内容・色を決めます。🔔 を押すたびに 開始時・5・10・20・30分前 に変わります。',
     tt_menu_alarm_all_on:'🔔 同じ予定すべて通知オン', tt_menu_alarm_all_off:'🔕 同じ予定すべて通知オフ',
     fill_time:'時間', fill_content:'内容', fill_content_ph:'例: 午前の仕事',
     fill_alarm:'この予定の開始時刻に通知する', fill_overlap:'重なる時間の既存の予定は消して上書き',
     tt_menu_alarm_on:'🔔 通知をオン', tt_menu_alarm_off:'🔕 通知をオフ', tt_menu_del_same:'🧹 同じ予定をすべて消す',
+    tt_alarm_lbl:'この予定に通知する', tt_alarm_when:'いつお知らせしますか',
+    tt_alarm_at_start:'開始時', tt_alarm_before:'{n}分前', tt_alarm_soon:'{name}（{n}分後に開始）',
+    tt_alarm_on_lead_msg:'この予定の{n}分前にお知らせします',
     tt_alarm_on_msg:'この予定が始まるときにお知らせします', tt_alarm_off_msg:'通知をオフにしました', tt_alarm_ring_title:'⏰ 予定の開始',
     tt_title:'時間割', tt_fill:'まとめて入力', tt_one:'1件ずつ追加', tt_clear:'全部消す',
     tt_one_full:'今日は空きがありません。ある枠を押して直してください。',
@@ -4625,6 +4638,18 @@ const TT_ROW_SHORT = 26;
 const TT_ROW_TALL = 78;
 function ttRowH() { return S.ttTall ? TT_ROW_TALL : TT_ROW_SHORT; }
 const TT_SNAP = 10;       // 10분 단위로 맞춘다
+
+// 칸 알림을 언제 울릴지 — 시작할 때(0)와 몇 분 전.
+// 칸에는 alarm:true 와 함께 alarmBefore 로 남는다 (0이면 아예 안 적는다).
+const TT_ALARM_LEADS = [0, 5, 10, 20, 30];
+function ttLead(b) {
+  const n = b && Number(b.alarmBefore);
+  return TT_ALARM_LEADS.indexOf(n) > 0 ? n : 0;
+}
+/** 그 칸의 알림이 울릴 시각(분). 자정을 넘어가면 자정에 붙인다 */
+function ttAlarmMin(b) { return Math.max(0, toMin(b.start) - ttLead(b)); }
+/** '5분 전' 처럼 읽히는 말 */
+function ttLeadName(n) { return n > 0 ? L('tt_alarm_before').replace('{n}', n) : L('tt_alarm_at_start'); }
 let _ttDrag = null;
 
 /** 격자에 보여줄 시간 범위 (블록에 맞춰 넓힌다) */
@@ -4864,8 +4889,9 @@ function fillPlan() {
   rows = rows.filter(r => r && ok(r.start) && ok(r.end)).map(r => ({
     start: r.start, end: r.end, label: typeof r.label === 'string' ? r.label : '',
     color: (r.color >= 0 && r.color <= 5) ? r.color : -1, alarm: r.alarm === true,
+    alarmBefore: ttLead(r),
   }));
-  if (!rows.length) rows = [{ start: '09:00', end: '12:00', label: '', color: -1, alarm: false }];
+  if (!rows.length) rows = [{ start: '09:00', end: '12:00', label: '', color: -1, alarm: false, alarmBefore: 0 }];
   return {
     rows,
     days: (Array.isArray(p.days) && p.days.length) ? p.days : [1, 2, 3, 4, 5],
@@ -4902,12 +4928,26 @@ function fillColorDots(i, cur, pal) {
   return h;
 }
 function fillSetColor(i, c) { if (_fillRows[i]) { _fillRows[i].color = c; renderFillRows(); } }
-function fillToggleAlarm(i) { if (_fillRows[i]) { _fillRows[i].alarm = !_fillRows[i].alarm; renderFillRows(); } }
+/**
+ * 🔔 단추를 누를 때마다 꺼짐 → 시작할 때 → 5 → 10 → 20 → 30분 전 → 꺼짐 으로 돈다.
+ * 줄이 좁아 고르개를 따로 둘 자리가 없어서 한 단추에 담았다.
+ */
+function fillToggleAlarm(i) {
+  const r = _fillRows[i];
+  if (!r) return;
+  if (!r.alarm) { r.alarm = true; r.alarmBefore = 0; }
+  else {
+    const at = TT_ALARM_LEADS.indexOf(ttLead(r)) + 1;
+    if (at >= TT_ALARM_LEADS.length) { r.alarm = false; r.alarmBefore = 0; }
+    else r.alarmBefore = TT_ALARM_LEADS[at];
+  }
+  renderFillRows();
+}
 function fillAddRow() {
   // 새 줄은 마지막 줄이 끝나는 시각에서 한 시간
   const last = _fillRows[_fillRows.length - 1];
   const st = last ? toMin(last.end) : 9 * 60;
-  _fillRows.push({ start: toHHMM(Math.min(st, 23 * 60)), end: toHHMM(Math.min(st + 60, 24 * 60)), label: '', color: -1, alarm: false });
+  _fillRows.push({ start: toHHMM(Math.min(st, 23 * 60)), end: toHHMM(Math.min(st + 60, 24 * 60)), label: '', color: -1, alarm: false, alarmBefore: 0 });
   renderFillRows();
   setTimeout(() => { const el = document.querySelector('#fillList .fill-row:last-child input[type=text]'); if (el) el.focus(); }, 30);
 }
@@ -4925,7 +4965,7 @@ function renderFillRows() {
       </div>
       <div class="fill-row-mid">
         <input type="text" class="todo-edit-in" maxlength="20" value="${_attr(r.label)}" placeholder="${L('fill_content_ph')}" oninput="_fillRows[${i}].label=this.value">
-        <button type="button" class="fill-bell${r.alarm ? ' on' : ''}" onclick="fillToggleAlarm(${i})" data-tip="${L('fill_alarm')}">${r.alarm ? '🔔' : '🔕'}</button>
+        <button type="button" class="fill-bell${r.alarm ? ' on' : ''}" onclick="fillToggleAlarm(${i})" data-tip="${r.alarm ? ttLeadName(ttLead(r)) : L('tt_alarm_off_msg')}">${r.alarm ? (ttLead(r) ? '🔔' + ttLead(r) : '🔔') : '🔕'}</button>
         <button type="button" class="sch-del-btn" onclick="fillDelRow(${i})" ${_fillRows.length <= 1 ? 'disabled' : ''}>×</button>
       </div>
       <div class="tt-colors fill-colors">${fillColorDots(i, r.color, pal)}</div>
@@ -4991,7 +5031,7 @@ function applyTtFill() {
       if (replace) list = cutBlocksAround(list, d, s0, e0);
       const b = { id: newAlarmId(), day: d, start: r.start, end: r.end, label: (r.label || '').trim() || L('blk_new'), type: 'work' };
       if (r.color >= 0) b.color = r.color;
-      if (r.alarm) b.alarm = true;
+      if (r.alarm) { b.alarm = true; if (ttLead(r)) b.alarmBefore = ttLead(r); }
       list.push(b);
       lo = Math.min(lo, s0); hi = Math.max(hi, e0);
     });
@@ -5005,7 +5045,7 @@ function applyTtFill() {
 
   // 다음에 열 때 적어 둔 내용이 그대로 뜨도록 남겨 둔다.
   // 목록이 아니라 글자 한 덩어리로 담아야 기기끼리 합쳐지지 않는다.
-  S.fillPlan = JSON.stringify({ rows: rows.map(r => ({ start: r.start, end: r.end, label: r.label, color: r.color, alarm: r.alarm })), days: days.slice(), replace });
+  S.fillPlan = JSON.stringify({ rows: rows.map(r => ({ start: r.start, end: r.end, label: r.label, color: r.color, alarm: r.alarm, alarmBefore: ttLead(r) })), days: days.slice(), replace });
   S.fillRows = null; S.fillDays = null;      // 예전 방식은 비운다
   saveState();
   renderTimetable();
@@ -5151,7 +5191,7 @@ function applyTtDup() {
     const copy = { id: newAlarmId(), day: d, start: toHHMM(st), end: toHHMM(st + dur),
                    label: src.label, type: src.type || 'work' };
     if (src.color >= 0) copy.color = src.color;
-    if (src.alarm) copy.alarm = true;
+    if (src.alarm) { copy.alarm = true; if (ttLead(src)) copy.alarmBefore = ttLead(src); }
     list.push(copy);
     made++;
   });
@@ -5407,10 +5447,12 @@ function ttMenuAct(what) {
   if (what === 'alarm') {
     const b = blockList().find(x => x.id === id);
     if (!b) return;
-    if (b.alarm) delete b.alarm; else b.alarm = true;
+    if (b.alarm) delete b.alarm; else b.alarm = true;   // 몇 분 전인지는 남겨 둔다
     saveState();
     renderTimetable();
-    toast('info', L('tt_title'), L(b.alarm ? 'tt_alarm_on_msg' : 'tt_alarm_off_msg'));
+    toast('info', L('tt_title'), b.alarm
+      ? (ttLead(b) ? L('tt_alarm_on_lead_msg').replace('{n}', ttLead(b)) : L('tt_alarm_on_msg'))
+      : L('tt_alarm_off_msg'));
     return;
   }
   if (what === 'dup') { openTtDup(id); return; }
@@ -5418,13 +5460,19 @@ function ttMenuAct(what) {
     const me = blockList().find(x => x.id === id);
     if (!me) return;
     const on = !me.alarm;                       // 지금 꺼져 있으면 모두 켠다, 켜져 있으면 모두 끈다
+    const lead = ttLead(me);                    // 누른 칸의 '몇 분 전'으로 맞춘다
     blockList().forEach(x => {
       if ((x.label || '') !== (me.label || '')) return;
-      if (on) x.alarm = true; else delete x.alarm;
+      if (on) {
+        x.alarm = true;
+        if (lead) x.alarmBefore = lead; else delete x.alarmBefore;
+      } else delete x.alarm;
     });
     saveState();
     renderTimetable();
-    toast('info', L('tt_title'), L(on ? 'tt_alarm_on_msg' : 'tt_alarm_off_msg'));
+    toast('info', L('tt_title'), on
+      ? (lead ? L('tt_alarm_on_lead_msg').replace('{n}', lead) : L('tt_alarm_on_msg'))
+      : L('tt_alarm_off_msg'));
     return;
   }
   if (what === 'delete' || what === 'delsame') {
@@ -5483,6 +5531,23 @@ function pickTtColor(i) {
 let _ttEditId = null;
 let _ttEditNew = false;   // 방금 만든 칸인가 (취소하면 지운다)
 
+let _ttEditLead = 0;
+
+/** 알림을 켰을 때만 몇 분 전인지 고르는 줄을 보여 준다 */
+function ttAlarmToggled() {
+  const on = !!(document.getElementById('ttAlarm') || {}).checked;
+  const row = document.getElementById('ttLeadRow');
+  if (row) row.style.display = on ? 'block' : 'none';
+}
+function renderTtLeads() {
+  const el = document.getElementById('ttLeads');
+  if (!el) return;
+  el.innerHTML = TT_ALARM_LEADS.map(n =>
+    `<button type="button" class="alarm-dow${n === _ttEditLead ? ' on' : ''}"
+       onclick="pickTtLead(${n})">${ttLeadName(n)}</button>`).join('');
+}
+function pickTtLead(n) { _ttEditLead = n; renderTtLeads(); }
+
 function ttEdit(id, isNew) {
   const b = blockList().find(x => x.id === id);
   if (!b) return;
@@ -5497,6 +5562,9 @@ function ttEdit(id, isNew) {
   _ttEditColor = (b.color >= 0 && b.color <= 5) ? b.color : -1;
   renderTtColors();
   if (g('ttAlarm')) g('ttAlarm').checked = b.alarm === true;
+  _ttEditLead = ttLead(b);
+  renderTtLeads();
+  ttAlarmToggled();
   if (g('ttStartCtl')) g('ttStartCtl').innerHTML = timeCtlHtml(b.start, 'id="ttStart"');
   if (g('ttEndCtl')) g('ttEndCtl').innerHTML = timeCtlHtml(b.end, 'id="ttEnd"');
   const m = g('ttModal');
@@ -5532,7 +5600,10 @@ function ttSaveEdit() {
   b.end = e;
   b.label = (g('ttName') ? g('ttName').value : '').trim() || L('blk_new');
   if (_ttEditColor >= 0) b.color = _ttEditColor; else delete b.color;
-  if (g('ttAlarm') && g('ttAlarm').checked) b.alarm = true; else delete b.alarm;
+  if (g('ttAlarm') && g('ttAlarm').checked) {
+    b.alarm = true;
+    if (_ttEditLead > 0) b.alarmBefore = _ttEditLead; else delete b.alarmBefore;
+  } else delete b.alarm;          // 몇 분 전인지는 남겨 둔다 — 다시 켤 때 그대로 쓴다
   if (!_ttEditNew) ttSnapshot();     // 새 칸은 만들 때 이미 남겨 두었다
   _ttEditNew = false;                // 저장했으니 이제 정식 칸
   saveState();
@@ -6100,17 +6171,22 @@ function checkAlarms() {
     raiseAlarm(a.label);
   });
 
-  // 시간표 칸의 알림 — 시작 시각에만 울린다.
+  // 시간표 칸의 알림 — 칸마다 고른 때(시작할 때 · 5·10·20·30분 전)에 울린다.
   // 앞 칸의 끝과 다음 칸의 시작이 같은 시각이면 그 시각에는 다음 칸이 시작하는 것이므로
   // 다음 칸의 이름으로 한 번만 울린다 (끝나는 쪽은 울리지 않는다).
-  // 같은 시각에 시작하는 칸이 여럿이면 이름을 모아 한 번만.
-  const starting = blocksOf(dow).filter(b => b.alarm === true && b.start === hhmm);
+  // 같은 때에 울릴 칸이 여럿이면 이름을 모아 한 번만.
+  const nowMin = toMin(hhmm);
+  const starting = blocksOf(dow).filter(b => b.alarm === true && ttAlarmMin(b) === nowMin);
   if (starting.length) {
     const key = 'blk:' + hhmm;
     if (S.alarmFired[key] !== today + ' ' + hhmm) {
       S.alarmFired[key] = today + ' ' + hhmm;
       changed = true;
-      const label = starting.map(b => b.label || L('blk_new')).join(' · ');
+      const label = starting.map(b => {
+        const nm = b.label || L('blk_new');
+        const lead = ttLead(b);
+        return lead ? L('tt_alarm_soon').replace('{name}', nm).replace('{n}', lead) : nm;
+      }).join(' · ');
       playWaterSound({ noBuzz: true });          // 물·비타민과 같은 소리로 (떨기는 아래에서 길게)
       buzz();
       showAlarmBubble('⏰ ' + label);
