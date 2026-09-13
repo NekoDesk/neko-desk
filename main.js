@@ -1467,7 +1467,11 @@ async function cloudPull(notify) {
     // 기준선이 없으면(새로 설치·초기화 직후) 비교할 근거가 없다.
     // 이때 병합하면 상대가 지운 항목을 되살리게 되므로, 클라우드를 그대로 받아
     // 기준선으로 삼는다. 다음 동기화부터 삭제가 정상 전파된다.
-    if (!st.base) {
+    //
+    // 다만 게스트로 쓰던 기록을 이 계정이 물려받는 중(claim)이라면 그럴 수 없다.
+    // 그 기록은 아직 어디에도 올라간 적이 없어서, 여기서 클라우드로 덮으면 그대로 사라진다.
+    // 그래서 승계 중일 때는 아래 병합 갈래로 내려보낸다.
+    if (!st.base && !st.claim) {
       cloudBump();                 // 받아온 게 있다 — 이어서 더 올 수 있다
       cloudBroadcast('cloud-apply', { data: remote, notify: '' });
       setSyncState({ seenTs: String(rows[0].updated_at || ''), claim: false });
@@ -1476,7 +1480,7 @@ async function cloudPull(notify) {
       return true;
     }
     // 안 올라간 내 변경이 있으면 원격으로 덮어쓰지 않고 병합해서 올린다
-    if (cloudPushTimer || st.dirty) {
+    if (st.claim || cloudPushTimer || st.dirty) {
       const local = await cloudReadLocal();
       let merged = st.claim ? cloudClaimMerge(remote, local)
                             : merge3(st.base, local, remote);

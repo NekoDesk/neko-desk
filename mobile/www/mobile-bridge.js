@@ -940,9 +940,13 @@
           syncStatus('클라우드 비어있음 (' + nowHHMM() + ')');
           return false;
         }
+        // 게스트로 쓰던 기록을 이 계정이 물려받는 중인가.
+        // 그 기록은 아직 어디에도 올라간 적이 없어서, 아래 '기준선 없음' 갈래로
+        // 클라우드를 그대로 받아 버리면 그대로 사라진다. 그래서 먼저 본다.
+        var claim = localStorage.getItem(CLAIM_KEY) === '1';
         // 기준선이 없으면(새로 설치·초기화 직후) 비교할 근거가 없다.
         // 병합하면 상대가 지운 항목을 되살리므로, 클라우드를 그대로 받아 기준선으로 삼는다.
-        if (!readBase()) {
+        if (!readBase() && !claim) {
           var ok0 = applyRemote(remote);
           setBase(remote);
           localStorage.setItem(SYNC_TS_KEY, String(rows[0].updated_at || ''));
@@ -952,8 +956,7 @@
         }
         // 아직 안 올라간 내 변경이 있으면(앱을 껐다 켠 경우 포함) 원격으로 덮어쓰지 않고,
         // 원격과 병합한 결과를 올린다 — 양쪽 기기의 기록이 모두 살아남는다.
-        if (_pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
-          var claim = localStorage.getItem(CLAIM_KEY) === '1';
+        if (claim || _pushTimer || localStorage.getItem(DIRTY_KEY) === '1') {
           var loc = collectLocal();
           var merged = claim ? claimMerge(remote, loc)
                              : merge3(readBase(), loc, remote);

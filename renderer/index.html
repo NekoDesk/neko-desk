@@ -9490,9 +9490,20 @@ function enforceDataOwner(s) {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         const saved = raw ? JSON.parse(raw) : null;
-        // 일정·다이어리 중 하나라도 있으면 승계할 기록이 있다고 본다
-        hasLocal = !!saved && ['calendarNotes','diaryEntries','scheduleMemo','wishlist']
-          .some(k => saved[k] && Object.keys(saved[k]).length);
+        // 적어 둔 것이 하나라도 있으면 승계할 기록이 있다고 본다.
+        // 달력·다이어리만 보던 때는 시간표만 쓰던 사람의 기록이 그냥 사라졌다.
+        const CLAIMABLE = ['calendarNotes','diaryEntries','scheduleMemo','wishlist','wishlistDone',
+                           'blocks','ddays','alarms','workItems','scheduleItems','memoDoc',
+                           'growthLogs','ownedAccs','harvestedFruits'];
+        const filled = (v) => {
+          if (v === null || v === undefined) return false;
+          if (typeof v === 'string') return v.trim() !== '';
+          if (Array.isArray(v)) return v.length > 0;
+          if (typeof v === 'object') return Object.keys(v).length > 0;
+          return !!v;
+        };
+        hasLocal = !!saved && (CLAIMABLE.some(k => filled(saved[k]))
+                               || Number(saved.pts) > 0 || Number(saved.fruits) > 0);
       } catch(e2) {}
       if (hasLocal) {
         if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim();
