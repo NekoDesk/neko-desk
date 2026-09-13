@@ -152,6 +152,29 @@ for (const th of themes) {
 console.log('배경 그림 ' + n + '개 (' + themes.map(t => t.id).join(', ') + ')');
 
 // ── 코드에서 고를 수 있게 표를 만들어 둔다 ──
+/** 캔버스용 색값 표 — PARTS 의 셈과 같은 값이어야 그림과 어긋나지 않는다 */
+function colorTable() {
+  const c = (x) => '0xFF' + hex(x).slice(1);
+  return themes.map(th => {
+    const v = th.vars;
+    const row = [
+      c(v.card), c(v.border),                                   // 머리줄
+      c(v.panel), c(v.border),                                  // 빈 칸
+      c(mix(v.yellow, v.card, 0.55)), c(mix(v.yellow, v.border, 0.4)),   // 오늘 요일
+      c(v.white), c(v.gray),                                    // 글씨
+      c(mix(v.gray, v.border, 0.45)),                           // 바깥 틀 선
+    ];
+    return '        { ' + row.join(', ') + ' },\n';
+  }).join('');
+}
+
+/** 캔버스용 칸 색 표 */
+function blockColorTable(tbl) {
+  const c = (x) => '0xFF' + hex(x).slice(1);
+  const kinds = ['w', 'r', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
+  return kinds.map(k => '        { ' + c(tbl[k][0]) + ', ' + c(tbl[k][1]) + ' },\n').join('');
+}
+
 /** 시간표 칸 그림 표 한 벌 (일·쉼·색0~5 × 혼자·위·가운데·아래) */
 function blockTable(suffix) {
   const kinds = ['w', 'r', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'];
@@ -190,6 +213,21 @@ java += `    };
     /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
     private static final boolean[] DARK = { ${themes.map(t => isDark(t.id)).join(', ')} };
 
+    // ── 캔버스로 직접 그릴 때 쓰는 색값 ──────────────────
+    // 시간표는 그림으로 그린다 (RemoteViews 로는 분 단위 높이를 만들 수 없다).
+    // 그림 drawable 과 같은 셈에서 나오므로 두 방식이 같은 색으로 보인다.
+    static final int C_HEAD = 0, C_HEAD_LINE = 1, C_EMPTY = 2, C_EMPTY_LINE = 3,
+                     C_TODAY = 4, C_TODAY_LINE = 5, C_TEXT = 6, C_DIM = 7, C_FRAME_LINE = 8;
+
+    private static final int[][] COLORS = {
+${colorTable()}    };
+
+    /** 시간표 칸 색 — [종류][0]=테두리 [종류][1]=바탕. 종류는 일·쉼·색0~5 */
+    private static final int[][] BLK_C_LIGHT = {
+${blockColorTable(BLOCK_LIGHT)}    };
+    private static final int[][] BLK_C_DARK = {
+${blockColorTable(BLOCK_DARK)}    };
+
     /** 글자 색 — { 본문, 흐린 글씨, 강조 } */
     private static final int[][] TEXT = {
 `;
@@ -224,6 +262,12 @@ ${blockTable('_black')}    };
 
     /** 시간표 칸 그림 — [종류][조각]. 종류는 일·쉼·색0~5, 조각은 혼자·위·가운데·아래 */
     static int[][] blocks(int theme) { return dark(theme) ? BLK_DARK : BLK_LIGHT; }
+
+    /** 캔버스용 색값 (C_ 로 시작하는 자리 번호) */
+    static int color(int theme, int slot) { return COLORS[theme][slot]; }
+
+    /** 캔버스용 칸 색 — [종류][테두리/바탕] */
+    static int[][] blockColors(int theme) { return dark(theme) ? BLK_C_DARK : BLK_C_LIGHT; }
 }
 `;
 fs.writeFileSync(path.join(JAVA, 'WidgetTheme.java'), java);

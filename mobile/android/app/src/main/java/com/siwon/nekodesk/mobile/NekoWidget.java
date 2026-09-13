@@ -9,6 +9,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
+import android.text.TextUtils;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -648,7 +655,8 @@ public class NekoWidget extends AppWidgetProvider {
             }
         }
 
-        if (showTable()) fillTable(v, pkg, o, th, ttRowH(mgr, id, o, ddayCount, shown));
+        if (showTable()) fillTable(ctx, v, pkg, o, th,
+                                   ttWidthDp(mgr, id), ttRowH(mgr, id, o, ddayCount, shown));
 
         // ── 고양이 ──
         if (showCat()) {
@@ -775,6 +783,19 @@ public class NekoWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.w_vita_row, vitaPi);
     }
 
+    /** 위젯이 가로로 몇 dp 를 쓰는지 (그림을 그 크기에 맞춰 그린다) */
+    private int ttWidthDp(AppWidgetManager mgr, int id) {
+        try {
+            Bundle opts = mgr.getAppWidgetOptions(id);
+            if (opts != null) {
+                int w = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
+                if (w <= 0) w = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0);
+                if (w > 0) return w - 20 - 3;          // 바깥 여백 10dp 씩 + 틀 테두리
+            }
+        } catch (Exception ignored) {}
+        return 300;
+    }
+
     private int ttRowH(AppWidgetManager mgr, int id, JSONObject o, int ddayCount, int todoCount) {
         int hDp = 0;
         try {
@@ -860,7 +881,8 @@ public class NekoWidget extends AppWidgetProvider {
         R.layout.w_tt_hour_f,
     };
 
-    private void fillTable(RemoteViews v, String pkg, JSONObject o, int th, int avail) {
+    private void fillTable(Context ctx, RemoteViews v, String pkg, JSONObject o, int th,
+                           int wDp, int avail) {
         JSONObject tt = o.optJSONObject("table");
         setBg(v, R.id.w_tt_frame, WidgetTheme.bg(th, WidgetTheme.TT_FRAME));
         setBg(v, R.id.w_tt_head, WidgetTheme.bg(th, WidgetTheme.TT_HEADBG));
@@ -868,6 +890,7 @@ public class NekoWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.w_tt_title, tt == null ? "" : tt.optString("label", ""));
         v.removeAllViews(R.id.w_tt_head);
         v.removeAllViews(R.id.w_tt_body);
+        v.setViewVisibility(R.id.w_tt_img, View.GONE);
         if (tt == null) return;
 
         JSONArray dows = tt.optJSONArray("dows");
@@ -882,6 +905,16 @@ public class NekoWidget extends AppWidgetProvider {
         int to = tt.optInt("to", 20);
         if (to <= from) to = from + 1;
         if (to > 24) to = 24;
+
+        // 그림으로 그린다 — 10분짜리 일정은 10분만큼만 높다.
+        // 실패하면(메모리 등) 아래의 한 시간 격자로 내려간다.
+        Bitmap img = drawTable(ctx, tt, blocks, dows, th, from, to, wDp, avail);
+        if (img != null) {
+            v.setImageViewBitmap(R.id.w_tt_img, img);
+            v.setViewVisibility(R.id.w_tt_img, View.VISIBLE);
+            return;
+        }
+
         int size = ttSize(avail, to - from);
         int[] hours = pickHours(blocks, from, to, avail, size);
         size = ttSize(avail, hours.length);   // 줄을 덜어냈으면 칸을 다시 키운다
@@ -944,6 +977,166 @@ public class NekoWidget extends AppWidgetProvider {
                 row.addView(R.id.i_row, cell);
             }
             v.addView(R.id.w_tt_body, row);
+        }
+    }
+
+    /**
+     * 시간표 한 판을 그림으로 그린다.
+     *
+     * RemoteViews 로는 칸 하나하나의 높이를 정할 수가 없어서, 지금까지는 한 시간을
+     * 통째로 칠하는 수밖에 없었다 (10분짜리 일정도 한 시간처럼 보였다). 직접 그리면
+     * 분 단위로 자리와 길이가 그대로 나온다.
+     *
+     * @param wDp  그릴 너비(dp)   @param hDp 그릴 높이(dp)
+     * @return 못 그리면 null — 부른 쪽이 예전 방식으로 내려간다
+     */
+    private static Bitmap drawTable(Context ctx, JSONObject tt, JSONArray blocks, JSONArray dows,
+                                    int th, int from, int to, int wDp, int hDp) {
+        try {
+            if (wDp < 80 || hDp < 40) return null;
+            float d = ctx.getResources().getDisplayMetrics().density;
+            if (d <= 0) d = 2f;
+            int W = Math.round(wDp * d), H = Math.round(hDp * d);
+            // 너무 큰 그림은 위젯이 받아 주지 않는다 — 넘으면 줄여서 그린다
+            long maxPx = 3L * 1024 * 1024 / 4;
+            if ((long) W * H > maxPx) {
+                double k = Math.sqrt((double) maxPx / ((double) W * (double) H));
+                W = (int) (W * k); H = (int) (H * k); d = (float) (d * k);
+            }
+            if (W < 40 || H < 24) return null;
+
+            Bitmap bm = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
+            Canvas cv = new Canvas(bm);
+            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+            Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
+            line.setStyle(Paint.Style.STROKE);
+
+            final int cHead = WidgetTheme.color(th, WidgetTheme.C_HEAD);
+            final int cHeadLine = WidgetTheme.color(th, WidgetTheme.C_HEAD_LINE);
+            final int cEmpty = WidgetTheme.color(th, WidgetTheme.C_EMPTY);
+            final int cEmptyLine = WidgetTheme.color(th, WidgetTheme.C_EMPTY_LINE);
+            final int cToday = WidgetTheme.color(th, WidgetTheme.C_TODAY);
+            final int cTodayLine = WidgetTheme.color(th, WidgetTheme.C_TODAY_LINE);
+            final int cText = WidgetTheme.color(th, WidgetTheme.C_TEXT);
+            final int cDim = WidgetTheme.color(th, WidgetTheme.C_DIM);
+            final int[][] blkC = WidgetTheme.blockColors(th);
+
+            float hourW = 22 * d;
+            float headH = Math.min(18 * d, H * 0.22f);
+            float colW = (W - hourW) / 7f;
+            int hours = Math.max(1, to - from);
+            float rowH = (H - headH) / hours;
+            int today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1;
+
+            // ── 머리줄 ──
+            p.setColor(cHead);
+            RectF r = new RectF(0, 0, W, headH);
+            cv.drawRoundRect(r, 6 * d, 6 * d, p);
+            cv.drawRect(0, headH - 6 * d, W, headH, p);      // 아래쪽은 각지게
+            if (today >= 0 && today < 7) {
+                p.setColor(cToday);
+                float x0 = hourW + colW * today;
+                RectF tr = new RectF(x0, 0, x0 + colW, headH);
+                cv.drawRoundRect(tr, 5 * d, 5 * d, p);
+                cv.drawRect(x0, headH - 5 * d, x0 + colW, headH, p);
+                line.setColor(cTodayLine);
+                line.setStrokeWidth(0.8f * d);
+                cv.drawRoundRect(tr, 5 * d, 5 * d, line);
+            }
+            line.setColor(cHeadLine);
+            line.setStrokeWidth(0.8f * d);
+            cv.drawLine(0, headH, W, headH, line);
+
+            TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            float dowSize = Math.min(9 * d, headH * 0.62f);
+            tp.setTextSize(dowSize);
+            tp.setTextAlign(Paint.Align.CENTER);
+            for (int i = 0; i < 7; i++) {
+                String nm = (dows == null) ? "" : dows.optString(i, "");
+                tp.setColor(i == today ? 0xFF6B5214 : (i == 0 ? 0xFFE08A86 : cDim));
+                float cx = hourW + colW * i + colW / 2f;
+                float cy = headH / 2f - (tp.descent() + tp.ascent()) / 2f;
+                cv.drawText(nm, cx, cy, tp);
+            }
+
+            // ── 빈 격자 ──
+            p.setColor(cEmpty);
+            cv.drawRect(hourW, headH, W, H, p);
+            line.setColor(cEmptyLine);
+            line.setStrokeWidth(0.6f * d);
+            for (int i = 0; i <= hours; i++) {
+                float y = headH + rowH * i;
+                cv.drawLine(hourW, y, W, y, line);
+            }
+            for (int i = 0; i <= 7; i++) {
+                float x = hourW + colW * i;
+                cv.drawLine(x, headH, x, H, line);
+            }
+
+            // ── 시각 ──
+            float hourSize = Math.min(8 * d, rowH * 0.7f);
+            tp.setTextSize(hourSize);
+            tp.setTextAlign(Paint.Align.RIGHT);
+            tp.setColor(cDim);
+            for (int i = 0; i < hours; i++) {
+                float y = headH + rowH * i - tp.ascent() + 1 * d;
+                if (y > H) break;
+                cv.drawText(_tPad2(from + i), hourW - 3 * d, y, tp);
+            }
+
+            // ── 일정 칸 (여기가 분 단위) ──
+            float blkSize = rowH >= 31 * d ? 10 * d : (rowH >= 22 * d ? 9 * d : (rowH >= 14 * d ? 8 * d : 7 * d));
+            for (int i = 0; blocks != null && i < blocks.length(); i++) {
+                JSONObject b = blocks.optJSONObject(i);
+                if (b == null) continue;
+                int day = b.optInt("day", -1);
+                if (day < 0 || day > 6) continue;
+                int s0 = Math.max(b.optInt("start", -1), from * 60);
+                int e0 = Math.min(b.optInt("end", -1), to * 60);
+                if (b.optInt("start", -1) < 0 || e0 <= s0) continue;
+
+                float top = headH + (s0 - from * 60) / 60f * rowH;
+                float hgt = Math.max(2 * d, (e0 - s0) / 60f * rowH);
+                float x0 = hourW + colW * day;
+                RectF br = new RectF(x0 + 1 * d, top, x0 + colW - 1 * d, top + hgt);
+
+                int ci = b.optInt("color", -1);
+                int style = (ci >= 0 && ci < 6) ? (2 + ci) : (b.optBoolean("rest", false) ? 1 : 0);
+                p.setColor(blkC[style][0]);
+                cv.drawRoundRect(br, 3 * d, 3 * d, p);
+                RectF in = new RectF(br.left + 1 * d, br.top + 1 * d, br.right - 1 * d, br.bottom - 1 * d);
+                if (in.width() > 0 && in.height() > 0) {
+                    p.setColor(blkC[style][1]);
+                    cv.drawRoundRect(in, 2 * d, 2 * d, p);
+                }
+
+                String label = b.optString("label", "");
+                if (label.length() == 0) continue;
+                // 짧은 칸에는 글씨를 조금 줄여서라도 넣는다 (그래도 안 들어가면 색만 남긴다)
+                float fs = Math.min(blkSize, (hgt - 1 * d) / 1.25f);
+                if (fs < 6 * d) continue;
+                float lineH = fs * 1.25f;
+                TextPaint lp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+                lp.setTextSize(fs);
+                lp.setColor(cText);
+                int tw = (int) Math.max(1, br.width() - 3 * d);
+                int maxLines = Math.max(1, (int) ((hgt - 2 * d) / lineH));
+                StaticLayout sl = StaticLayout.Builder.obtain(label, 0, label.length(), lp, tw)
+                        .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                        .setMaxLines(maxLines)
+                        .setEllipsize(TextUtils.TruncateAt.END)
+                        .setIncludePad(false)
+                        .build();
+                cv.save();
+                float ty = br.top + Math.max(0, (hgt - sl.getHeight()) / 2f);
+                cv.clipRect(br);
+                cv.translate(br.left + 1.5f * d, ty);
+                sl.draw(cv);
+                cv.restore();
+            }
+            return bm;
+        } catch (Throwable t) {
+            return null;                                      // 못 그리면 예전 격자로
         }
     }
 

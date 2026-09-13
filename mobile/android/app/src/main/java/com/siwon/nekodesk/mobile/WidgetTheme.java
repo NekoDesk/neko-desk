@@ -37,6 +37,44 @@ final class WidgetTheme {
     /** 어두운 테마인가 — 시간표 칸을 어두운 그림으로 그린다 */
     private static final boolean[] DARK = { false, false, false, false, false, false, true };
 
+    // ── 캔버스로 직접 그릴 때 쓰는 색값 ──────────────────
+    // 시간표는 그림으로 그린다 (RemoteViews 로는 분 단위 높이를 만들 수 없다).
+    // 그림 drawable 과 같은 셈에서 나오므로 두 방식이 같은 색으로 보인다.
+    static final int C_HEAD = 0, C_HEAD_LINE = 1, C_EMPTY = 2, C_EMPTY_LINE = 3,
+                     C_TODAY = 4, C_TODAY_LINE = 5, C_TEXT = 6, C_DIM = 7, C_FRAME_LINE = 8;
+
+    private static final int[][] COLORS = {
+        { 0xFFEEF1F5, 0xFFD8DEE8, 0xFFFFFFFF, 0xFFD8DEE8, 0xFFE5D1A3, 0xFFD9BE82, 0xFF33405A, 0xFF8C98AD, 0xFFAEB8C8 },
+        { 0xFFF7F3E8, 0xFFEBE4D4, 0xFFFFFEFA, 0xFFEBE4D4, 0xFFE7D7B3, 0xFFDDC89A, 0xFF5A5346, 0xFFA89E8C, 0xFFC6BEAC },
+        { 0xFFFBEDF1, 0xFFF5DDE5, 0xFFFFFBFC, 0xFFF5DDE5, 0xFFEED5BD, 0xFFE8C7A7, 0xFF6B525A, 0xFFC5AAB3, 0xFFDBC1CA },
+        { 0xFFEEF5FC, 0xFFDDE9F5, 0xFFFBFDFF, 0xFFDDE9F5, 0xFFE2D8BE, 0xFFD8CAA7, 0xFF4A5A6E, 0xFF9FB4C8, 0xFFBBCCDC },
+        { 0xFFEEF8F2, 0xFFDCEFE5, 0xFFFBFEFC, 0xFFDCEFE5, 0xFFE2DAB9, 0xFFD7CCA1, 0xFF486054, 0xFF9CBAAD, 0xFFB9D2C6 },
+        { 0xFFF4EEFB, 0xFFE8DDF4, 0xFFFDFBFF, 0xFFE8DDF4, 0xFFE6D4BE, 0xFFDCC5A7, 0xFF584A6A, 0xFFB3A3C6, 0xFFCBBDDB },
+        { 0xFF3A3A43, 0xFF4B4B56, 0xFF2E2E35, 0xFF4B4B56, 0xFF8C7B56, 0xFFAE9864, 0xFFF4F4F8, 0xFFB0B0BC, 0xFF83838E },
+    };
+
+    /** 시간표 칸 색 — [종류][0]=테두리 [종류][1]=바탕. 종류는 일·쉼·색0~5 */
+    private static final int[][] BLK_C_LIGHT = {
+        { 0xFF9AD3BF, 0xFFDCF0E8 },
+        { 0xFFEFCB9A, 0xFFFCEEDC },
+        { 0xFFA2AEC2, 0xFFEDF0F5 },
+        { 0xFFCFC0A0, 0xFFF7F1DF },
+        { 0xFFE2A8C0, 0xFFFBE7EF },
+        { 0xFFA6C4E2, 0xFFE6F0FA },
+        { 0xFFA2D0BA, 0xFFE4F5EC },
+        { 0xFFC2AADE, 0xFFF0E8FA },
+    };
+    private static final int[][] BLK_C_DARK = {
+        { 0xFF528372, 0xFF31463D },
+        { 0xFF84775A, 0xFF453F31 },
+        { 0xFF65758D, 0xFF38424F },
+        { 0xFF84775A, 0xFF453F31 },
+        { 0xFF8A5D71, 0xFF4B3642 },
+        { 0xFF56759B, 0xFF313E53 },
+        { 0xFF528372, 0xFF31463D },
+        { 0xFF756492, 0xFF403752 },
+    };
+
     /** 글자 색 — { 본문, 흐린 글씨, 강조 } */
     private static final int[][] TEXT = {
         { 0xFF33405A, 0xFF8C98AD, 0xFF5A6B8C },
@@ -88,4 +126,10 @@ final class WidgetTheme {
 
     /** 시간표 칸 그림 — [종류][조각]. 종류는 일·쉼·색0~5, 조각은 혼자·위·가운데·아래 */
     static int[][] blocks(int theme) { return dark(theme) ? BLK_DARK : BLK_LIGHT; }
+
+    /** 캔버스용 색값 (C_ 로 시작하는 자리 번호) */
+    static int color(int theme, int slot) { return COLORS[theme][slot]; }
+
+    /** 캔버스용 칸 색 — [종류][테두리/바탕] */
+    static int[][] blockColors(int theme) { return dark(theme) ? BLK_C_DARK : BLK_C_LIGHT; }
 }

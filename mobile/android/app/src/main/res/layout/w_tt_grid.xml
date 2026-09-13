@@ -16,6 +16,13 @@
         android:orientation="vertical" android:padding="1.2dp"
         android:background="@drawable/w_tt_frame">
 
+        <!-- 시간표는 코드에서 그림으로 그려 넣는다. 칸 높이를 분 단위로 잡으려면
+             RemoteViews 로는 안 되고(칸마다 높이를 정할 방법이 없다) 직접 그려야 한다. -->
+        <ImageView android:id="@+id/w_tt_img"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitXY"
+            android:contentDescription="@null" android:visibility="gone" />
+
         <LinearLayout android:id="@+id/w_tt_head"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:background="@drawable/w_tt_headbg" />
