@@ -11,6 +11,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.text.Layout;
 import android.text.StaticLayout;
@@ -1134,6 +1136,13 @@ public class NekoWidget extends AppWidgetProvider {
                 sl.draw(cv);
                 cv.restore();
             }
+            // 네 모서리를 틀 안쪽 곡률만큼 깎는다.
+            // 그림은 네모라서 그냥 두면 둥근 틀 밖으로 모서리가 삐져나온다
+            // (틀 반지름 9dp 에서 안쪽 여백 1.2dp 를 뺀 만큼).
+            Paint cut = new Paint(Paint.ANTI_ALIAS_FLAG);
+            cut.setColor(0xFF000000);
+            cut.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+            cv.drawRoundRect(new RectF(0, 0, W, H), 7.8f * d, 7.8f * d, cut);
             return bm;
         } catch (Throwable t) {
             return null;                                      // 못 그리면 예전 격자로
