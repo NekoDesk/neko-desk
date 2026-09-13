@@ -635,8 +635,8 @@ struct WTimetable: View {
         let s = span
         let cellFont: CGFloat = rowH >= 31 ? 10 : (rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7))
         let hourFont: CGFloat = rowH >= 22 ? 9 : (rowH >= 14 ? 8 : 7)
-        // 칸 색은 한 시간짜리 조각으로 깔고, 이름은 그 위에 블록 하나로 얹는다.
-        // 그래야 두 시간짜리 일정의 이름이 두 줄 세 줄로 다 보인다.
+        // 빈 격자를 깔고 그 위에 칸을 분 단위로 얹는다.
+        // 한 시간짜리 조각으로 그리면 10~50분짜리 일정이 한 시간을 다 차지해 보인다.
         return ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
                 ForEach(Array(s.from..<s.to), id: \.self) { h in
@@ -646,65 +646,53 @@ struct WTimetable: View {
                             .foregroundColor(t.isDark ? t.dim : WC.ttHour)
                             .frame(width: 22, height: rowH)
                         ForEach(Array(0..<7), id: \.self) { d in
-                            cell(day: d, hour: h, last: h == s.to - 1 && d == 6)
+                            emptyCell(last: h == s.to - 1 && d == 6)
                                 .frame(maxWidth: .infinity, minHeight: rowH, maxHeight: rowH)
                         }
                     }
                 }
                 Spacer(minLength: 0)
             }
-            labels(rowH: rowH, width: width, font: cellFont)
+            blocksLayer(rowH: rowH, width: width, font: cellFont)
         }
     }
 
-    /// 블록마다 이름을 한 번씩 — 보이는 범위로 잘라 그 자리에 얹는다.
-    /// 들어갈 줄 수는 높이로 셈하고, 넘치면 마지막 줄 끝에 … 이 붙는다.
-    private func labels(rowH: CGFloat, width: CGFloat, font: CGFloat) -> some View {
+    private func emptyCell(last: Bool) -> some View {
+        RCorners(br: last ? 7 : 0)
+            .fill(t.ttEmpty)
+            .overlay(RCorners(br: last ? 7 : 0).stroke(t.ttEmptyLine, lineWidth: 0.6))
+    }
+
+    /// 칸 하나를 제 시각·제 길이대로 얹는다 (10분짜리는 10분만큼만 높다).
+    /// 이름은 칸 안에서 줄을 바꿔 가며, 높이에 들어가는 줄 수만큼만 보이고 넘치면 … 으로 자른다.
+    private func blocksLayer(rowH: CGFloat, width: CGFloat, font: CGFloat) -> some View {
         let s = span
         let colW = max(0, (width - 22) / 7)
         let lineH = font * 1.25
         return ForEach(Array(blocks.enumerated()), id: \.offset) { _, b in
             let top = max(b.start, s.from * 60)
             let bottom = min(b.end, s.to * 60)
-            let name = b.label ?? ""
-            if bottom > top && !name.isEmpty && b.day >= 0 && b.day < 7 {
+            if bottom > top && b.day >= 0 && b.day < 7 {
                 let y = CGFloat(top - s.from * 60) / 60 * rowH
-                let hgt = CGFloat(bottom - top) / 60 * rowH
-                Text(name)
-                    .font(.system(size: font))
-                    .foregroundColor(t.text)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(max(1, Int((hgt - 2) / lineH)))
-                    .truncationMode(.tail)
-                    .frame(width: max(0, colW - 5), height: max(0, hgt - 2))
-                    .offset(x: 22 + colW * CGFloat(b.day) + 2.5, y: y + 1)
+                let hgt = max(3, CGFloat(bottom - top) / 60 * rowH)
+                let c = TTColor.of(b, dark: t.isDark)
+                let name = b.label ?? ""
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3).fill(c.line)
+                    RoundedRectangle(cornerRadius: 2).fill(c.fill).padding(1)
+                    if !name.isEmpty && hgt >= lineH {
+                        Text(name)
+                            .font(.system(size: font))
+                            .foregroundColor(t.text)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(max(1, Int((hgt - 2) / lineH)))
+                            .truncationMode(.tail)
+                            .padding(.horizontal, 2)
+                    }
+                }
+                .frame(width: max(0, colW - 2), height: hgt)
+                .offset(x: 22 + colW * CGFloat(b.day) + 1, y: y)
             }
-        }
-    }
-
-    @ViewBuilder
-    private func cell(day: Int, hour: Int, last: Bool) -> some View {
-        let hit = blocks.first { $0.day == day && hour * 60 < $0.end && (hour + 1) * 60 > $0.start }
-        if let b = hit {
-            let starts = b.start >= hour * 60 && b.start < (hour + 1) * 60
-            let ends = b.end > hour * 60 && b.end <= (hour + 1) * 60
-            let c = TTColor.of(b, dark: t.isDark)
-            ZStack {
-                RCorners(tl: starts ? 3 : 0, tr: starts ? 3 : 0,
-                         bl: ends ? 3 : 0, br: ends ? 3 : 0)
-                    .fill(c.line)
-                    .padding(.horizontal, 1)
-                RCorners(tl: starts ? 2 : 0, tr: starts ? 2 : 0,
-                         bl: ends ? 2 : 0, br: ends ? 2 : 0)
-                    .fill(c.fill)
-                    .padding(.horizontal, 2)
-                    .padding(.top, starts ? 1 : 0)
-                    .padding(.bottom, ends ? 1 : 0)
-            }
-        } else {
-            RCorners(br: last ? 7 : 0)
-                .fill(t.ttEmpty)
-                .overlay(RCorners(br: last ? 7 : 0).stroke(t.ttEmptyLine, lineWidth: 0.6))
         }
     }
 }
