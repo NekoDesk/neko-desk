@@ -5509,6 +5509,9 @@ function ttMoveTo(id, day, start) {
 
 // ── 칸 우클릭 메뉴 ──
 let _ttMenuId = null;
+let _ttMenuAt = 0;                  // 메뉴를 띄운 때
+let _ttMenuArm = null;
+const TT_MENU_ARM_MS = 350;         // 이만큼은 메뉴가 누름을 받지 않는다
 
 function ttBlkMenu(e, id) {
   e.preventDefault();
@@ -5525,13 +5528,26 @@ function ttBlkMenu(e, id) {
   m.style.display = 'block';
   const w = m.offsetWidth || 130, h = m.offsetHeight || 70;
   m.style.left = Math.min(e.clientX, window.innerWidth - w - 8) + 'px';
-  m.style.top = Math.min(e.clientY, window.innerHeight - h - 8) + 'px';
+  m.style.top = Math.min(e.clientY + 6, window.innerHeight - h - 8) + 'px';
+
+  // 폰에서는 손을 뗀 자리에 메뉴가 뜨는데, 그 터치가 남긴 클릭이 뒤늦게 날아와
+  // 그 자리에 있던 단추를 곧바로 눌러 버린다 (알림이 저 혼자 꺼지던 이유).
+  // 잠깐 동안은 메뉴가 아무 것도 받지 않게 해서 그 클릭을 흘려보낸다.
+  _ttMenuAt = Date.now();
+  clearTimeout(_ttMenuArm);
+  m.style.pointerEvents = 'none';
+  _ttMenuArm = setTimeout(() => { m.style.pointerEvents = ''; }, TT_MENU_ARM_MS);
 }
 function ttCloseMenu() {
   const m = document.getElementById('ttMenu');
-  if (m) m.style.display = 'none';
+  if (!m) return;
+  m.style.display = 'none';
+  m.style.pointerEvents = '';
+  clearTimeout(_ttMenuArm);
 }
 function ttMenuAct(what) {
+  // 메뉴가 막 떴을 때 들어온 누름은 앞선 터치가 남긴 것이다 — 흘려보낸다
+  if (Date.now() - _ttMenuAt < TT_MENU_ARM_MS) return;
   const id = _ttMenuId;
   ttCloseMenu();
   if (!id) return;
