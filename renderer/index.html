@@ -535,7 +535,7 @@ body.theme-black {
   line-height: 1.5; max-width: 200px; margin-bottom: 2px; }
 /* 영양제 주의 — 눈에 걸리되 소리치지는 않게 */
 .vita-warn { font-size: 9px; color: #e8908a; opacity: 0.9; text-align: center;
-  line-height: 1.55; max-width: 200px; margin: -2px 0 2px; }
+  line-height: 1.6; max-width: 240px; margin: -2px 0 2px; }
 
 /* 비타민: 물컵과 같은 자리, 알약 모양 픽셀 그림 */
 .vita-hd { font-family: 'Galmuri14', monospace; font-size: 11px; color: var(--gray); white-space: nowrap; margin-top: 4px; }
@@ -1391,11 +1391,11 @@ select {
                 <div class="water-col">
                   <div class="water-hd"><span data-i18n="water_lbl">💧 오늘 마신 물</span> <b id="waterCount">0</b>/8</div>
                   <div class="water-cups" id="waterCups"></div>
-                  <div class="water-tip" data-i18n="water_tip">당신의 맑고 건강한 피부를 위해 수분보충! +10pt</div>
+                  <div class="water-tip" data-i18n-html="water_tip">당신의 맑고 건강한 피부를 위해<br>수분보충! +10pt</div>
                   <div class="vita-hd" id="vitaHd"><span data-i18n="vita_lbl">💊 오늘 먹은 영양제</span> <b id="vitaCount">0</b>/<span id="vitaGoal">1</span></div>
                   <div class="vita-pills" id="vitaPills"></div>
-                  <div class="water-tip" data-i18n="vita_tip">작은 실천으로 일상 속 영양 불균형 해소! +10pt</div>
-                  <div class="vita-warn" data-i18n="vita_warn">⚠ 권장량 이상 먹으면 오히려 역효과! 영양제는 반드시 일일 권장 정량만 섭취하세요!</div>
+                  <div class="water-tip" data-i18n-html="vita_tip">작은 실천으로 일상 속<br>영양 불균형 해소! +10pt</div>
+                  <div class="vita-warn" data-i18n-html="vita_warn">⚠ 권장량 이상 먹으면 오히려 역효과!<br>영양제는 반드시 일일 권장 정량만 섭취하세요!</div>
                 </div>
               </div>
             </div>
@@ -2370,9 +2370,9 @@ const STRINGS = {
     sync_nothing:'올릴 내용 없음', sync_waiting:'연결 대기 중', sync_need_login:'로그인 필요',
     sync_relogin:'구글 로그인 필요 (로그아웃 후 다시 로그인)', sync_unsupported:'지원 안 됨',
     sync_config_err:'설정 오류', sync_error:'오류',
-    water_lbl:'💧 오늘 마신 물', water_tip:'당신의 맑고 건강한 피부를 위해 수분보충! +10pt',
-    vita_tip:'작은 실천으로 일상 속 영양 불균형 해소! +10pt',
-    vita_warn:'⚠ 권장량 이상 먹으면 오히려 역효과! 영양제는 반드시 일일 권장 정량만 섭취하세요!',
+    water_lbl:'💧 오늘 마신 물', water_tip:'당신의 맑고 건강한 피부를 위해<br>수분보충! +10pt',
+    vita_tip:'작은 실천으로 일상 속<br>영양 불균형 해소! +10pt',
+    vita_warn:'⚠ 권장량 이상 먹으면 오히려 역효과!<br>영양제는 반드시 일일 권장 정량만 섭취하세요!',
     water_reward_title:'💧 물 한 잔!', water_reward_msg:'🍋 열매를 하나 얻었어요!',
     health_pts_msg:'+{n} pts 받았어요!',
     water_full_msg:'바구니가 가득 찼어요!',
@@ -2686,9 +2686,9 @@ const STRINGS = {
     sync_nothing:'Nothing to upload', sync_waiting:'Waiting', sync_need_login:'Sign-in required',
     sync_relogin:'Sign in with Google (sign out, then sign in again)', sync_unsupported:'Not supported',
     sync_config_err:'Config error', sync_error:'Error',
-    water_lbl:'💧 Water today', water_tip:'Stay hydrated for clear, healthy skin! +10pt',
-    vita_tip:'A small habit that evens out your daily nutrition! +10pt',
-    vita_warn:'⚠ More than the recommended amount backfires. Stick to the daily dose on the label.',
+    water_lbl:'💧 Water today', water_tip:'Stay hydrated for clear,<br>healthy skin! +10pt',
+    vita_tip:'A small habit that evens out<br>your daily nutrition! +10pt',
+    vita_warn:'⚠ More than the recommended amount backfires.<br>Stick to the daily dose on the label.',
     water_reward_title:'💧 Nice!', water_reward_msg:'You earned a 🍋 fruit!',
     health_pts_msg:'+{n} pts!',
     water_full_msg:'Your basket is full!',
@@ -3002,9 +3002,9 @@ const STRINGS = {
     sync_nothing:'送信する内容なし', sync_waiting:'接続待ち', sync_need_login:'ログインが必要',
     sync_relogin:'Googleでログインしてください（ログアウト後に再ログイン）', sync_unsupported:'非対応',
     sync_config_err:'設定エラー', sync_error:'エラー',
-    water_lbl:'💧 今日の水分', water_tip:'すこやかな肌のために水分補給！ +10pt',
-    vita_tip:'小さな習慣で毎日の栄養バランスを整えよう！ +10pt',
-    vita_warn:'⚠ 推奨量を超えると逆効果。1日の目安量を守って飲んでください。',
+    water_lbl:'💧 今日の水分', water_tip:'すこやかな肌のために<br>水分補給！ +10pt',
+    vita_tip:'小さな習慣で毎日の<br>栄養バランスを整えよう！ +10pt',
+    vita_warn:'⚠ 推奨量を超えると逆効果。<br>1日の目安量を守って飲んでください。',
     water_reward_title:'💧 いいね！', water_reward_msg:'🍋の実を1つもらいました！',
     health_pts_msg:'+{n} pts もらいました！',
     water_full_msg:'かごがいっぱいです！',
