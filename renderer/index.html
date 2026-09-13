@@ -1847,6 +1847,17 @@ select {
   </div>
 </div>
 
+<!-- 게스트로 쓰던 기록을 계정에 합칠지 (처음 로그인할 때 한 번) -->
+<div id="claimModal" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,0.78);align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:20px 22px;max-width:380px;width:88%">
+    <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:10px" data-i18n="claim_title">☁️ 이 기기에 적어 둔 기록이 있어요</div>
+    <div id="claimWhat" style="font-size:12px;color:var(--white);line-height:1.8;margin-bottom:6px"></div>
+    <div style="font-size:11px;color:var(--gray);line-height:1.8;margin-bottom:16px" data-i18n="claim_hint">합치면 계정에 있던 기록과 이 기기 기록이 모두 남아요. 계정 기록만 쓰면 이 기기 기록은 사라집니다.</div>
+    <button class="btn btn-y" style="width:100%;font-size:12px;padding:10px 6px;margin-bottom:8px" onclick="claimAnswer(true)" data-i18n="claim_merge">✓ 계정에 합치기 (권장)</button>
+    <button class="btn btn-gr" style="width:100%;font-size:12px;padding:9px 6px" onclick="claimAnswer(false)" data-i18n="claim_drop">계정 기록만 쓰기</button>
+  </div>
+</div>
+
 <!-- 칸 복제하기 -->
 <div id="ttDupModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeTtDup(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:380px;width:90%;max-height:84vh;overflow:auto" onclick="event.stopPropagation()">
@@ -2386,6 +2397,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr 인스타그램', mag_follow:'📷 팔로우', mag_seek:'🔎 둘러보기', holiday_short:'공휴일',
     holiday_title:'🎌 공휴일', holiday_none:'표시하지 않음',
     holiday_desc:'사는 나라를 고르면 달력에 그 나라 공휴일이 표시돼요. 고르지 않으면 표시하지 않아요.',
+    claim_title:'☁️ 이 기기에 적어 둔 기록이 있어요',
+    claim_hint:'합치면 계정에 있던 기록과 이 기기 기록이 모두 남아요. 계정 기록만 쓰면 이 기기 기록은 사라집니다.',
+    claim_merge:'✓ 계정에 합치기 (권장)', claim_drop:'계정 기록만 쓰기',
+    claim_n_todo:'할 일 {n}개', claim_n_diary:'다이어리 {n}일', claim_n_block:'시간표 {n}칸',
+    claim_n_dday:'디데이 {n}개', claim_n_alarm:'알람 {n}개', claim_n_memo:'메모',
     acc_guest:'게스트 (보너스/광고설정 불가)', acc_admin:' (관리자)',
     sync_title:'☁️ 동기화', sync_down:'받기', sync_up:'올리기', sync_idle:'대기 중',
     sync_connecting:'연결 중...', sync_uptodate:'최신', sync_received:'받음', sync_merged:'내 변경 병합',
@@ -2704,6 +2720,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr on Instagram', mag_follow:'📷 Follow', mag_seek:'🔎 Seek', holiday_short:'Holiday',
     holiday_title:'🎌 Holidays', holiday_none:'Do not show',
     holiday_desc:'Pick where you live and public holidays for that country appear on the calendar. Nothing is shown until you pick one.',
+    claim_title:'☁️ This device has notes of its own',
+    claim_hint:'Merging keeps both what is in the account and what is on this device. Using only the account will drop the notes on this device.',
+    claim_merge:'✓ Merge into my account (recommended)', claim_drop:'Use the account only',
+    claim_n_todo:'{n} to-dos', claim_n_diary:'{n} diary days', claim_n_block:'{n} timetable blocks',
+    claim_n_dday:'{n} D-days', claim_n_alarm:'{n} alarms', claim_n_memo:'notes',
     acc_guest:'Guest (no bonus/ads)', acc_admin:' (admin)',
     sync_title:'☁️ Sync', sync_down:'Down', sync_up:'Up', sync_idle:'Idle',
     sync_connecting:'Connecting...', sync_uptodate:'Up to date', sync_received:'Received', sync_merged:'Merged',
@@ -3022,6 +3043,11 @@ const STRINGS = {
     mag_instagram:'@good.energy.kr インスタグラム', mag_follow:'📷 フォロー', mag_seek:'🔎 のぞいてみる', holiday_short:'祝日',
     holiday_title:'🎌 祝日', holiday_none:'表示しない',
     holiday_desc:'お住まいの国を選ぶと、その国の祝日がカレンダーに表示されます。選ばなければ何も表示しません。',
+    claim_title:'☁️ この端末に書いた記録があります',
+    claim_hint:'合わせるとアカウントの記録もこの端末の記録も残ります。アカウントだけを使うと、この端末の記録は消えます。',
+    claim_merge:'✓ アカウントに合わせる（おすすめ）', claim_drop:'アカウントの記録だけ使う',
+    claim_n_todo:'やること{n}件', claim_n_diary:'日記{n}日', claim_n_block:'時間割{n}枠',
+    claim_n_dday:'D-day {n}件', claim_n_alarm:'アラーム{n}件', claim_n_memo:'メモ',
     acc_guest:'ゲスト（ボーナス/広告設定不可）', acc_admin:'（管理者）',
     sync_title:'☁️ 同期', sync_down:'受信', sync_up:'送信', sync_idle:'待機中',
     sync_connecting:'接続中...', sync_uptodate:'最新', sync_received:'受信済み', sync_merged:'変更を統合',
@@ -9473,6 +9499,47 @@ async function _wipeForOwner(tag) {
   location.reload();
 }
 
+/**
+ * 게스트로 쓰던 기록이 얼마나 되는지 — 물어볼 때 보여 줄 요약.
+ * 무엇이 걸려 있는지 보여 주지 않으면 고를 수가 없다.
+ */
+function _guestSummary(saved) {
+  const out = [];
+  const n = (v) => {
+    if (!v) return 0;
+    if (Array.isArray(v)) return v.length;
+    if (typeof v === 'object') return Object.keys(v).length;
+    return String(v).trim() ? 1 : 0;
+  };
+  let todo = 0;
+  const notes = saved.calendarNotes || {};
+  Object.keys(notes).forEach(k => { todo += (notes[k] || []).length; });
+  if (todo) out.push(L('claim_n_todo').replace('{n}', todo));
+  if (n(saved.diaryEntries)) out.push(L('claim_n_diary').replace('{n}', n(saved.diaryEntries)));
+  if (n(saved.blocks)) out.push(L('claim_n_block').replace('{n}', n(saved.blocks)));
+  if (n(saved.ddays)) out.push(L('claim_n_dday').replace('{n}', n(saved.ddays)));
+  if (n(saved.alarms)) out.push(L('claim_n_alarm').replace('{n}', n(saved.alarms)));
+  if (n(saved.memoDoc) || n(saved.scheduleMemo)) out.push(L('claim_n_memo'));
+  return out;
+}
+
+let _claimResolve = null;
+/** 물어보고 답을 기다린다 — true 면 합치기 */
+function askClaim(parts) {
+  const el = document.getElementById('claimModal');
+  if (!el) return Promise.resolve(true);
+  const what = document.getElementById('claimWhat');
+  if (what) what.textContent = parts.join(' · ');
+  el.style.display = 'flex';
+  return new Promise(res => { _claimResolve = res; });
+}
+function claimAnswer(merge) {
+  const el = document.getElementById('claimModal');
+  if (el) el.style.display = 'none';
+  const r = _claimResolve; _claimResolve = null;
+  if (r) r(!!merge);
+}
+
 function enforceDataOwner(s) {
   try {
     const tag = _ownerTag(s);
@@ -9487,9 +9554,10 @@ function enforceDataOwner(s) {
       // 게스트로 쓰던 기록을 이 계정 것으로 승계한다.
       // 클라우드에 이미 기록이 있어도 덮어쓰지 않고 합치도록 표시해 둔다.
       let hasLocal = false;
+      let saved = null;                 // 물어볼 때 요약을 만들려면 바깥에서도 필요하다
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        const saved = raw ? JSON.parse(raw) : null;
+        saved = raw ? JSON.parse(raw) : null;
         // 적어 둔 것이 하나라도 있으면 승계할 기록이 있다고 본다.
         // 달력·다이어리만 보던 때는 시간표만 쓰던 사람의 기록이 그냥 사라졌다.
         const CLAIMABLE = ['calendarNotes','diaryEntries','scheduleMemo','wishlist','wishlistDone',
@@ -9506,8 +9574,9 @@ function enforceDataOwner(s) {
                                || Number(saved.pts) > 0 || Number(saved.fruits) > 0);
       } catch(e2) {}
       if (hasLocal) {
-        if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim();
-        if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim();
+        // 여기서 바로 정하지 않고 물어본다. 답은 decideDataOwner 가 받는다.
+        _claimPending = saved;
+        return false;
       }
     }
     localStorage.setItem(DATA_OWNER_KEY, tag);
@@ -9515,9 +9584,31 @@ function enforceDataOwner(s) {
   return false;
 }
 
-function applySession(s){
+let _claimPending = null;      // 물어볼 거리가 있으면 저장해 둔 기록
+
+/**
+ * 주인을 가린다. 게스트로 쓴 기록이 있으면 어떻게 할지 먼저 물어본다.
+ * @return true 면 기기를 비우고 다시 켜는 중이니 여기서 멈춰야 한다
+ */
+async function decideDataOwner(s) {
+  _claimPending = null;
+  if (enforceDataOwner(s)) return true;        // 다른 계정 — 비우고 다시 켠다
+  if (!_claimPending) return false;
+  const saved = _claimPending; _claimPending = null;
+  const parts = _guestSummary(saved);
+  if (!parts.length) return false;
+  const merge = await askClaim(parts);
+  if (!merge) { _wipeForOwner(_ownerTag(s)); return true; }
+  // 합치기로 정했다 — 이제 이 기기의 주인은 이 계정이다 (다음부터는 묻지 않는다)
+  try { localStorage.setItem(DATA_OWNER_KEY, _ownerTag(s)); } catch (e) {}
+  if (window.electronAPI && window.electronAPI.cloudMarkClaim) window.electronAPI.cloudMarkClaim();
+  if (typeof window._mobileMarkClaim === 'function') window._mobileMarkClaim();
+  return false;
+}
+
+async function applySession(s){
   window._session = s;
-  if (s && !s.guest && s.email && enforceDataOwner(s)) return;
+  if (s && !s.guest && s.email && await decideDataOwner(s)) return;
   hideLoginGate();
   setTimeout(() => { _gateLang = null; }, 60 * 1000);   // 첫 동기화가 지나면 더는 되돌리지 않는다
   // 계정 정보 표시
