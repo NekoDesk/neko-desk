@@ -30,9 +30,15 @@ Deno.serve(async (req) => {
     const {
       action, name, desc: description, id,
       imgBase64Front, imgBase64Side, imgBase64Back,
-      breed_group, concept,
+      breed_group, concept, rarity,
       name_en, name_ja, desc_en, desc_ja,
     } = body;
+
+    // 등급은 정해진 넷 중 하나만 받는다. 엉뚱한 값이 들어오면 앱에서 자물쇠가
+    // 이상하게 걸리므로, 모르는 값은 흔한 고양이로 본다.
+    const RARITY = ["normal", "rare", "super", "legend"];
+    const safeRarity = (v: unknown) =>
+      typeof v === "string" && RARITY.includes(v) ? v : "normal";
 
     const uploadImage = async (b64: string, suffix: string): Promise<string | null> => {
       const m = b64.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -51,7 +57,7 @@ Deno.serve(async (req) => {
     if (action === "list") {
       const { data, error } = await supabase
         .from("cat_breeds")
-        .select("id, name, name_en, name_ja, description, desc_en, desc_ja, breed_group, concept, image_url, image_url_side, image_url_b")
+        .select("id, name, name_en, name_ja, description, desc_en, desc_ja, breed_group, concept, rarity, image_url, image_url_side, image_url_b")
         .order("breed_group", { ascending: true })
         .order("concept", { ascending: true });
       if (error) return json({ ok: false, error: error.message }, 500);
@@ -72,6 +78,7 @@ Deno.serve(async (req) => {
           name_en: name_en || null, name_ja: name_ja || null,
           desc_en: desc_en || null, desc_ja: desc_ja || null,
           breed_group: breed_group ?? null, concept: concept ?? null,
+          rarity: safeRarity(rarity),
           image_url, image_url_side, image_url_b,
         })
         .select()
@@ -90,6 +97,7 @@ Deno.serve(async (req) => {
         name: name || `${breed_group} · ${concept}`,
       };
       if (description !== undefined) patch.description = description || null;
+      if (rarity !== undefined) patch.rarity = safeRarity(rarity);
       // 비워서 보내면 지운다 — 잘못 넣은 번역을 되돌릴 수 있어야 한다
       if (name_en !== undefined) patch.name_en = name_en || null;
       if (name_ja !== undefined) patch.name_ja = name_ja || null;

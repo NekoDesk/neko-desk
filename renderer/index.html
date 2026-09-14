@@ -139,6 +139,27 @@ body.electron-dashboard #dashPanel {
   color: var(--gray);
   line-height: 1.3;
 }
+/* 등급 — 흔한 고양이는 아무 표도 달지 않는다 */
+.breed-card { position: relative; }
+.breed-tag { position:absolute; top:3px; left:3px; font-size:9px; font-weight:700;
+  font-family:'Galmuri14',monospace; padding:1px 4px; border-radius:3px; letter-spacing:0.02em; }
+.breed-tag.rare   { background:#6fb4e8; color:#0d2233; }
+.breed-tag.super  { background:#c79bef; color:#26123a; }
+.breed-tag.legend { background:linear-gradient(100deg,#f5cf5b,#f0956a,#f5cf5b); color:#3a2606;
+  background-size:200% 100%; animation:legendShine 3s linear infinite; }
+@keyframes legendShine { to { background-position:-200% 0; } }
+.breed-card.rare   { border-color:#4d7fa8; }
+.breed-card.super  { border-color:#8d68b5; }
+.breed-card.legend { border-color:#c9a23f; }
+/* 아직 못 연 고양이 — 그림은 어둡게, 값은 또렷하게 */
+.breed-card.locked .breed-thumb { filter:grayscale(1) brightness(0.45); }
+.breed-card.locked .breed-name, .breed-card.locked .breed-desc { opacity:0.5; }
+.breed-lock { position:absolute; inset:auto 0 4px 0; font-size:10px; font-weight:700;
+  font-family:'Galmuri14',monospace; color:var(--yellow); text-shadow:0 1px 2px rgba(0,0,0,0.8); }
+.breed-card.locked:hover { border-color:var(--yellow); }
+.breed-note { font-size:12px; color:var(--gray); line-height:1.7; margin-bottom:12px; }
+.breed-mypts { font-size:12px; color:var(--white); margin-bottom:10px; }
+.breed-mypts b { color:var(--yellow); }
 
 /* ── 고양이 이미지: 배경 제거는 JS에서 픽셀 처리로 ── */
 .cat-img-render {
@@ -1732,7 +1753,10 @@ select {
         style="background:var(--card);border:2px solid var(--border);color:var(--white);padding:6px;font-size:15px;flex:1;min-width:0;outline:none">
       <button class="btn btn-g" onclick="renameCat()">OK</button>
     </div>
-    <div style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace;margin-bottom:5px" data-i18n="cat_breed_lbl">고양이 종류</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+      <span style="font-size:12px;color:var(--gray);font-family:'Galmuri14',monospace" data-i18n="cat_breed_lbl">고양이 종류</span>
+      <button id="gachaBtn" class="btn btn-y" style="display:none;font-size:11px;padding:4px 10px" onclick="openGacha()" data-i18n="gacha_btn">🎰 레전드냥 뽑기</button>
+    </div>
     <div class="breed-row" id="breedRow"></div>
   </div>
 </div>
@@ -1796,6 +1820,17 @@ select {
     </div>
   </div>
 </div>
+<!-- 고양이 해금 / 뽑기 -->
+<div id="breedModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeBreedUnlock(event)">
+  <div class="card" style="width:min(340px,92vw);padding:16px" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span id="breedModalTitle" style="font-size:14px;font-weight:700;color:var(--white)"></span>
+      <button onclick="closeBreedUnlock()" style="background:transparent;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1">✕</button>
+    </div>
+    <div id="breedModalBody"></div>
+  </div>
+</div>
+
 <!-- 열매 바구니 / 포인트 교환 -->
 <div id="fruitModal" style="display:none;position:fixed;inset:0;z-index:9460;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeFruitPopup(event)">
   <div style="background:var(--panel);border:2px solid var(--border);border-radius:10px;padding:18px 20px;max-width:420px;width:88%;max-height:80vh;overflow:auto" onclick="event.stopPropagation()">
@@ -2454,6 +2489,23 @@ const STRINGS = {
     water_full_msg:'바구니가 가득 찼어요!',
     cat_touch_lbl:'함께 놀기 (무료)', cat_pet_btn:'🤲 쓰다듬기', cat_play_btn:'🧶 놀아주기',
     cat_call1_btn:'📣 부르기 1', cat_call2_btn:'📣 부르기 2',
+    cat_call_title:'🐱 왔다!', cat_call_msg:'부르니까 기분이 좋아졌어요',
+    rar_normal:'', rar_rare:'레어냥', rar_super:'슈퍼레어냥', rar_legend:'레전드냥',
+    rar_gacha_only:'뽑기 전용',
+    rar_unlock_desc:'{n} 를 데려올까요? 한 번 데려오면 계속 쓸 수 있어요.',
+    rar_my_pts:'가진 포인트',
+    rar_buy_pts:'{p}pt 로 데려오기', rar_buy_won:'{w}원으로 데려오기',
+    rar_not_enough:'포인트가 모자라요',
+    rar_got_title:'🐱 새 친구!', rar_got_msg:'{n} 가 왔어요!',
+    rar_legend_only:'레전드냥은 뽑기로만 만날 수 있어요.',
+    gacha_btn:'🎰 레전드냥 뽑기', gacha_title:'🎰 레전드냥 뽑기',
+    gacha_desc:'아직 만나지 못한 레전드냥이 {n}마리 있어요. 그 중에서 한 마리가 나와요.',
+    gacha_draw:'{w}원 내고 뽑기',
+    gacha_all_done:'레전드냥을 모두 모았어요! 👑',
+    gacha_win_title:'👑 레전드냥!', gacha_win_msg:'{n} 를 뽑았어요!',
+    pay_soon:'준비 중', pay_soon_title:'결제 준비 중',
+    pay_soon_msg:'결제가 아직 열리지 않았어요. 조금만 기다려 주세요!',
+    hour_fruit_title:'🍋 한 시간 지났어요', hour_fruit_msg:'같이 있어 줘서 고마워요! 열매 +1',
     cat_pet_title:'🤲 골골골~', cat_pet_msg:'쓰다듬어 줘서 기분이 좋아졌어요! (+10)',
     cat_play_title:'🧶 신난다!', cat_play_msg:'같이 놀아서 신났어요! (+10)',
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
@@ -2781,6 +2833,23 @@ const STRINGS = {
     water_full_msg:'Your basket is full!',
     cat_touch_lbl:'Play together (free)', cat_pet_btn:'🤲 Pet', cat_play_btn:'🧶 Play',
     cat_call1_btn:'📣 Call 1', cat_call2_btn:'📣 Call 2',
+    cat_call_title:'🐱 Here I am!', cat_call_msg:'Being called made me happy',
+    rar_normal:'', rar_rare:'RARE', rar_super:'SUPER', rar_legend:'LEGEND',
+    rar_gacha_only:'Draw only',
+    rar_unlock_desc:'Bring {n} home? Once you do, they stay with you.',
+    rar_my_pts:'Your points',
+    rar_buy_pts:'Get for {p}pt', rar_buy_won:'Get for {w} KRW',
+    rar_not_enough:'Not enough points',
+    rar_got_title:'🐱 New friend!', rar_got_msg:'{n} is here!',
+    rar_legend_only:'Legend cats only come from a draw.',
+    gacha_btn:'🎰 Draw a Legend', gacha_title:'🎰 Legend draw',
+    gacha_desc:'{n} legend cats you have not met yet. One of them will come.',
+    gacha_draw:'Draw for {w} KRW',
+    gacha_all_done:'You have every legend cat! 👑',
+    gacha_win_title:'👑 Legend!', gacha_win_msg:'You drew {n}!',
+    pay_soon:'soon', pay_soon_title:'Payments coming soon',
+    pay_soon_msg:'Payments are not open yet. Hang tight!',
+    hour_fruit_title:'🍋 An hour together', hour_fruit_msg:'Thanks for staying! Fruit +1',
     cat_pet_title:'🤲 Purr~', cat_pet_msg:'That petting felt great! (+10)',
     cat_play_title:'🧶 So fun!', cat_play_msg:'Playing together was fun! (+10)',
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
@@ -3108,6 +3177,23 @@ const STRINGS = {
     water_full_msg:'かごがいっぱいです！',
     cat_touch_lbl:'一緒に遊ぶ（無料）', cat_pet_btn:'🤲 なでる', cat_play_btn:'🧶 遊ぶ',
     cat_call1_btn:'📣 呼ぶ 1', cat_call2_btn:'📣 呼ぶ 2',
+    cat_call_title:'🐱 来たよ！', cat_call_msg:'呼ばれて嬉しくなりました',
+    rar_normal:'', rar_rare:'レアにゃん', rar_super:'スーパーレアにゃん', rar_legend:'レジェンドにゃん',
+    rar_gacha_only:'ガチャ限定',
+    rar_unlock_desc:'{n} を迎えますか？一度迎えるとずっと使えます。',
+    rar_my_pts:'持っているpt',
+    rar_buy_pts:'{p}pt で迎える', rar_buy_won:'{w}ウォンで迎える',
+    rar_not_enough:'ptが足りません',
+    rar_got_title:'🐱 新しい友だち！', rar_got_msg:'{n} が来ました！',
+    rar_legend_only:'レジェンドにゃんはガチャでしか会えません。',
+    gacha_btn:'🎰 レジェンドガチャ', gacha_title:'🎰 レジェンドガチャ',
+    gacha_desc:'まだ会っていないレジェンドにゃんが{n}匹います。その中から1匹出ます。',
+    gacha_draw:'{w}ウォンで引く',
+    gacha_all_done:'レジェンドにゃんを全部集めました！👑',
+    gacha_win_title:'👑 レジェンド！', gacha_win_msg:'{n} を引きました！',
+    pay_soon:'準備中', pay_soon_title:'決済は準備中',
+    pay_soon_msg:'まだ決済が開いていません。もう少しお待ちください！',
+    hour_fruit_title:'🍋 1時間たちました', hour_fruit_msg:'一緒にいてくれてありがとう！実 +1',
     cat_pet_title:'🤲 ゴロゴロ~', cat_pet_msg:'なでてもらって嬉しい！（+10）',
     cat_play_title:'🧶 楽しい！', cat_play_msg:'一緒に遊んで楽しかった！（+10）',
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
@@ -3708,6 +3794,8 @@ const S = {
   schedule: { ws:'09:00', ls:'12:00', le:'13:00', we:'18:00', es:'19:00' },
   fruits: [],
   harvestedFruits: 0,
+  lastFruitHourAt: 0,        // 켜 둔 보상으로 열매를 준 마지막 때
+  ownedBreeds: [],           // 포인트·결제로 연 고양이들
   follow: false,
   pos: 'br',
   sessions: 0,
@@ -3785,7 +3873,7 @@ function loadState() {
     // 옛 저장 데이터 마이그레이션: breed 필드가 없으면 tabby로
     // breed validated when custom breeds load (see loadCustomBreeds)
     if (saved.schedule) Object.assign(S.schedule, saved.schedule);
-    ['pts','fruits','harvestedFruits','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterGoal','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','ttTall','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','holidayCountry','diaryEntries']
+    ['pts','fruits','harvestedFruits','lastFruitHourAt','ownedBreeds','follow','pos','sessions','todayPts','growthLogs','lastCycleIdx','lastDate','ownedAccs','theme','photoPath','products','catFedThisCycle','lastPenaltyBreakIdx','lastMoodResetDate','lastVitaminDate','waterOff','waterFrom','waterTo','waterGoal','waterCups','waterDate','blocks','fillPlan','fillRows','fillDays','fillReplace','ttFrom','ttTo','ttTall','pomoOn','focusMins','breakMins','vitaminOn','vitaminTime','vitaminTimes','vitaminGoal','vitaminTaken','vitaminDate','waterWorkOnly','alarms','alarmFired','scheduleItems','scheduleMemo','calendarNotes','calendarDeleted','ddays','memoDoc','wishlist','wishlistDone','redeemedCoupons','workItems','language','holidayCountry','diaryEntries']
       .forEach(k => { if (saved[k] !== undefined) S[k] = saved[k]; });
     // 구버전 fruits 마이그레이션: {e, done} 객체 배열 → 문자열 배열
     if (Array.isArray(S.fruits) && S.fruits.length > 0 && typeof S.fruits[0] === 'object') {
@@ -4059,14 +4147,47 @@ function earnPts(n) {
 const HEALTH_PTS = 10;
 function healthReward(cups) { earnPts(HEALTH_PTS * cups); }
 
-/** @param silent 부르는 쪽에서 이미 소리를 냈으면 열매 소리는 겹치지 않게 뺀다 */
+/**
+ * 바구니에 열매를 하나 넣는다.
+ *
+ * 넣고 나서 바로 적어 둬야 한다. 위젯 창은 10초마다 저장된 값으로 메모리를
+ * 되돌린 뒤 저장하는데(대시보드에서 고친 것을 덮어쓰지 않으려고), fruits 가
+ * 그 되돌리는 목록에 들어 있다. 여기서 적어 두지 않으면 방금 받은 열매가
+ * 다음 자동저장에 지워진다 — 사이클을 끝내도 열매가 안 생기던 이유다.
+ *
+ * @param silent 부르는 쪽에서 이미 소리를 냈으면 열매 소리는 겹치지 않게 뺀다
+ * @returns 열매가 실제로 들어갔는가 (바구니가 가득이면 false)
+ */
 function addFruit(silent) {
-  if (S.fruits.length >= 5) return; // 최대 5개
+  if (S.fruits.length >= 5) return false; // 최대 5개
   const f=['🍋','🍊','🍎','🍇','🍓','🫐','🍑','🍒'];
   S.fruits.push(f[Math.floor(Math.random()*f.length)]);
+  saveState();
   if (!silent) playFruitSound();
   renderFruits();
   renderHarvestCount();
+  return true;
+}
+
+/**
+ * 켜 둔 보상 — 한 시간에 열매 하나.
+ *
+ * 사이클 보상과는 따로 논다. 시간표가 없는 시간에도, 집중하지 않아도,
+ * 앱을 켜 두고 있으면 한 시간마다 하나씩 쌓인다.
+ *
+ * 바구니가 가득이면 시계를 돌리지 않는다 — 그래야 비우자마자 받는다.
+ * (돌려 버리면 가득 찬 동안의 한 시간이 조용히 사라진다.)
+ */
+const HOUR_FRUIT_MS = 60 * 60 * 1000;
+function checkHourFruit() {
+  const now = Date.now();
+  if (!S.lastFruitHourAt) { S.lastFruitHourAt = now; saveState(); return; }
+  if (now - S.lastFruitHourAt < HOUR_FRUIT_MS) return;
+  if (!addFruit()) return;                  // 바구니가 가득 — 시계는 그대로 둔다
+  S.lastFruitHourAt = now;
+  saveState();
+  toast('reward', L('hour_fruit_title'), L('hour_fruit_msg'));
+  if (!window._isDashboard) showBubble(L('hour_fruit_msg'));
 }
 
 function harvestOneFruit() {
@@ -4178,11 +4299,18 @@ function renderCatPage() {
     const custom = Object.entries(window._customBreeds||{}).map(([id,b])=>{
       const _bn = (_bLang !== 'ko' && b['name_'+_bLang]) || b.name;
       const _bd = (_bLang !== 'ko' && b['desc_'+_bLang]) || b.desc || '';
+      const rar = breedRarity(id);
+      const owned = breedOwned(id);
+      const tag = rar === 'normal' ? '' : `<span class="breed-tag ${rar}">${L('rar_' + rar)}</span>`;
+      // 못 연 고양이에는 어떻게 여는지를 적어 둔다 — 눌러 보기 전에 알 수 있게
+      const lock = owned ? '' : `<div class="breed-lock">${rar === 'legend' ? L('rar_gacha_only') : RARITY_COST[rar] + 'pt'}</div>`;
       return `
-    <div class="breed-card ${id===S.cat.breed?'sel':''}" onclick="setCatBreed('${id}')">
+    <div class="breed-card ${rar !== 'normal' ? rar : ''} ${owned ? '' : 'locked'} ${id===S.cat.breed?'sel':''}" onclick="setCatBreed('${id}')">
+      ${tag}
       <img class="breed-thumb" id="breedThumb-${id}" alt="${_bn}">
       <div class="breed-name">${_bn}</div>
       <div class="breed-desc">${_bd}</div>
+      ${lock}
     </div>`;
     }).join('');
 
@@ -4194,6 +4322,11 @@ function renderCatPage() {
 
     cr.innerHTML = custom + comingSoon;
 
+    // 레전드냥이 한 마리도 없으면 뽑기 단추를 감춘다. 두면 눌렀을 때
+    // '모두 모았어요' 라고 나오는데, 모은 적이 없으니 거짓말이 된다.
+    const gb = document.getElementById('gachaBtn');
+    if (gb) gb.style.display = gachaExists() ? '' : 'none';
+
     // 썸네일: 배경 제거된 URL 직접 사용
     Object.entries(window._customBreeds||{}).forEach(([id, b])=>{
       if (!b.image_url) return;
@@ -4204,8 +4337,40 @@ function renderCatPage() {
   updateCatUI();
 }
 
+/**
+ * 고양이 등급.
+ *
+ * normal 은 예전부터 있던 고양이들 — 값도 표도 없다. 서버에 등급이 없으면 normal 로 본다.
+ * rare·super 는 포인트를 쓰거나 돈을 내서 연다. legend 는 뽑기로만 나온다.
+ */
+const RARITY = ['normal','rare','super','legend'];
+const RARITY_COST = { rare: 500, super: 1000, legend: 0 };   // pt (legend 는 pt 로 못 산다)
+const RARITY_WON  = { rare: 500, super: 1000, legend: 2000 };
+const GACHA_WON = 2000;
+
+function breedRarity(id) {
+  const b = (window._customBreeds || {})[id];
+  const r = b && b.rarity;
+  return RARITY.includes(r) ? r : 'normal';
+}
+
+/** 지금 쓸 수 있는 고양이인가 (흔한 고양이는 늘 열려 있다) */
+function breedOwned(id) {
+  if (breedRarity(id) === 'normal') return true;
+  return (S.ownedBreeds || []).includes(id);
+}
+
+/** 연 것으로 적어 둔다 */
+function breedUnlock(id) {
+  if (!Array.isArray(S.ownedBreeds)) S.ownedBreeds = [];
+  if (!S.ownedBreeds.includes(id)) S.ownedBreeds.push(id);
+  saveState();
+}
+
 function setCatBreed(breed){
   if(!(window._customBreeds && window._customBreeds[breed])) return;
+  // 아직 못 연 고양이면 바꾸지 않고 여는 창을 띄운다
+  if (!breedOwned(breed)) { openBreedUnlock(breed); return; }
   S.cat.breed=breed;
   catFrameIdx=0;
   renderCatPage(); renderAll(); saveState();
@@ -4214,6 +4379,163 @@ function setCatBreed(breed){
   const bname = (_l !== 'ko' && _b['name_' + _l]) || _b.name || breed;
   toast('info', L('breed_title'), L('breed_msg').replace('{n}', bname));
 }
+/**
+ * 값을 치르러 간다.
+ *
+ * 토스 심사가 끝나 window._cfg.PAY_ON 이 켜지기 전에는 단추가 잠겨 있어 여기까지 오지 않는다.
+ * 승인은 반드시 서버(supabase/functions/confirm-payment)에서 한다 — 앱이 "냈어요" 라고
+ * 말하는 것만 믿고 고양이를 주면, 그 말은 누구나 지어낼 수 있다.
+ *
+ * @param order {kind:"breed"|"gacha", breed?:string, amount:number}
+ */
+function startPayment(order) {
+  if (!payReady()) { toast('info', L('pay_soon_title'), L('pay_soon_msg')); return; }
+  if (typeof window.openTossCheckout === 'function') {
+    window.openTossCheckout(order, grantAfterPay);
+    return;
+  }
+  toast('info', L('pay_soon_title'), L('pay_soon_msg'));
+}
+
+// ── 고양이 해금 ───────────────────────────────
+
+let _breedPick = null;
+
+function _breedName(id) {
+  const b = (window._customBreeds || {})[id] || {};
+  const l = S.language || 'ko';
+  return (l !== 'ko' && b['name_' + l]) || b.name || id;
+}
+
+/** 결제가 아직 연결되지 않았으면 돈으로 사는 길은 막아 둔다 */
+function payReady() { return !!(window._cfg && window._cfg.PAY_ON); }
+
+function _breedModalShow(title, html) {
+  const t = document.getElementById('breedModalTitle');
+  const b = document.getElementById('breedModalBody');
+  const m = document.getElementById('breedModal');
+  if (!t || !b || !m) return;
+  t.textContent = title;
+  b.innerHTML = html;
+  m.style.display = 'flex';
+}
+
+function closeBreedUnlock(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('breedModal');
+  if (m) m.style.display = 'none';
+  _breedPick = null;
+}
+
+/** 값을 치르는 단추. 결제가 아직이면 눌리지 않고 이유를 달아 둔다. */
+function _payBtn(label, onclick, primary) {
+  const off = payReady() ? '' : ' disabled';
+  const tail = payReady() ? '' : ' · ' + L('pay_soon');
+  return '<button class="btn' + (primary ? ' btn-y' : '') + '" style="width:100%"' + off +
+         ' onclick="' + onclick + '">' + label + tail + '</button>';
+}
+
+function openBreedUnlock(id) {
+  _breedPick = id;
+  const rar = breedRarity(id);
+  const title = L('rar_' + rar) + ' · ' + _breedName(id);
+
+  // 레전드냥은 값을 치러 고를 수 없다 — 뽑기로만 나온다
+  if (rar === 'legend') {
+    _breedModalShow(title,
+      '<div class="breed-note">' + L('rar_legend_only') + '</div>' +
+      '<button class="btn btn-y" style="width:100%" onclick="closeBreedUnlock();openGacha()">' +
+        L('gacha_btn') + '</button>');
+    return;
+  }
+
+  const cost = RARITY_COST[rar] || 0;
+  const won = RARITY_WON[rar] || 0;
+  const enough = S.pts >= cost;
+  _breedModalShow(title,
+    '<div class="breed-note">' + L('rar_unlock_desc').replace('{n}', _breedName(id)) + '</div>' +
+    '<div class="breed-mypts">' + L('rar_my_pts') + ' <b>' + S.pts + '</b>pt</div>' +
+    '<button class="btn' + (enough ? ' btn-y' : '') + '" style="width:100%;margin-bottom:7px"' +
+      (enough ? '' : ' disabled') + ' onclick="buyBreedWithPts()">' +
+      L('rar_buy_pts').replace('{p}', cost) + (enough ? '' : ' · ' + L('rar_not_enough')) + '</button>' +
+    _payBtn(L('rar_buy_won').replace('{w}', won.toLocaleString()), 'buyBreedWithCash()', false));
+}
+
+function buyBreedWithPts() {
+  const id = _breedPick;
+  if (!id) return;
+  const cost = RARITY_COST[breedRarity(id)] || 0;
+  if (S.pts < cost) { toast('alert', L('pts_short_title'), L('rar_not_enough')); return; }
+  earnPts(-cost);
+  breedUnlock(id);
+  closeBreedUnlock();
+  setCatBreed(id);                       // 산 김에 바로 바꿔 준다
+  toast('reward', L('rar_got_title'), L('rar_got_msg').replace('{n}', _breedName(id)));
+}
+
+function buyBreedWithCash() {
+  if (!payReady()) { toast('info', L('pay_soon_title'), L('pay_soon_msg')); return; }
+  const id = _breedPick;
+  if (!id) return;
+  startPayment({ kind: 'breed', breed: id, amount: RARITY_WON[breedRarity(id)] || 0 });
+}
+
+// ── 뽑기 ──────────────────────────────────────
+// 레전드냥은 값을 치러 고르는 게 아니라 뽑아서 나온다.
+// 돈을 냈는데 이미 있는 고양이가 또 나오면 억울하니, 아직 없는 것 중에서만 뽑는다.
+
+function gachaPool() {
+  return Object.keys(window._customBreeds || {})
+    .filter(id => breedRarity(id) === 'legend' && !breedOwned(id));
+}
+
+/** 뽑을 것이 애초에 있기는 한가 (레전드냥을 아직 한 마리도 안 만들었을 수 있다) */
+function gachaExists() {
+  return Object.keys(window._customBreeds || {}).some(id => breedRarity(id) === 'legend');
+}
+
+function openGacha() {
+  _breedPick = null;
+  const pool = gachaPool();
+  if (pool.length === 0) {
+    _breedModalShow(L('gacha_title'), '<div class="breed-note">' + L('gacha_all_done') + '</div>');
+    return;
+  }
+  _breedModalShow(L('gacha_title'),
+    '<div class="breed-note">' + L('gacha_desc').replace('{n}', pool.length) + '</div>' +
+    _payBtn(L('gacha_draw').replace('{w}', GACHA_WON.toLocaleString()), 'drawGacha()', true));
+}
+
+function drawGacha() {
+  if (!payReady()) { toast('info', L('pay_soon_title'), L('pay_soon_msg')); return; }
+  if (gachaPool().length === 0) { toast('info', L('gacha_title'), L('gacha_all_done')); return; }
+  startPayment({ kind: 'gacha', amount: GACHA_WON });
+}
+
+/**
+ * 값을 치르고 난 뒤 — 결제가 끝나면 이 자리로 돌아온다.
+ *
+ * 뽑기는 돈이 오간 뒤에 뽑는다. 먼저 뽑아 두고 결제를 부르면, 결제가 엎어졌을 때
+ * 이미 뽑은 것을 도로 물려야 한다.
+ */
+function grantAfterPay(order) {
+  if (!order) return;
+  if (order.kind === 'breed' && order.breed) {
+    breedUnlock(order.breed);
+    setCatBreed(order.breed);
+    toast('reward', L('rar_got_title'), L('rar_got_msg').replace('{n}', _breedName(order.breed)));
+    return;
+  }
+  if (order.kind === 'gacha') {
+    const pool = gachaPool();
+    if (pool.length === 0) return;
+    const won = pool[Math.floor(Math.random() * pool.length)];
+    breedUnlock(won);
+    setCatBreed(won);
+    toast('reward', L('gacha_win_title'), L('gacha_win_msg').replace('{n}', _breedName(won)));
+  }
+}
+
 // ══════════════════════════════════════════
 // CUSTOM CAT BREEDS (Supabase)
 // ── 로딩 스크린 컨트롤러 ─────────────────────
@@ -4278,7 +4600,8 @@ function loadCustomBreeds() {
         desc_ja: row.desc_ja || row.description || '',
         image_url: row.image_url,
         image_url_side: row.image_url_side || row.image_url,
-        image_url_b: row.image_url_b || null
+        image_url_b: row.image_url_b || null,
+        rarity: row.rarity || 'normal'
       };
     });
     // 이미지 HTTP 캐시 프라이밍 → 로딩 화면 중에 다운로드 완료
@@ -4291,7 +4614,10 @@ function loadCustomBreeds() {
     return Promise.all(preloads);
   })
   .then(() => {
-    const _firstBreed = Object.keys(window._customBreeds)[0];
+    // 처음 고를 때는 그냥 열려 있는 고양이 중에서 — 잠긴 고양이를 기본으로 두면
+    // 아무것도 안 했는데 잠긴 고양이를 쓰고 있는 꼴이 된다
+    const _firstBreed = Object.keys(window._customBreeds).find(breedOwned)
+                     || Object.keys(window._customBreeds)[0];
     if (_firstBreed && !window._customBreeds[S.cat.breed]) {
       S.cat.breed = _firstBreed; saveState();
     }
@@ -6477,11 +6803,17 @@ function playCatTouchSound() {
   playRole('touch', CAT_TOUCH_SOUNDS[_catTouchIdx % CAT_TOUCH_SOUNDS.length], _catTouchIdx);
 }
 
-/** 고양이 부르기 — 두 가지 부름소리 */
+/** 고양이 부르기 — 두 가지 부름소리. 부르면 기분도 오른다 */
 function callCat(n) {
   // 내장 부름소리는 하나뿐이라 둘 다 같은 것을 쓴다. 서버에 올리면 따로 난다.
   // 부르기는 진동 모드여도 소리로 — 고양이를 부르려고 누른 것이니까.
   playRole(n === 2 ? 'call2' : 'call1', 'cat_calling_03.mp3', 0, { force: true });
+  // 불러 놓고 본체만체하면 서운하다. 쓰다듬기(+10)보다는 적게 — 부르기는 쉬우니까.
+  if (S.cat.mood >= 100) return;
+  S.cat.mood = Math.min(100, S.cat.mood + 5);
+  updateCatUI();
+  saveState();
+  toast('info', L('cat_call_title'), L('cat_call_msg'));
 }
 
 /** 열매를 얻거나 수확할 때 */
@@ -6914,13 +7246,17 @@ function updateCycleUI() {
       S.sessions++;
       const sc = document.getElementById('sessCount'); if(sc) sc.textContent = S.sessions;
       // hCycleCount is now static (data-i18n='cycle_home_desc')
-      addFruit();
+      const got = addFruit();                 // 바구니가 가득이면 못 받는다
       addXP(15);
-      addLog('g', `✅ 사이클 ${S.lastCycleIdx+1} 완료! 🍋 열매 획득`);
-      toast('reward', L('cycle_done_title'), L('cycle_done_msg').replace('{n}', S.lastCycleIdx + 1));
+      addLog('g', got ? `✅ 사이클 ${S.lastCycleIdx+1} 완료! 🍋 열매 획득`
+                      : `✅ 사이클 ${S.lastCycleIdx+1} 완료! (바구니가 가득)`);
+      toast('reward', L('cycle_done_title'),
+            got ? L('cycle_done_msg').replace('{n}', S.lastCycleIdx + 1)
+                 : L('water_full_msg'));
       if (window.electronAPI && window.electronAPI.gaEvent) window.electronAPI.gaEvent('cycle_complete', {});
     }
     S.lastCycleIdx = c.cycleIdx;
+    saveState();          // 센 횟수도 함께 — 여기서 안 적으면 다음 자동저장까지 떠 있다
   }
 
   // 말풍선 (집중 시작 3분)
@@ -10546,6 +10882,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const tp=document.getElementById('todayPts'); if(tp) tp.textContent=S.todayPts;
     } catch(err) {}
   });
+
+  // 켜 둔 보상도 위젯 창에서만 센다 — 두 창이 같이 세면 한 시간에 두 개가 된다
+  if (!IS_DASHBOARD) {
+    checkHourFruit();
+    setInterval(checkHourFruit, 60 * 1000);
+  }
 
   // 자동저장(10초)은 위젯 창에서만 — 대시보드는 사용자 액션 시에만 명시적으로 저장
   if (!IS_DASHBOARD) setInterval(() => {
