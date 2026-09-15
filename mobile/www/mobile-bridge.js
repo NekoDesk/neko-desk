@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.5.4-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.6.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1152,6 +1152,7 @@
   var _notiKey = 'noti_checking';   // 설정 화면에 보여 줄 상태 (문구 열쇠)
   var _notiExtra = '';              // 오류 메시지처럼 번역할 수 없는 꼬리말
   var _notiCount = 0;
+  var _notiExact = null;            // 정확한 시각으로 울릴 수 있는가 (안드로이드 12+)
 
   /** 사전에 없으면 열쇠 대신 대비 문구를 쓴다 (사전은 renderer 쪽에 있다) */
   function LL(key, fallback) {
@@ -1162,6 +1163,24 @@
       }
     } catch (e) {}
     return fallback || key;
+  }
+
+  /**
+   * 안드로이드 12부터 '정확한 시각 알람'은 따로 허용을 받아야 한다.
+   *
+   * 허용이 없으면 플러그인은 오류를 내지 않고 조용히 '대략 그때쯤' 예약으로
+   * 떨어진다(setAndAllowWhileIdle). 그래서 앱은 '허용됨'이라고 적어 두는데
+   * 실제로는 몇 분씩 늦게 울렸다. 상태를 물어서 있는 그대로 적는다.
+   */
+  function checkExactNoti() {
+    var N = notiPlugin();
+    if (!N || !N.checkExactNotificationSetting) return Promise.resolve(null);
+    return N.checkExactNotificationSetting()
+      .then(function (st) {
+        _notiExact = st && st.exact_alarm ? st.exact_alarm : null;
+        return _notiExact;
+      })
+      .catch(function () { _notiExact = null; return null; });
   }
 
   function notiSay(key, n, extra) {
@@ -1200,6 +1219,14 @@
       html += '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
             + 'onclick="window.__nekoAskNoti()">' + LL('noti_enable', '알림 켜기') + '</button>';
     }
+    // 알림은 되는데 '정확한 시각'만 막힌 경우 — 늦게 울리는 이유를 여기 적는다
+    if (!need && _notiExact && _notiExact !== 'granted') {
+      html += '<div style="flex-basis:100%;font-size:11px;color:var(--yellow);line-height:1.5">'
+            + LL('noti_exact_off', '⏰ 알람이 몇 분 늦게 울릴 수 있어요. 정확한 시각으로 받으려면 켜 주세요.')
+            + '</div>'
+            + '<button class="btn btn-y" style="font-size:11px;padding:4px 10px" '
+            + 'onclick="window.__nekoAskExact()">' + LL('noti_exact_btn', '정확한 시각으로 받기') + '</button>';
+    }
     if (box.innerHTML !== html) box.innerHTML = html;
   }
 
@@ -1214,6 +1241,33 @@
         else notiSay('noti_denied');
       })
       .catch(function (e) { notiSay('noti_error', undefined, e && e.message ? e.message : String(e)); });
+  };
+
+  // 설정에서 켜고 돌아왔는지 본다. 켰으면 예약을 정확한 시각으로 새로 넣는다.
+  function watchExactReturn() {
+    var recheck = function () {
+      if (document.hidden) return;
+      var was = _notiExact;
+      checkExactNoti().then(function (now) {
+        renderNotiRow();
+        // 막혀 있던 것이 풀렸으면 예약을 다시 — 예전 것은 대략 시각으로 들어가 있다
+        if (was && was !== 'granted' && now === 'granted') {
+          _notiLastPlan = '';
+          syncNotifications();
+        }
+      });
+    };
+    document.addEventListener('visibilitychange', recheck);
+    var App = capPlugin('App');
+    if (App) { try { App.addListener('appStateChange', function (st) { if (st && st.isActive) recheck(); }); } catch (e) {} }
+  }
+
+  // 정확한 시각 알람을 켜러 설정 화면으로 보낸다 (안드로이드가 직접 띄운다)
+  window.__nekoAskExact = function () {
+    var N = notiPlugin();
+    if (!N || !N.changeExactNotificationSetting) return;
+    Promise.resolve(N.changeExactNotificationSetting()).catch(function () {});
+    // 설정에서 켜고 돌아오면 resume 에서 다시 묻고 예약을 새로 넣는다
   };
 
   /**
@@ -1375,7 +1429,13 @@
           return N.cancel({ notifications: old.map(function (o) { return { id: o.id }; }) });
         })
         .then(function () { return list.length ? N.schedule({ notifications: list }) : null; })
-        .then(function () { _notiLastPlan = plan; notiSay('noti_ok', list.length); })
+        .then(function () {
+          _notiLastPlan = plan;
+          // 넣는 데 성공했다고 정확한 시각인 것은 아니다 — 물어보고 적는다
+          return checkExactNoti().then(function (ex) {
+            notiSay(ex && ex !== 'granted' ? 'noti_ok_approx' : 'noti_ok', list.length);
+          });
+        })
         .catch(function (e) {
           // 정확한 시각 예약이 막힌 기기에서는 대략적인 시각으로라도 넣는다
           list.forEach(function (n) { delete n.schedule.allowWhileIdle; });
@@ -2494,6 +2554,7 @@
 
       // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
       try { scheduleNotiSync(); } catch (e) {}
+      try { watchExactReturn(); } catch (e) {}
 
     }, 400);
   });
