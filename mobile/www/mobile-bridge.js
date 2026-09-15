@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.6.0-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.6.1-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1306,6 +1306,113 @@
       })
       .catch(function () {});
   };
+
+  // ── 처음 깔거나 새로 올렸을 때 알림을 물어본다 ──────────────
+  //
+  // 설정 안의 줄 하나로는 거기에 그런 것이 있는 줄도 모르고 지나친다.
+  // 알림은 켜야 쓸모가 있는 것이라, 깔고 나서 한 번은 제대로 물어본다.
+  // 판이 바뀌면(업데이트) 한 번 더 — 그 사이에 새로 생긴 알림이 있을 수 있다.
+
+  var NOTI_VER_KEY = 'neko_noti_asked_ver';
+
+  function notiIntroShow() {
+    if (document.getElementById('nekoNotiIntro')) return;
+
+    var wrap = document.createElement('div');
+    wrap.id = 'nekoNotiIntro';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:9480;background:rgba(0,0,0,0.72);'
+      + 'display:flex;align-items:center;justify-content:center;padding:20px';
+
+    var card = document.createElement('div');
+    card.style.cssText = 'width:min(320px,92vw);background:var(--panel,#2e2e35);'
+      + 'border:2px solid var(--frame,#e87aa4);border-radius:10px;padding:18px 16px;'
+      + 'font-family:inherit;text-align:center';
+
+    var h = document.createElement('div');
+    h.style.cssText = 'font-size:15px;font-weight:700;color:var(--white,#f4f4f8);margin-bottom:10px';
+    h.textContent = LL('noti_intro_title', '🔔 알림을 켤까요?');
+
+    var p = document.createElement('div');
+    p.style.cssText = 'font-size:12px;color:var(--gray,#b0b0bc);line-height:1.7;margin-bottom:16px';
+    p.textContent = LL('noti_intro_body',
+      '알람·물·영양제를 제때 알려 드리려면 알림이 필요해요. 앱을 꺼 두어도 울립니다.');
+
+    var ok = document.createElement('button');
+    ok.className = 'btn btn-y';
+    ok.style.cssText = 'width:100%;font-size:13px;padding:9px 0;margin-bottom:7px';
+    ok.textContent = LL('noti_intro_ok', '알림 켜기');
+
+    var no = document.createElement('button');
+    no.className = 'btn';
+    no.style.cssText = 'width:100%;font-size:12px;padding:7px 0';
+    no.textContent = LL('noti_intro_later', '나중에');
+
+    var close = function () { try { wrap.remove(); } catch (e) {} };
+    no.onclick = close;
+    ok.onclick = function () {
+      close();
+      notiIntroAsk();
+    };
+
+    card.appendChild(h); card.appendChild(p); card.appendChild(ok); card.appendChild(no);
+    wrap.appendChild(card);
+    document.body.appendChild(wrap);
+  }
+
+  /**
+   * 허용을 차례로 받는다.
+   *
+   * 먼저 알림 자체를 받고(안드로이드 13+ 는 이것도 물어야 한다), 그게 되면
+   * 정확한 시각까지 이어서 묻는다. 둘을 한꺼번에 물을 수는 없다 — 하나는
+   * 보통 권한이고 하나는 설정 화면이라 가는 길이 다르다.
+   */
+  function notiIntroAsk() {
+    var N = notiPlugin();
+    if (!N) return;
+    Promise.resolve(N.requestPermissions ? N.requestPermissions() : null)
+      .then(function (st) {
+        if (!st || st.display !== 'granted') { notiSay('noti_denied'); return null; }
+        _notiLastPlan = '';
+        syncNotifications();
+        return checkExactNoti();
+      })
+      .then(function (ex) {
+        // 알림은 켜졌는데 시각만 대략이면, 이어서 그 화면으로 보낸다
+        if (ex && ex !== 'granted' && typeof window.__nekoAskExact === 'function') {
+          markExactAsked();
+          window.__nekoAskExact();
+        }
+      })
+      .catch(function () {});
+  }
+
+  /** 이 판에서 아직 안 물어봤으면 물어본다 */
+  function notiIntroIfNew() {
+    var run = function (ver) {
+      var seen = null;
+      try { seen = localStorage.getItem(NOTI_VER_KEY); } catch (e) {}
+      if (seen === ver) return;                 // 이 판에서는 이미 물어봤다
+      try { localStorage.setItem(NOTI_VER_KEY, ver); } catch (e) {}
+      var N = notiPlugin();
+      if (!N) return;
+      // 이미 다 켜져 있으면 굳이 묻지 않는다
+      Promise.resolve(N.checkPermissions ? N.checkPermissions() : { display: 'granted' })
+        .then(function (st) {
+          var okDisplay = st && st.display === 'granted';
+          return checkExactNoti().then(function (ex) {
+            if (okDisplay && (!ex || ex === 'granted')) return;   // 손댈 것이 없다
+            notiIntroShow();
+          });
+        })
+        .catch(function () {});
+    };
+    var App = capPlugin('App');
+    if (App && App.getInfo) {
+      App.getInfo()
+        .then(function (i) { run(String((i && i.version) || '?')); })
+        .catch(function () { run('?'); });
+    } else { run('?'); }
+  }
 
   // 한 번 물어봤는지 (기기마다 따로 적어 둔다 — 계정을 옮겨도 이건 기기 사정이다)
   var EXACT_ASKED_KEY = 'neko_exact_asked';
@@ -2623,6 +2730,7 @@
       try { scheduleNotiSync(); } catch (e) {}
       try { watchExactReturn(); } catch (e) {}
       try { hookAlarmAdd(); } catch (e) {}
+      try { notiIntroIfNew(); } catch (e) {}
 
     }, 400);
   });
