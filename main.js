@@ -168,6 +168,13 @@ function openDashboardWindow() {
   dashboardWindow.loadFile('renderer/index.html', { query: { mode: 'dashboard' } });
   dashboardWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   if (typeof attachCloudFocusPull === 'function') attachCloudFocusPull(dashboardWindow);
+  // 대시보드가 뜨면 그 위로 다시 올린다 — 따라다니는 고양이가 뒤로 숨지 않게
+  try {
+    if (cursorWindow && !cursorWindow.isDestroyed()) {
+      cursorWindow.setAlwaysOnTop(true, 'screen-saver');
+      cursorWindow.moveTop();
+    }
+  } catch (e) {}
   dashboardWindow.on('closed', () => {
     dashboardWindow = null;
     isDashboardOpen = false;
@@ -681,6 +688,9 @@ ipcMain.on('set-follow', (e, on, imgDataURL) => {
         webPreferences: { nodeIntegration: false, contextIsolation: true }
       });
       cursorWindow.setIgnoreMouseEvents(true);  // 클릭 통과 (작업 방해 X)
+      // 만들 때 준 alwaysOnTop 은 '떠 있는' 등급까지다. 대시보드처럼 나중에 뜬 창이
+      // 그 위를 덮어 고양이가 가려졌다. 위젯과 같은 등급으로 올려 둔다.
+      cursorWindow.setAlwaysOnTop(true, 'screen-saver');
       cursorWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       cursorWindow.on('closed', () => { cursorWindow = null; });
     }
@@ -689,6 +699,7 @@ ipcMain.on('set-follow', (e, on, imgDataURL) => {
       </body></html>`;
     cursorWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
     cursorWindow.showInactive();
+    cursorWindow.setAlwaysOnTop(true, 'screen-saver');   // 다시 띄울 때도 같은 등급으로
 
     if (cursorTimer) clearInterval(cursorTimer);
     cursorTimer = setInterval(() => {

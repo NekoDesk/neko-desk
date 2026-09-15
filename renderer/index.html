@@ -761,6 +761,23 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   background-color:rgba(59,130,246,0.10);
 }
 /* 글씨를 고르면 뜨는 서식 막대 */
+/* 윈도우 메모장처럼 가운데에 둔다 — 글 자체가 가운데로 흐르니 손도 가운데에 있다 */
+.memo-bar {
+  display:flex; justify-content:center; align-items:center; gap:3px;
+  flex-wrap:wrap; margin:0 0 10px;
+  padding:5px 6px; border-radius:7px;
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1));
+  border:1px solid var(--border);
+}
+.memo-bar button {
+  min-width:28px; height:26px; padding:0 6px;
+  background:transparent; border:none; color:var(--white);
+  cursor:pointer; border-radius:4px; font-size:13px; line-height:1;
+  font-family:'Galmuri14', monospace;
+}
+.memo-bar button:hover { background:var(--yellow); color:var(--bg); }
+.memo-bar-sep { width:1px; height:16px; background:var(--border); margin:0 4px; }
+
 .memo-fmt {
   position:fixed; z-index:9999; display:none; gap:2px; padding:4px;
   background:color-mix(in srgb, var(--card), #fff var(--lift-1));
@@ -1541,6 +1558,25 @@ select {
           <div class="memo-head">
             <div class="card-title" style="margin-bottom:0" data-i18n="memo_title">📓 메모장</div>
             <span class="memo-hint" data-i18n="memo_hint">/ 를 입력하면 목록·표를 넣을 수 있어요</span>
+          </div>
+          <!-- 늘 떠 있는 막대. 글씨를 고르면 뜨는 막대(memo-fmt)와 달리, 무엇을 넣을 수
+               있는지 미리 보여 준다 — '/' 를 아는 사람만 쓸 수 있으면 안 되니까. -->
+          <div class="memo-bar">
+            <button type="button" data-i18n-tip="fmt_bold" onmousedown="event.preventDefault();memoFmt('bold')"
+              style="font-weight:800">B</button>
+            <button type="button" data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')"
+              style="font-style:italic">I</button>
+            <button type="button" data-i18n-tip="fmt_under" onmousedown="event.preventDefault();memoFmt('underline')"
+              style="text-decoration:underline">U</button>
+            <button type="button" data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')"
+              style="text-decoration:line-through">S</button>
+            <span class="memo-bar-sep"></span>
+            <button type="button" data-i18n-tip="slash_todo" onmousedown="event.preventDefault();memoBar('todo')">☑</button>
+            <button type="button" data-i18n-tip="slash_bullet" onmousedown="event.preventDefault();memoBar('bullet')">•</button>
+            <button type="button" data-i18n-tip="slash_number" onmousedown="event.preventDefault();memoBar('number')">1.</button>
+            <button type="button" data-i18n-tip="slash_toggle" onmousedown="event.preventDefault();memoBar('toggle')">▸</button>
+            <button type="button" data-i18n-tip="slash_table" onmousedown="event.preventDefault();memoBar('table')">▦</button>
+            <button type="button" data-i18n-tip="slash_divider" onmousedown="event.preventDefault();memoBar('divider')">—</button>
           </div>
           <div id="memoDoc" class="memo-doc" contenteditable="true" spellcheck="false"
                data-i18n-ph="memo_ph" data-ph="여기에 자유롭게 적어보세요..."></div>
@@ -9191,13 +9227,82 @@ function memoTodoBackspace(e) {
   return true;
 }
 
+/**
+ * 표 안에 커서가 있으면 표 바로 아래 새 줄로 내보낸다.
+ *
+ * 표는 contenteditable=false 껍데기 안에 든 '또 하나의 편집 자리' 다. 그 안에
+ * 커서가 있으면 document.execCommand 는 바깥 편집 자리를 기준으로 돌아 아무 일도
+ * 하지 않는다 — 체크박스·목록·토글·구분선이 모두 조용히 실패했다.
+ *
+ * 넣으려는 것은 칸 안의 글씨가 아니라 글줄이므로, 표 아래로 내보내고 거기에 넣는다.
+ */
+function memoLeaveTable() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return false;
+  let n = sel.getRangeAt(0).startContainer;
+  if (n && n.nodeType === 3) n = n.parentElement;
+  const wrap = (n && n.closest) ? n.closest('.memo-table-wrap') : null;
+  if (!wrap) return false;
+
+  // 표 바로 아래 줄을 쓰되, 없거나 또 표면 새로 하나 만든다
+  let line = wrap.nextElementSibling;
+  if (!line || line.classList.contains('memo-table-wrap')) {
+    line = document.createElement('div');
+    line.innerHTML = '<br>';
+    wrap.parentNode.insertBefore(line, wrap.nextSibling);
+  }
+  try {
+    const r = document.createRange();
+    r.setStart(line, 0);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  } catch (e) { return false; }
+  return true;
+}
+
+/**
+ * 위 막대에서 부른다.
+ *
+ * '/' 를 쳐서 고르는 것과 같은 일을 한다. 다만 막대는 글을 쓰다 말고 누르는 것이라
+ * 커서가 편집칸 밖(단추 위)에 있을 수 있어, 마지막으로 있던 자리를 살려 준다.
+ */
+function memoBar(key) {
+  const el = memoEl();
+  if (!el) return;
+  const i = SLASH_CMDS.findIndex(c => c.key === key);
+  if (i < 0) return;
+  // 커서가 편집칸 안에 없으면 맨 끝으로 보낸다 (아무 데도 안 들어가는 것을 막는다)
+  const sel = window.getSelection();
+  let inside = false;
+  if (sel && sel.rangeCount) {
+    let n = sel.getRangeAt(0).startContainer;
+    if (n && n.nodeType === 3) n = n.parentElement;
+    inside = !!(n && el.contains(n));
+  }
+  if (!inside) {
+    el.focus();
+    try {
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } catch (e) {}
+  }
+  runSlash(i);
+}
+
 function runSlash(i) {
   const c = SLASH_CMDS[i];
   closeSlashMenu();
   const el = memoEl();
   if (!el || !c) return;
-  el.focus();
+  // 손(focus)을 먼저 편집칸에 주면 커서가 있던 자리를 잃어버려, 표 안인지조차
+  // 알 수 없게 된다. 그래서 '/' 를 지우고 표 밖으로 내보내는 일을 먼저 한다.
   removeSlashChar();
+  // 표 안이면 표 아래 새 줄로 (표 안에서는 아무것도 들어가지 않는다)
+  if (!memoLeaveTable()) el.focus();
   if (c.key === 'bullet')  document.execCommand('insertUnorderedList');
   else if (c.key === 'number') document.execCommand('insertOrderedList');
   else if (c.key === 'divider') document.execCommand('insertHTML', false, '<hr><div><br></div>');
@@ -9361,8 +9466,17 @@ function memoTableMenu(e) {
 
 function memoTableAct(act) {
   closeSlashMenu();
-  const cell = _mtCtxCell;
-  if (!cell) return;
+  let cell = _mtCtxCell;
+  // 이미 지워진 표의 칸을 들고 있으면 아무 일도 안 하고 끝나서, 눌러도 안 지워지는
+  // 것처럼 보였다. 그럴 때는 지금 커서가 있는 표를 쓴다.
+  if (cell && !cell.isConnected) cell = null;
+  if (!cell) {
+    const sel = window.getSelection();
+    let n = (sel && sel.rangeCount) ? sel.getRangeAt(0).startContainer : null;
+    if (n && n.nodeType === 3) n = n.parentElement;
+    cell = (n && n.closest) ? n.closest('td,th') : null;
+  }
+  if (!cell) { _mtCtxCell = null; return; }
   const tr = cell.parentElement;
   const wrap = cell.closest('.memo-table-wrap');
   const tbl = wrap && wrap.querySelector('table');
@@ -9395,6 +9509,7 @@ function memoTableAct(act) {
       memoSyncCols(tbl);
     }
   }
+  _mtCtxCell = null;          // 다 쓴 칸은 놓아 준다 (다음에 낡은 것을 들고 있지 않게)
   memoSnapAll();
   memoChanged();
 }
