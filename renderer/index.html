@@ -6896,11 +6896,36 @@ const ALARM_SNOOZE = [5, 10, 30, 60];
  */
 let _snoozeTimer = null;
 
+/**
+ * 끄지 않고 놔두면 10분 뒤에 소리만 한 번 더 낸다.
+ *
+ * 창은 끌 때까지 남지만 소리는 처음 한 번뿐이라, 그때 자리에 없었으면
+ * 울린 줄 모르고 지나쳤다. 그렇다고 끝없이 울리면 자리를 비운 사이
+ * 계속 시끄러우므로 딱 한 번만 더 부른다.
+ */
+const ALARM_NAG_MS = 10 * 60 * 1000;
+let _alarmNagTimer = null;
+
+function alarmNagCancel() {
+  clearTimeout(_alarmNagTimer);
+  _alarmNagTimer = null;
+}
+
+function alarmNagArm() {
+  alarmNagCancel();
+  _alarmNagTimer = setTimeout(() => {
+    _alarmNagTimer = null;
+    playAlarmSound();
+    buzz();
+  }, ALARM_NAG_MS);
+}
+
 function alarmDone(d) {
   const action = d && d.action;
   const min = Number(d && d.min) || 0;
   clearTimeout(_snoozeTimer);
   _snoozeTimer = null;
+  alarmNagCancel();               // 사람이 손을 댔으니 더 부르지 않는다
   if (action !== 'snooze' || min <= 0) {
     hideBubbleNow();                       // 해제 — 말풍선도 함께 거둔다
     return;
@@ -6923,6 +6948,7 @@ let _lastAlarmLabel = "";
 
 function raiseAlarm(label) {
   _lastAlarmLabel = label;
+  alarmNagArm();
   const api = window.electronAPI;
   if (!api) return;                        // 모바일에서는 할 일이 없다
   try { if (api.alarmAttention) api.alarmAttention(); } catch (e) {}
