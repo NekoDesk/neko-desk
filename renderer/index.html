@@ -9207,6 +9207,12 @@ function memoSaveNow() {
   if (!el) return;
   clearTimeout(_memoSaveTimer);
   _memoSaveTimer = null;
+  // 표를 넣고 지우는 일은 execCommand 로 하므로 '글자를 쳤다' 는 신호(input)가
+  // 함께 난다. 그대로 두면 0.5초 뒤 타이머가 깨어나 '넣은 뒤' 모습을 한 걸음으로
+  // 또 적는다 — 넣기 전 모습은 이미 적어 두었으므로 헛걸음이다.
+  // 그 헛걸음 때문에 되돌리기를 한 번 눌러도 아무 일이 없고 두 번 눌러야 했다.
+  clearTimeout(_memoTypeTimer);
+  _memoTypeTimer = null;
   S.memoDoc = el.innerHTML;
   saveState();
 }
