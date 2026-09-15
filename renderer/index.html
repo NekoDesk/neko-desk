@@ -6987,7 +6987,10 @@ function alarmDone(d) {
   }, min * 60 * 1000);
   const n = min >= 60 ? L('alarm_popup_hour').replace('{n}', min / 60)
                       : L('alarm_popup_min').replace('{n}', min);
-  toast('info', L('alarm_snooze_title'), L('alarm_snooze_msg').replace('{t}', n));
+  const said = L('alarm_snooze_msg').replace('{t}', n);
+  toast('info', L('alarm_snooze_title'), said);
+  // 위젯에서는 고양이가 말해 준다 — 알림 창은 방금 닫혔으니 뭐가 됐는지 알 길이 없다
+  if (!window._isDashboard) showBubble(said, true);
 }
 
 let _lastAlarmLabel = "";
@@ -10397,8 +10400,12 @@ if (window.electronAPI && window.electronAPI.onSessionExpired) {
   window.electronAPI.onSessionExpired(onSessionExpired);
 }
 // 알람 창에서 고른 것('해제' 또는 '뒤에 다시')을 받는다.
+//
 // 위젯 창에서만 받는다 — 두 창이 다 받으면 미룬 알람이 두 번 울린다.
-if (!window._isDashboard && window.electronAPI && window.electronAPI.onAlarmDone) {
+// window._isDashboard 는 DOMContentLoaded 에서야 정해지는데 이 줄은 그 전에
+// 돌므로, 여기서는 주소를 직접 본다.
+if (window.electronAPI && window.electronAPI.onAlarmDone
+    && new URLSearchParams(window.location.search).get('mode') !== 'dashboard') {
   window.electronAPI.onAlarmDone(alarmDone);
 }
 window.addEventListener('neko-session-expired', onSessionExpired);

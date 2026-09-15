@@ -38,6 +38,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "preload-alarm.js",
       "config.js",
       "renderer/**/*",
       "assets/**/*",

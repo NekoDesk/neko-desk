@@ -2,6 +2,14 @@
 <html lang="ko"><head><meta charset="utf-8">
 <title>NEKO DESK 알람</title>
 <style>
+  /* 본체(index.html)는 이 글꼴을 제 안에 품고 있지만, 이 창은 딴 파일이라
+     따라오지 않는다. 그래서 여기만 글씨체가 달라 보였다. 같은 파일을 가리켜
+     대시보드와 같은 글씨로 맞춘다. */
+  @font-face {
+    font-family: 'Galmuri14';
+    src: url('../assets/galmuri14.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
   /* 색은 본체가 쓰는 테마 값을 주소로 넘겨받아 채운다 */
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Galmuri14','Malgun Gothic',sans-serif; }
   html, body { width:100%; height:100%; background:transparent; overflow:hidden; }
@@ -34,7 +42,8 @@
   .msg { font-size:15px; color:var(--white); line-height:1.45; word-break:break-word;
          flex:1; display:flex; align-items:center; }
 
-  .again-lbl { font-size:11px; color:var(--gray); }
+  /* 대시보드의 단추 글씨(.btn)와 같은 12px 로 맞춘다 */
+  .again-lbl { font-size:12px; color:var(--gray); }
   .again { display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; }
   .again button {
     font-family:inherit; font-size:12px; padding:6px 0; cursor:pointer;
