@@ -799,6 +799,8 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
 /* 앞뒤 날짜 요약 */
 /* 카드보다 한 톤 밝은 배경 + 본문은 흰색 계열로 — 글자 대비를 확보한다.
    (예전엔 박스 전체에 opacity를 걸어 글씨까지 흐려졌음) */
+/* 끌어온 일정을 여기 놓을 수 있다는 표시 */
+.todo-adj.cal-drop { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 78%); }
 .todo-adj { background:var(--card);
   background:color-mix(in srgb, var(--card), #fff var(--lift-1));
   border:1px solid var(--border); border-radius:4px;
@@ -3684,9 +3686,14 @@ function speechBubbleClick() {
     saveState();
     const praised = MSGS('waterPraise')[Math.floor(Math.random() * MSGS('waterPraise').length)];
     showBubble(praised, true);
-  } else {
-    openDash();
+    return;
   }
+  // 누르면 닫는다. 고양이가 하는 말은 반가울 때도 있지만 가릴 때도 있어서,
+  // 치우는 길이 없으면 열 몇 초를 그냥 기다려야 했다.
+  bubbleQueue.length = 0;
+  clearTimeout(bubbleTimer);
+  bubbleBusy = false;
+  hideBubbleNow();
 }
 
 // 설정 섹션 접기/펴기
@@ -3914,7 +3921,7 @@ function openCatEdit(){
   setTimeout(() => { if (inp) inp.focus(); }, 30);
 }
 function closeCatEdit(e){
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const el = document.getElementById('catEditModal');
   if (el) el.style.display = 'none';
 }
@@ -3936,7 +3943,7 @@ function openInstall(){
   el.style.display = 'flex';
 }
 function closeInstall(e){
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const el = document.getElementById('installModal');
   if (el) el.style.display = 'none';
 }
@@ -3999,7 +4006,7 @@ function openPcInstall(){
   }).catch(() => {});
 }
 function closePcInstall(e){
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const el = document.getElementById('pcInstallModal');
   if (el) el.style.display = 'none';
 }
@@ -4421,7 +4428,7 @@ function _breedModalShow(title, html) {
 }
 
 function closeBreedUnlock(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('breedModal');
   if (m) m.style.display = 'none';
   _breedPick = null;
@@ -4971,9 +4978,22 @@ const BUBBLE_GAP_MS = 500;        // 다음 알림까지 잠깐 텀
 let bubbleQueue = [];             // 겹치는 알림은 줄 세워 차례대로 표시
 let bubbleBusy = false;
 
+/**
+ * 창을 닫아도 되는 호출인가.
+ *
+ * 예전에는 어두운 바깥을 누르면 창이 닫혔다. 그런데 창 안의 글을 끌어서 고르다가
+ * 손을 창 밖에서 떼면 그것도 "바깥 누름"으로 세어져, 쓰던 내용이 통째로 날아갔다.
+ * 이제 바깥은 아무리 눌러도 닫히지 않는다 — 닫는 길은 ✕ 단추와 Esc 뿐이다.
+ */
+function _bgClose(e) { return !e; }
+
 function hideBubbleNow() {
   const el = document.getElementById('speechBubble');
-  if (el) el.classList.add('hidden');
+  if (!el) return;
+  el.classList.add('hidden');
+  // 알람 차림새(노랗게 뛰기)도 함께 벗긴다 — 안 벗기면 다음에 뜨는 말풍선이
+  // 알람도 아닌데 계속 뛴다
+  el.classList.remove('bubble-alarm');
 }
 
 /** 대기열의 다음 알림을 띄운다 */
@@ -5631,7 +5651,7 @@ function openTtFill() {
   if (m) m.style.display = 'flex';
 }
 function closeTtFill(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('ttFillModal');
   if (m) m.style.display = 'none';
 }
@@ -5718,7 +5738,7 @@ function openTtRange() {
   if (m) m.style.display = 'flex';
 }
 function closeTtRange(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('ttRangeModal');
   if (m) m.style.display = 'none';
 }
@@ -5762,7 +5782,7 @@ function openLeadPick(id, all) {
 }
 
 function closeLeadPick(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('ttLeadModal');
   if (m) m.style.display = 'none';
   _leadPick = null;
@@ -5836,7 +5856,7 @@ function dupSyncEnd() {
 }
 
 function closeTtDup(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('ttDupModal');
   if (m) m.style.display = 'none';
 }
@@ -6287,7 +6307,7 @@ function ttEdit(id, isNew) {
   if (m) m.style.display = 'flex';
 }
 function ttCloseEdit(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   // 새로 만든 칸을 저장하지 않고 닫으면 없던 일로 되돌린다
   if (_ttEditNew && _ttEditId) {
     S.blocks = blockList().filter(x => x.id !== _ttEditId);
@@ -6351,7 +6371,7 @@ function openPomoSettings() {
   if (m) m.style.display = 'flex';
 }
 function closePomoSettings(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('pomoModal');
   if (m) m.style.display = 'none';
 }
@@ -6393,7 +6413,7 @@ function openTtTips() {
   if (m) m.style.display = 'flex';
 }
 function closeTtTips(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('ttTipModal');
   if (m) m.style.display = 'none';
 }
@@ -7067,7 +7087,7 @@ function openRemindSettings() {
   syncAllTimeAmPm(el);
 }
 function closeRemindSettings(e) {
-  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  if (!_bgClose(e)) return;
   const el = document.getElementById('remindModal');
   if (el) el.style.display = 'none';
 }
@@ -7278,8 +7298,17 @@ function updateCycleUI() {
     if (bt) bt.innerHTML = `<div style="font-size:22px">${tips[c.cycleIdx % tips.length]}</div>`;
     // (break 기반 기분 페널티 제거 → 15분 타이머로 대체)
   } else if (isPre) {
+    // 이 갈래는 대기열을 거치지 않고 말풍선을 직접 되살린다. 그런데 1초마다 도는
+    // 자리라, 알람이 울려 붙은 bubble-alarm(끝없이 뛰는 차림새)을 벗기지 않으면
+    // 출근 전 안내가 알람처럼 계속 깜빡였다. 알람을 끄기 전까지 멈추지 않았다.
     const el = document.getElementById('speechBubble');
-    if (el) { el.textContent=L('pre_bubble'); el.classList.remove('hidden'); }
+    if (el) {
+      el.classList.remove('bubble-alarm');
+      const txt = L('pre_bubble');
+      // 이미 같은 말을 같은 모습으로 띄우고 있으면 건드리지 않는다 (괜한 다시 그리기)
+      if (el.textContent !== txt) el.textContent = txt;
+      el.classList.remove('hidden');
+    }
   }
 }
 
@@ -7979,7 +8008,9 @@ function _dragMove(e) {
   }
   const under = document.elementFromPoint(e.clientX, e.clientY);
   // 캘린더 날짜 위 → 날짜 이동 / 다른 할 일 위 → 순서 변경
-  const cell = (under && under.closest) ? under.closest('.cal-day[data-key]') : null;
+  // 어제·내일 상자도 날짜다 — 달력까지 올라가지 않고 바로 옆으로 옮길 수 있게.
+  const cell = (under && under.closest)
+    ? under.closest('.cal-day[data-key], .todo-adj[data-key]') : null;
   const row  = (!cell && under && under.closest) ? under.closest('.todo-item[data-idx]') : null;
   const next = cell || row;
   if (_drag.hover && _drag.hover !== next) {
@@ -8094,7 +8125,7 @@ function _adjDayHtml(key, labelKey, cls) {
   } else {
     body = `<div class="todo-adj-item empty">${L('todo_adj_empty')}</div>`;
   }
-  return `<div class="todo-adj ${cls}" onclick="openDayNote('${key}')">
+  return `<div class="todo-adj ${cls}" data-key="${key}" onclick="openDayNote('${key}')">
     <div class="todo-adj-hd">${L(labelKey)} · ${parseInt(m)}/${parseInt(d)}</div>
     ${body}
   </div>`;
@@ -8113,7 +8144,7 @@ function openDiary() {
   if (el) el.style.display = 'flex';
 }
 function closeDiary(e) {
-  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  if (!_bgClose(e)) return;
   _diaryAutoSave();          // 저장을 누르지 않고 닫아도 잃지 않게
   const el = document.getElementById('diaryModal');
   if (el) el.style.display = 'none';
@@ -8127,7 +8158,7 @@ function openFruitPopup() {
   if (el) el.style.display = 'flex';
 }
 function closeFruitPopup(e) {
-  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  if (!_bgClose(e)) return;
   const el = document.getElementById('fruitModal');
   if (el) el.style.display = 'none';
 }
@@ -8139,7 +8170,7 @@ function openTodoTips() {
   if (el) el.style.display = 'flex';
 }
 function closeTodoTips(e) {
-  if (e && e.target !== e.currentTarget) return;   // 내용 클릭으로는 닫히지 않게
+  if (!_bgClose(e)) return;
   const el = document.getElementById('todoTipModal');
   if (el) el.style.display = 'none';
 }
@@ -8863,7 +8894,7 @@ function openCalPick() {
   if (m) m.style.display = 'flex';
 }
 function closeCalPick(e) {
-  if (e && e.target !== e.currentTarget) return;
+  if (!_bgClose(e)) return;
   const m = document.getElementById('calPickModal');
   if (m) m.style.display = 'none';
 }
