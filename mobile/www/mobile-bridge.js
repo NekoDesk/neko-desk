@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '3.6.2-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
+  var APP_VERSION = '3.6.3-mobile';   // prepare-www.js가 빌드할 때 채워 넣는다
 
   // 여기가 폰이라는 표시. renderer 는 데스크톱 기준으로 짜여 있어서
   // "위젯 창"처럼 폰에 없는 개념을 가려내는 데 쓴다.
@@ -1146,6 +1146,8 @@
   };
 
   var NOTI_CHANNEL = 'neko_remind';
+  // 아이폰 번들 맨 위 · 안드로이드 res/raw 양쪽에 같은 이름으로 둔다
+  var NOTI_SOUND = 'neko_noti.wav';
   var _notiPlugin = null;
   var _notiTimer = null;
   var _notiLastPlan = '';
@@ -1557,6 +1559,10 @@
     list.forEach(function (n) {
       n.channelId = NOTI_CHANNEL;
       n.schedule.repeats = true;
+      // 아이폰은 알림마다 소리를 따로 읽는다 (안드로이드는 위 통로의 소리를 쓴다).
+      // 이걸 안 주면 아이폰은 기본 알림음으로 울린다 — 고양이 소리가 안 났던 까닭.
+      // MP3 는 아이폰이 알림 소리로 받지 않아 wav 를 따로 둔다.
+      n.sound = NOTI_SOUND;
     });
     return list;
   }

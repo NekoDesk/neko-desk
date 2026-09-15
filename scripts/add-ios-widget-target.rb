@@ -25,6 +25,25 @@ if File.exist?(plugin_path) && app_target
   end
 end
 
+# ── 알림 소리를 앱 번들 맨 위에 넣는다 ──
+#
+# 아이폰은 알림 소리를 앱 번들의 '맨 위'에서만 찾는다. www 가 복사되는
+# public/ 밑에 있으면 못 찾아서 기본 소리로 울린다.
+# 형식도 가린다 — MP3 는 받지 않고 caf·aiff·wav 만 받는다 (30초 이내).
+noti_sound = File.join(__dir__, '..', 'mobile', 'ios', 'App', 'App', 'neko_noti.wav')
+if File.exist?(noti_sound) && app_target
+  already = app_target.resources_build_phase.files.any? do |f|
+    f.file_ref&.path&.end_with?('neko_noti.wav')
+  end
+  unless already
+    app_group = project.main_group.groups.find { |g| g.display_name == 'App' }
+    app_group ||= project.main_group
+    ref = app_group.new_file('neko_noti.wav')
+    app_target.resources_build_phase.add_file_reference(ref)
+    puts 'neko_noti.wav → App 타겟 리소스에 추가 (알림 소리)'
+  end
+end
+
 # 이미 추가돼 있으면 위젯 타겟은 건너뛴다
 if project.targets.any? { |t| t.name == 'NekoWidget' }
   project.save
