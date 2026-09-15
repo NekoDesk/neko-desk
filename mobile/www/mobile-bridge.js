@@ -1243,6 +1243,31 @@
       .catch(function (e) { notiSay('noti_error', undefined, e && e.message ? e.message : String(e)); });
   };
 
+  /**
+   * 알람을 새로 만든 그 순간에 확인한다.
+   *
+   * 알람을 처음 만드는 사람에게는 이때가 가장 알맞다 — 늦게 울리면 안 되는
+   * 물건을 방금 만들었으니 왜 켜야 하는지 설명할 필요도 없다.
+   */
+  function hookAlarmAdd() {
+    var orig = window.addAlarm;
+    if (typeof orig !== 'function' || orig.__nekoHooked) return;
+    var wrapped = function () {
+      var before = (window.S && Array.isArray(window.S.alarms)) ? window.S.alarms.length : 0;
+      var out = orig.apply(this, arguments);
+      var after = (window.S && Array.isArray(window.S.alarms)) ? window.S.alarms.length : 0;
+      if (after > before) {
+        checkExactNoti().then(function (ex) {
+          renderNotiRow();
+          nudgeExactOnce(after);
+        });
+      }
+      return out;
+    };
+    wrapped.__nekoHooked = true;
+    window.addAlarm = wrapped;
+  }
+
   // 설정에서 켜고 돌아왔는지 본다. 켰으면 예약을 정확한 시각으로 새로 넣는다.
   function watchExactReturn() {
     var recheck = function () {
@@ -1262,13 +1287,52 @@
     if (App) { try { App.addListener('appStateChange', function (st) { if (st && st.isActive) recheck(); }); } catch (e) {} }
   }
 
-  // 정확한 시각 알람을 켜러 설정 화면으로 보낸다 (안드로이드가 직접 띄운다)
+  /**
+   * 정확한 시각 알람을 켜러 안드로이드 설정 화면으로 보낸다.
+   *
+   * 앱이 스스로 켤 수는 없다 — 안드로이드가 일부러 사람 손을 거치게 해 두었다.
+   * 다만 돌아올 때 결과를 그대로 돌려주므로, 켰으면 그 자리에서 예약을 새로 넣는다.
+   * (예전 예약은 이미 '대략 그때쯤' 으로 들어가 있어 새로 넣어야 정확해진다)
+   */
   window.__nekoAskExact = function () {
     var N = notiPlugin();
     if (!N || !N.changeExactNotificationSetting) return;
-    Promise.resolve(N.changeExactNotificationSetting()).catch(function () {});
-    // 설정에서 켜고 돌아오면 resume 에서 다시 묻고 예약을 새로 넣는다
+    markExactAsked();
+    Promise.resolve(N.changeExactNotificationSetting())
+      .then(function (st) {
+        _notiExact = st && st.exact_alarm ? st.exact_alarm : _notiExact;
+        if (_notiExact === 'granted') { _notiLastPlan = ''; syncNotifications(); }
+        renderNotiRow();
+      })
+      .catch(function () {});
   };
+
+  // 한 번 물어봤는지 (기기마다 따로 적어 둔다 — 계정을 옮겨도 이건 기기 사정이다)
+  var EXACT_ASKED_KEY = 'neko_exact_asked';
+  function exactAsked() {
+    try { return localStorage.getItem(EXACT_ASKED_KEY) === '1'; } catch (e) { return false; }
+  }
+  function markExactAsked() {
+    try { localStorage.setItem(EXACT_ASKED_KEY, '1'); } catch (e) {}
+  }
+
+  /**
+   * 알람이 있는데 정확한 시각이 막혀 있으면 한 번은 제대로 물어본다.
+   *
+   * 설정 구석의 한 줄로는 못 보고 지나친다. 알람은 늦으면 소용이 없으니,
+   * 알람을 쓰는 사람에게는 눈에 띄게 한 번 알린다. 물어본 뒤로는 설정 줄에만 둔다.
+   */
+  function nudgeExactOnce(alarmCount) {
+    if (!alarmCount || exactAsked()) return;
+    if (!_notiExact || _notiExact === 'granted') return;
+    markExactAsked();
+    try {
+      if (typeof window.toast === 'function') {
+        window.toast('alert', LL('noti_exact_title', '⏰ 알람이 늦게 울려요'),
+                     LL('noti_exact_ask', '설정 탭에서 \'정확한 시각으로 받기\' 를 켜 주세요.'), 9000);
+      }
+    } catch (e) {}
+  }
 
   /**
    * 알림 플러그인을 잡는다.
@@ -1434,6 +1498,9 @@
           // 넣는 데 성공했다고 정확한 시각인 것은 아니다 — 물어보고 적는다
           return checkExactNoti().then(function (ex) {
             notiSay(ex && ex !== 'granted' ? 'noti_ok_approx' : 'noti_ok', list.length);
+            // 직접 등록한 알람이 있는 사람에게만 — 물·비타민은 몇 분 늦어도 괜찮다
+            var alarms = (window.S && Array.isArray(window.S.alarms)) ? window.S.alarms.length : 0;
+            nudgeExactOnce(alarms);
           });
         })
         .catch(function (e) {
@@ -2555,6 +2622,7 @@
       // 6) 알람·물·비타민을 안드로이드에 예약 (앱이 꺼져 있어도 울리도록)
       try { scheduleNotiSync(); } catch (e) {}
       try { watchExactReturn(); } catch (e) {}
+      try { hookAlarmAdd(); } catch (e) {}
 
     }, 400);
   });
