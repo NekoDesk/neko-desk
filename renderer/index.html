@@ -9193,6 +9193,24 @@ function loadMemoDoc() {
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+/**
+ * 지금 화면 그대로 바로 적어 둔다.
+ *
+ * 글자를 칠 때는 매 글자마다 쓰지 않으려고 0.6초를 기다린다. 그런데 표를 더하고
+ * 지우는 것처럼 '한 번에 끝나는 일' 까지 기다리면 위험하다 — 그 0.6초 사이에
+ * 동기화가 돌면, 적혀 있는 값이 아직 옛것이라 '이 기기는 안 건드렸다' 로
+ * 판정돼(merge3 의 첫 줄) 서버 것으로 덮인다. 화면은 4행인데 적힌 것은 3행이
+ * 되고, 창을 다시 열면 3행으로 돌아온다.
+ */
+function memoSaveNow() {
+  const el = memoEl();
+  if (!el) return;
+  clearTimeout(_memoSaveTimer);
+  _memoSaveTimer = null;
+  S.memoDoc = el.innerHTML;
+  saveState();
+}
+
 /** 입력이 멎으면 저장 (매 글자마다 쓰지 않도록) */
 function memoChanged() {
   const el = memoEl();
@@ -9391,7 +9409,7 @@ function runSlash(i) {
     document.execCommand('insertHTML', false, memoTableHtml(3, 2) + '<div><br></div>');
     setTimeout(memoSnapAll, 0);
   }
-  memoChanged();
+  memoSaveNow();              // 목록·표·구분선을 넣은 것도 바로
 }
 
 /** 표 한 벌 (행·열 추가 버튼 포함). 버튼은 편집 대상이 아니므로 contenteditable=false */
@@ -9587,7 +9605,7 @@ function memoTableAct(act) {
   }
   _mtCtxCell = null;          // 다 쓴 칸은 놓아 준다 (다음에 낡은 것을 들고 있지 않게)
   memoSnapAll();
-  memoChanged();
+  memoSaveNow();              // 표를 고친 것은 기다리지 않고 바로
 }
 
 /** 고른 셀들에 색을 칠한다 (고른 게 없으면 우클릭한 셀 하나) */
@@ -9738,7 +9756,7 @@ function memoInsertTable(cols, rows) {
     }
   }
   setTimeout(memoSnapAll, 0);
-  memoChanged();
+  memoSaveNow();              // 표를 넣은 것도 바로
 }
 
 // ── 되돌리기 / 다시 하기 ──────────────────────────────
