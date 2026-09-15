@@ -1875,6 +1875,16 @@ select {
     </div>
   </div>
 </div>
+<!-- 메모장 통째로 비우기 확인 -->
+<div id="memoClearModal" style="display:none;position:fixed;inset:0;z-index:9490;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="event.stopPropagation()">
+  <div class="card" style="width:min(320px,92vw);padding:18px 16px;text-align:center">
+    <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:8px" data-i18n="memo_clear_title">🗑 메모를 모두 지울까요?</div>
+    <div style="font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:14px" data-i18n="memo_clear_body">표와 체크박스까지 모두 지워져요. 되돌릴 수 없어요.</div>
+    <button class="btn btn-y" style="width:100%;margin-bottom:7px" onclick="memoClearYes()" data-i18n="memo_clear_ok">모두 지우기</button>
+    <button class="btn" style="width:100%" onclick="memoClearCancel()" data-i18n="memo_clear_no">그대로 두기</button>
+  </div>
+</div>
+
 <!-- 고양이 해금 / 뽑기 -->
 <div id="breedModal" style="display:none;position:fixed;inset:0;z-index:9470;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="closeBreedUnlock(event)">
   <div class="card" style="width:min(340px,92vw);padding:16px" onclick="event.stopPropagation()">
@@ -2676,6 +2686,10 @@ const STRINGS = {
     alarm_popup_off:'해제', alarm_popup_again:'뒤에 다시',
     alarm_popup_min:'{n}분', alarm_popup_hour:'{n}시간',
     alarm_snooze_title:'⏰ 잠깐 미뤘어요', alarm_snooze_msg:'{t} 뒤에 다시 알려 드릴게요',
+    memo_clear_title:'🗑 메모를 모두 지울까요?',
+    memo_clear_body:'표와 체크박스까지 모두 지워져요. 되돌릴 수 없어요.',
+    memo_clear_ok:'모두 지우기', memo_clear_no:'그대로 두기',
+    memo_clear_done:'메모를 비웠어요',
     noti_intro_title:'🔔 알림을 켤까요?',
     noti_intro_body:'알람·물·영양제를 제때 알려 드리려면 알림이 필요해요. 앱을 꺼 두어도 울립니다.',
     noti_intro_ok:'알림 켜기', noti_intro_later:'나중에',
@@ -3029,6 +3043,10 @@ const STRINGS = {
     alarm_popup_off:'Dismiss', alarm_popup_again:'Remind me in',
     alarm_popup_min:'{n} min', alarm_popup_hour:'{n} hr',
     alarm_snooze_title:'⏰ Snoozed', alarm_snooze_msg:'I will remind you in {t}',
+    memo_clear_title:'🗑 Clear the whole memo?',
+    memo_clear_body:'Tables and checkboxes go too. This cannot be undone.',
+    memo_clear_ok:'Clear all', memo_clear_no:'Keep it',
+    memo_clear_done:'Memo cleared',
     noti_intro_title:'🔔 Turn on notifications?',
     noti_intro_body:'Alarms, water and supplement reminders need notifications. They ring even when the app is closed.',
     noti_intro_ok:'Turn on', noti_intro_later:'Later',
@@ -3363,6 +3381,10 @@ const STRINGS = {
     alarm_popup_off:'解除', alarm_popup_again:'後でもう一度',
     alarm_popup_min:'{n}分', alarm_popup_hour:'{n}時間',
     alarm_snooze_title:'⏰ 少し延ばしました', alarm_snooze_msg:'{t}後にまたお知らせします',
+    memo_clear_title:'🗑 メモをすべて消しますか？',
+    memo_clear_body:'表やチェックボックスも消えます。元に戻せません。',
+    memo_clear_ok:'すべて消す', memo_clear_no:'そのままにする',
+    memo_clear_done:'メモを空にしました',
     noti_intro_title:'🔔 通知をオンにしますか？',
     noti_intro_body:'アラーム・水・サプリをちょうどよい時刻にお知らせするには通知が必要です。アプリを閉じていても鳴ります。',
     noti_intro_ok:'通知をオン', noti_intro_later:'あとで',
@@ -9539,10 +9561,90 @@ function memoSnapTable(wrap) {
   const pad = (MEMO_LINE - (used % MEMO_LINE)) % MEMO_LINE;
   wrap.style.marginBottom = pad + 'px';
 }
+/**
+ * 표 껍데기 안으로 잘못 들어간 것을 밖으로 빼낸다.
+ *
+ * 표 껍데기(.memo-table-wrap)에 들어가도 되는 것은 표와 '+' 단추뿐이다. 그런데
+ * 편집 중에 체크박스나 글줄이 그 안으로 끼어들면, 껍데기의 오른쪽 여백 자리에
+ * 얹혀 표 옆에 비집고 들어간 것처럼 보였다.
+ *
+ * 지우지 않고 표 바로 아래로 옮긴다 — 사람이 쓴 것을 없애면 안 되니까.
+ */
+function memoFixStrays(el) {
+  if (!el) return;
+  el.querySelectorAll('.memo-table-wrap').forEach(wrap => {
+    [...wrap.children].forEach(ch => {
+      if (ch.tagName === 'TABLE' || ch.classList.contains('mt-add')) return;
+      wrap.parentNode.insertBefore(ch, wrap.nextSibling);
+    });
+  });
+}
+
+/** 지금 고른 것이 메모 전체인가 */
+function memoAllSelected() {
+  const el = memoEl();
+  const sel = window.getSelection();
+  if (!el || !sel || !sel.rangeCount || sel.isCollapsed) return false;
+  const r = sel.getRangeAt(0);
+  const full = document.createRange();
+  full.selectNodeContents(el);
+  try {
+    return r.compareBoundaryPoints(Range.START_TO_START, full) <= 0
+        && r.compareBoundaryPoints(Range.END_TO_END, full) >= 0;
+  } catch (e) { return false; }
+}
+
+/** 메모에 지울 것이 남아 있는가 */
+function memoHasContent() {
+  const el = memoEl();
+  if (!el) return false;
+  return !!(el.querySelector('.memo-table-wrap, .memo-todo, details, hr, ul, ol')
+            || el.textContent.replace(/[+\s ]/g, ''));
+}
+
+/**
+ * 메모를 통째로 비운다.
+ *
+ * 표는 contenteditable=false 껍데기라 전체 선택 뒤 지워도 남았고, '+' 단추의
+ * 글자만 '++' 처럼 남아 더 지저분해졌다. 통째로 비우는 일은 브라우저에 맡기지
+ * 않고 여기서 직접 한다.
+ *
+ * 되돌릴 수 없는 일이라 한 번 묻는다.
+ */
+function memoClearAll() {
+  if (!memoHasContent()) return;
+  const m = document.getElementById('memoClearModal');
+  if (!m) return;
+  m.style.display = 'flex';
+}
+function memoClearCancel() {
+  const m = document.getElementById('memoClearModal');
+  if (m) m.style.display = 'none';
+}
+function memoClearYes() {
+  memoClearCancel();
+  const el = memoEl();
+  if (!el) return;
+  el.innerHTML = '<div><br></div>';
+  el.focus();
+  try {
+    const r = document.createRange();
+    r.setStart(el.firstChild, 0);
+    r.collapse(true);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  } catch (e) {}
+  S.memoDoc = el.innerHTML;
+  saveState();
+  toast('info', L('memo_clear_title'), L('memo_clear_done'));
+}
+
 /** 메모 안의 모든 표를 다시 맞춘다 */
 function memoSnapAll() {
   const el = memoEl();
   if (!el) return;
+  memoFixStrays(el);          // 표 안에 끼어든 것을 먼저 빼낸다
   el.querySelectorAll('.memo-table-wrap').forEach(memoSnapTable);
 }
 
@@ -9646,6 +9748,29 @@ function initMemo() {
       if (e.key === 'Escape')    { e.preventDefault(); closeSlashMenu(); return; }
     }
     if (e.key === '/') setTimeout(openSlashMenu, 0);   // 글자가 들어간 뒤 위치를 잡는다
+    // Ctrl+A 는 우리가 직접 고른다.
+    //
+    // 브라우저에 맡기면 커서가 표 칸 안에 있을 때 그 표 안만 골라서, 전체를 고른 줄
+    // 알고 지워도 바깥 글은 그대로 남았다. 표는 껍데기가 따로 노는 '또 하나의 편집
+    // 자리' 라 브라우저가 거기까지만 본다.
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+      e.preventDefault();
+      el.focus();
+      try {
+        const rg = document.createRange();
+        rg.selectNodeContents(el);
+        const sl = window.getSelection();
+        sl.removeAllRanges();
+        sl.addRange(rg);
+      } catch (err) {}
+      return;
+    }
+    // 전체를 고르고 지우면 표까지 통째로 — 브라우저에 맡기면 표가 남는다
+    if ((e.key === 'Backspace' || e.key === 'Delete') && memoAllSelected()) {
+      e.preventDefault();
+      memoClearAll();
+      return;
+    }
     if (e.key === 'Backspace' && memoTodoBackspace(e)) return;
   });
   el.addEventListener('blur', () => { S.memoDoc = el.innerHTML; saveState(); closeSlashMenu(); });
