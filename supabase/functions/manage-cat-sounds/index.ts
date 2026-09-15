@@ -9,9 +9,9 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const BUCKET = "cat-sounds";
-const ROLES = ["touch", "call1", "call2", "water", "fruit"] as const;
+const ROLES = ["touch", "call1", "call2", "water", "fruit", "alarm"] as const;
 /** touch 만 여러 개. 나머지는 하나만 두므로 올리면 있던 것을 갈아 끼운다. */
-const SINGLE = new Set(["call1", "call2", "water", "fruit"]);
+const SINGLE = new Set(["call1", "call2", "water", "fruit", "alarm"]);
 
 Deno.serve(async (req) => {
   const cors = {

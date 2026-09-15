@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 알람: 위젯을 앞으로 + 오른쪽 위 알림 창
   alarmAttention: () => ipcRenderer.send('alarm-attention'),
   alarmPopup:     (opts) => ipcRenderer.send('alarm-popup', opts),
+  onAlarmDone:    (cb) => ipcRenderer.on('alarm-done', (e, d) => cb(d)),
 
   minimizeApp:    () => ipcRenderer.send('minimize-app'),
 

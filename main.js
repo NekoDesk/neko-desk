@@ -483,10 +483,15 @@ ipcMain.on('alarm-attention', () => {
   } catch (e) {}
 });
 
-/** 화면 오른쪽 위에 알림 창을 띄운다. 확인을 누르거나 정해진 시간이 지나면 닫힌다 */
+/**
+ * 화면 오른쪽 위에 알림 창을 띄운다.
+ *
+ * 스스로 닫히지 않는다 — 사람이 '해제' 나 '뒤에 다시' 를 고를 때까지 남는다.
+ * (예전에는 8초 뒤에 혼자 닫혀서, 자리를 비운 사이 울린 알람은 울린 줄도 몰랐다)
+ */
 ipcMain.on('alarm-popup', (e, opts) => {
   const o = opts || {};
-  const W = 340, H = 156, MARGIN = 18;
+  const W = 358, H = 238, MARGIN = 18;
   try {
     if (alarmPopup && !alarmPopup.isDestroyed()) alarmPopup.destroy();
     const { x: dx, y: dy, width: dw } = screen.getPrimaryDisplay().workArea;
@@ -495,16 +500,23 @@ ipcMain.on('alarm-popup', (e, opts) => {
       y: Math.round(dy + MARGIN),
       width: W, height: H,
       frame: false, transparent: true, resizable: false, movable: false,
-      skipTaskbar: true, focusable: false, show: false,
+      skipTaskbar: true, show: false,
+      // 단추를 눌러야 하므로 손이 닿아야 한다 (예전에는 focusable:false 라 눌러도 먹지 않았다)
+      focusable: true,
       alwaysOnTop: true,
-      webPreferences: { nodeIntegration: false, contextIsolation: true },
+      webPreferences: {
+        nodeIntegration: false, contextIsolation: true,
+        preload: path.join(__dirname, 'preload-alarm.js'),
+      },
     });
     alarmPopup.setAlwaysOnTop(true, 'screen-saver');
     const q = new URLSearchParams({
       msg: String(o.msg || ''),
-      ok: String(o.ok || '확인'),
-      after: String(o.after || '{n}초 후 닫힘'),
-      sec: String(o.sec || 8),
+      off: String(o.off || '해제'),
+      againLbl: String(o.againLbl || '뒤에 다시'),
+      minFmt: String(o.minFmt || '{n}분'),
+      hourFmt: String(o.hourFmt || '{n}시간'),
+      mins: String(o.mins || '5,10,30,60'),
       panel: o.panel || '#16213e',
       frame: o.frame || '#e87aa4',
       'frame-text': o.frameText || '#d4659a',
@@ -519,6 +531,13 @@ ipcMain.on('alarm-popup', (e, opts) => {
     });
     alarmPopup.on('closed', () => { alarmPopup = null; });
   } catch (err) {}
+});
+
+/** 알람 창에서 고른 것을 본체 화면으로 넘긴다 (다시 울릴 시각은 거기서 잰다) */
+ipcMain.on('alarm-done', (e, data) => {
+  try { if (alarmPopup && !alarmPopup.isDestroyed()) alarmPopup.destroy(); } catch (err) {}
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try { mainWindow.webContents.send('alarm-done', data || {}); } catch (err) {}
 });
 
 ipcMain.on('minimize-app', (e) => {

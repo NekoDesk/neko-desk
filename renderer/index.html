@@ -2513,7 +2513,6 @@ const STRINGS = {
     cat_full_title:'😻 기분이 200점!', cat_full_msg:'고마워요★ 더 행복해졌어요!',
     login_google_btn:'구글 로그인 하기',
     alarm_dup_msg:'같은 알람이 이미 있어요', remind_dirty:'아직 저장하지 않았어요',
-    alarm_popup_ok:'확인', alarm_popup_after:'{n}초 후 닫힘',
     alarm_title:'⏰ 알람', alarm_ph:'알람 이름', alarm_add:'+ 추가',
     alarm_empty:'등록된 알람이 없어요', alarm_everyday:'매일',
     alarm_weekdays:'주중', alarm_weekend:'주말',
@@ -2621,6 +2620,9 @@ const STRINGS = {
     noti_notyet:'아직 허용 안 함', noti_ok:'허용됨', noti_ok_approx:'허용됨 (시각은 대략)',
     noti_exact_off:'⏰ 알람이 몇 분 늦게 울릴 수 있어요. 정확한 시각으로 받으려면 켜 주세요.',
     noti_exact_btn:'정확한 시각으로 받기',
+    alarm_popup_off:'해제', alarm_popup_again:'뒤에 다시',
+    alarm_popup_min:'{n}분', alarm_popup_hour:'{n}시간',
+    alarm_snooze_title:'⏰ 잠깐 미뤘어요', alarm_snooze_msg:'{t} 뒤에 다시 알려 드릴게요',
     noti_exact_title:'⏰ 알람이 늦게 울려요',
     noti_exact_ask:'설정 탭에서 \'정확한 시각으로 받기\' 를 켜 주세요.',
     noti_error:'오류', noti_noplugin:'플러그인을 못 찾음',
@@ -2861,7 +2863,6 @@ const STRINGS = {
     cat_full_title:'😻 Mood 200%!', cat_full_msg:'Thank you★ Even happier now!',
     login_google_btn:'Sign in with Google',
     alarm_dup_msg:'That alarm already exists', remind_dirty:'Not saved yet',
-    alarm_popup_ok:'OK', alarm_popup_after:'closes in {n}s',
     alarm_title:'⏰ Alarms', alarm_ph:'Alarm name', alarm_add:'+ Add',
     alarm_empty:'No alarms yet', alarm_everyday:'Every day',
     alarm_weekdays:'Weekdays', alarm_weekend:'Weekend',
@@ -2969,6 +2970,9 @@ const STRINGS = {
     noti_notyet:'Not allowed yet', noti_ok:'Allowed', noti_ok_approx:'Allowed (times are approximate)',
     noti_exact_off:'⏰ Alarms may ring a few minutes late. Turn this on for exact times.',
     noti_exact_btn:'Ring at the exact time',
+    alarm_popup_off:'Dismiss', alarm_popup_again:'Remind me in',
+    alarm_popup_min:'{n} min', alarm_popup_hour:'{n} hr',
+    alarm_snooze_title:'⏰ Snoozed', alarm_snooze_msg:'I will remind you in {t}',
     noti_exact_title:'⏰ Alarms ring late',
     noti_exact_ask:'Turn on \'Ring at the exact time\' in the Settings tab.',
     noti_error:'Error', noti_noplugin:'Plugin not found',
@@ -3209,7 +3213,6 @@ const STRINGS = {
     cat_full_title:'😻 気分が200点！', cat_full_msg:'ありがとう★ もっと幸せになったよ！',
     login_google_btn:'Googleでログイン',
     alarm_dup_msg:'同じアラームがすでにあります', remind_dirty:'まだ保存していません',
-    alarm_popup_ok:'確認', alarm_popup_after:'{n}秒後に閉じます',
     alarm_title:'⏰ アラーム', alarm_ph:'アラーム名', alarm_add:'+ 追加',
     alarm_empty:'アラームがありません', alarm_everyday:'毎日',
     alarm_weekdays:'平日', alarm_weekend:'週末',
@@ -3298,6 +3301,9 @@ const STRINGS = {
     noti_notyet:'まだ許可していません', noti_ok:'許可済み', noti_ok_approx:'許可済み（時刻は目安）',
     noti_exact_off:'⏰ アラームが数分遅れることがあります。正確な時刻で受け取るにはオンにしてください。',
     noti_exact_btn:'正確な時刻で受け取る',
+    alarm_popup_off:'解除', alarm_popup_again:'後でもう一度',
+    alarm_popup_min:'{n}分', alarm_popup_hour:'{n}時間',
+    alarm_snooze_title:'⏰ 少し延ばしました', alarm_snooze_msg:'{t}後にまたお知らせします',
     noti_exact_title:'⏰ アラームが遅れます',
     noti_exact_ask:'設定タブで「正確な時刻で受け取る」をオンにしてください。',
     noti_error:'エラー', noti_noplugin:'プラグインが見つかりません',
@@ -6868,17 +6874,55 @@ function buzz(kind) {
 }
 
 function alarmSoundSrc() { return soundSrc('cat01.mp3'); }
-function playAlarmSound() { playSound('cat01.mp3', { noBuzz: true }); }   // 알람은 따로 길게 떤다
+// 알람은 따로 길게 떤다. 서버에 '알람' 소리를 올려 두면 그것으로, 없으면 내장본으로.
+function playAlarmSound() { playRole('alarm', 'cat01.mp3', 0, { noBuzz: true }); }
 
 
 /**
  * 알람을 놓치지 않게 한다.
  * 위젯이 다른 창 뒤에 있으면 말풍선이 안 보이므로 앞으로 끌어올리고,
- * 화면 오른쪽 위에도 알림 창을 띄운다 (확인을 누르거나 8초 뒤 닫힘).
+ * 화면 오른쪽 위에도 알림 창을 띄운다. 그 창은 스스로 닫히지 않는다 —
+ * '해제' 를 누르거나 '뒤에 다시' 를 고를 때까지 남는다.
  */
-const ALARM_POPUP_SEC = 8;
+/** 다시 울리기까지 고를 수 있는 시간 (분) */
+const ALARM_SNOOZE = [5, 10, 30, 60];
+
+/**
+ * 알람 창에서 고른 것.
+ *
+ * '뒤에 다시' 를 고르면 그만큼 뒤에 같은 말로 한 번 더 울린다. 잠깐 자리를 비우거나
+ * 지금은 못 하는 일일 때 쓴다. 앱을 껐다 켜면 사라진다 — 잠깐 미루는 것이지
+ * 알람을 새로 만드는 것이 아니다.
+ */
+let _snoozeTimer = null;
+
+function alarmDone(d) {
+  const action = d && d.action;
+  const min = Number(d && d.min) || 0;
+  clearTimeout(_snoozeTimer);
+  _snoozeTimer = null;
+  if (action !== 'snooze' || min <= 0) {
+    hideBubbleNow();                       // 해제 — 말풍선도 함께 거둔다
+    return;
+  }
+  const label = _lastAlarmLabel;
+  hideBubbleNow();
+  _snoozeTimer = setTimeout(() => {
+    _snoozeTimer = null;
+    playAlarmSound();
+    buzz();
+    showAlarmBubble('⏰ ' + label);
+    raiseAlarm(label);
+  }, min * 60 * 1000);
+  const n = min >= 60 ? L('alarm_popup_hour').replace('{n}', min / 60)
+                      : L('alarm_popup_min').replace('{n}', min);
+  toast('info', L('alarm_snooze_title'), L('alarm_snooze_msg').replace('{t}', n));
+}
+
+let _lastAlarmLabel = "";
 
 function raiseAlarm(label) {
+  _lastAlarmLabel = label;
   const api = window.electronAPI;
   if (!api) return;                        // 모바일에서는 할 일이 없다
   try { if (api.alarmAttention) api.alarmAttention(); } catch (e) {}
@@ -6888,9 +6932,11 @@ function raiseAlarm(label) {
     const v = (k, d) => (cs.getPropertyValue(k) || '').trim() || d;
     api.alarmPopup({
       msg: label,
-      ok: L('alarm_popup_ok'),
-      after: L('alarm_popup_after'),
-      sec: ALARM_POPUP_SEC,
+      off: L('alarm_popup_off'),
+      againLbl: L('alarm_popup_again'),
+      minFmt: L('alarm_popup_min'),
+      hourFmt: L('alarm_popup_hour'),
+      mins: ALARM_SNOOZE.join(','),
       panel: v('--panel', '#16213e'),
       frame: v('--frame', '#e87aa4'),
       frameText: v('--frame-text', '#d4659a'),
@@ -10277,6 +10323,11 @@ function onSessionExpired(){
 }
 if (window.electronAPI && window.electronAPI.onSessionExpired) {
   window.electronAPI.onSessionExpired(onSessionExpired);
+}
+// 알람 창에서 고른 것('해제' 또는 '뒤에 다시')을 받는다.
+// 위젯 창에서만 받는다 — 두 창이 다 받으면 미룬 알람이 두 번 울린다.
+if (!window._isDashboard && window.electronAPI && window.electronAPI.onAlarmDone) {
+  window.electronAPI.onAlarmDone(alarmDone);
 }
 window.addEventListener('neko-session-expired', onSessionExpired);
 
