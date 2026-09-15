@@ -776,6 +776,22 @@ body.dragging-item, body.dragging-item * { cursor:grabbing !important; }
   font-family:'Galmuri14', monospace;
 }
 .memo-bar button:hover { background:var(--yellow); color:var(--bg); }
+/* 지금 걸려 있는 서식은 켜 보인다 — 커서를 얹으면 어떤 것이 걸렸는지 알 수 있게 */
+.memo-bar button.on, .memo-fmt button.on { background:var(--yellow); color:var(--bg); }
+
+/* 표 크기 고르기 */
+.tp-box { position:fixed; z-index:9496; padding:8px;
+  background:color-mix(in srgb, var(--card), #fff var(--lift-1));
+  border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.3); }
+.tp-label { font-size:11px; color:var(--gray); text-align:center; margin-bottom:6px;
+  font-family:'Galmuri14', monospace; }
+.tp-grid { display:grid; grid-template-columns:repeat(5, 22px); gap:3px; }
+.tp-cell { width:22px; height:22px; border:1px solid var(--border); border-radius:3px;
+  background:var(--panel); cursor:pointer; }
+.tp-cell.on { border-color:var(--yellow); background:color-mix(in srgb, var(--yellow), transparent 70%); }
+.tp-more { margin-top:8px; padding-top:7px; border-top:1px solid var(--border);
+  font-size:12px; color:var(--white); cursor:pointer; text-align:center; }
+.tp-more:hover { color:var(--yellow); }
 .memo-bar-sep { width:1px; height:16px; background:var(--border); margin:0 4px; }
 
 .memo-fmt {
@@ -1562,20 +1578,23 @@ select {
           <!-- 늘 떠 있는 막대. 글씨를 고르면 뜨는 막대(memo-fmt)와 달리, 무엇을 넣을 수
                있는지 미리 보여 준다 — '/' 를 아는 사람만 쓸 수 있으면 안 되니까. -->
           <div class="memo-bar">
-            <button type="button" data-i18n-tip="fmt_bold" onmousedown="event.preventDefault();memoFmt('bold')"
+            <button type="button" class="ff-undo" data-i18n-tip="memo_undo" onmousedown="event.preventDefault();memoUndo()">↶</button>
+            <button type="button" class="ff-redo" data-i18n-tip="memo_redo" onmousedown="event.preventDefault();memoRedo()">↷</button>
+            <span class="memo-bar-sep"></span>
+            <button type="button" class="ff-bold" data-i18n-tip="fmt_bold" onmousedown="event.preventDefault();memoFmt('bold')"
               style="font-weight:800">B</button>
-            <button type="button" data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')"
+            <button type="button" class="ff-italic" data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')"
               style="font-style:italic">I</button>
-            <button type="button" data-i18n-tip="fmt_under" onmousedown="event.preventDefault();memoFmt('underline')"
+            <button type="button" class="ff-underline" data-i18n-tip="fmt_under" onmousedown="event.preventDefault();memoFmt('underline')"
               style="text-decoration:underline">U</button>
-            <button type="button" data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')"
+            <button type="button" class="ff-strike" data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')"
               style="text-decoration:line-through">S</button>
             <span class="memo-bar-sep"></span>
             <button type="button" data-i18n-tip="slash_todo" onmousedown="event.preventDefault();memoBar('todo')">☑</button>
             <button type="button" data-i18n-tip="slash_bullet" onmousedown="event.preventDefault();memoBar('bullet')">•</button>
             <button type="button" data-i18n-tip="slash_number" onmousedown="event.preventDefault();memoBar('number')">1.</button>
             <button type="button" data-i18n-tip="slash_toggle" onmousedown="event.preventDefault();memoBar('toggle')">▸</button>
-            <button type="button" data-i18n-tip="slash_table" onmousedown="event.preventDefault();memoBar('table')">▦</button>
+            <button type="button" data-i18n-tip="slash_table" onmousedown="event.preventDefault();event.stopPropagation();openTablePick(event)">▦</button>
             <button type="button" data-i18n-tip="slash_divider" onmousedown="event.preventDefault();memoBar('divider')">—</button>
           </div>
           <div id="memoDoc" class="memo-doc" contenteditable="true" spellcheck="false"
@@ -1583,10 +1602,10 @@ select {
         </div>
         <div id="slashMenu" class="slash-menu" style="display:none"></div>
         <div id="memoFmt" class="memo-fmt">
-          <button type="button" class="ff-b" title="굵게"      data-i18n-tip="fmt_bold"   onmousedown="event.preventDefault();memoFmt('bold')">B</button>
-          <button type="button" class="ff-i" title="기울임"    data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')">I</button>
-          <button type="button" class="ff-u" title="밑줄"      data-i18n-tip="fmt_under"  onmousedown="event.preventDefault();memoFmt('underline')">U</button>
-          <button type="button" class="ff-s" title="취소선"    data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')">S</button>
+          <button type="button" class="ff-b ff-bold" title="굵게"      data-i18n-tip="fmt_bold"   onmousedown="event.preventDefault();memoFmt('bold')">B</button>
+          <button type="button" class="ff-i ff-italic" title="기울임"    data-i18n-tip="fmt_italic" onmousedown="event.preventDefault();memoFmt('italic')">I</button>
+          <button type="button" class="ff-u ff-underline" title="밑줄"      data-i18n-tip="fmt_under"  onmousedown="event.preventDefault();memoFmt('underline')">U</button>
+          <button type="button" class="ff-s ff-strike" title="취소선"    data-i18n-tip="fmt_strike" onmousedown="event.preventDefault();memoFmt('strikeThrough')">S</button>
         </div>
       </div>
 
@@ -1875,6 +1894,30 @@ select {
     </div>
   </div>
 </div>
+<!-- 표 크기 고르기 -->
+<div id="tablePick" class="tp-box" style="display:none">
+  <div class="tp-label" id="tpLabel"></div>
+  <div class="tp-grid" id="tpGrid"></div>
+  <div class="tp-more" onmousedown="event.preventDefault();openTableSize()" data-i18n="tp_more">표 삽입…</div>
+</div>
+
+<!-- 표 크기를 숫자로 -->
+<div id="tableSizeModal" style="display:none;position:fixed;inset:0;z-index:9495;background:rgba(0,0,0,0.7);align-items:center;justify-content:center">
+  <div class="card" style="width:min(300px,92vw);padding:18px 16px">
+    <div style="font-size:14px;font-weight:700;color:var(--white);margin-bottom:12px" data-i18n="tp_title">표 삽입</div>
+    <label style="display:block;font-size:12px;color:var(--gray);margin-bottom:4px" data-i18n="tp_cols">열 개수</label>
+    <input id="tsCols" type="number" min="1" max="20" value="3"
+      style="width:100%;margin-bottom:10px;padding:7px 9px;font-family:inherit;font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white)">
+    <label style="display:block;font-size:12px;color:var(--gray);margin-bottom:4px" data-i18n="tp_rows">행 개수</label>
+    <input id="tsRows" type="number" min="1" max="50" value="2"
+      style="width:100%;margin-bottom:14px;padding:7px 9px;font-family:inherit;font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white)">
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-y" style="flex:1" onclick="applyTableSize()" data-i18n="tp_ok">삽입</button>
+      <button class="btn" style="flex:1" onclick="closeTableSize()" data-i18n="tp_cancel">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- 메모장 통째로 비우기 확인 -->
 <div id="memoClearModal" style="display:none;position:fixed;inset:0;z-index:9490;background:rgba(0,0,0,0.7);align-items:center;justify-content:center" onclick="event.stopPropagation()">
   <div class="card" style="width:min(320px,92vw);padding:18px 16px;text-align:center">
@@ -2686,6 +2729,9 @@ const STRINGS = {
     alarm_popup_off:'해제', alarm_popup_again:'뒤에 다시',
     alarm_popup_min:'{n}분', alarm_popup_hour:'{n}시간',
     alarm_snooze_title:'⏰ 잠깐 미뤘어요', alarm_snooze_msg:'{t} 뒤에 다시 알려 드릴게요',
+    memo_undo:'되돌리기 (Ctrl+Z)', memo_redo:'다시 하기 (Ctrl+Alt+Z)',
+    tp_pick:'표 크기를 고르세요', tp_more:'표 삽입…', tp_title:'표 삽입',
+    tp_cols:'열 개수', tp_rows:'행 개수', tp_ok:'삽입', tp_cancel:'취소',
     memo_clear_title:'🗑 메모를 모두 지울까요?',
     memo_clear_body:'표와 체크박스까지 모두 지워져요. 되돌릴 수 없어요.',
     memo_clear_ok:'모두 지우기', memo_clear_no:'그대로 두기',
@@ -3043,6 +3089,9 @@ const STRINGS = {
     alarm_popup_off:'Dismiss', alarm_popup_again:'Remind me in',
     alarm_popup_min:'{n} min', alarm_popup_hour:'{n} hr',
     alarm_snooze_title:'⏰ Snoozed', alarm_snooze_msg:'I will remind you in {t}',
+    memo_undo:'Undo (Ctrl+Z)', memo_redo:'Redo (Ctrl+Alt+Z)',
+    tp_pick:'Pick a table size', tp_more:'Insert table…', tp_title:'Insert table',
+    tp_cols:'Columns', tp_rows:'Rows', tp_ok:'Insert', tp_cancel:'Cancel',
     memo_clear_title:'🗑 Clear the whole memo?',
     memo_clear_body:'Tables and checkboxes go too. This cannot be undone.',
     memo_clear_ok:'Clear all', memo_clear_no:'Keep it',
@@ -3381,6 +3430,9 @@ const STRINGS = {
     alarm_popup_off:'解除', alarm_popup_again:'後でもう一度',
     alarm_popup_min:'{n}分', alarm_popup_hour:'{n}時間',
     alarm_snooze_title:'⏰ 少し延ばしました', alarm_snooze_msg:'{t}後にまたお知らせします',
+    memo_undo:'元に戻す (Ctrl+Z)', memo_redo:'やり直す (Ctrl+Alt+Z)',
+    tp_pick:'表の大きさを選んでください', tp_more:'表を挿入…', tp_title:'表を挿入',
+    tp_cols:'列の数', tp_rows:'行の数', tp_ok:'挿入', tp_cancel:'キャンセル',
     memo_clear_title:'🗑 メモをすべて消しますか？',
     memo_clear_body:'表やチェックボックスも消えます。元に戻せません。',
     memo_clear_ok:'すべて消す', memo_clear_no:'そのままにする',
@@ -9320,6 +9372,7 @@ function runSlash(i) {
   closeSlashMenu();
   const el = memoEl();
   if (!el || !c) return;
+  memoUndoPush();              // 넣기 전 모습을 한 걸음으로
   // 손(focus)을 먼저 편집칸에 주면 커서가 있던 자리를 잃어버려, 표 안인지조차
   // 알 수 없게 된다. 그래서 '/' 를 지우고 표 밖으로 내보내는 일을 먼저 한다.
   removeSlashChar();
@@ -9488,6 +9541,7 @@ function memoTableMenu(e) {
 
 function memoTableAct(act) {
   closeSlashMenu();
+  memoUndoPush();              // 표를 고치기 전 모습을 한 걸음으로
   let cell = _mtCtxCell;
   // 이미 지워진 표의 칸을 들고 있으면 아무 일도 안 하고 끝나서, 눌러도 안 지워지는
   // 것처럼 보였다. 그럴 때는 지금 커서가 있는 표를 쓴다.
@@ -9561,6 +9615,212 @@ function memoSnapTable(wrap) {
   const pad = (MEMO_LINE - (used % MEMO_LINE)) % MEMO_LINE;
   wrap.style.marginBottom = pad + 'px';
 }
+// ── 표 크기 고르기 ────────────────────────────────────
+// 칸을 훑어 크기를 고른다. 몇 칸짜리가 될지 미리 보이는 편이,
+// 늘 3x2 로 만들어 놓고 나중에 행·열을 더하는 것보다 손이 덜 간다.
+
+const TP_MAX = 5;              // 훑어서 고를 수 있는 최대 (그보다 크면 숫자로 적는다)
+let _tpRange = null;           // 창을 열기 직전의 커서 자리
+
+/** 창을 열 때 커서 자리를 적어 둔다 — 창을 누르는 사이에 잃어버리므로 */
+function tpSaveCaret() {
+  const sel = window.getSelection();
+  _tpRange = (sel && sel.rangeCount) ? sel.getRangeAt(0).cloneRange() : null;
+}
+function tpRestoreCaret() {
+  const el = memoEl();
+  if (!el) return;
+  el.focus();
+  // 적어 둔 자리가 이미 지워진 글에 걸려 있으면 쓸 수 없다 — 그럴 땐 맨 끝에 넣는다
+  const n = _tpRange && _tpRange.startContainer;
+  const alive = n && n.isConnected && el.contains(n);
+  try {
+    const sel = window.getSelection();
+    const r = document.createRange();
+    if (alive) { sel.removeAllRanges(); sel.addRange(_tpRange); return; }
+    r.selectNodeContents(el);
+    r.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  } catch (e) {}
+}
+
+function openTablePick(ev) {
+  const box = document.getElementById('tablePick');
+  const grid = document.getElementById('tpGrid');
+  if (!box || !grid) return;
+  tpSaveCaret();
+  grid.innerHTML = '';
+  for (let r = 1; r <= TP_MAX; r++) {
+    for (let c = 1; c <= TP_MAX; c++) {
+      const d = document.createElement('div');
+      d.className = 'tp-cell';
+      d.dataset.r = r; d.dataset.c = c;
+      d.onmouseenter = () => tpHover(r, c);
+      d.onmousedown = (e) => { e.preventDefault(); closeTablePick(); memoInsertTable(c, r); };
+      grid.appendChild(d);
+    }
+  }
+  tpHover(0, 0);
+  box.style.display = 'block';
+  // 누른 단추 바로 아래에 띄운다
+  const b = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : null;
+  if (b) {
+    box.style.left = Math.max(8, Math.min(b.left - 40, window.innerWidth - 200)) + 'px';
+    box.style.top = Math.min(b.bottom + 6, window.innerHeight - 260) + 'px';
+  }
+}
+
+function tpHover(r, c) {
+  const lbl = document.getElementById('tpLabel');
+  if (lbl) lbl.textContent = (r && c) ? (c + ' x ' + r) : L('tp_pick');
+  document.querySelectorAll('#tpGrid .tp-cell').forEach(d => {
+    d.classList.toggle('on', Number(d.dataset.r) <= r && Number(d.dataset.c) <= c);
+  });
+}
+
+function closeTablePick() {
+  const box = document.getElementById('tablePick');
+  if (box) box.style.display = 'none';
+}
+
+/** 숫자로 적어서 넣기 (훑어 고를 수 있는 것보다 큰 표) */
+function openTableSize() {
+  // 고르기 창을 거치지 않고 바로 열릴 수도 있고, 앞서 적어 둔 자리가 낡았을 수도 있다
+  if (!_tpRange || !_tpRange.startContainer || !_tpRange.startContainer.isConnected) tpSaveCaret();
+  closeTablePick();
+  const m = document.getElementById('tableSizeModal');
+  if (!m) return;
+  const c = document.getElementById('tsCols'), r = document.getElementById('tsRows');
+  if (c) c.value = 3;
+  if (r) r.value = 2;
+  m.style.display = 'flex';
+  if (c) setTimeout(() => { c.focus(); c.select(); }, 0);
+}
+function closeTableSize() {
+  const m = document.getElementById('tableSizeModal');
+  if (m) m.style.display = 'none';
+}
+function applyTableSize() {
+  const c = Number((document.getElementById('tsCols') || {}).value) || 0;
+  const r = Number((document.getElementById('tsRows') || {}).value) || 0;
+  closeTableSize();
+  memoInsertTable(c, r);
+}
+
+/**
+ * 고른 크기로 표를 넣는다.
+ *
+ * 머리글 줄이 따로 있으므로, 사람이 '3행' 이라고 하면 머리글 1 + 몸 2 가 된다.
+ */
+function memoInsertTable(cols, rows) {
+  const el = memoEl();
+  if (!el) return;
+  cols = Math.max(1, Math.min(20, cols || 3));
+  rows = Math.max(1, Math.min(50, rows || 2));
+  tpRestoreCaret();
+  memoUndoPush();
+  if (!memoLeaveTable()) el.focus();
+  const html = memoTableHtml(cols, Math.max(0, rows - 1)) + '<div><br></div>';
+  let ok = false;
+  try { ok = document.execCommand('insertHTML', false, html); } catch (e) {}
+  // 창(숫자로 크기 적기)을 거쳐 오면 손이 딴 데 가 있어 execCommand 가 안 먹는다.
+  // 그럴 때는 커서 자리에 직접 끼워 넣는다 — 눌렀는데 아무 일도 없으면 안 되니까.
+  if (!ok || !el.querySelector('.memo-table-wrap')) {
+    const sel = window.getSelection();
+    const frag = document.createRange().createContextualFragment(html);
+    if (sel && sel.rangeCount) {
+      const rg = sel.getRangeAt(0);
+      rg.collapse(false);
+      rg.insertNode(frag);
+    } else {
+      el.appendChild(frag);
+    }
+  }
+  setTimeout(memoSnapAll, 0);
+  memoChanged();
+}
+
+// ── 되돌리기 / 다시 하기 ──────────────────────────────
+// 표를 더하고 지우는 일은 브라우저의 되돌리기에 남지 않는다 (우리가 직접 DOM 을
+// 만졌으므로). 그래서 메모 전체의 모습을 스무 걸음까지 적어 두고 그걸로 되돌린다.
+
+const MEMO_UNDO_MAX = 20;
+const _memoUndo = [];
+const _memoRedo = [];
+let _memoUndoLock = false;
+let _memoTypeTimer = null;
+
+/** 지금 모습을 한 걸음으로 적어 둔다 */
+function memoUndoPush() {
+  const el = memoEl();
+  if (!el || _memoUndoLock) return;
+  const html = el.innerHTML;
+  if (_memoUndo.length && _memoUndo[_memoUndo.length - 1] === html) return;
+  _memoUndo.push(html);
+  if (_memoUndo.length > MEMO_UNDO_MAX) _memoUndo.shift();
+  _memoRedo.length = 0;          // 새로 한 일이 생기면 '다시 하기' 는 버린다
+}
+
+/** 글자를 치는 동안은 한 글자마다가 아니라 손이 멎을 때 한 걸음으로 묶는다 */
+function memoUndoTyping() {
+  clearTimeout(_memoTypeTimer);
+  _memoTypeTimer = setTimeout(() => { _memoTypeTimer = null; memoUndoPush(); }, 500);
+}
+
+function memoUndo() {
+  const el = memoEl();
+  if (!el || !_memoUndo.length) return;
+  // 글자를 치다 멎으면 도는 타이머가 아직 걸려 있으면, 되돌린 직후에 깨어나
+  // 한 걸음을 새로 적으면서 '다시 하기' 를 버린다. 먼저 끈다.
+  clearTimeout(_memoTypeTimer); _memoTypeTimer = null;
+  _memoUndoLock = true;
+  _memoRedo.push(el.innerHTML);
+  el.innerHTML = _memoUndo.pop();
+  _memoUndoLock = false;
+  memoSnapAll();
+  S.memoDoc = el.innerHTML;
+  saveState();
+}
+
+function memoRedo() {
+  const el = memoEl();
+  if (!el || !_memoRedo.length) return;
+  clearTimeout(_memoTypeTimer); _memoTypeTimer = null;
+  _memoUndoLock = true;
+  _memoUndo.push(el.innerHTML);
+  el.innerHTML = _memoRedo.pop();
+  _memoUndoLock = false;
+  memoSnapAll();
+  S.memoDoc = el.innerHTML;
+  saveState();
+}
+
+// ── 막대의 단추에 지금 상태를 비춘다 ──────────────────
+// 취소선이 걸린 글씨에 커서를 두면 취소선 단추가 켜져 보이게 — 지금 무엇이
+// 걸려 있는지 눈으로 알 수 있게 한다.
+
+const MEMO_STATES = [
+  ['bold', 'ff-bold'], ['italic', 'ff-italic'],
+  ['underline', 'ff-underline'], ['strikeThrough', 'ff-strike'],
+];
+
+function memoSyncBar() {
+  const el = memoEl();
+  if (!el) return;
+  // 커서가 메모 안에 없으면 굳이 묻지 않는다 (엉뚱한 자리의 상태가 비친다)
+  const sel = window.getSelection();
+  let n = (sel && sel.rangeCount) ? sel.getRangeAt(0).startContainer : null;
+  if (n && n.nodeType === 3) n = n.parentElement;
+  if (!n || !el.contains(n)) return;
+  MEMO_STATES.forEach(([cmd, cls]) => {
+    let on = false;
+    try { on = document.queryCommandState(cmd); } catch (e) {}
+    document.querySelectorAll('.memo-bar .' + cls + ', .memo-fmt .' + cls)
+      .forEach(b => b.classList.toggle('on', !!on));
+  });
+}
+
 /**
  * 표 껍데기 안으로 잘못 들어간 것을 밖으로 빼낸다.
  *
@@ -9625,6 +9885,7 @@ function memoClearYes() {
   memoClearCancel();
   const el = memoEl();
   if (!el) return;
+  memoUndoPush();              // 통째로 비우기도 되돌릴 수 있게
   el.innerHTML = '<div><br></div>';
   el.focus();
   try {
@@ -9739,7 +10000,11 @@ function initMemo() {
   if (!el || el._memoWired) return;
   el._memoWired = true;
   loadMemoDoc();
-  el.addEventListener('input', () => { if (!_slashOpen) memoChanged(); });
+  el.addEventListener('input', () => { if (!_slashOpen) memoChanged(); memoUndoTyping(); });
+  // 커서가 움직이면 막대에 지금 서식을 비춘다
+  document.addEventListener('selectionchange', () => { if (!_slashOpen) memoSyncBar(); });
+  el.addEventListener('keyup', memoSyncBar);
+  el.addEventListener('mouseup', memoSyncBar);
   el.addEventListener('keydown', (e) => {
     if (_slashOpen) {
       if (e.key === 'ArrowDown') { e.preventDefault(); moveSlash(1); return; }
@@ -9748,6 +10013,12 @@ function initMemo() {
       if (e.key === 'Escape')    { e.preventDefault(); closeSlashMenu(); return; }
     }
     if (e.key === '/') setTimeout(openSlashMenu, 0);   // 글자가 들어간 뒤 위치를 잡는다
+    // 되돌리기 / 다시 하기 — 시간표와 같은 손놀림
+    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.altKey || e.shiftKey) memoRedo(); else memoUndo();
+      return;
+    }
     // Ctrl+A 는 우리가 직접 고른다.
     //
     // 브라우저에 맡기면 커서가 표 칸 안에 있을 때 그 표 안만 골라서, 전체를 고른 줄
@@ -9784,6 +10055,8 @@ function initMemo() {
   });
   document.addEventListener('mousedown', (e) => {
     if (_slashOpen && !slashMenuEl().contains(e.target)) closeSlashMenu();
+    const tp = document.getElementById('tablePick');
+    if (tp && tp.style.display === 'block' && !tp.contains(e.target)) closeTablePick();
   });
   // 표: 우클릭 메뉴 / 경계선 드래그로 너비 조절
   el.addEventListener('contextmenu', (e) => { memoTableMenu(e); });
