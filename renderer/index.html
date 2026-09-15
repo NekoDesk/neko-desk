@@ -9531,8 +9531,12 @@ const MEMO_LINE = 30;
 function memoSnapTable(wrap) {
   if (!wrap) return;
   wrap.style.marginBottom = '0px';
-  const h = wrap.offsetHeight;
-  const pad = (MEMO_LINE - (h % MEMO_LINE)) % MEMO_LINE;
+  // 표가 세로로 차지하는 자리는 '높이' 만이 아니라 위 여백까지다.
+  // 위 여백(10px)을 빼고 재는 바람에 표 아래 글이 늘 10px 씩 밀려,
+  // 배경 줄과 어긋난 자리에 앉았다.
+  const mt = parseFloat(getComputedStyle(wrap).marginTop) || 0;
+  const used = mt + wrap.offsetHeight;
+  const pad = (MEMO_LINE - (used % MEMO_LINE)) % MEMO_LINE;
   wrap.style.marginBottom = pad + 'px';
 }
 /** 메모 안의 모든 표를 다시 맞춘다 */
